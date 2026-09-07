@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { PolyFitLogo } from "@/components/ui/polyfit-logo";
 
 interface PublicNavigationProps {
   onOpenLeadForm?: (type: 'employer' | 'provider') => void;
@@ -18,16 +19,13 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0B1F33]/95 backdrop-blur-md border-b border-white/10" aria-label="Main Navigation">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-white/10" aria-label="Main Navigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
             <a href="/" className="flex items-center space-x-2.5 sm:space-x-3 group">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-[#28D17C] rounded-[10px] flex items-center justify-center shadow-sm">
-                <span className="text-[#0B1F33] font-bold text-lg sm:text-xl leading-none">P</span>
-              </div>
-              <span className="text-xl sm:text-2xl font-bold tracking-tight text-white">PolyFit</span>
+              <PolyFitLogo theme="dark" iconSize={38} />
             </a>
           </div>
 
@@ -46,7 +44,7 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
             <button 
               onClick={() => onOpenLeadForm?.('employer')}
               aria-label="Talk to us - Open employer inquiry modal"
-              className="bg-[#28D17C] hover:bg-[#28D17C]/90 text-[#0B1F33] px-5 py-2.5 rounded-[10px] text-sm font-semibold transition-all duration-150 shadow-sm hover:shadow"
+              className="bg-emerald-500 hover:bg-emerald-600 text-slate-900 px-5 py-2.5 rounded-[10px] text-sm font-semibold transition-all duration-150 shadow-xs hover:shadow-sm"
             >
               Talk to us
             </button>
@@ -68,7 +66,7 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
 
       {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-[#0B1F33] border-t border-white/10 px-4 pt-3 pb-6 space-y-3 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-2xl">
+        <div className="md:hidden bg-slate-900 border-t border-white/10 px-4 pt-3 pb-6 space-y-3 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-2xl">
           <div className="space-y-1">
             {navLinks.map((link) => (
               <a
@@ -89,7 +87,7 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
                 onOpenLeadForm?.('employer');
               }}
               aria-label="Talk to us - Open employer inquiry modal"
-              className="w-full bg-[#28D17C] hover:bg-[#28D17C]/90 text-[#0B1F33] px-5 py-3 rounded-[10px] text-sm font-semibold transition-colors min-h-[44px] flex items-center justify-center"
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-900 px-5 py-3 rounded-[10px] text-sm font-semibold transition-colors min-h-[44px] flex items-center justify-center"
             >
               Talk to us
             </button>
