@@ -19,6 +19,7 @@ import {
   X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PolyFitLogo } from "@/components/ui/polyfit-logo";
 
 const navigationItems = [
   {
@@ -109,18 +110,11 @@ export function NavigationRail() {
             {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-              <ScanLine className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-headline-md font-bold text-foreground text-base">
-                PolyFit
-              </span>
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                Live
-              </span>
-            </div>
+            <PolyFitLogo theme="dark" iconSize={28} showWordmark={true} />
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 ml-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Live
+            </span>
           </div>
         </div>
 
@@ -149,75 +143,76 @@ export function NavigationRail() {
         )}
       >
         {/* Logo/Brand */}
-        <div className="p-5 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center shrink-0">
-              <ScanLine className="w-6 h-6 text-primary-foreground" />
+        <div className="p-4 border-b border-border flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <PolyFitLogo theme="dark" iconSize={32} showWordmark={true} />
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Live
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h1 className="font-headline-md font-bold text-foreground text-base">PolyFit</h1>
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Live
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground">Operations Console</p>
-            </div>
+            <p className="text-xs text-muted-foreground mt-1">Operations Console</p>
           </div>
 
           <button
             onClick={() => setMobileOpen(false)}
-            className="lg:hidden p-1 text-muted-foreground hover:text-foreground"
-            aria-label="Close menu"
+            className="lg:hidden p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
+            aria-label="Close Navigation Sidebar"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Navigation Items */}
-        <div className="flex-1 overflow-y-auto py-3">
-          <ul className="space-y-1 px-3">
-            {navigationItems.map((item) => {
-              const isActive = pathname === item.href || (pathname?.startsWith(item.href + '/') && item.href !== '/');
-              const Icon = item.icon;
+        <div className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+          {navigationItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href || (pathname?.startsWith(item.href + '/') && item.href !== '/');
 
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                      "min-h-[44px]", // 44px minimum touch target
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                    aria-current={isActive ? "page" : undefined}
-                  >
-                    <Icon className="w-5 h-5 shrink-0" />
-                    <div className="flex flex-col">
-                      <span>{item.name}</span>
-                      <span className="text-xs opacity-70">{item.description}</span>
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group min-h-[44px]",
+                  isActive
+                    ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "w-5 h-5 shrink-0 transition-colors",
+                    isActive
+                      ? "text-primary-foreground"
+                      : "text-muted-foreground group-hover:text-foreground"
+                  )}
+                />
+                <span className="truncate">{item.name}</span>
+              </Link>
+            );
+          })}
         </div>
 
-        {/* Bottom Actions */}
-        <div className="p-3 border-t border-border">
+        {/* Footer actions */}
+        <div className="p-3 border-t border-border space-y-1">
           <Link
-            href="/login"
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors min-h-[44px]"
+            href="/monitor"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors min-h-[44px]"
+          >
+            <ScanLine className="w-5 h-5 shrink-0" />
+            <span className="truncate">Reception Monitor</span>
+          </Link>
+          <button
+            onClick={() => {
+              window.location.href = "/";
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors min-h-[44px]"
           >
             <LogOut className="w-5 h-5 shrink-0" />
-            <span>Sign Out</span>
-          </Link>
+            <span className="truncate">Exit to Home</span>
+          </button>
         </div>
       </nav>
     </>
