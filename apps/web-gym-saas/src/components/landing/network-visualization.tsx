@@ -15,7 +15,7 @@ export default function NetworkVisualization() {
               Connected Fitness Network
             </span>
           </div>
-          <span className="text-[10px] sm:text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full flex-shrink-0 text-center">
+          <span className="text-[10px] sm:text-[11px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full flex-shrink-0 text-center">
             One Benefit → Many
           </span>
         </div>
@@ -97,7 +97,7 @@ export default function NetworkVisualization() {
                   <ShieldCheck className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-slate-950" />
                 </div>
               </div>
-              <span className="text-[11px] sm:text-xs font-bold text-emerald-700 mt-1.5 sm:mt-2">PolyFit</span>
+              <span className="text-[11px] sm:text-xs font-bold text-emerald-800 mt-1.5 sm:mt-2">PolyFit</span>
               <span className="text-[9px] sm:text-[10px] text-slate-600">Verified Router</span>
             </div>
 
@@ -106,7 +106,7 @@ export default function NetworkVisualization() {
               {/* Gym */}
               <div className="flex items-center gap-1.5 sm:gap-2.5 p-1.5 sm:p-2 rounded-[10px] bg-slate-50 border border-slate-200/80 hover:border-emerald-500/40 transition-colors">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-[8px] bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                  <Dumbbell className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
+                  <Dumbbell className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-700" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-[11px] sm:text-xs font-medium text-slate-900 truncate">Fitness Gym</p>
@@ -117,7 +117,7 @@ export default function NetworkVisualization() {
               {/* Studio */}
               <div className="flex items-center gap-1.5 sm:gap-2.5 p-1.5 sm:p-2 rounded-[10px] bg-slate-50 border border-slate-200/80 hover:border-emerald-500/40 transition-colors">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-[8px] bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <Footprints className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
+                  <Footprints className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-700" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-[11px] sm:text-xs font-medium text-slate-900 truncate">Studio</p>
@@ -128,7 +128,7 @@ export default function NetworkVisualization() {
               {/* Pool & Recovery */}
               <div className="flex items-center gap-1.5 sm:gap-2.5 p-1.5 sm:p-2 rounded-[10px] bg-slate-50 border border-slate-200/80 hover:border-emerald-500/40 transition-colors">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-[8px] bg-teal-100 flex items-center justify-center flex-shrink-0">
-                  <Waves className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teal-600" />
+                  <Waves className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teal-700" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-[11px] sm:text-xs font-medium text-slate-900 truncate">Pool & Spa</p>

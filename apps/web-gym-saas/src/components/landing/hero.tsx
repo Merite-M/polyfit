@@ -38,7 +38,7 @@ export default function Hero({ onOpenLeadForm }: HeroProps) {
               <button 
                 onClick={() => onOpenLeadForm('provider')}
                 aria-label="Join the Provider Network - Open provider form"
-                className="w-full sm:w-auto border border-emerald-500/60 text-emerald-700 hover:bg-emerald-50 px-6 sm:px-8 py-3.5 sm:py-4 rounded-[10px] text-base font-semibold transition-all duration-150 flex items-center justify-center min-h-[48px]"
+                className="w-full sm:w-auto border border-emerald-500/60 text-emerald-800 hover:bg-emerald-50 px-6 sm:px-8 py-3.5 sm:py-4 rounded-[10px] text-base font-semibold transition-all duration-150 flex items-center justify-center min-h-[48px]"
               >
                 Join the Provider Network
               </button>
