@@ -19,13 +19,13 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-white/10" aria-label="Main Navigation">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs" aria-label="Main Navigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
             <a href="/" className="flex items-center space-x-2.5 sm:space-x-3 group">
-              <PolyFitLogo theme="dark" iconSize={38} />
+              <PolyFitLogo theme="light" iconSize={38} />
             </a>
           </div>
 
@@ -35,7 +35,7 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
               <a
                 key={link.name}
                 href={link.href}
-                className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
+                className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
               >
                 {link.name}
               </a>
@@ -44,7 +44,7 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
             <button 
               onClick={() => onOpenLeadForm?.('employer')}
               aria-label="Talk to us - Open employer inquiry modal"
-              className="bg-emerald-500 hover:bg-emerald-600 text-slate-900 px-5 py-2.5 rounded-[10px] text-sm font-semibold transition-all duration-150 shadow-xs hover:shadow-sm"
+              className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-5 py-2.5 rounded-[10px] text-sm font-semibold transition-all duration-150 shadow-xs hover:shadow-sm"
             >
               Talk to us
             </button>
@@ -54,7 +54,7 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
           <div className="md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-[10px] text-gray-300 hover:text-white hover:bg-white/10 focus:outline-none min-h-[44px] min-w-[44px]"
+              className="inline-flex items-center justify-center p-2 rounded-[10px] text-slate-700 hover:text-slate-900 hover:bg-slate-100 focus:outline-none min-h-[44px] min-w-[44px]"
               aria-expanded={isMenuOpen}
               aria-label="Toggle mobile menu"
             >
@@ -66,13 +66,13 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
 
       {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-slate-900 border-t border-white/10 px-4 pt-3 pb-6 space-y-3 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-2xl">
+        <div className="md:hidden bg-white border-t border-slate-200 px-4 pt-3 pb-6 space-y-3 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-xl">
           <div className="space-y-1">
             {navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
-                className="block px-3 py-3 rounded-[10px] text-base font-medium text-gray-200 hover:text-white hover:bg-white/5 transition-colors active:bg-white/10"
+                className="block px-3 py-3 rounded-[10px] text-base font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-colors active:bg-slate-100"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {link.name}
@@ -80,14 +80,14 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
             ))}
           </div>
           
-          <div className="pt-3 border-t border-white/10">
+          <div className="pt-3 border-t border-slate-200">
             <button 
               onClick={() => {
                 setIsMenuOpen(false);
                 onOpenLeadForm?.('employer');
               }}
               aria-label="Talk to us - Open employer inquiry modal"
-              className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-900 px-5 py-3 rounded-[10px] text-sm font-semibold transition-colors min-h-[44px] flex items-center justify-center"
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-5 py-3 rounded-[10px] text-sm font-semibold transition-colors min-h-[44px] flex items-center justify-center"
             >
               Talk to us
             </button>
