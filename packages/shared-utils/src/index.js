@@ -1,20 +1,20 @@
 const crypto = require('crypto');
 
 /**
- * Calculates live occupancy for a given tenant within the auto-checkout window.
+ * Calculates live occupancy for a given provider location within the auto-checkout window.
  * @param {Object} supabaseClient - Configured Supabase client
- * @param {string} tenantId - Tenant UUID
+ * @param {string} providerLocationId - Provider location UUID
  * @param {number} [autoCheckoutMinutes=120] - Time window in minutes
  * @returns {Promise<number>} - Active occupancy count
  */
-async function getLiveOccupancy(supabaseClient, tenantId, autoCheckoutMinutes = 120) {
-  if (!supabaseClient || !tenantId) return 0;
+async function getLiveOccupancy(supabaseClient, providerLocationId, autoCheckoutMinutes = 120) {
+  if (!supabaseClient || !providerLocationId) return 0;
   try {
     const windowStart = new Date(Date.now() - autoCheckoutMinutes * 60 * 1000).toISOString();
     const { count, error } = await supabaseClient
-      .from('check_ins')
+      .from('visits')
       .select('id', { count: 'exact', head: true })
-      .eq('tenant_id', tenantId)
+      .eq('provider_location_id', providerLocationId)
       .in('status', ['approved', 'warning'])
       .is('checkout_at', null)
       .gte('created_at', windowStart);
@@ -31,28 +31,28 @@ async function getLiveOccupancy(supabaseClient, tenantId, autoCheckoutMinutes = 
 }
 
 /**
- * Validates whether a user belongs to a tenant and optionally possesses allowed roles.
+ * Validates whether a user belongs to an organization and optionally possesses allowed roles.
  * @param {Object} supabaseClient - Configured Supabase client
  * @param {string} userId - User profile UUID (req.user.id)
- * @param {string} tenantId - Target tenant UUID
+ * @param {string} organizationId - Target organization UUID
  * @param {string[]} [allowedRoles] - Optional list of allowed roles (e.g. ['admin', 'manager', 'staff'])
  * @returns {Promise<{authorized: boolean, profile?: Object, error?: string, status?: number}>}
  */
-async function validateTenantAccess(supabaseClient, userId, tenantId, allowedRoles = null) {
+async function validateOrganizationAccess(supabaseClient, userId, organizationId, allowedRoles = null) {
   if (!supabaseClient) {
     return { authorized: false, error: 'Supabase client not configured', status: 500 };
   }
   if (!userId) {
     return { authorized: false, error: 'Unauthenticated user', status: 401 };
   }
-  if (!tenantId) {
-    return { authorized: false, error: 'Missing tenant_id parameter', status: 400 };
+  if (!organizationId) {
+    return { authorized: false, error: 'Missing organization_id parameter', status: 400 };
   }
 
   try {
     const { data: profile, error } = await supabaseClient
       .from('profiles')
-      .select('id, tenant_id, role, first_name, last_name')
+      .select('id, organization_id, role, first_name, last_name')
       .eq('id', userId)
       .single();
 
@@ -60,8 +60,8 @@ async function validateTenantAccess(supabaseClient, userId, tenantId, allowedRol
       return { authorized: false, error: 'User profile not found', status: 404 };
     }
 
-    if (profile.tenant_id !== tenantId && profile.role !== 'admin' && profile.role !== 'super_admin') {
-      return { authorized: false, error: 'Unauthorized access to tenant', status: 403 };
+    if (profile.organization_id !== organizationId && profile.role !== 'admin' && profile.role !== 'super_admin') {
+      return { authorized: false, error: 'Unauthorized access to organization', status: 403 };
     }
 
     if (allowedRoles && Array.isArray(allowedRoles) && allowedRoles.length > 0) {
@@ -76,8 +76,8 @@ async function validateTenantAccess(supabaseClient, userId, tenantId, allowedRol
 
     return { authorized: true, profile, role: profile.role };
   } catch (err) {
-    console.error('[validateTenantAccess] error:', err);
-    return { authorized: false, error: 'Internal tenant authorization error', status: 500 };
+    console.error('[validateOrganizationAccess] error:', err);
+    return { authorized: false, error: 'Internal organization authorization error', status: 500 };
   }
 }
 
@@ -153,7 +153,7 @@ function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
 
 module.exports = {
   getLiveOccupancy,
-  validateTenantAccess,
+  validateOrganizationAccess,
   verifyHmacSignature,
   formatRWF,
   getDistanceFromLatLonInM,
