@@ -68,28 +68,6 @@ Determine which PolyFit actor it serves:
 4. **PolyFit Operations** - Internal platform management
 5. **Finance/Settlement** - Billing and provider settlement
 
-### Do NOT Introduce Gym-Specific Functionality
-
-**Never implement:**
-- Gym member management
-- Gym POS (Point of Sale) systems
-- Gym staff management
-- Gym trainer management
-- Gym class scheduling
-- Gym reception desk workflows
-- Gym inventory management
-- Gym-specific financial reporting
-- Gym expense tracking
-- Gym branch management
-- Membership freeze/suspension
-- Individual gym subscription management
-- Gym-specific customer CRM
-- Gym-owner onboarding
-- Single-gym analytics
-- Gym-specific admin pages
-
-**These are gym-software features, not aggregator features.**
-
 ### Preferred Terminology
 
 | Old (Gym Software) | New (PolyFit Aggregator) |
