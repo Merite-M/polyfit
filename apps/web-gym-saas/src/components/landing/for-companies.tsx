@@ -9,7 +9,7 @@ export default function ForCompanies({ onOpenLeadForm }: ForCompaniesProps) {
     {
       icon: Users,
       title: "More choice",
-      description: "Employees aren't restricted to a single gym location—they can choose providers that match their schedule and workout style."
+      description: "Employees aren't restricted to a single provider—they can choose facilities that match their schedule and workout style."
     },
     {
       icon: MapPin,
