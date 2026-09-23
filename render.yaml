@@ -32,8 +32,8 @@ services:
   - type: web
     name: polyfit
     env: static
-    buildCommand: pnpm install --filter @polyfit/web-gym-saas... && pnpm --filter @polyfit/web-gym-saas build
-    staticPublishPath: apps/web-gym-saas/out
+    buildCommand: pnpm install --filter @polyfit/web... && pnpm --filter @polyfit/web build
+    staticPublishPath: apps/web/out
     routes:
       - type: rewrite
         source: /*

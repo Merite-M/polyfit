@@ -40,7 +40,7 @@ Employees / Beneficiaries
 polyfit/
 ├── apps/
 │   ├── backend-core/        # Express.js API server
-│   └── web-gym-saas/        # Next.js landing page and applications
+│   └── web/                 # Next.js landing page and applications
 ├── packages/
 │   ├── shared-utils/        # Shared utility functions
 │   ├── supabase-client/     # Supabase client configuration
@@ -127,7 +127,7 @@ JWT_SECRET=your_jwt_secret
 INTERNAL_API_KEY=your_internal_api_key
 ```
 
-**Frontend (apps/web-gym-saas/.env.local)**
+**Frontend (apps/web/.env.local)**
 ```
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
@@ -150,7 +150,7 @@ The backend API server runs on port 3001 by default.
 ### Frontend Development
 
 ```bash
-cd apps/web-gym-saas
+cd apps/web
 pnpm dev
 ```
 
@@ -163,7 +163,7 @@ The development server runs on http://localhost:3000.
 pnpm build
 
 # Build specific app
-pnpm --filter @polyfit/web-gym-saas build
+pnpm --filter @polyfit/web build
 ```
 
 ---

@@ -16,6 +16,7 @@ Never assume, guess, or work from memory when a live data source is available vi
 
 ### 🔵 Linear (`linear/*`)
 - Before working on ANY issue: call `get_issue` with `fields: [title, description, priority, estimate, status, labels, assignee, createdAt, updatedAt]` to get the **complete, untruncated** issue spec.
+- **Aggregator Rule**: The issue identifier prefix `GYM-` (e.g. `GYM-70`) is an immutable legacy workspace key. It does NOT denote gym software. PolyFit is strictly a B2B2C corporate wellness aggregator. Never implement single-gym software features.
 - Before auditing or planning: call `list_issues` across all relevant states to understand the full backlog.
 - After completing work: always call `save_issue` to update `state` (Done / In Progress), set `assignee`, and append implementation notes to the description via `patch`.
 - Use `list_issue_statuses` to understand the exact valid state names for the workspace before updating statuses.
@@ -31,6 +32,7 @@ Never assume, guess, or work from memory when a live data source is available vi
 
 ### 🟠 Render (`render/*`)
 - Before deploying or touching infra: call `list_services` and `get_service` to understand the live deployment state.
+- **Active Services**: The active backend web service is `polyfit-backend` (`srv-daq3ojrtqb8s73e7r9o0`) deployed at `https://polyfit-backend.onrender.com`. The frontend static site is `polyfit` (`srv-dadc8egae00c739lio4g`) at `https://polyfit.onrender.com`.
 - Use `list_deploys` and `get_deploy` to check whether recent changes are live before debugging.
 - Use `list_logs` to read actual runtime logs when diagnosing errors, instead of guessing.
 - Use `get_metrics` to understand real CPU/memory usage before recommending infrastructure changes.
@@ -45,8 +47,9 @@ Never assume, guess, or work from memory when a live data source is available vi
 
 ### 🔶 Stitch (`stitch/*`)
 - Before implementing any UI screen: call `list_screens` and `get_screen` to retrieve the design spec.
+- **Active Project**: Always use the **PolyFit Design Center** (`projects/16498663316307719095`). Ignore the archived `Gym SaaS Design System` project (`projects/11473264703669051919`).
 - Reference Stitch screen designs for component layout, color tokens, and interaction patterns.
-- Use `list_design_systems` and `apply_design_system` to ensure every new component uses the established design system.
+- Use `list_design_systems` and `apply_design_system` to ensure every new component uses the established design system (`PolyFit Design System v1.0`).
 - Generate screens from stitch project of this project using tools like generate_screens_from_text or other for a consistent design.
 
 ---
