@@ -1,9 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-const multer = require('multer');
 const { rateLimit } = require('express-rate-limit');
 const { createClient } = require('@supabase/supabase-js');
-const { getLiveOccupancy, getDistanceFromLatLonInM } = require('@polyfit/shared-utils');
 require('dotenv').config();
 
 const app = express();
@@ -28,12 +26,23 @@ const apiLimiter = rateLimit({
 
 app.use('/api/', apiLimiter);
 
+// ─── Supabase Client ─────────────────────────────────────────────────────────
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+let supabase;
+
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+} else {
+  console.warn("Supabase credentials not found, endpoints using supabase will fail.");
+}
+
 // ─── Health Check Endpoint ───────────────────────────────────────────────────
 app.get('/health', async (req, res) => {
   try {
     let dbStatus = 'disconnected';
     if (supabase) {
-      const { error } = await supabase.from('organizations').select('id').limit(1);
+      const { error } = await supabase.rpc('version');
       dbStatus = error ? 'error' : 'connected';
     }
     const isHealthy = dbStatus === 'connected' || !supabase;
@@ -54,45 +63,18 @@ app.get('/health', async (req, res) => {
 });
 // ─────────────────────────────────────────────────────────────────────────────
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-let supabase;
-
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey);
-} else {
-  console.warn("Supabase credentials not found, endpoints using supabase will fail.");
-}
-
-const eventEmitter = require("./events");
-const upload = multer({ storage: multer.memoryStorage() });
-
-// NOTE: Gym-specific routes removed during PolyFit pivot to corporate wellness aggregator
-// Infrastructure kept: auth, events, sync, communications (to be adapted)
-// Removed: pos, staff, membership_holds, calendar, iot, member-crm, contracts, tier_proration, staff_tasks, drip_engine, waivers, checkin
-
-const initCron = require("./cron");
-
-const adminRoutes = require("./admin");
-app.use("/api/admin", adminRoutes);
-
-const paymentsRoutes = require("./payments");
-app.use("/api/payments", paymentsRoutes);
-
-const publicRoutes = require("./public");
-app.use("/api/public", publicRoutes);
-app.use("/widgets", publicRoutes);
-
-const syncRoutes = require("./sync");
-app.use("/api/sync", syncRoutes);
-
-const corporateRoutes = require("./corporate");
-app.use("/api/corporate", corporateRoutes);
-
-const communicationsRoutes = require("./communications");
-app.use("/api/communications", communicationsRoutes);
-
-initCron(supabase);
+// ─── Aggregator API Routes ──────────────────────────────────────────────────
+// New aggregator routes will be registered here as they are built:
+// - /api/organizations  — Employer management
+// - /api/providers      — Provider management
+// - /api/employees      — Employee/beneficiary management
+// - /api/benefits       — Benefit configuration
+// - /api/eligibility    — Eligibility verification
+// - /api/visits         — Visit tracking
+// - /api/utilization    — Usage analytics
+// - /api/settlements    — Provider settlement
+// - /api/reporting      — Employer/provider reporting
+// ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Server Start ─────────────────────────────────────────────────────────────
 app.listen(port, () => {

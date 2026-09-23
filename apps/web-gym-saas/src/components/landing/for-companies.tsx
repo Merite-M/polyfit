@@ -19,12 +19,12 @@ export default function ForCompanies({ onOpenLeadForm }: ForCompaniesProps) {
     {
       icon: BarChart3,
       title: "Usage visibility",
-      description: "Understand participation and benefit utilization with transparent reporting instead of paying flat fees for unused memberships."
+      description: "Understand participation and benefit utilization with transparent reporting instead of paying flat fees for unused benefits."
     },
     {
       icon: Handshake,
       title: "One relationship",
-      description: "PolyFit manages the provider network and contracts instead of your HR team coordinating multiple gyms individually."
+      description: "PolyFit manages the provider network and contracts instead of your HR team coordinating multiple providers individually."
     }
   ];
 

@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { AppStateProvider } from "@/lib/state-context";
 
 const inter = Inter({ 
   subsets: ["latin"], 
@@ -13,10 +12,10 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "PolyFit — Corporate Fitness & Wellness Network",
-  description: "PolyFit connects companies and employees to a network of gyms and fitness providers, making corporate fitness benefits more accessible, flexible and measurable.",
+  description: "PolyFit connects companies and employees to a network of wellness providers, making corporate fitness benefits more accessible, flexible and measurable.",
   openGraph: {
     title: "PolyFit — Corporate Fitness & Wellness Network",
-    description: "PolyFit connects companies and employees to a network of gyms and fitness providers, making corporate fitness benefits more accessible, flexible and measurable.",
+    description: "PolyFit connects companies and employees to a network of wellness providers, making corporate fitness benefits more accessible, flexible and measurable.",
     siteName: "PolyFit",
     type: "website",
   },
@@ -41,12 +40,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-background text-foreground">
         <ErrorBoundary>
           <AuthProvider>
-            <AppStateProvider>
               <a href="#main-content" className="skip-to-main">
                 Skip to main content
               </a>
               {children}
-            </AppStateProvider>
           </AuthProvider>
         </ErrorBoundary>
       </body>

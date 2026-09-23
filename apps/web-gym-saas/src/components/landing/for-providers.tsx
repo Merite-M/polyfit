@@ -24,7 +24,7 @@ export default function ForProviders({ onOpenLeadForm }: ForProvidersProps) {
     {
       icon: TrendingUp,
       title: "Business insights",
-      description: "Understand peak member hours, demographic demand, and facility utilization patterns."
+      description: "Understand peak visitor hours, demographic demand, and facility utilization patterns."
     }
   ];
 

@@ -1,5 +1,5 @@
 services:
-  # 1. Render Web Service (Always-on Node.js API backend hosting Express 5, WebSockets, background billing crons, IoT triggers, and payment webhooks)
+  # 1. Render Web Service (Node.js API backend hosting Express 5 for the PolyFit corporate wellness aggregator)
   - type: web
     name: polyfit-backend
     env: node

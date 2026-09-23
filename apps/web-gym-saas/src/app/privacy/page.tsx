@@ -60,7 +60,7 @@ export default function PrivacyPage() {
             <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
               <li><strong className="text-foreground">Corporate Leads:</strong> Name, work email address, telephone number, organization name, employee headcount, and wellness objectives.</li>
               <li><strong className="text-foreground">Fitness Providers:</strong> Business name, facility physical address, contact representative name, telephone number, operational hours, and facility capacity.</li>
-              <li><strong className="text-foreground">Check-in Verification Data:</strong> Facility check-in timestamps, verification tokens, and member roster confirmation to process cross-facility billing and settlement.</li>
+              <li><strong className="text-foreground">Visit Verification Data:</strong> Facility visit timestamps, verification tokens, and employee roster confirmation to process cross-facility billing and settlement.</li>
             </ul>
           </section>
 
@@ -73,9 +73,9 @@ export default function PrivacyPage() {
               We process personal information under the following legal bases:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-              <li>To evaluate and establish corporate membership contracts and provider partnership agreements.</li>
+              <li>To evaluate and establish corporate benefit contracts and provider partnership agreements.</li>
               <li>To calculate and settle facility utilization payments between corporate employers and network fitness providers.</li>
-              <li>To dispatch automated transaction notifications (SMS and email confirmations) regarding inquiries, tours, and active memberships.</li>
+              <li>To dispatch automated transaction notifications (SMS and email confirmations) regarding inquiries, tours, and active benefit plans.</li>
               <li>To detect and prevent fraudulent access or double-check-in violations across partner turnstiles and scanners.</li>
             </ul>
           </section>

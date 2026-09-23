@@ -69,10 +69,10 @@ export default function TermsPage() {
           <section className="bg-card border border-border rounded-2xl p-6 sm:p-8 space-y-4">
             <div className="flex items-center gap-3">
               <UserCheck className="w-6 h-6 text-accent" />
-              <h2 className="text-2xl font-bold text-foreground m-0">4. Member Code of Conduct</h2>
+              <h2 className="text-2xl font-bold text-foreground m-0">4. User Code of Conduct</h2>
             </div>
             <p className="text-muted-foreground">
-              Members utilizing the PolyFit pass must abide by all house safety rules and facility guidelines of each host venue. Passes and verification credentials (QR codes, NFC tokens, or PINs) are strictly personal and non-transferable. Anti-passback algorithms monitor check-in frequencies to prevent badge sharing.
+              Employees utilizing the PolyFit pass must abide by all house safety rules and facility guidelines of each host venue. Passes and verification credentials (QR codes, NFC tokens, or PINs) are strictly personal and non-transferable. Anti-passback algorithms monitor visit frequencies to prevent credential sharing.
             </p>
           </section>
 
