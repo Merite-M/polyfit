@@ -16,7 +16,6 @@ Never assume, guess, or work from memory when a live data source is available vi
 
 ### 🔵 Linear (`linear/*`)
 - Before working on ANY issue: call `get_issue` with `fields: [title, description, priority, estimate, status, labels, assignee, createdAt, updatedAt]` to get the **complete, untruncated** issue spec.
-- **Aggregator Rule**: The issue identifier prefix `GYM-` (e.g. `GYM-70`) is an immutable legacy workspace key. It does NOT denote gym software. PolyFit is strictly a B2B2C corporate wellness aggregator. Never implement single-gym software features.
 - Before auditing or planning: call `list_issues` across all relevant states to understand the full backlog.
 - After completing work: always call `save_issue` to update `state` (Done / In Progress), set `assignee`, and append implementation notes to the description via `patch`.
 - Use `list_issue_statuses` to understand the exact valid state names for the workspace before updating statuses.
