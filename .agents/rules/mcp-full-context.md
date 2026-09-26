@@ -119,3 +119,83 @@ Never assume, guess, or work from memory when a live data source is available vi
 ```
 
 Never intermediately write these statements to a file. Run them directly.
+
+---
+
+## Startup Context — Read Before You Code
+
+### Before Starting ANY Task
+1. **Read `docs/` folder.** The `docs/` directory contains critical domain context:
+   - `PRODUCT_CONTEXT.md` — Business model, market position, competitive landscape
+   - `DOMAIN_MODEL.md` — Data model relationships and entity definitions
+   - `BUSINESS_MODEL.md` — Revenue model, pricing strategy, unit economics
+   - `research/` — Investor memos and market research
+2. **Read `AGENTS.md`** at the project root — it defines terminology, anti-bias rules, and the aggregator architecture. Every coding decision must align with it.
+3. **Read existing code before writing.** Use `list_dir`, `view_file`, and `grep_search` to understand what already exists. Never create parallel implementations.
+4. **Read existing rules.** All files in `.agents/rules/` are mandatory — they define how we work.
+
+### Why
+Without domain context, agents default to generic software patterns. PolyFit is a specific business with specific terminology, actors, and architecture. Reading the docs first prevents gym-software bias, wrong naming, and features that don't serve the aggregator model.
+
+---
+
+## Completion Checklist — Mandatory Close-Out Steps
+
+**Every implementation task MUST complete ALL of the following steps before reporting "done" to the user. No exceptions. These are not optional follow-ups — they are part of the work itself.**
+
+### 1. Tests Pass
+- Run all relevant tests (`node --test`, `npm test`, etc.)
+- Confirm **zero failures** before proceeding
+- If tests fail, fix them — do not proceed with failures
+
+### 2. Git Commit & Push
+- Stage only the files related to the current task
+- Write a detailed conventional commit: `feat(PF-XX):`, `fix(PF-XX):`, etc.
+- Push to the correct branch (usually `main` unless told otherwise)
+- **Verify the push succeeded** — check `git status` shows "up to date with origin"
+
+### 3. CI/CD & Deploy Verification
+- Check if `.github/workflows/` exists — if so, verify GitHub Actions pass
+- Render auto-deploy: call `list_deploys` and confirm status is **`live`** — not just "triggered"
+- If deploy fails: read `list_logs`, diagnose, fix, and re-deploy before marking done
+- **Do NOT tell the user "deploy triggered" without confirming it went live**
+
+### 4. Linear Issue → Done
+- Update the issue status to **Done** (not "In Review", not "In Progress" — **Done**)
+- Leave a **detailed implementation comment** via `save_comment` containing:
+  - What was built (files, endpoints, schema changes)
+  - What was deferred and why
+  - Test results summary
+  - Any infrastructure changes (env vars, deploys, schema migrations)
+
+### 5. Environment & Infrastructure
+- If new env vars were added: set them on Render via `update_environment_variables` — never leave this for the user
+- Update `.env.example` with any new variables
+- If schema changes were made: verify via `execute_sql` that they took effect
+
+### What "Done" Means
+A task is **done** when ALL of these are true:
+- [x] Code is written and tested locally (zero test failures)
+- [x] Changes are committed and pushed to remote
+- [x] Deploy is **live** on Render (verified via `list_deploys`)
+- [x] Linear issue is marked **Done** with implementation summary comment
+- [x] Any new env vars are set on Render
+- [x] Any schema changes are verified in Supabase
+
+If ANY are incomplete, the task is **not done**. Do not tell the user it's done.
+
+---
+
+## Anti-Patterns (Never Do These)
+
+- ❌ Starting to code without reading `docs/`, `AGENTS.md`, and existing codebase
+- ❌ Creating new rule files when content belongs in an existing file
+- ❌ Marking Linear as "In Review" instead of "Done" when work is complete
+- ❌ Pushing code but not checking if the deploy succeeded
+- ❌ Telling the user "deploy triggered" without confirming it went **live**
+- ❌ Skipping tests because "they should pass"
+- ❌ Leaving env vars for the user to set manually when MCP can do it
+- ❌ Writing migration `.sql` files to disk instead of executing via MCP
+- ❌ Forgetting to commit/push after implementation
+- ❌ Writing code but not wiring it (e.g., creating routes but not registering them in index.js)
+- ❌ Assuming schema, env vars, or deployment state instead of fetching live data via MCP
