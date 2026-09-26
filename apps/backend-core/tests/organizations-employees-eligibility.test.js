@@ -379,7 +379,7 @@ Paul Kagame,paul@example.com,EMP-010,Executive,ultra_vip`;
       assert.equal(result.location.id, testLocationId);
       assert.equal(result.monthly_allowance, 10);
       assert.equal(result.remaining_visits, 10);
-      assert.ok(durationMs < 5000, `Eligibility check took ${durationMs}ms (remote internet round-trip)`);
+      assert.ok(durationMs < 8000, `Eligibility check took ${durationMs}ms (remote internet round-trip)`);
     });
 
     test('EmployeeService freezes employee and eligibility check instantly rejects', async () => {

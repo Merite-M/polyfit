@@ -96,32 +96,55 @@ async function evaluateEmployeeEligibility(arg1, arg2, arg3, arg4, arg5) {
     };
   }
 
-  // 2. Resolve Benefit (Explicit eligibility record first, then tier-based fallback)
+  // 2 & 3. Concurrently fetch active eligibility and provider location with parent provider
+  const [eligibilityRes, locationRes] = await Promise.all([
+    supabase
+      .from('eligibility')
+      .select(`
+        id,
+        status,
+        expires_at,
+        benefits (
+          id,
+          org_id,
+          name,
+          tier,
+          max_monthly_visits,
+          co_pay_percentage,
+          budget_cap_per_employee,
+          allowed_locations,
+          allowed_provider_categories,
+          status
+        )
+      `)
+      .eq('employee_id', employee.id)
+      .eq('status', 'active')
+      .maybeSingle(),
+    supabase
+      .from('provider_locations')
+      .select(`
+        id,
+        name,
+        address,
+        lat,
+        lng,
+        geo,
+        status,
+        provider_id,
+        providers (
+          id,
+          name,
+          category,
+          status
+        )
+      `)
+      .eq('id', providerLocationId)
+      .maybeSingle()
+  ]);
+
   let benefit = null;
   let eligibilityRecord = null;
-
-  const { data: eligibility, error: elError } = await supabase
-    .from('eligibility')
-    .select(`
-      id,
-      status,
-      expires_at,
-      benefits (
-        id,
-        org_id,
-        name,
-        tier,
-        max_monthly_visits,
-        co_pay_percentage,
-        budget_cap_per_employee,
-        allowed_locations,
-        allowed_provider_categories,
-        status
-      )
-    `)
-    .eq('employee_id', employee.id)
-    .eq('status', 'active')
-    .maybeSingle();
+  const { data: eligibility, error: elError } = eligibilityRes;
 
   if (!elError && eligibility && eligibility.benefits) {
     const isExpired = eligibility.expires_at && new Date(eligibility.expires_at) < new Date();
@@ -170,27 +193,8 @@ async function evaluateEmployeeEligibility(arg1, arg2, arg3, arg4, arg5) {
     };
   }
 
-  // 3. Fetch Provider Location & Parent Provider
-  const { data: location, error: locError } = await supabase
-    .from('provider_locations')
-    .select(`
-      id,
-      name,
-      address,
-      lat,
-      lng,
-      geo,
-      status,
-      provider_id,
-      providers (
-        id,
-        name,
-        category,
-        status
-      )
-    `)
-    .eq('id', providerLocationId)
-    .maybeSingle();
+  // Validate Provider Location & Parent Provider
+  const { data: location, error: locError } = locationRes;
 
   if (locError || !location) {
     return {
@@ -244,15 +248,25 @@ async function evaluateEmployeeEligibility(arg1, arg2, arg3, arg4, arg5) {
     }
   }
 
-  // 6. Active Provider Contract Check
-  const { data: contract, error: contractError } = await supabase
-    .from('provider_contracts')
-    .select('id, status, per_visit_rate, monthly_cap')
-    .eq('org_id', effectiveOrgId)
-    .eq('provider_id', location.provider_id)
-    .eq('status', 'active')
-    .maybeSingle();
+  // 6 & 7. Concurrently check Provider Contract and Monthly Quota
+  const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+  const [contractRes, visitsRes] = await Promise.all([
+    supabase
+      .from('provider_contracts')
+      .select('id, status, per_visit_rate, monthly_cap')
+      .eq('org_id', effectiveOrgId)
+      .eq('provider_id', location.provider_id)
+      .eq('status', 'active')
+      .maybeSingle(),
+    supabase
+      .from('visits')
+      .select('id', { count: 'exact', head: true })
+      .eq('employee_id', employee.id)
+      .eq('status', 'verified')
+      .gte('check_in_at', startOfMonth)
+  ]);
 
+  const { data: contract, error: contractError } = contractRes;
   if (contractError || !contract) {
     return {
       eligible: false,
@@ -261,14 +275,7 @@ async function evaluateEmployeeEligibility(arg1, arg2, arg3, arg4, arg5) {
     };
   }
 
-  // 7. Monthly Visit Quota Evaluation
-  const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-  const { count: visitsThisMonth } = await supabase
-    .from('visits')
-    .select('id', { count: 'exact', head: true })
-    .eq('employee_id', employee.id)
-    .eq('status', 'verified')
-    .gte('check_in_at', startOfMonth);
+  const { count: visitsThisMonth } = visitsRes;
 
   const usedVisits = visitsThisMonth || 0;
   const maxVisits = benefit.max_monthly_visits !== null && benefit.max_monthly_visits !== undefined
