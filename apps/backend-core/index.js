@@ -21,7 +21,7 @@ const apiLimiter = rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: { error: 'Too many requests from this IP, please try again later', code: 'RATE_LIMIT_EXCEEDED' },
-  skip: (req) => req.path.includes('/webhook') || req.path === '/health'
+  skip: (req) => req.path.includes('/webhook') || req.path.includes('/cron') || req.path === '/health'
 });
 
 app.use('/api/', apiLimiter);
@@ -64,21 +64,42 @@ app.get('/health', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Aggregator API Routes ──────────────────────────────────────────────────
-// New aggregator routes will be registered here as they are built:
+// PF-78: Multi-Role Auth & RBAC routes
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
+
+// PF-79: Visit Verification Engine routes (TOTP QR, Anti-Passback, Geofence, Disputes)
+const visitRoutes = require('./routes/visitRoutes');
+app.use('/api/visits', visitRoutes);
+
+// PF-80: Billing & Settlement Engine routes
+const billingRoutes = require('./routes/billingRoutes');
+app.use('/api/billing', billingRoutes);
+
+const settlementRoutes = require('./routes/settlementRoutes');
+app.use('/api/settlements', settlementRoutes);
+
+// PF-80: Cron trigger endpoints (protected by CRON_SECRET, not JWT)
+const cronRoutes = require('./routes/cronRoutes');
+app.use('/api/cron', cronRoutes);
+
+// Additional aggregator routes will be registered here as they are built:
 // - /api/organizations  — Employer management
 // - /api/providers      — Provider management
 // - /api/employees      — Employee/beneficiary management
 // - /api/benefits       — Benefit configuration
 // - /api/eligibility    — Eligibility verification
-// - /api/visits         — Visit tracking
 // - /api/utilization    — Usage analytics
-// - /api/settlements    — Provider settlement
 // - /api/reporting      — Employer/provider reporting
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Server Start ─────────────────────────────────────────────────────────────
-app.listen(port, () => {
-  console.log(`PolyFit Aggregator API server running on port ${port}`);
-  console.log(`Health check available at http://localhost:${port}/health`);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`PolyFit Aggregator API server running on port ${port}`);
+    console.log(`Health check available at http://localhost:${port}/health`);
+  });
+}
+
+module.exports = app;
 // ─────────────────────────────────────────────────────────────────────────────
