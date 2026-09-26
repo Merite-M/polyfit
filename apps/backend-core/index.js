@@ -97,10 +97,9 @@ app.use('/api/organizations/:orgId/benefits', benefitRoutes);
 const eligibilityRoutes = require('./routes/eligibilityRoutes');
 app.use('/api/eligibility', eligibilityRoutes);
 
-// Additional aggregator routes will be registered here as they are built:
-// - /api/providers      — Provider management
-// - /api/utilization    — Usage analytics
-// - /api/reporting      — Employer/provider reporting
+// PF-81: Reporting & Analytics API (Employer Utilization, Provider Analytics, Platform KPIs)
+const reportingRoutes = require('./routes/reportingRoutes');
+app.use('/api/reporting', reportingRoutes);
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Server Start ─────────────────────────────────────────────────────────────
