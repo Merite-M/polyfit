@@ -12,7 +12,8 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.text({ type: ['text/csv', 'text/plain'], limit: '10mb' }));
 
 // ─── Rate Limiters ───────────────────────────────────────────────────────────
 const apiLimiter = rateLimit({
@@ -83,12 +84,21 @@ app.use('/api/settlements', settlementRoutes);
 const cronRoutes = require('./routes/cronRoutes');
 app.use('/api/cron', cronRoutes);
 
+// PF-82: Organization, Employee Roster, Benefit Configuration & Eligibility routes
+const organizationRoutes = require('./routes/organizationRoutes');
+app.use('/api/organizations', organizationRoutes);
+
+const employeeRoutes = require('./routes/employeeRoutes');
+app.use('/api/organizations/:orgId/employees', employeeRoutes);
+
+const benefitRoutes = require('./routes/benefitRoutes');
+app.use('/api/organizations/:orgId/benefits', benefitRoutes);
+
+const eligibilityRoutes = require('./routes/eligibilityRoutes');
+app.use('/api/eligibility', eligibilityRoutes);
+
 // Additional aggregator routes will be registered here as they are built:
-// - /api/organizations  — Employer management
 // - /api/providers      — Provider management
-// - /api/employees      — Employee/beneficiary management
-// - /api/benefits       — Benefit configuration
-// - /api/eligibility    — Eligibility verification
 // - /api/utilization    — Usage analytics
 // - /api/reporting      — Employer/provider reporting
 // ─────────────────────────────────────────────────────────────────────────────
