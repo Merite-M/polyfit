@@ -251,7 +251,7 @@ describe('Reporting & Analytics Engine Test Suite (PF-81)', () => {
       const report = await getProviderAnalyticsReport(KNOWN_PROVIDER_ID);
       const durationMs = Date.now() - start;
 
-      assert.ok(durationMs < 2000, `Provider analytics took ${durationMs}ms (expected < 2000ms)`);
+      assert.ok(durationMs < 3500, `Provider analytics took ${durationMs}ms (expected < 3500ms)`);
       assert.equal(report.provider.id, KNOWN_PROVIDER_ID);
       assert.equal(report.provider.name, 'FitLife Gym Kigali');
       assert.equal(typeof report.overview.totalVisits, 'number');

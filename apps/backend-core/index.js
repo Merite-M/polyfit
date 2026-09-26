@@ -100,6 +100,13 @@ app.use('/api/eligibility', eligibilityRoutes);
 // PF-81: Reporting & Analytics API (Employer Utilization, Provider Analytics, Platform KPIs)
 const reportingRoutes = require('./routes/reportingRoutes');
 app.use('/api/reporting', reportingRoutes);
+
+// PF-83: Provider & Network API (Provider Onboarding, Location Management, Contracts & Discovery)
+const providerRoutes = require('./routes/providerRoutes');
+app.use('/api/providers', providerRoutes);
+
+const contractRoutes = require('./routes/contractRoutes');
+app.use('/api/provider-contracts', contractRoutes);
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Server Start ─────────────────────────────────────────────────────────────
