@@ -107,6 +107,10 @@ app.use('/api/providers', providerRoutes);
 
 const contractRoutes = require('./routes/contractRoutes');
 app.use('/api/provider-contracts', contractRoutes);
+
+// PF-88: Public Lead & Demo Request Pipeline
+const publicRoutes = require('./routes/publicRoutes');
+app.use('/api/public', publicRoutes);
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Server Start ─────────────────────────────────────────────────────────────

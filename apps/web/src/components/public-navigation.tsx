@@ -44,9 +44,15 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
             ))}
 
             <button 
-              onClick={() => onOpenLeadForm?.('employer')}
-              aria-label="Talk to us - Open employer inquiry modal"
-              className="bg-emerald-500 hover:bg-emerald-600 text-slate-900 px-5 py-2.5 rounded-[10px] text-sm font-semibold transition-all duration-150 shadow-xs hover:shadow-sm"
+              onClick={() => {
+                if (onOpenLeadForm) {
+                  onOpenLeadForm('employer');
+                } else {
+                  window.location.href = '/demo';
+                }
+              }}
+              aria-label="Talk to us - Request employer demo"
+              className="bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] px-5 py-2.5 rounded-[10px] text-sm font-bold transition-all duration-150 shadow-xs hover:shadow-sm cursor-pointer"
             >
               Talk to us
             </button>
@@ -86,10 +92,14 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
             <button 
               onClick={() => {
                 setIsMenuOpen(false);
-                onOpenLeadForm?.('employer');
+                if (onOpenLeadForm) {
+                  onOpenLeadForm('employer');
+                } else {
+                  window.location.href = '/demo';
+                }
               }}
-              aria-label="Talk to us - Open employer inquiry modal"
-              className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-900 px-5 py-3 rounded-[10px] text-sm font-semibold transition-colors min-h-[44px] flex items-center justify-center"
+              aria-label="Talk to us - Request employer demo"
+              className="w-full bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] px-5 py-3 rounded-[10px] text-sm font-bold transition-colors min-h-[44px] flex items-center justify-center cursor-pointer"
             >
               Talk to us
             </button>

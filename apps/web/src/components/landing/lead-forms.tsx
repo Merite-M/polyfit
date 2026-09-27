@@ -166,17 +166,29 @@ export default function LeadForms({ isOpen, onClose, defaultType = 'employer' }:
         console.warn("[LeadForms] Primary API endpoint error, attempting Supabase fallback:", apiErr);
 
         // 2. Direct Supabase Fallback
-        const nameTokens = payload.name.split(/\s+/);
-        const { error: sbError } = await supabase.from('leads').insert({
-          first_name: nameTokens[0] || 'Lead',
-          last_name: nameTokens.slice(1).join(' ') || (formType === 'employer' ? 'Corporate' : 'Provider'),
-          email: payload.email,
-          phone: payload.phone,
-          pipeline_stage: 'inquiry',
-          source: 'website_widget',
-          notes: payload.message || `Inquiry from ${formType} form`,
-          custom_fields: payload
-        });
+        const { error: sbError } = formType === 'employer'
+          ? await supabase.from('demo_requests').insert({
+              company_name: employerForm.organization.trim() || employerForm.name.trim(),
+              contact_name: employerForm.name.trim(),
+              work_email: employerForm.email.trim().toLowerCase(),
+              phone: employerForm.phone.trim(),
+              country: 'Rwanda',
+              company_size: employerForm.employees,
+              message: employerForm.message.trim() || null,
+              source: 'landing_modal',
+              status: 'pending'
+            })
+          : await supabase.from('demo_requests').insert({
+              company_name: providerForm.business.trim(),
+              contact_name: providerForm.name.trim(),
+              work_email: providerForm.email.trim().toLowerCase(),
+              phone: providerForm.phone.trim(),
+              country: 'Rwanda',
+              company_size: providerForm.locations,
+              message: providerForm.message.trim() || `Provider in ${providerForm.location.trim()}`,
+              source: 'provider_modal',
+              status: 'pending'
+            });
 
         if (!sbError) {
           submissionSuccess = true;
