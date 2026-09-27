@@ -62,12 +62,12 @@ export default function Hero({ onOpenLeadForm }: HeroProps) {
                 <ArrowRight className="w-5 h-5 stroke-[2.5]" />
               </button>
 
-              <a 
-                href="#facility-directory"
+              <Link 
+                href="/pricing"
                 className="w-full sm:w-auto border border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-6 sm:px-7 py-3.5 sm:py-4 rounded-[10px] text-base font-semibold transition-all duration-150 flex items-center justify-center min-h-[48px] text-center"
               >
-                Explore Provider Network
-              </a>
+                View Plans & Pricing
+              </Link>
             </div>
 
             {/* Trust & Proof Strip */}

@@ -12,6 +12,7 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navLinks = [
+    { name: "Pricing", href: "/pricing" },
     { name: "How it Works", href: "/#how-it-works" },
     { name: "For Companies", href: "/#for-companies" },
     { name: "For Providers", href: "/#for-providers" },
