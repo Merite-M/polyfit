@@ -225,6 +225,31 @@ CREATE POLICY "Org admins can read org eligibility" ON eligibility
     )
   );
 
+-- Explicit Data API Grants (Required by Supabase PostgREST)
+GRANT SELECT ON public.organizations TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.organizations TO authenticated;
+GRANT ALL ON public.organizations TO service_role;
+
+GRANT SELECT ON public.providers TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.providers TO authenticated;
+GRANT ALL ON public.providers TO service_role;
+
+GRANT SELECT ON public.provider_locations TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.provider_locations TO authenticated;
+GRANT ALL ON public.provider_locations TO service_role;
+
+GRANT SELECT ON public.employees TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.employees TO authenticated;
+GRANT ALL ON public.employees TO service_role;
+
+GRANT SELECT ON public.benefits TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.benefits TO authenticated;
+GRANT ALL ON public.benefits TO service_role;
+
+GRANT SELECT ON public.eligibility TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.eligibility TO authenticated;
+GRANT ALL ON public.eligibility TO service_role;
+
 -- Seed data for testing
 -- 1 Organization
 DO $$

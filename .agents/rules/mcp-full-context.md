@@ -80,6 +80,7 @@ Never assume, guess, or work from memory when a live data source is available vi
 1. **Check `list_tables` and `list_migrations` before any schema change.** A column that already exists must never be re-added.
 2. **Migrations are append-only.** Never modify an existing migration file. Always create a new one for changes.
 3. **No redundant indexes.** Verify via `execute_sql` that an index does not already exist before creating one.
+4. **Mandatory Data API Grants (PostgREST):** Every `CREATE TABLE` in `public` must explicitly include `GRANT` statements for `anon` (if readable), `authenticated`, and `service_role`. Without this, tables created after October 30 will return permission denied in the Data API.
 
 ### Dependencies
 1. **Check `package.json` before installing.** Never `npm install` a package that is already listed as a dependency.
@@ -98,17 +99,24 @@ Never assume, guess, or work from memory when a live data source is available vi
 1. **Never write migration files to disk.** Do not create `.sql` files, migration scripts, or seed files in the repository. The `supabase/migrations/` directory must remain empty unless a file was placed there by the user directly.
 2. **Never write temporary or test scripts to disk.** Do not create `test.js`, `seed.sql`, `fix.sql`, `temp.js`, `debug.js`, or any equivalent one-off script file anywhere in the codebase.
 3. **Execute immediately via MCP.** All SQL changes (schema alterations, data fixes, index creation, RLS policies, seed data) must be run live using `supabase/execute_sql` or `supabase/apply_migration` at the time they are needed — not saved for later.
+4. **Always grant Data API permissions on new tables.** From October 30 onwards, Supabase does not automatically grant Data API access to new tables. When creating any table in `public`, you must execute explicit grants:
+   ```sql
+   GRANT SELECT ON public.your_table TO anon; -- (if public read is desired)
+   GRANT SELECT, INSERT, UPDATE, DELETE ON public.your_table TO authenticated;
+   GRANT ALL ON public.your_table TO service_role;
+   ```
 
 ### Why
 - Migration files left on disk without being applied create a false sense of progress and cause schema drift.
 - Temporary scripts accumulate and pollute the codebase with dead, untested code.
 - The Supabase MCP gives direct execution access — there is no reason to write intermediate files.
+- Without explicit grants, PostgREST / `@supabase/supabase-js` returns permission denied (code 42501) for any new tables created.
 
 ### Correct Workflow for Schema Changes
 ```
 1. supabase/list_tables        → verify current schema state
 2. supabase/list_migrations    → check what has already been applied
-3. supabase/execute_sql        → run the change live against the database
+3. supabase/execute_sql        → run the change live against the database (including explicit GRANTs for new tables)
 4. supabase/execute_sql        → verify the change took effect (SELECT / \d)
 ```
 
