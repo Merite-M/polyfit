@@ -37,7 +37,7 @@ export default function Home() {
         <SolutionSection />
         <HowItWorks />
         <RoiCalculator onOpenLeadForm={openLeadForm} />
-        <FacilityDirectory />
+        <FacilityDirectory onOpenLeadForm={openLeadForm} />
         <ForCompanies onOpenLeadForm={openLeadForm} />
         <ForProviders onOpenLeadForm={openLeadForm} />
         <AboutSection />
