@@ -16,11 +16,7 @@ export default function RoiCalculator({ onOpenLeadForm }: RoiCalculatorProps) {
   const annualTotalRwf = monthlyTotalRwf * 12;
 
   const formatRwf = (num: number) => {
-    return new Intl.NumberFormat("en-RW", {
-      style: "currency",
-      currency: "RWF",
-      maximumFractionDigits: 0,
-    }).format(num);
+    return `RWF ${new Intl.NumberFormat("en-US").format(num)}`;
   };
 
   return (

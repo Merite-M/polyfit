@@ -1,150 +1,209 @@
 "use client";
 
-import { Building2, Dumbbell, Waves, Footprints, ShieldCheck } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Building2, Dumbbell, Waves, Footprints, ShieldCheck, BadgeCheck, Activity, MapPin } from "lucide-react";
+import { IsometricHexMark } from "@/components/ui/polyfit-logo";
+
+const LIVE_CHECKINS = [
+  { company: "Bank of Kigali", venue: "WAKA Fitness Kimihurura", category: "Gym & Strength", time: "2m ago" },
+  { company: "Equity Bank", venue: "Cercle Sportif CSK", category: "Tennis & Pool", time: "4m ago" },
+  { company: "World Vision", venue: "Cali Fitness & Pool", category: "Swim & Cardio", time: "7m ago" },
+  { company: "Rwanda Air", venue: "Zenith Studio Kacyiru", category: "Yoga & Wellness", time: "11m ago" }
+];
 
 export default function NetworkVisualization() {
+  const [currentCheckInIndex, setCurrentCheckInIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentCheckInIndex((prev) => (prev + 1) % LIVE_CHECKINS.length);
+    }, 3800);
+    return () => clearInterval(timer);
+  }, []);
+
+  const activeCheckIn = LIVE_CHECKINS[currentCheckInIndex];
+
   return (
     <div className="relative w-full max-w-lg mx-auto select-none px-1 sm:px-0">
-      {/* Container with subtle dark border and glow */}
-      <div className="relative rounded-[14px] bg-[#0E2841]/80 border border-white/10 p-4 sm:p-6 lg:p-8 backdrop-blur-sm shadow-2xl overflow-hidden">
-        {/* Header pill */}
-        <div className="flex items-center justify-between pb-4 sm:pb-6 border-b border-white/10 gap-2">
+      {/* Outer ambient glow */}
+      <div className="absolute -inset-1 bg-gradient-to-r from-[#28D17C]/20 via-[#00D2B4]/20 to-[#B8F36B]/15 rounded-[18px] blur-xl opacity-75 pointer-events-none" />
+
+      {/* Main Glass/Dark Executive Telemetry Card */}
+      <div className="relative rounded-[16px] bg-[#0D2235]/95 border border-[#21405A] p-5 sm:p-7 backdrop-blur-md shadow-2xl overflow-hidden">
+        
+        {/* Top Telemetry Header */}
+        <div className="flex items-center justify-between pb-4 border-b border-[#21405A] gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="w-2 h-2 rounded-full bg-[#28D17C] animate-pulse flex-shrink-0"></span>
-            <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-gray-300 truncate">
-              Connected Fitness Network
+            <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#28D17C] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#28D17C]"></span>
+            </span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-200 truncate flex items-center gap-1.5">
+              <Activity className="w-3.5 h-3.5 text-[#28D17C]" />
+              Live Network Telemetry
             </span>
           </div>
-          <span className="text-[10px] sm:text-[11px] font-medium text-[#28D17C] bg-[#28D17C]/10 border border-[#28D17C]/30 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full flex-shrink-0 text-center">
-            One Benefit → Many
-          </span>
+
+          <div className="flex items-center gap-1.5 bg-[#28D17C]/10 border border-[#28D17C]/30 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-mono font-semibold text-[#28D17C]">
+            <span>4,892 verified visits / mo</span>
+          </div>
         </div>
 
-        {/* Diagram Area */}
-        <div className="relative py-6 sm:py-8">
-          {/* SVG Connection Lines */}
+        {/* Diagram Area with Animated Flows */}
+        <div className="relative py-7 sm:py-9">
+          {/* Animated Vector Connection Mesh */}
           <svg
             className="absolute inset-0 w-full h-full pointer-events-none"
-            viewBox="0 0 420 220"
+            viewBox="0 0 440 220"
             preserveAspectRatio="xMidYMid meet"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            {/* Line from Company to PolyFit */}
+            {/* Gradient definition for paths */}
+            <defs>
+              <linearGradient id="flow-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#28D17C" stopOpacity="0.4" />
+                <stop offset="50%" stopColor="#28D17C" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="#00D2B4" stopOpacity="0.8" />
+              </linearGradient>
+            </defs>
+
+            {/* Line from Employer to PolyFit Hub */}
             <path
-              d="M 85 110 L 205 110"
-              stroke="#28D17C"
-              strokeWidth="2"
+              d="M 90 110 L 210 110"
+              stroke="url(#flow-gradient)"
+              strokeWidth="2.5"
               strokeDasharray="4 4"
-              className="opacity-70"
-            />
-            {/* Line from PolyFit to Gym (Top Right) */}
-            <path
-              d="M 215 100 C 260 70, 280 45, 335 45"
-              stroke="#28D17C"
-              strokeWidth="2"
-              className="opacity-60"
-            />
-            {/* Line from PolyFit to Studio (Center Right) */}
-            <path
-              d="M 225 110 L 335 110"
-              stroke="#28D17C"
-              strokeWidth="2"
-              className="opacity-60"
-            />
-            {/* Line from PolyFit to Pool / Wellness (Bottom Right) */}
-            <path
-              d="M 215 120 C 260 150, 280 175, 335 175"
-              stroke="#28D17C"
-              strokeWidth="2"
-              className="opacity-60"
             />
 
-            {/* Subtle traveling particles */}
+            {/* Line from PolyFit Hub to Gym (Top Right) */}
+            <path
+              d="M 230 95 C 275 60, 295 38, 345 38"
+              stroke="url(#flow-gradient)"
+              strokeWidth="2"
+            />
+
+            {/* Line from PolyFit Hub to Studio / Tennis (Center Right) */}
+            <path
+              d="M 235 110 L 345 110"
+              stroke="url(#flow-gradient)"
+              strokeWidth="2"
+            />
+
+            {/* Line from PolyFit Hub to Pool & Spa (Bottom Right) */}
+            <path
+              d="M 230 125 C 275 160, 295 182, 345 182"
+              stroke="url(#flow-gradient)"
+              strokeWidth="2"
+            />
+
+            {/* Traveling Data Particles representing Benefit & Verification Flow */}
+            <circle r="3.5" fill="#28D17C">
+              <animateMotion dur="2.1s" repeatCount="indefinite" path="M 90 110 L 210 110" />
+            </circle>
             <circle r="3" fill="#B8F36B">
-              <animateMotion dur="2.4s" repeatCount="indefinite" path="M 85 110 L 205 110" />
+              <animateMotion dur="2.5s" repeatCount="indefinite" path="M 230 95 C 275 60, 295 38, 345 38" />
             </circle>
-            <circle r="2.5" fill="#28D17C">
-              <animateMotion dur="2.8s" repeatCount="indefinite" path="M 215 100 C 260 70, 280 45, 335 45" />
+            <circle r="3" fill="#00D2B4">
+              <animateMotion dur="2.0s" repeatCount="indefinite" path="M 235 110 L 345 110" />
             </circle>
-            <circle r="2.5" fill="#28D17C">
-              <animateMotion dur="2.2s" repeatCount="indefinite" path="M 225 110 L 335 110" />
-            </circle>
-            <circle r="2.5" fill="#28D17C">
-              <animateMotion dur="3s" repeatCount="indefinite" path="M 215 120 C 260 150, 280 175, 335 175" />
+            <circle r="3" fill="#28D17C">
+              <animateMotion dur="2.8s" repeatCount="indefinite" path="M 230 125 C 275 160, 295 182, 345 182" />
             </circle>
           </svg>
 
-          {/* Diagram Nodes Layout */}
-          <div className="relative flex items-center justify-between gap-1.5 sm:gap-4">
-            {/* 1. Left Node: Company */}
-            <div className="flex flex-col items-center text-center w-20 sm:w-28 flex-shrink-0">
-              <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-[12px] bg-white/10 border border-white/20 flex items-center justify-center shadow-md mb-1.5 sm:mb-2">
-                <Building2 className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
+          {/* Interactive Node Layout */}
+          <div className="relative flex items-center justify-between gap-2 sm:gap-4">
+            
+            {/* 1. Left Node: Corporate Employer */}
+            <div className="flex flex-col items-center text-center w-24 sm:w-28 flex-shrink-0">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-[12px] bg-[#132D43] border border-[#21405A] flex items-center justify-center shadow-lg mb-2 relative group-hover:border-[#28D17C]/50 transition-colors">
+                <Building2 className="w-6 h-6 text-white" />
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#28D17C] rounded-full border-2 border-[#0D2235]" />
               </div>
-              <span className="text-[11px] sm:text-xs font-semibold text-white">Company</span>
-              <span className="text-[9px] sm:text-[10px] text-gray-400 truncate max-w-full">Single Benefit</span>
+              <span className="text-xs font-bold text-white tracking-tight">Enterprise</span>
+              <span className="text-[10px] text-slate-400 font-mono">1 Policy • 100% Tax</span>
             </div>
 
-            {/* 2. Central Hub Node: PolyFit */}
+            {/* 2. Central Router Node: PolyFit 3D Isometric Mark */}
             <div className="flex flex-col items-center text-center flex-shrink-0">
-              <div className="relative">
-                <div className="w-13 h-13 sm:w-16 sm:h-16 rounded-[14px] bg-[#28D17C] text-[#0B1F33] flex flex-col items-center justify-center shadow-lg shadow-[#28D17C]/20 border border-white/40 p-2">
-                  <span className="text-lg sm:text-xl font-extrabold leading-none">P</span>
-                  <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide mt-0.5">Hub</span>
-                </div>
-                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-[#B8F36B] rounded-full flex items-center justify-center">
-                  <ShieldCheck className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-[#0B1F33]" />
+              <div className="relative p-2.5 rounded-[16px] bg-[#071521] border border-[#28D17C]/40 shadow-xl shadow-[#28D17C]/15">
+                <IsometricHexMark size={44} />
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#28D17C] text-[#0B1F33] rounded-full flex items-center justify-center shadow-xs">
+                  <ShieldCheck className="w-2.5 h-2.5 stroke-[2.5]" />
                 </div>
               </div>
-              <span className="text-[11px] sm:text-xs font-bold text-[#28D17C] mt-1.5 sm:mt-2">PolyFit</span>
-              <span className="text-[9px] sm:text-[10px] text-gray-300">Verified Router</span>
+              <span className="text-xs font-extrabold text-[#28D17C] mt-2 tracking-tight">PolyFit Router</span>
+              <span className="text-[9px] text-slate-300 font-mono uppercase tracking-wider">Dynamic TOTP</span>
             </div>
 
             {/* 3. Right Column: Partner Providers */}
-            <div className="flex flex-col gap-2 sm:gap-3 w-28 sm:w-36 flex-shrink-0">
+            <div className="flex flex-col gap-2.5 w-32 sm:w-40 flex-shrink-0">
               {/* Gym */}
-              <div className="flex items-center gap-1.5 sm:gap-2.5 p-1.5 sm:p-2 rounded-[10px] bg-white/5 border border-white/10 hover:border-[#28D17C]/40 transition-colors">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-[8px] bg-[#28D17C]/20 flex items-center justify-center flex-shrink-0">
-                  <Dumbbell className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#28D17C]" />
+              <div className="flex items-center gap-2 p-1.5 sm:p-2 rounded-[10px] bg-[#132D43]/90 border border-[#21405A] hover:border-[#28D17C]/50 transition-all">
+                <div className="w-7 h-7 rounded-[8px] bg-[#28D17C]/15 flex items-center justify-center flex-shrink-0">
+                  <Dumbbell className="w-3.5 h-3.5 text-[#28D17C]" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] sm:text-xs font-medium text-white truncate">Fitness Gym</p>
-                  <p className="text-[8px] sm:text-[9px] text-gray-400 truncate">Weights & Cardio</p>
+                  <p className="text-[11px] font-bold text-white truncate">WAKA Fitness</p>
+                  <p className="text-[9px] text-slate-400 truncate flex items-center gap-0.5">
+                    <MapPin className="w-2.5 h-2.5 text-[#28D17C]" /> Kimihurura
+                  </p>
                 </div>
               </div>
 
-              {/* Studio */}
-              <div className="flex items-center gap-1.5 sm:gap-2.5 p-1.5 sm:p-2 rounded-[10px] bg-white/5 border border-white/10 hover:border-[#28D17C]/40 transition-colors">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-[8px] bg-[#3B82F6]/20 flex items-center justify-center flex-shrink-0">
-                  <Footprints className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#3B82F6]" />
+              {/* Tennis & Multi-Sport */}
+              <div className="flex items-center gap-2 p-1.5 sm:p-2 rounded-[10px] bg-[#132D43]/90 border border-[#21405A] hover:border-[#00D2B4]/50 transition-all">
+                <div className="w-7 h-7 rounded-[8px] bg-[#00D2B4]/15 flex items-center justify-center flex-shrink-0">
+                  <Footprints className="w-3.5 h-3.5 text-[#00D2B4]" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] sm:text-xs font-medium text-white truncate">Studio</p>
-                  <p className="text-[8px] sm:text-[9px] text-gray-400 truncate">Yoga & Classes</p>
+                  <p className="text-[11px] font-bold text-white truncate">Cercle Sportif (CSK)</p>
+                  <p className="text-[9px] text-slate-400 truncate flex items-center gap-0.5">
+                    <MapPin className="w-2.5 h-2.5 text-[#00D2B4]" /> Rugunga
+                  </p>
                 </div>
               </div>
 
               {/* Pool & Recovery */}
-              <div className="flex items-center gap-1.5 sm:gap-2.5 p-1.5 sm:p-2 rounded-[10px] bg-white/5 border border-white/10 hover:border-[#28D17C]/40 transition-colors">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-[8px] bg-[#B8F36B]/20 flex items-center justify-center flex-shrink-0">
-                  <Waves className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B8F36B]" />
+              <div className="flex items-center gap-2 p-1.5 sm:p-2 rounded-[10px] bg-[#132D43]/90 border border-[#21405A] hover:border-[#B8F36B]/50 transition-all">
+                <div className="w-7 h-7 rounded-[8px] bg-[#B8F36B]/15 flex items-center justify-center flex-shrink-0">
+                  <Waves className="w-3.5 h-3.5 text-[#B8F36B]" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] sm:text-xs font-medium text-white truncate">Pool & Spa</p>
-                  <p className="text-[8px] sm:text-[9px] text-gray-400 truncate">Swim & Sauna</p>
+                  <p className="text-[11px] font-bold text-white truncate">Cali Fitness & Pool</p>
+                  <p className="text-[9px] text-slate-400 truncate flex items-center gap-0.5">
+                    <MapPin className="w-2.5 h-2.5 text-[#B8F36B]" /> Musanze
+                  </p>
                 </div>
               </div>
             </div>
+
           </div>
         </div>
 
-        {/* Footer Note */}
-        <div className="pt-3 sm:pt-4 border-t border-white/10 text-center">
-          <p className="text-[10px] sm:text-xs text-gray-300">
-            Employees choose where they exercise • Unified invoicing
-          </p>
+        {/* Live Verified Visit Ticker */}
+        <div className="pt-3 border-t border-[#21405A]">
+          <div className="flex items-center justify-between gap-2 bg-[#071521]/70 px-3 py-2 rounded-[10px] border border-[#21405A]">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="p-1 rounded-full bg-[#E9FAF2] text-[#008A4B] flex-shrink-0">
+                <BadgeCheck className="w-3.5 h-3.5" />
+              </span>
+              <div className="text-[11px] text-slate-200 truncate font-sans">
+                <span className="font-semibold text-white">{activeCheckIn.company}</span> team member verified at{" "}
+                <span className="text-[#28D17C] font-semibold">{activeCheckIn.venue}</span>
+              </div>
+            </div>
+            <span className="text-[10px] font-mono text-slate-400 flex-shrink-0">{activeCheckIn.time}</span>
+          </div>
         </div>
+
+        {/* Bottom Micro Badges */}
+        <div className="mt-3 flex items-center justify-between text-[10px] font-medium text-slate-400 px-1">
+          <span>✓ RRA EBM 18% VAT Itemized</span>
+          <span>✓ Anti-Passback Geo-Verified</span>
+        </div>
+
       </div>
     </div>
   );
