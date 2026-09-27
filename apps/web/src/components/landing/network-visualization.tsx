@@ -4,11 +4,11 @@ import React, { useState, useEffect } from "react";
 import { Building2, Dumbbell, Waves, Footprints, ShieldCheck, BadgeCheck, Activity, MapPin } from "lucide-react";
 import { IsometricHexMark } from "@/components/ui/polyfit-logo";
 
-const LIVE_CHECKINS = [
-  { company: "Bank of Kigali", venue: "WAKA Fitness Kimihurura", category: "Gym & Strength", time: "2m ago" },
-  { company: "Equity Bank", venue: "Cercle Sportif CSK", category: "Tennis & Pool", time: "4m ago" },
-  { company: "World Vision", venue: "Cali Fitness & Pool", category: "Swim & Cardio", time: "7m ago" },
-  { company: "Rwanda Air", venue: "Zenith Studio Kacyiru", category: "Yoga & Wellness", time: "11m ago" }
+const VERIFIED_ACCESS_EVENTS = [
+  { tier: "Corporate Tier A", venue: "WAKA Fitness Kimihurura", category: "Gym & Strength", method: "15s Dynamic TOTP Pass", status: "Verified" },
+  { tier: "Executive Pass", venue: "Cercle Sportif (CSK)", category: "Olympic Pool & Tennis", method: "Anti-Passback Validated", status: "Verified" },
+  { tier: "Corporate Tier B", venue: "Cali Fitness & Pool", category: "Swim & Cardio", method: "Geofence & TOTP Pass", status: "Verified" },
+  { tier: "Wellness Tier", venue: "Zenith Studio Kacyiru", category: "Reformer Pilates & Yoga", method: "15s Dynamic TOTP Pass", status: "Verified" }
 ];
 
 export default function NetworkVisualization() {
@@ -16,12 +16,12 @@ export default function NetworkVisualization() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentCheckInIndex((prev) => (prev + 1) % LIVE_CHECKINS.length);
+      setCurrentCheckInIndex((prev) => (prev + 1) % VERIFIED_ACCESS_EVENTS.length);
     }, 3800);
     return () => clearInterval(timer);
   }, []);
 
-  const activeCheckIn = LIVE_CHECKINS[currentCheckInIndex];
+  const activeCheckIn = VERIFIED_ACCESS_EVENTS[currentCheckInIndex];
 
   return (
     <div className="relative w-full max-w-lg mx-auto select-none px-1 sm:px-0">
@@ -40,12 +40,12 @@ export default function NetworkVisualization() {
             </span>
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-200 truncate flex items-center gap-1.5">
               <Activity className="w-3.5 h-3.5 text-[#28D17C]" />
-              Live Network Telemetry
+              Verification Engine
             </span>
           </div>
 
           <div className="flex items-center gap-1.5 bg-[#28D17C]/10 border border-[#28D17C]/30 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-mono font-semibold text-[#28D17C]">
-            <span>4,892 verified visits / mo</span>
+            <span>15+ Locations • 2,500+ Capacity</span>
           </div>
         </div>
 
@@ -190,18 +190,22 @@ export default function NetworkVisualization() {
                 <BadgeCheck className="w-3.5 h-3.5" />
               </span>
               <div className="text-[11px] text-slate-200 truncate font-sans">
-                <span className="font-semibold text-white">{activeCheckIn.company}</span> team member verified at{" "}
+                <span className="text-white font-semibold">{activeCheckIn.tier}</span>
+                <span className="text-slate-400"> → </span>
                 <span className="text-[#28D17C] font-semibold">{activeCheckIn.venue}</span>
+                <span className="text-slate-400 text-[10px] ml-1.5 hidden sm:inline">({activeCheckIn.method})</span>
               </div>
             </div>
-            <span className="text-[10px] font-mono text-slate-400 flex-shrink-0">{activeCheckIn.time}</span>
+            <span className="text-[10px] font-mono text-[#008A4B] bg-[#E9FAF2] px-2 py-0.5 rounded-full flex-shrink-0 font-bold">
+              {activeCheckIn.status}
+            </span>
           </div>
         </div>
 
         {/* Bottom Micro Badges */}
         <div className="mt-3 flex items-center justify-between text-[10px] font-medium text-slate-400 px-1">
-          <span>✓ RRA EBM 18% VAT Itemized</span>
-          <span>✓ Anti-Passback Geo-Verified</span>
+          <span>✓ RRA EBM 18% VAT Invoicing</span>
+          <span>✓ Anti-Passback Hardware Protected</span>
         </div>
 
       </div>

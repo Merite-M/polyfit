@@ -47,9 +47,9 @@ export default function Footer({ onOpenLeadForm }: FooterProps) {
                 </a>
               </li>
               <li>
-                <a href="/#facility-directory" className="hover:text-white transition-colors">
-                  Network Directory
-                </a>
+                <Link href="/network" className="hover:text-white transition-colors">
+                  Partner Network Map
+                </Link>
               </li>
               <li>
                 <Link href="/pricing" className="hover:text-white transition-colors">
@@ -69,12 +69,17 @@ export default function Footer({ onOpenLeadForm }: FooterProps) {
             <h3 className="text-xs font-bold uppercase tracking-wider text-gray-300 mb-3 sm:mb-4">Get Started</h3>
             <ul className="space-y-2 sm:space-y-2.5 text-xs sm:text-sm text-gray-400">
               <li>
+                <Link href="/demo" className="hover:text-white transition-colors">
+                  Request Corporate Demo
+                </Link>
+              </li>
+              <li>
                 <button
                   onClick={() => onOpenLeadForm?.('employer')}
                   aria-label="Employers - Open inquiry modal"
                   className="hover:text-white transition-colors text-left"
                 >
-                  Employers
+                  Employer Inquiries
                 </button>
               </li>
               <li>

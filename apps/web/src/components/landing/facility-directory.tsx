@@ -317,6 +317,9 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
             <div className="relative w-full lg:w-80">
               <Search className="w-4 h-4 text-[#94A3B8] absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
+                id="facility-search-input"
+                name="facilitySearch"
+                aria-label="Search wellness facilities by name, district, or amenity"
                 type="text"
                 placeholder="Search by venue, district, or amenity..."
                 value={searchQuery}

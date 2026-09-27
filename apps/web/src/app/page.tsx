@@ -9,7 +9,7 @@ import SolutionSection from "@/components/landing/solution-section";
 import HowItWorks from "@/components/landing/how-it-works";
 import ForCompanies from "@/components/landing/for-companies";
 import ForProviders from "@/components/landing/for-providers";
-import FacilityDirectory from "@/components/landing/facility-directory";
+import NetworkPreview from "@/components/landing/network-preview";
 import RoiCalculator from "@/components/landing/roi-calculator";
 import AboutSection from "@/components/landing/about-section";
 import FAQSection from "@/components/landing/faq-section";
@@ -37,7 +37,7 @@ export default function Home() {
         <SolutionSection />
         <HowItWorks />
         <RoiCalculator onOpenLeadForm={openLeadForm} />
-        <FacilityDirectory onOpenLeadForm={openLeadForm} />
+        <NetworkPreview onOpenLeadForm={openLeadForm} />
         <ForCompanies onOpenLeadForm={openLeadForm} />
         <ForProviders onOpenLeadForm={openLeadForm} />
         <AboutSection />

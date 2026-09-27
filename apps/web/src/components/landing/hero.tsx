@@ -72,10 +72,11 @@ export default function Hero({ onOpenLeadForm }: HeroProps) {
 
             {/* Trust & Proof Strip */}
             <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-center lg:justify-start gap-4 sm:gap-6 text-xs text-slate-300">
-              <div className="flex items-center gap-1.5">
+              <Link href="/network" className="flex items-center gap-1.5 hover:text-white transition-colors group">
                 <BadgeCheck className="w-4 h-4 text-[#28D17C]" />
-                <span>50+ Vetted Venues</span>
-              </div>
+                <span className="group-hover:underline">15+ Verified Locations in Kigali</span>
+                <ArrowRight className="w-3 h-3 text-[#28D17C] opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Link>
               <div className="flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-[#28D17C]" />
                 <span>RRA EBM 18% VAT Invoicing</span>

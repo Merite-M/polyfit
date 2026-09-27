@@ -54,7 +54,7 @@ export default function RoiCalculator({ onOpenLeadForm }: RoiCalculatorProps) {
               {/* Slider 1: Employee Count */}
               <div className="mb-8">
                 <div className="flex justify-between items-center mb-3">
-                  <label className="text-sm font-semibold text-[#0B1F33] flex items-center gap-2">
+                  <label htmlFor="roi-employees-slider" className="text-sm font-semibold text-[#0B1F33] flex items-center gap-2">
                     <Users className="w-4 h-4 text-gray-400" />
                     Employee Headcount
                   </label>
@@ -63,6 +63,9 @@ export default function RoiCalculator({ onOpenLeadForm }: RoiCalculatorProps) {
                   </span>
                 </div>
                 <input
+                  id="roi-employees-slider"
+                  name="roi-employees"
+                  aria-label="Employee Headcount Slider"
                   type="range"
                   min="10"
                   max="1000"
@@ -81,7 +84,7 @@ export default function RoiCalculator({ onOpenLeadForm }: RoiCalculatorProps) {
               {/* Slider 2: Monthly Budget per Employee */}
               <div className="mb-6">
                 <div className="flex justify-between items-center mb-3">
-                  <label className="text-sm font-semibold text-[#0B1F33] flex items-center gap-2">
+                  <label htmlFor="roi-budget-slider" className="text-sm font-semibold text-[#0B1F33] flex items-center gap-2">
                     <Building2 className="w-4 h-4 text-gray-400" />
                     Monthly Allowance / Employee
                   </label>
@@ -90,6 +93,9 @@ export default function RoiCalculator({ onOpenLeadForm }: RoiCalculatorProps) {
                   </span>
                 </div>
                 <input
+                  id="roi-budget-slider"
+                  name="roi-budget"
+                  aria-label="Monthly Allowance per Employee Slider"
                   type="range"
                   min="20000"
                   max="150000"
