@@ -24,8 +24,24 @@ import {
 } from "lucide-react";
 import { PolyFitLogo, IsometricHexMark, ConstellationNetworkMark } from "@/components/ui/polyfit-logo";
 
+interface ColorToken {
+  name: string;
+  token: string;
+  hex: string;
+  rgb: string;
+  hsl?: string;
+  role: string;
+  textLight: boolean;
+  wcag?: string;
+}
+
+interface ColorGroup {
+  category: string;
+  items: ColorToken[];
+}
+
 // Signature Color Tokens
-const COLOR_TOKENS = [
+const COLOR_TOKENS: ColorGroup[] = [
   {
     category: "Signature Brand Anchors",
     items: [
