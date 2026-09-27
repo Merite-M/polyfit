@@ -8,381 +8,183 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-mono);
   --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
+
   --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-full: 9999px;
 }
 
 :root {
-  /* PolyFit Dark Theme Colors (Default for Operations Console) */
-  --background: #090f0d;
-  --foreground: #dae9e2;
-  --card: #121b18;
-  --card-foreground: #dae9e2;
-  --popover: #121b18;
-  --popover-foreground: #dae9e2;
-  --primary: #29C47A;
-  --primary-foreground: #004b2a;
-  --secondary: #2E8BFF;
-  --secondary-foreground: #003f80;
-  --tertiary: #FFB547;
-  --tertiary-foreground: #5f3c00;
-  --muted: #1c2824;
-  --muted-foreground: #a0aea8;
-  --accent: #4edf92;
-  --accent-foreground: #004b2a;
-  --destructive: #fa746f;
-  --destructive-foreground: #490006;
-  --success: #4edf92;
-  --success-foreground: #004b2a;
-  --warning: #ffc16b;
-  --warning-foreground: #5f3c00;
-  --info: #a9c7ff;
-  --info-foreground: #003f80;
-  --border: #3e4b46;
-  --input: #3e4b46;
-  --ring: #4edf92;
-  --radius: 0.5rem;
-  
-  /* Surface variants */
-  --surface: #090f0d;
-  --surface-dim: #090f0d;
-  --surface-bright: #222f2b;
-  --surface-container-lowest: #000000;
-  --surface-container-low: #0d1512;
-  --surface-container: #121b18;
-  --surface-container-high: #17221e;
-  --surface-container-highest: #1c2824;
-  --surface-variant: #1c2824;
-  --on-surface: #dae9e2;
-  --on-surface-variant: #a0aea8;
-  --inverse-surface: #f5fbf7;
-  --inverse-on-surface: #505654;
-  --outline: #6b7873;
-  --outline-variant: #3e4b46;
-  --surface-tint: #4edf92;
-  
-  /* Status colors */
-  --status-cleared: #4edf92;
-  --status-cleared-foreground: #004b2a;
-  --status-action-foreground: #5f3c00;
-  --status-blocked-foreground: #490006;
-  --status-info-foreground: #003f80;
-  --status-action: #ffc16b;
-  --status-blocked: #fa746f;
-  --status-info: #a9c7ff;
-  
-  /* Chart colors */
-  --chart-1: #4edf92;
-  --chart-2: #a9c7ff;
-  --chart-3: #ffc16b;
-  --chart-4: #fa746f;
-  --chart-5: #e9a236;
-  
-  /* Sidebar colors */
-  --sidebar: #090f0d;
-  --sidebar-foreground: #dae9e2;
-  --sidebar-primary: #4edf92;
-  --sidebar-primary-foreground: #004b2a;
-  --sidebar-accent: #1c2824;
-  --sidebar-accent-foreground: #dae9e2;
-  --sidebar-border: #3e4b46;
-  --sidebar-ring: #4edf92;
-}
+  /* PolyFit Master Design System v1.0 (Light Mode Default) */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
-/* Marketing Theme Tokens (Light Mode for Landing Page) */
-.marketing-theme {
+  /* Brand Anchors */
+  --pf-navy: #0B1F33;
+  --pf-green: #28D17C;
+  --pf-green-hover: #22BC6E;
+  --pf-green-subtle: #E9FAF2;
+  --pf-teal: #00D2B4;
+  --pf-lime: #B8F36B;
+  --pf-blue: #3B82F6;
+
+  /* Theme standard tokens */
   --background: #F7F9FC;
   --foreground: #0B1F33;
+
   --card: #FFFFFF;
   --card-foreground: #0B1F33;
   --popover: #FFFFFF;
   --popover-foreground: #0B1F33;
+
   --primary: #0B1F33;
   --primary-foreground: #FFFFFF;
-  --secondary: #3B82F6;
-  --secondary-foreground: #FFFFFF;
-  --tertiary: #B8F36B;
-  --tertiary-foreground: #0B1F33;
-  --muted-foreground: #64748B;
-  --destructive: #EF4444;
-  --destructive-foreground: #FFFFFF;
-  --success: #28D17C;
-  --success-foreground: #FFFFFF;
-  --warning: #F59E0B;
-  --warning-foreground: #FFFFFF;
-  --info: #3B82F6;
-  --info-foreground: #FFFFFF;
+
+  --secondary: #00D2B4;
+  --secondary-foreground: #0B1F33;
+
+  --accent: #28D17C;
+  --accent-foreground: #0B1F33;
+
+  --highlight: #B8F36B;
+  --highlight-foreground: #0B1F33;
+
+  --muted: #F1F4F8;
+  --muted-foreground: #526173;
+
   --border: #E2E8F0;
   --input: #E2E8F0;
   --ring: #28D17C;
-  --radius: 0.5rem;
+
+  /* Semantic tokens */
+  --success: #28D17C;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --info: #00D2B4;
+
+  /* Radius constants */
+  --radius-card: 14px;
+  --radius-btn: 10px;
+  --radius-badge: 9999px;
+
+  /* Ambient elevation shadows */
+  --shadow-sm: 0 1px 3px 0 rgba(11, 31, 51, 0.05), 0 1px 2px -1px rgba(11, 31, 51, 0.03);
+  --shadow-md: 0 4px 12px -2px rgba(11, 31, 51, 0.06), 0 2px 6px -1px rgba(11, 31, 51, 0.03);
+  --shadow-lg: 0 12px 28px -6px rgba(11, 31, 51, 0.09), 0 6px 12px -3px rgba(11, 31, 51, 0.04);
+  --shadow-modal: 0 24px 48px -12px rgba(11, 31, 51, 0.18);
 }
 
-/* Skip to main link for accessibility */
-.skip-to-main {
-  position: absolute;
-  top: -40px;
-  left: 0;
-  background: var(--accent);
-  color: var(--accent-foreground);
-  padding: 8px;
-  z-index: 100;
-  transition: top 0.3s;
+.dark {
+  --background: #071521;
+  --foreground: #FFFFFF;
+
+  --card: #0D2235;
+  --card-foreground: #FFFFFF;
+  --popover: #0D2235;
+  --popover-foreground: #FFFFFF;
+
+  --primary: #28D17C;
+  --primary-foreground: #0B1F33;
+
+  --secondary: #00D2B4;
+  --secondary-foreground: #0B1F33;
+
+  --accent: #28D17C;
+  --accent-foreground: #0B1F33;
+
+  --muted: #132D43;
+  --muted-foreground: #8491A3;
+
+  --border: #21405A;
+  --input: #21405A;
+  --ring: #28D17C;
 }
-
-.skip-to-main:focus {
-  top: 0;
-}
-
-
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
-  }
-  /* Dark mode by default for PolyFit */
-  .dark {
-    color-scheme: dark;
+    font-family: var(--font-sans);
   }
 }
-@theme inline {
-  /* PolyFit Color Tokens - Dark Theme */
-  --color-outline-variant: #3e4b46;
-  --color-surface-tint: #4edf92;
-  --color-on-tertiary-fixed: #271901;
-  --color-on-tertiary: #dae9e2;
-  --color-on-primary-container: #004b2a;
-  --color-inverse-surface: #f5fbf7;
-  --color-surface-container-high: #17221e;
-  --color-on-secondary-fixed: #003f80;
-  --color-on-primary-fixed-variant: #006a3d;
-  --color-on-secondary-fixed-variant: #005ab2;
-  --color-warning-soft: rgba(255, 193, 107, 0.2);
-  --color-slate-hover: #1c2824;
-  --color-primary-fixed-dim: #3cd185;
-  --color-surface-container-highest: #1c2824;
-  --color-canvas-bg: #090f0d;
-  --color-error-container: #871f21;
-  --color-tertiary-container: #f9b042;
-  --color-on-error: #dae9e2;
-  --color-tertiary: #ffc16b;
-  --color-on-tertiary-fixed-variant: #5f3c00;
-  --color-on-error-container: #ff9993;
-  --color-tertiary-fixed: #f9b042;
-  --color-border-hairline: #3e4b46;
-  --color-primary-fixed: #6ffdac;
-  --color-surface-muted: #1c2824;
-  --color-danger-crimson: #fa746f;
-  --color-on-primary-fixed: #004a29;
-  --color-warning-amber: #ffc16b;
-  --color-text-muted: #a0aea8;
-  --color-outline: #6b7873;
-  --color-text-secondary: #a0aea8;
-  --color-secondary: #2E8BFF;
-  --color-secondary-fixed: #d6e3ff;
-  --color-surface-bright: #222f2b;
-  --color-secondary-container: #003a78;
-  --color-on-secondary: #dae9e2;
-  --color-danger-soft: rgba(250, 116, 111, 0.2);
-  --color-on-background: #dae9e2;
-  --color-surface-container-lowest: #000000;
-  --color-surface-container: #121b18;
-  --color-surface-container-low: #0d1512;
-  --color-on-primary: #004b2a;
-  --color-on-tertiary-container: #533400;
-  --color-surface: #090f0d;
-  --color-primary: #29C47A;
-  --color-on-surface: #dae9e2;
-  --color-inverse-on-surface: #505654;
-  --color-surface-variant: #1c2824;
-  --color-success-soft: rgba(78, 223, 146, 0.2);
-  --color-tertiary-fixed-dim: #e9a236;
-  --color-secondary-fixed-dim: #c0d5ff;
-  --color-background: #090f0d;
-  --color-surface-dim: #090f0d;
-  --color-inverse-primary: #006d40;
-  --color-error: #fa746f;
-  --color-primary-container: #0bb86f;
-  --color-on-secondary-container: #9dc0ff;
-  --color-on-surface-variant: #a0aea8;
 
-  /* Status Colors */
-  --color-status-cleared: #4edf92;
-  --color-status-cleared-foreground: #004b2a;
-  --color-status-action-foreground: #5f3c00;
-  --color-status-blocked-foreground: #490006;
-  --color-status-info-foreground: #003f80;
-  --color-status-action: #ffc16b;
-  --color-status-blocked: #fa746f;
-  --color-status-info: #a9c7ff;
-
-  /* RWF Currency Color */
-  --color-currency: #4edf92;
-
-  /* Fonts - Manrope for headlines, Inter for body/labels */
-  --font-headline-md: "Manrope", sans-serif;
-  --font-mono-id: "JetBrains Mono", monospace;
-  --font-headline-md-mobile: "Manrope", sans-serif;
-  --font-label-caps: "Inter", sans-serif;
-  --font-subhead-sm: "Manrope", sans-serif;
-  --font-body-base: "Inter", sans-serif;
-  --font-body-dense: "Inter", sans-serif;
-  --font-display-lg: "Manrope", sans-serif;
-
-  /* Typography Text Sizes */
-  --text-headline-md: 24px;
-  --text-headline-md--line-height: 32px;
-  --text-mono-id: 12px;
-  --text-mono-id--line-height: 16px;
-  --text-headline-md-mobile: 20px;
-  --text-headline-md-mobile--line-height: 28px;
-  --text-label-caps: 11px;
-  --text-label-caps--line-height: 14px;
-  --text-subhead-sm: 18px;
-  --text-subhead-sm--line-height: 26px;
-  --text-body-base: 14px;
-  --text-body-base--line-height: 20px;
-  --text-body-dense: 13px;
-  --text-body-dense--line-height: 18px;
-  --text-display-lg: 32px;
-  --text-display-lg--line-height: 40px;
-
-  /* Font Weights */
-  --font-weight-headline-md: 700;
-  --font-weight-mono-id: 500;
-  --font-weight-headline-md-mobile: 700;
-  --font-weight-label-caps: 700;
-  --font-weight-subhead-sm: 600;
-  --font-weight-body-base: 400;
-  --font-weight-body-dense: 400;
-  --font-weight-display-lg: 700;
-
-  /* Letter Spacing */
-  --tracking-headline-md: -0.01em;
-  --tracking-headline-md-mobile: -0.01em;
-  --tracking-label-caps: 0.05em;
-  --tracking-subhead-sm: -0.01em;
-  --tracking-display-lg: -0.02em;
-
-  /* Spacing - Dense layouts for operations */
-  --spacing-split-crm-nav: 30%;
-  --spacing-split-monitor-log: 65%;
-  --spacing-split-crm-content: 70%;
-  --spacing-gutter: 16px;
-  --spacing-unit: 4px;
-  --spacing-split-monitor-card: 35%;
-  --spacing-margin-page: 24px;
-  --spacing-navigation-rail: 240px;
-  --spacing-touch-target: 44px;
+/* Custom PolyFit Utilities */
+.pf-glass-nav {
+  background: rgba(247, 249, 252, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-/* Accessibility Styles */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
+.dark .pf-glass-nav {
+  background: rgba(7, 21, 33, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-.focus\:not-sr-only:focus {
-  position: static;
-  width: auto;
-  height: auto;
-  padding: 0;
-  margin: 0;
-  overflow: visible;
-  clip: auto;
-  white-space: normal;
+.pf-gradient-flow {
+  background: linear-gradient(135deg, #28D17C 0%, #00D2B4 100%);
 }
 
+.pf-gradient-vitality {
+  background: linear-gradient(135deg, #28D17C 0%, #B8F36B 100%);
+}
+
+.pf-gradient-executive {
+  background: linear-gradient(180deg, #0D2235 0%, #071521 100%);
+}
+
+.pf-glow-green {
+  box-shadow: 0 0 24px -4px rgba(40, 209, 124, 0.4);
+}
+
+.pf-glow-teal {
+  box-shadow: 0 0 24px -4px rgba(0, 210, 180, 0.4);
+}
+
+/* Skip link for accessibility */
 .skip-to-main {
   position: absolute;
   top: -40px;
   left: 0;
-  background: var(--primary);
-  color: var(--primary-foreground);
-  padding: 8px;
+  background: var(--pf-green);
+  color: var(--pf-navy);
+  font-weight: 700;
+  padding: 8px 16px;
   z-index: 100;
-  transition: top 0.3s;
+  transition: top 0.2s ease;
+  border-radius: 0 0 8px 8px;
 }
 
 .skip-to-main:focus {
   top: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-@media (prefers-contrast: high) {
-  * {
-    border-width: 2px !important;
-  }
-}
-
-*:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-*:focus:not(:focus-visible) {
-  outline: none;
-}
-
-.material-symbols-filled {
-  font-variation-settings: 'FILL' 1;
 }

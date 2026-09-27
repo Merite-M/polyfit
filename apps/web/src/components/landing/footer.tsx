@@ -47,9 +47,14 @@ export default function Footer({ onOpenLeadForm }: FooterProps) {
                 </a>
               </li>
               <li>
-                <a href="#facility-directory" className="hover:text-white transition-colors">
+                <a href="/#facility-directory" className="hover:text-white transition-colors">
                   Network Directory
                 </a>
+              </li>
+              <li>
+                <Link href="/brand" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
+                  Brand & Design System
+                </Link>
               </li>
             </ul>
           </div>
