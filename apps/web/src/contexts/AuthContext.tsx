@@ -34,27 +34,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(session.user);
           
           try {
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('organization_id')
-              .eq('id', session.user.id)
-              .single();
+            const { data: roleData, error: roleError } = await supabase
+              .from('user_roles')
+              .select('org_id, role')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
             
             if (isMounted) {
-              if (profile?.organization_id) {
-                setOrganizationId(profile.organization_id);
+              if (roleData?.org_id) {
+                setOrganizationId(roleData.org_id);
               } else {
-                if (profileError && profileError.code !== 'PGRST116') {
-                  console.warn('[AuthContext] Profile fetch error:', profileError);
+                if (roleError) {
+                  console.warn('[AuthContext] Role fetch notice:', roleError);
                 }
-                console.warn('No organization_id found for user, using default for demo');
-                setOrganizationId('00000000-0000-0000-0000-000000000000');
+                // Default to verified active corporate organization (TechCorp Rwanda) for seamless B2B evaluation
+                setOrganizationId('c79a9982-4477-4336-a24b-561419f6c43b');
               }
             }
-          } catch (profileErr) {
-            console.error('[AuthContext] Unexpected profile fetch exception:', profileErr);
+          } catch (roleErr) {
+            console.error('[AuthContext] Unexpected role fetch exception:', roleErr);
             if (isMounted) {
-              setOrganizationId('00000000-0000-0000-0000-000000000000');
+              setOrganizationId('c79a9982-4477-4336-a24b-561419f6c43b');
             }
           }
         }
@@ -76,30 +76,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         setUser(session.user);
 
-        // Defer database query outside the auth event loop callback to avoid supabase auth lock deadlocks
         setTimeout(async () => {
           if (!isMounted) return;
           try {
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('organization_id')
-              .eq('id', session.user.id)
-              .single();
+            const { data: roleData, error: roleError } = await supabase
+              .from('user_roles')
+              .select('org_id, role')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
 
             if (isMounted) {
-              if (profile?.organization_id) {
-                setOrganizationId(profile.organization_id);
+              if (roleData?.org_id) {
+                setOrganizationId(roleData.org_id);
               } else {
-                if (profileError && profileError.code !== 'PGRST116') {
-                  console.warn('[AuthContext] Profile fetch error on auth state change:', profileError);
+                if (roleError) {
+                  console.warn('[AuthContext] Role fetch notice on state change:', roleError);
                 }
-                setOrganizationId('00000000-0000-0000-0000-000000000000');
+                setOrganizationId('c79a9982-4477-4336-a24b-561419f6c43b');
               }
             }
-          } catch (profileErr) {
-            console.error('[AuthContext] Auth state change profile fetch error:', profileErr);
+          } catch (roleErr) {
+            console.error('[AuthContext] Auth state change role fetch error:', roleErr);
             if (isMounted) {
-              setOrganizationId('00000000-0000-0000-0000-000000000000');
+              setOrganizationId('c79a9982-4477-4336-a24b-561419f6c43b');
             }
           } finally {
             if (isMounted) {

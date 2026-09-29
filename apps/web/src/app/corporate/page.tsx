@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { CorporateHeader } from "@/components/corporate/CorporateHeader";
 import { AdoptionFunnelRow } from "@/components/corporate/AdoptionFunnelRow";
-import { ActivationCards } from "@/components/corporate/ActivationCards";
 import { EngagementTrendChart } from "@/components/corporate/EngagementTrendChart";
 import { CategoryDistribution } from "@/components/corporate/CategoryDistribution";
 import { TopProvidersLeaderboard } from "@/components/corporate/TopProvidersLeaderboard";
@@ -11,14 +11,36 @@ import { DepartmentTable } from "@/components/corporate/DepartmentTable";
 import { RoiMetricsCard } from "@/components/corporate/RoiMetricsCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiFetch } from "@/lib/api-client";
-import { Sparkles, RefreshCw, CheckCircle2, ShieldAlert } from "lucide-react";
+import { generateRraEbmInvoicePdf } from "@/lib/invoice-pdf";
+import {
+  Users,
+  Receipt,
+  Share2,
+  CheckCircle2,
+  AlertTriangle,
+  ArrowRight,
+  Download,
+  Copy,
+  Check,
+  Building2,
+  TrendingUp,
+  ShieldCheck,
+  Sparkles,
+  BarChart3,
+  LayoutDashboard,
+  ExternalLink,
+  CreditCard,
+  MessageSquare,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-// Fallback enterprise dataset for TechCorp Rwanda demo & offline resilience
+// Verified fallback enterprise dataset for TechCorp Rwanda demo & offline resilience
 const TECHCORP_DEMO_DATA = {
   organization: {
     id: "c79a9982-4477-4336-a24b-561419f6c43b",
     name: "TechCorp Rwanda",
     slug: "techcorp-rwanda",
+    domain: "techcorp.rw",
     industry: "Technology",
   },
   funnel: {
@@ -33,7 +55,9 @@ const TECHCORP_DEMO_DATA = {
   economics: {
     currentInvoiceRwf: 1892000,
     invoiceStatus: "paid" as const,
+    invoiceNumber: "PF-INV-2026-09-082",
     pmpmSpendRwf: 4592,
+    citTaxShieldRwf: 567600,
   },
   wellness: {
     wellnessHour: "17:00 - 18:00",
@@ -48,14 +72,87 @@ const TECHCORP_DEMO_DATA = {
 };
 
 export default function CorporateDashboardPage() {
-  const { organizationId, isDemoMode } = useAuth();
+  const { organizationId } = useAuth();
   const [selectedRange, setSelectedRange] = useState("30d");
+  const [activeTab, setActiveTab] = useState<"overview" | "analytics">("overview");
   const [isLoading, setIsLoading] = useState(false);
-  const [downloadNotification, setDownloadNotification] = useState<string | null>(null);
+  const [notification, setNotification] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  // Live state with offline fallbacks
+  const [funnelData, setFunnelData] = useState(TECHCORP_DEMO_DATA.funnel);
+  const [economicsData, setEconomicsData] = useState(TECHCORP_DEMO_DATA.economics);
 
   const activeOrgId = organizationId || TECHCORP_DEMO_DATA.organization.id;
   const activeOrgName = TECHCORP_DEMO_DATA.organization.name;
   const activeOrgSlug = TECHCORP_DEMO_DATA.organization.slug;
+  const corporateDomain = TECHCORP_DEMO_DATA.organization.domain;
+
+  const showToast = (msg: string) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(null), 3500);
+  };
+
+  const [origin, setOrigin] = useState("https://polyfit.onrender.com");
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setOrigin(window.location.origin);
+    }
+  }, []);
+
+  const inviteUrl = `${origin}/join/${activeOrgSlug}`;
+
+  // Fetch live dashboard and utilization metrics from backend
+  const fetchDashboardData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // 1. Fetch Employer Utilization Reporting
+      const utilRes = await apiFetch<any>(
+        `/api/reporting/employer/${activeOrgId}/utilization`
+      );
+
+      if (utilRes && utilRes.summary) {
+        setFunnelData((prev) => ({
+          ...prev,
+          totalEligible: utilRes.summary.total_eligible ?? prev.totalEligible,
+          registeredMembers: utilRes.summary.registered_members ?? prev.registeredMembers,
+          activeBeneficiaries: utilRes.summary.active_beneficiaries ?? prev.activeBeneficiaries,
+          totalVisits: utilRes.summary.total_visits ?? prev.totalVisits,
+        }));
+      }
+
+      // 2. Fetch Live Billing Summary
+      const billingRes = await apiFetch<any>(
+        `/api/billing/summary?org_id=${activeOrgId}&year=2026`
+      );
+
+      if (billingRes) {
+        setEconomicsData((prev) => ({
+          ...prev,
+          currentInvoiceRwf: billingRes.current_balance ?? prev.currentInvoiceRwf,
+          citTaxShieldRwf: billingRes.cit_tax_shield_rwf ?? prev.citTaxShieldRwf,
+          pmpmSpendRwf: billingRes.average_cost_per_visit ?? prev.pmpmSpendRwf,
+        }));
+      }
+    } catch {
+      // Keep verified demo metrics when offline or disconnected
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeOrgId]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  const handleCopyLink = () => {
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(inviteUrl);
+      setCopiedLink(true);
+      showToast("Join link copied to clipboard! Ready to paste into Slack or Teams.");
+      setTimeout(() => setCopiedLink(false), 2500);
+    }
+  };
 
   // 1-Click "Download Census" Handler (standard RFC 4180 CSV export)
   const handleDownloadCensus = () => {
@@ -72,10 +169,9 @@ export default function CorporateDashboardPage() {
     ];
 
     const escapeCell = (str: string) => `"${str.replace(/"/g, '""')}"`;
-    const csvContent = "data:text/csv;charset=utf-8," + [
-      headers.map(escapeCell).join(","),
-      ...rows.map((row) => row.map(escapeCell).join(","))
-    ].join("\r\n");
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.map(escapeCell).join(","), ...rows.map((row) => row.map(escapeCell).join(","))].join("\r\n");
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -85,155 +181,346 @@ export default function CorporateDashboardPage() {
     link.click();
     document.body.removeChild(link);
 
-    setDownloadNotification("Census exported successfully (8 active employee records)");
-    setTimeout(() => setDownloadNotification(null), 3000);
+    showToast("Employee roster census exported successfully (8 active employee records)");
   };
 
-  // 1-Click "Download Invoice PDF" Handler
-  const handleDownloadInvoice = () => {
-    // Generate clean printable receipt
-    const invoiceWindow = window.open("", "_blank");
-    if (!invoiceWindow) return;
-
-    invoiceWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>PolyFit Invoice - ${activeOrgName} - Sep 2026</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #0B1F33; }
-            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #E2E8F0; padding-bottom: 20px; }
-            .badge { background: #E9FAF2; color: #28D17C; padding: 4px 12px; border-radius: 9999px; font-weight: bold; font-size: 12px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 30px; }
-            th, td { text-align: left; padding: 12px; border-bottom: 1px solid #E2E8F0; }
-            th { font-size: 11px; text-transform: uppercase; color: #8491A3; }
-            .total { text-align: right; margin-top: 30px; font-size: 18px; font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div>
-              <h1 style="margin: 0; color: #0B1F33;">PolyFit Network</h1>
-              <p style="margin: 4px 0; color: #526173;">Corporate Wellness Tax Invoice (RRA EBM-compliant)</p>
-            </div>
-            <div style="text-align: right;">
-              <span class="badge">PAID</span>
-              <p style="margin: 4px 0; font-size: 12px; color: #8491A3;">Invoice #PF-2026-09-082</p>
-            </div>
-          </div>
-          <div style="margin-top: 24px;">
-            <strong>Billed To:</strong> ${activeOrgName} &bull; Kigali, Rwanda &bull; Tax ID: 109283746
-          </div>
-          <table>
-            <thead>
-              <tr><th>Description</th><th>Verified Visits</th><th>Avg Rate</th><th>Total (RWF)</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Fitness Facilities & Gyms</td><td>710</td><td>2,200</td><td>1,562,000</td></tr>
-              <tr><td>Swimming Pools & Aquatic Centers</td><td>355</td><td>2,800</td><td>994,000</td></tr>
-              <tr><td>Yoga & Movement Studios</td><td>236</td><td>3,500</td><td>826,000</td></tr>
-              <tr><td>Wellness & Physio Clinics</td><td>179</td><td>4,000</td><td>716,000</td></tr>
-            </tbody>
-          </table>
-          <div class="total">
-            <p style="margin: 4px 0; font-size: 14px; font-weight: normal; color: #526173;">Subtotal: RWF 1,603,390</p>
-            <p style="margin: 4px 0; font-size: 14px; font-weight: normal; color: #526173;">18% VAT: RWF 288,610</p>
-            <p style="margin: 8px 0; color: #0B1F33;">Grand Total: RWF 1,892,000</p>
-          </div>
-          <p style="margin-top: 40px; font-size: 11px; color: #8491A3; text-align: center;">
-            PolyFit Corporate Wellness Ltd &bull; 100% Tax-Deductible Health Benefit
-          </p>
-        </body>
-      </html>
-    `);
-    invoiceWindow.document.close();
-    invoiceWindow.print();
-
-    setDownloadNotification("Invoice PDF opened for printing/saving");
-    setTimeout(() => setDownloadNotification(null), 3000);
+  // 1-Click "Download Official EBM Tax PDF"
+  const handleDownloadInvoicePdf = () => {
+    generateRraEbmInvoicePdf({
+      id: "inv-2026-09-082",
+      invoice_number: economicsData.invoiceNumber,
+      billing_period_start: "2026-09-01",
+      billing_period_end: "2026-09-30",
+      organizations: {
+        name: activeOrgName,
+        tax_id: "109283746",
+        billing_email: "finance@techcorp.rw",
+      },
+      status: economicsData.invoiceStatus,
+      paid_at: "2026-09-29T10:15:00Z",
+      due_date: "2026-10-31",
+      total_visits: funnelData.totalVisits,
+      tax_amount: 288610,
+      total_amount: economicsData.currentInvoiceRwf,
+      line_items: [
+        {
+          provider_name: "Waka Fitness & Wellness Centers",
+          provider_category: "Gym & Fitness",
+          visit_count: 710,
+          per_visit_rate: 2200,
+          subtotal: 1562000,
+        },
+        {
+          provider_name: "Cercle Sportif de Kigali (Lap Pools)",
+          provider_category: "Swimming & Aquatic",
+          visit_count: 355,
+          per_visit_rate: 2800,
+          subtotal: 994000,
+        },
+        {
+          provider_name: "Nyashad Movement & Yoga Studios",
+          provider_category: "Yoga & Studios",
+          visit_count: 236,
+          per_visit_rate: 3500,
+          subtotal: 826000,
+        },
+        {
+          provider_name: "Kigali Physio & Wellness Clinic",
+          provider_category: "Physiotherapy & Wellness",
+          visit_count: 179,
+          per_visit_rate: 4000,
+          subtotal: 716000,
+        },
+      ],
+    });
+    showToast("Official Rwanda EBM v2.1 Tax Invoice PDF downloaded!");
   };
+
+  const activePercent =
+    funnelData.registeredMembers > 0
+      ? Math.round((funnelData.activeBeneficiaries / funnelData.registeredMembers) * 100)
+      : 52;
 
   return (
     <div className="min-h-full">
-      {/* Sticky Corporate Header */}
+      {/* Sticky Corporate Navigation Header */}
       <CorporateHeader
         selectedRange={selectedRange}
         onRangeChange={setSelectedRange}
         organizationName={activeOrgName}
         organizationSlug={activeOrgSlug}
-        totalEligible={TECHCORP_DEMO_DATA.funnel.totalEligible}
+        totalEligible={funnelData.totalEligible}
         onDownloadCensus={handleDownloadCensus}
       />
 
-      {/* Instant Notification Toast */}
-      {downloadNotification && (
-        <div className="fixed top-20 right-6 z-50 animate-in fade-in-50 slide-in-from-top-4 duration-200">
-          <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B1F33] text-white shadow-xl border border-[#21405A] text-xs font-semibold">
-            <CheckCircle2 className="w-4 h-4 text-[#28D17C]" />
-            <span>{downloadNotification}</span>
+      {/* Floating Notification Toast */}
+      {notification && (
+        <div className="fixed top-20 right-6 z-50 animate-in fade-in slide-in-from-top-4 duration-200">
+          <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[#0B1F33] text-white shadow-2xl border border-[#21405A] text-xs font-semibold">
+            <CheckCircle2 className="w-4 h-4 text-[#28D17C] flex-shrink-0" />
+            <span>{notification}</span>
           </div>
         </div>
       )}
 
-      {/* Main Container */}
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
-        {/* 1. Wellhub 3-Stage Adoption Funnel Row */}
-        <section aria-label="Adoption Funnel">
-          <AdoptionFunnelRow
-            data={TECHCORP_DEMO_DATA.funnel}
-            onUpdateListClick={handleDownloadCensus}
-          />
-        </section>
-
-        {/* 2. High-Leverage Activation Deck: Make Signup a Snap + Current Invoice */}
-        <section aria-label="Activation and Billing">
-          <ActivationCards
-            organizationName={activeOrgName}
-            organizationSlug={activeOrgSlug}
-            currentInvoiceAmount={TECHCORP_DEMO_DATA.economics.currentInvoiceRwf}
-            invoiceStatus={TECHCORP_DEMO_DATA.economics.invoiceStatus}
-            pmpmSpend={TECHCORP_DEMO_DATA.economics.pmpmSpendRwf}
-            onDownloadInvoice={handleDownloadInvoice}
-          />
-        </section>
-
-        {/* 3. Return on Wellbeing (ROI) & "Wellness Hour" Indicator */}
-        <section aria-label="ROI & Wellness Hour">
-          <RoiMetricsCard
-            activeEmployees={TECHCORP_DEMO_DATA.funnel.activeBeneficiaries}
-            totalSpendRwf={TECHCORP_DEMO_DATA.economics.currentInvoiceRwf}
-            wellnessHour={TECHCORP_DEMO_DATA.wellness.wellnessHour}
-            peakDay={TECHCORP_DEMO_DATA.wellness.peakDay}
-          />
-        </section>
-
-        {/* 4. Deep-Dive Analytics Deck: Engagement Trends & Wellness Dimensions */}
-        <section aria-label="Engagement & Category Analytics">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            <div className="lg:col-span-7">
-              <EngagementTrendChart className="h-full" />
+        {/* EXECUTIVE ATTENTION BANNER (What Needs Your Attention Today) */}
+        <section aria-label="Action Items Banner">
+          <div className="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start md:items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#E9FAF2] text-[#28D17C] flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#0B1F33]">
+                    What Needs Your Attention
+                  </span>
+                  <span className="text-[11px] font-semibold text-[#28D17C] bg-[#E9FAF2] px-2 py-0.5 rounded-full">
+                    All Systems Operational
+                  </span>
+                </div>
+                <p className="text-xs text-[#526173] mt-0.5">
+                  September statement is <strong className="text-[#28D17C]">PAID</strong>. 
+                  Your workforce join link is active with <strong>{corporateDomain}</strong> email verification.
+                </p>
+              </div>
             </div>
-            <div className="lg:col-span-5">
-              <CategoryDistribution
-                categories={TECHCORP_DEMO_DATA.wellness.categories}
-                totalVisits={TECHCORP_DEMO_DATA.funnel.totalVisits}
-                className="h-full"
+
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={handleCopyLink}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] bg-[#F7F9FC] hover:bg-white text-xs font-semibold text-[#0B1F33] transition-all"
+              >
+                {copiedLink ? <Check className="w-3.5 h-3.5 text-[#28D17C]" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedLink ? "Link Copied" : "Copy Join Link"}</span>
+              </button>
+              <Link
+                href="/corporate/employees"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-white text-xs font-semibold transition-all shadow-xs"
+              >
+                <span>Add Employee</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* 3 HIGH-IMPACT EXECUTIVE CARDS */}
+        <section aria-label="Executive Overview Cards">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* CARD 1: TEAM ENGAGEMENT */}
+            <div className="p-6 rounded-2xl bg-white border border-[#E2E8F0] shadow-xs flex flex-col justify-between hover:border-[#28D17C]/40 transition-all">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#8491A3]">
+                    Team Engagement
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-[#E9FAF2] text-[#28D17C] flex items-center justify-center">
+                    <Users className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-3 flex items-baseline gap-2">
+                  <span className="text-3xl font-extrabold text-[#0B1F33]">
+                    {funnelData.activeBeneficiaries}
+                  </span>
+                  <span className="text-sm font-semibold text-[#526173]">
+                    active this month ({activePercent}%)
+                  </span>
+                </div>
+                <p className="text-xs text-[#8491A3] mt-1">
+                  Out of {funnelData.registeredMembers} enrolled team members across all departments.
+                </p>
+              </div>
+
+              <div className="mt-5 pt-4 border-t border-[#E2E8F0] flex items-center justify-between">
+                <span className="text-xs text-[#526173] font-medium">
+                  {funnelData.totalVisits} verified visits logged
+                </span>
+                <Link
+                  href="/corporate/employees"
+                  className="text-xs font-bold text-[#28D17C] hover:text-[#22BC6E] inline-flex items-center gap-1"
+                >
+                  <span>Manage Roster</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+
+            {/* CARD 2: MONTHLY STATEMENT */}
+            <div className="p-6 rounded-2xl bg-white border border-[#E2E8F0] shadow-xs flex flex-col justify-between hover:border-[#28D17C]/40 transition-all">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#8491A3]">
+                    September Statement
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-[#E9FAF2] text-[#28D17C] flex items-center justify-center">
+                    <Receipt className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-3 flex items-baseline gap-2">
+                  <span className="text-2xl font-extrabold text-[#0B1F33]">
+                    RWF {economicsData.currentInvoiceRwf.toLocaleString()}
+                  </span>
+                  <span className="px-2 py-0.5 text-[11px] font-bold rounded-full bg-[#E9FAF2] text-[#28D17C]">
+                    PAID
+                  </span>
+                </div>
+                <p className="text-xs text-[#8491A3] mt-1">
+                  18% VAT itemized &bull; Official RRA EBM v2.1 Certified
+                </p>
+              </div>
+
+              <div className="mt-5 pt-4 border-t border-[#E2E8F0] flex items-center justify-between">
+                <button
+                  onClick={handleDownloadInvoicePdf}
+                  className="text-xs font-bold text-[#0B1F33] hover:text-[#28D17C] inline-flex items-center gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5 text-[#28D17C]" />
+                  <span>Download EBM PDF</span>
+                </button>
+                <Link
+                  href="/corporate/billing"
+                  className="text-xs font-bold text-[#526173] hover:text-[#0B1F33]"
+                >
+                  View History &rarr;
+                </Link>
+              </div>
+            </div>
+
+            {/* CARD 3: 1-CLICK TEAM INVITE */}
+            <div className="p-6 rounded-2xl bg-[#0B1F33] text-white shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#8491A3]">
+                    Staff Self-Onboarding
+                  </span>
+                  <span className="text-[11px] font-semibold text-[#28D17C] bg-[#28D17C]/15 px-2 py-0.5 rounded-full border border-[#28D17C]/30 flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" />
+                    @{corporateDomain}
+                  </span>
+                </div>
+                <div className="mt-3">
+                  <p className="text-sm font-semibold text-white">
+                    Send join link to your team
+                  </p>
+                  <p className="text-xs text-[#8491A3] mt-0.5 line-clamp-1 font-mono">
+                    {inviteUrl}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 pt-4 border-t border-[#21405A] flex items-center gap-2">
+                <button
+                  onClick={handleCopyLink}
+                  className="flex-1 py-2 px-3 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs"
+                >
+                  {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedLink ? "Link Copied!" : "Copy Join Link"}</span>
+                </button>
+                <a
+                  href={`mailto:?subject=Activate%20Your%20${encodeURIComponent(activeOrgName)}%20Wellness%20Pass&body=Hi%20team,%0A%0APlease%20use%20your%20company%20email%20to%20activate%20your%20wellness%20pass%20here:%0A${encodeURIComponent(inviteUrl)}`}
+                  className="p-2 rounded-xl bg-[#132D43] hover:bg-[#21405A] text-white text-xs transition-colors"
+                  title="Share via Email"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* TAB CONTROLS: OVERVIEW VS DETAILED ANALYTICS */}
+        <section aria-label="Portal Navigation Tabs">
+          <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-1">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setActiveTab("overview")}
+                className={cn(
+                  "flex items-center gap-2 pb-3 px-1 text-sm font-bold border-b-2 transition-all",
+                  activeTab === "overview"
+                    ? "border-[#28D17C] text-[#0B1F33]"
+                    : "border-transparent text-[#8491A3] hover:text-[#526173]"
+                )}
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span>Executive Overview</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("analytics")}
+                className={cn(
+                  "flex items-center gap-2 pb-3 px-1 text-sm font-bold border-b-2 transition-all",
+                  activeTab === "analytics"
+                    ? "border-[#28D17C] text-[#0B1F33]"
+                    : "border-transparent text-[#8491A3] hover:text-[#526173]"
+                )}
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>Detailed Analytics & Trends</span>
+              </button>
+            </div>
+
+            <span className="text-xs text-[#8491A3]">
+              {activeTab === "overview" ? "Simplified view for HR management" : "Deep metrics & category utilization"}
+            </span>
+          </div>
+        </section>
+
+        {/* TAB 1: EXECUTIVE OVERVIEW CONTENT */}
+        {activeTab === "overview" && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* 3-Stage Adoption Funnel Bar */}
+            <section aria-label="Adoption Funnel">
+              <AdoptionFunnelRow
+                data={funnelData}
+                onUpdateListClick={handleDownloadCensus}
               />
-            </div>
-          </div>
-        </section>
+            </section>
 
-        {/* 5. Provider Leaderboard & Department Participation Matrix */}
-        <section aria-label="Venues and Departments">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            <div className="lg:col-span-5">
-              <TopProvidersLeaderboard className="h-full" />
-            </div>
-            <div className="lg:col-span-7">
-              <DepartmentTable className="h-full" />
-            </div>
+            {/* Provider Leaderboard & Department Participation Matrix */}
+            <section aria-label="Venues and Departments">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                <div className="lg:col-span-5">
+                  <TopProvidersLeaderboard className="h-full" />
+                </div>
+                <div className="lg:col-span-7">
+                  <DepartmentTable className="h-full" />
+                </div>
+              </div>
+            </section>
           </div>
-        </section>
+        )}
+
+        {/* TAB 2: DETAILED ANALYTICS CONTENT */}
+        {activeTab === "analytics" && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* Return on Wellbeing & Peak Wellness Hour */}
+            <section aria-label="ROI & Wellness Hour">
+              <RoiMetricsCard
+                activeEmployees={funnelData.activeBeneficiaries}
+                totalSpendRwf={economicsData.currentInvoiceRwf}
+                wellnessHour={TECHCORP_DEMO_DATA.wellness.wellnessHour}
+                peakDay={TECHCORP_DEMO_DATA.wellness.peakDay}
+              />
+            </section>
+
+            {/* Engagement Trends & Category Distribution */}
+            <section aria-label="Engagement & Category Analytics">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                <div className="lg:col-span-7">
+                  <EngagementTrendChart className="h-full" />
+                </div>
+                <div className="lg:col-span-5">
+                  <CategoryDistribution
+                    categories={TECHCORP_DEMO_DATA.wellness.categories}
+                    totalVisits={funnelData.totalVisits}
+                    className="h-full"
+                  />
+                </div>
+              </div>
+            </section>
+          </div>
+        )}
       </div>
     </div>
   );

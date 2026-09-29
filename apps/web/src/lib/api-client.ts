@@ -52,6 +52,14 @@ export async function apiFetch<T = unknown>(
     ...fetchOptions
   } = options;
 
+  const API_BASE_URL =
+    (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) ||
+    'https://polyfit-backend.onrender.com';
+
+  const resolvedUrl = url.startsWith('/')
+    ? `${API_BASE_URL.replace(/\/$/, '')}${url}`
+    : url;
+
   if (typeof window !== 'undefined' && !navigator.onLine) {
     throw new APIError(
       ERROR_CODE_MESSAGES.NETWORK_OFFLINE,
@@ -67,7 +75,7 @@ export async function apiFetch<T = unknown>(
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(resolvedUrl, {
         ...fetchOptions,
         method,
         signal: controller.signal,
