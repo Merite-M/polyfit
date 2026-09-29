@@ -140,6 +140,35 @@ describe('Billing Routes - Input Validation', () => {
 
     assert.ok([401, 503].includes(res.status));
   });
+
+  it('should reject billing summary without auth', async () => {
+    const res = await request(app)
+      .get('/api/billing/summary?org_id=test-org');
+
+    assert.strictEqual(res.status, 401);
+  });
+
+  it('should reject invoice audit trail request without auth', async () => {
+    const res = await request(app)
+      .get('/api/billing/invoices/test-inv-id/audit-trail');
+
+    assert.strictEqual(res.status, 401);
+  });
+
+  it('should reject invoice audit CSV export without auth', async () => {
+    const res = await request(app)
+      .get('/api/billing/invoices/test-inv-id/export-audit');
+
+    assert.strictEqual(res.status, 401);
+  });
+
+  it('should reject dispute submission without auth', async () => {
+    const res = await request(app)
+      .post('/api/billing/invoices/test-inv-id/dispute')
+      .send({ reason: 'Duplicate visit' });
+
+    assert.strictEqual(res.status, 401);
+  });
 });
 
 describe('Settlement Routes - Input Validation', () => {

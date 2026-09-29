@@ -462,10 +462,294 @@ async function generateAllInvoices(periodStart, periodEnd) {
   return { generated, skipped, errors, results };
 }
 
+// ─── Get Invoice Audit Trail ──────────────────────────────────────────────────
+/**
+ * Retrieves full audit trail for an invoice, including line items and granular
+ * per-employee verified visits during the invoice billing period.
+ *
+ * @param {string} invoiceId
+ * @returns {object} Invoice with line items and itemized employee visits
+ */
+async function getInvoiceAuditTrail(invoiceId) {
+  if (!supabase) throw new Error('Database connection unavailable');
+
+  const invoice = await getInvoiceDetail(invoiceId);
+
+  // Fetch granular verified visits within the billing period for this organization
+  const { data: visits, error: visitError } = await supabase
+    .from('visits')
+    .select(`
+      id,
+      check_in_at,
+      check_out_at,
+      verification_method,
+      status,
+      employee_id,
+      provider_location_id,
+      employees (
+        id,
+        full_name,
+        email,
+        department
+      ),
+      provider_locations (
+        id,
+        name,
+        provider_id,
+        providers (
+          id,
+          name,
+          category
+        )
+      )
+    `)
+    .eq('org_id', invoice.org_id)
+    .eq('status', 'verified')
+    .gte('check_in_at', `${invoice.billing_period_start}T00:00:00Z`)
+    .lte('check_in_at', `${invoice.billing_period_end}T23:59:59Z`)
+    .order('check_in_at', { ascending: false });
+
+  if (visitError) {
+    console.error('[billingService] Failed to query invoice visit audit trail:', visitError.message);
+  }
+
+  // Format flattened visit records for easy tabular and audit consumption
+  const formattedVisits = (visits || []).map(v => ({
+    id: v.id,
+    check_in_at: v.check_in_at,
+    check_out_at: v.check_out_at,
+    verification_method: v.verification_method,
+    status: v.status,
+    employee_id: v.employee_id,
+    employee_name: v.employees?.full_name || 'Corporate Beneficiary',
+    employee_email: v.employees?.email || '',
+    department: v.employees?.department || 'General',
+    location_id: v.provider_location_id,
+    location_name: v.provider_locations?.name || 'Main Facility',
+    provider_id: v.provider_locations?.providers?.id,
+    provider_name: v.provider_locations?.providers?.name || 'Wellness Provider',
+    provider_category: v.provider_locations?.providers?.category || 'wellness'
+  }));
+
+  return {
+    invoice,
+    visits: formattedVisits,
+    total_audit_visits: formattedVisits.length
+  };
+}
+
+// ─── Get Billing Summary ──────────────────────────────────────────────────────
+/**
+ * Calculates corporate billing summary, YTD spend, verified visits, average cost,
+ * overdue balance alert, and monthly trendline for an organization.
+ *
+ * @param {string} orgId
+ * @param {number|string} [year]
+ * @returns {object} Billing summary metrics
+ */
+async function getBillingSummary(orgId, year = new Date().getFullYear()) {
+  if (!supabase) throw new Error('Database connection unavailable');
+
+  const startDate = `${year}-01-01`;
+  const endDate = `${year}-12-31`;
+
+  const { data: invoices, error } = await supabase
+    .from('invoices')
+    .select(`
+      id,
+      invoice_number,
+      billing_period_start,
+      billing_period_end,
+      total_visits,
+      total_amount,
+      tax_amount,
+      status,
+      due_date,
+      paid_at,
+      created_at
+    `)
+    .eq('org_id', orgId)
+    .gte('billing_period_start', startDate)
+    .lte('billing_period_start', endDate)
+    .order('billing_period_start', { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to get billing summary: ${error.message}`);
+  }
+
+  const invoiceList = invoices || [];
+
+  let ytdTotalSpent = 0;
+  let ytdTotalVisits = 0;
+  let currentBalance = 0;
+  let overdueAmount = 0;
+  let overdueCount = 0;
+
+  const monthlyTrendMap = {};
+
+  for (const inv of invoiceList) {
+    const amount = parseFloat(inv.total_amount) || 0;
+    const visits = parseInt(inv.total_visits, 10) || 0;
+
+    ytdTotalSpent += amount;
+    ytdTotalVisits += visits;
+
+    if (inv.status === 'sent' || inv.status === 'overdue') {
+      currentBalance += amount;
+    }
+
+    if (inv.status === 'overdue') {
+      overdueCount++;
+      overdueAmount += amount;
+    }
+
+    const monthKey = (inv.billing_period_start || '').substring(0, 7);
+    if (monthKey) {
+      monthlyTrendMap[monthKey] = {
+        month: monthKey,
+        amount,
+        visits,
+        status: inv.status,
+        invoice_number: inv.invoice_number
+      };
+    }
+  }
+
+  const avgCostPerVisit = ytdTotalVisits > 0 ? parseFloat((ytdTotalSpent / ytdTotalVisits).toFixed(2)) : 0;
+  const citTaxShieldRwf = parseFloat((ytdTotalSpent * 0.30).toFixed(2)); // Rwanda 30% CIT wellness deduction
+
+  return {
+    year: parseInt(year, 10),
+    ytd_total_spent: ytdTotalSpent,
+    ytd_total_visits: ytdTotalVisits,
+    average_cost_per_visit: avgCostPerVisit,
+    current_balance: currentBalance,
+    overdue_amount: overdueAmount,
+    overdue_count: overdueCount,
+    has_overdue: overdueCount > 0,
+    cit_tax_shield_rwf: citTaxShieldRwf,
+    invoices_count: invoiceList.length,
+    monthly_trends: Object.values(monthlyTrendMap)
+  };
+}
+
+// ─── Dispute Invoice ──────────────────────────────────────────────────────────
+/**
+ * Records a formal dispute on an invoice with reason and notes.
+ *
+ * @param {string} invoiceId
+ * @param {object} payload
+ * @param {string} payload.reason
+ * @param {string} [payload.notes]
+ * @returns {object} Updated invoice
+ */
+async function disputeInvoice(invoiceId, { reason, notes } = {}) {
+  if (!supabase) throw new Error('Database connection unavailable');
+
+  if (!reason || !reason.trim()) {
+    throw new Error('Dispute reason is required');
+  }
+
+  // Fetch current invoice
+  const { data: invoice, error: fetchError } = await supabase
+    .from('invoices')
+    .select('id, status, org_id')
+    .eq('id', invoiceId)
+    .single();
+
+  if (fetchError || !invoice) {
+    throw new Error('Invoice not found');
+  }
+
+  if (invoice.status !== 'sent' && invoice.status !== 'overdue') {
+    throw new Error(`Cannot dispute invoice with status "${invoice.status}". Invoices can only be disputed when sent or overdue.`);
+  }
+
+  const now = new Date().toISOString();
+  const updatePayload = {
+    status: 'disputed',
+    dispute_reason: reason.trim(),
+    dispute_notes: notes ? notes.trim() : null,
+    disputed_at: now,
+    updated_at: now
+  };
+
+  const { data: updated, error: updateError } = await supabase
+    .from('invoices')
+    .update(updatePayload)
+    .eq('id', invoiceId)
+    .select()
+    .single();
+
+  if (updateError) {
+    throw new Error(`Failed to record invoice dispute: ${updateError.message}`);
+  }
+
+  return updated;
+}
+
+// ─── Export Invoice Audit CSV ─────────────────────────────────────────────────
+/**
+ * Exports invoice verified visits audit trail as standard RFC 4180 CSV string.
+ *
+ * @param {string} invoiceId
+ * @returns {Promise<string>} CSV string
+ */
+async function exportInvoiceAuditCsv(invoiceId) {
+  const audit = await getInvoiceAuditTrail(invoiceId);
+  const headers = [
+    'Visit ID',
+    'Date',
+    'Time',
+    'Employee ID',
+    'Employee Name',
+    'Work Email',
+    'Department',
+    'Provider Name',
+    'Category',
+    'Facility Location',
+    'Verification Method',
+    'Status'
+  ];
+
+  const escapeCell = (val) => {
+    if (val === null || val === undefined) return '""';
+    const str = String(val).replace(/"/g, '""');
+    return `"${str}"`;
+  };
+
+  const rows = audit.visits.map(v => {
+    const dateObj = new Date(v.check_in_at);
+    const dateStr = isNaN(dateObj.getTime()) ? '' : dateObj.toISOString().split('T')[0];
+    const timeStr = isNaN(dateObj.getTime()) ? '' : dateObj.toISOString().split('T')[1].substring(0, 5);
+
+    return [
+      escapeCell(v.id),
+      escapeCell(dateStr),
+      escapeCell(timeStr),
+      escapeCell(v.employee_id),
+      escapeCell(v.employee_name),
+      escapeCell(v.employee_email),
+      escapeCell(v.department),
+      escapeCell(v.provider_name),
+      escapeCell(v.provider_category),
+      escapeCell(v.location_name),
+      escapeCell(v.verification_method),
+      escapeCell(v.status)
+    ].join(',');
+  });
+
+  return [headers.map(escapeCell).join(','), ...rows].join('\r\n');
+}
+
 module.exports = {
   generateInvoice,
   listInvoices,
   getInvoiceDetail,
+  getInvoiceAuditTrail,
+  getBillingSummary,
+  disputeInvoice,
+  exportInvoiceAuditCsv,
   updateInvoiceStatus,
   markOverdueInvoices,
   generateAllInvoices,
