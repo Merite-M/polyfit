@@ -689,6 +689,937 @@ router.patch('/:id/dispute', requireAuth, requireRole('super_admin', 'polyfit_op
   }
 });
 
+// ─── Turnstile Authentication Helper ─────────────────────────────────────────
+function authenticateTurnstile(req, res, next) {
+  const turnstileKey = req.headers['x-polyfit-turnstile-key'];
+  const configuredKey = process.env.TURNSTILE_API_KEY || 'polyfit_turnstile_relay_key_2026';
+
+  if (turnstileKey) {
+    if (turnstileKey === configuredKey) {
+      req.isTurnstileDevice = true;
+      req.primaryRole = 'turnstile_device';
+      return next();
+    }
+    return res.status(401).json({
+      error: 'Invalid X-PolyFit-Turnstile-Key header',
+      code: 'TURNSTILE_AUTH_INVALID'
+    });
+  }
+
+  // Fallback to JWT auth
+  return requireAuth(req, res, next);
+}
+
+// ─── 5a. Arriving Employee Check-in Intent (20-Minute Window) ────────────────
+router.post('/checkin-intent', requireAuth, async (req, res) => {
+  try {
+    const { provider_location_id, employee_id, lat, lng } = req.body;
+
+    if (!provider_location_id) {
+      return res.status(400).json({
+        error: 'provider_location_id is required',
+        code: 'VISIT_MISSING_LOCATION'
+      });
+    }
+
+    if (!supabase) {
+      return res.status(503).json({
+        error: 'Database service unavailable',
+        code: 'SERVICE_UNAVAILABLE'
+      });
+    }
+
+    // Identify employee
+    const employee = await getEmployeeForUser(req, employee_id);
+    if (!employee) {
+      return res.status(404).json({
+        error: 'No active employee profile linked to user',
+        code: 'EMPLOYEE_NOT_FOUND'
+      });
+    }
+
+    if (employee.status !== 'active') {
+      return res.status(403).json({
+        error: `Employee account status is '${employee.status}'. Active account required`,
+        code: 'EMPLOYEE_INACTIVE'
+      });
+    }
+
+    // Eligibility check
+    const eligibilityResult = await evaluateEmployeeEligibility(
+      employee.id,
+      employee.org_id,
+      provider_location_id
+    );
+
+    if (!eligibilityResult.eligible) {
+      return res.status(403).json({
+        error: eligibilityResult.reason,
+        code: 'INELIGIBLE_FOR_VISIT',
+        details: eligibilityResult
+      });
+    }
+
+    // Geofence check
+    const { location } = eligibilityResult;
+    let geofencePassed = true;
+    let distanceMeters = null;
+
+    if (lat !== undefined && lng !== undefined) {
+      const userLat = parseFloat(lat);
+      const userLng = parseFloat(lng);
+
+      const { data: geoData, error: geoError } = await supabase.rpc('verify_geofence', {
+        p_location_id: provider_location_id,
+        p_user_lat: userLat,
+        p_user_lng: userLng
+      });
+
+      if (!geoError && geoData && geoData.length > 0) {
+        geofencePassed = geoData[0].within_geofence;
+        distanceMeters = geoData[0].distance_meters;
+      } else if (location.lat && location.lng) {
+        distanceMeters = Math.round(
+          getDistanceFromLatLonInM(userLat, userLng, Number(location.lat), Number(location.lng))
+        );
+        geofencePassed = distanceMeters <= 200;
+      }
+
+      if (!geofencePassed) {
+        return res.status(403).json({
+          error: `Geofence check failed: You are ${distanceMeters}m away (maximum allowed: 200m)`,
+          code: 'GEOFENCE_OUT_OF_BOUNDS',
+          distance_meters: distanceMeters,
+          max_allowed_radius_meters: 200
+        });
+      }
+    }
+
+    // Anti-Passback Check
+    const { data: apData, error: apError } = await supabase.rpc('check_anti_passback', {
+      p_employee_id: employee.id,
+      p_provider_location_id: provider_location_id
+    });
+
+    if (!apError && apData && apData.length > 0 && !apData[0].allowed) {
+      return res.status(409).json({
+        error: `Anti-passback cooldown active: Re-entry allowed in ${apData[0].minutes_remaining} minutes`,
+        code: 'ANTI_PASSBACK_COOLDOWN',
+        minutes_remaining: apData[0].minutes_remaining
+      });
+    }
+
+    // Check if there is already an active pending checkin for this employee within 20 mins
+    const twentyMinsAgo = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+    const { data: existingPending } = await supabase
+      .from('visits')
+      .select('id, check_in_at')
+      .eq('employee_id', employee.id)
+      .eq('provider_location_id', provider_location_id)
+      .eq('status', 'pending')
+      .gte('check_in_at', twentyMinsAgo)
+      .maybeSingle();
+
+    if (existingPending) {
+      const elapsedMs = Date.now() - new Date(existingPending.check_in_at).getTime();
+      const secondsRemaining = Math.max(0, Math.floor((20 * 60 * 1000 - elapsedMs) / 1000));
+      return res.status(200).json({
+        success: true,
+        message: 'Active check-in already pending front-desk validation',
+        visit: existingPending,
+        seconds_remaining: secondsRemaining,
+        expires_at: new Date(new Date(existingPending.check_in_at).getTime() + 20 * 60 * 1000).toISOString()
+      });
+    }
+
+    const checkInAt = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + 20 * 60 * 1000).toISOString();
+
+    const { data: newPendingVisit, error: insertError } = await supabase
+      .from('visits')
+      .insert({
+        employee_id: employee.id,
+        org_id: employee.org_id,
+        provider_location_id,
+        verification_method: 'totp_qr',
+        status: 'pending',
+        check_in_at: checkInAt,
+        geo_lat: lat ? parseFloat(lat) : null,
+        geo_lng: lng ? parseFloat(lng) : null
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      return res.status(400).json({
+        error: insertError.message,
+        code: 'CHECKIN_INTENT_FAILED'
+      });
+    }
+
+    await logAuthEvent({
+      userId: req.user.id,
+      eventType: 'visit_checkin_intent',
+      metadata: {
+        visit_id: newPendingVisit.id,
+        employee_id: employee.id,
+        provider_location_id
+      },
+      req
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Check-in submitted and awaiting front-desk validation (20-minute window)',
+      visit: newPendingVisit,
+      seconds_remaining: 1200,
+      expires_at: expiresAt
+    });
+  } catch (error) {
+    console.error('[visitRoutes/checkin-intent] error:', error);
+    return res.status(500).json({
+      error: 'Failed to initiate check-in intent',
+      code: 'CHECKIN_INTENT_INTERNAL_ERROR'
+    });
+  }
+});
+
+// ─── 5b. Pending Check-in Queue (Front-Desk 20-Min Window) ───────────────────
+router.get('/pending', requireAuth, requireRole('super_admin', 'polyfit_ops', 'provider_admin'), async (req, res) => {
+  try {
+    const { provider_location_id } = req.query;
+
+    if (!supabase) {
+      return res.status(503).json({
+        error: 'Database service unavailable',
+        code: 'SERVICE_UNAVAILABLE'
+      });
+    }
+
+    const twentyMinsAgo = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+
+    // Auto-expire stale pending visits (> 20 mins)
+    await supabase
+      .from('visits')
+      .update({ status: 'rejected' })
+      .eq('status', 'pending')
+      .lt('check_in_at', twentyMinsAgo);
+
+    let query = supabase
+      .from('visits')
+      .select(`
+        id,
+        check_in_at,
+        status,
+        verification_method,
+        employee_id,
+        provider_location_id,
+        org_id,
+        employees (
+          id,
+          full_name,
+          email,
+          tier,
+          department,
+          employee_id_external
+        ),
+        organizations (
+          id,
+          name
+        ),
+        provider_locations (
+          id,
+          name,
+          city,
+          provider_id,
+          providers (
+            id,
+            name,
+            category
+          )
+        )
+      `)
+      .eq('status', 'pending')
+      .gte('check_in_at', twentyMinsAgo)
+      .order('check_in_at', { ascending: false });
+
+    // Tenancy filtering
+    if (req.primaryRole === 'provider_admin') {
+      const { data: locs } = await supabase
+        .from('provider_locations')
+        .select('id')
+        .eq('provider_id', req.providerId);
+      const locIds = locs?.map((l) => l.id) || [];
+      query = query.in('provider_location_id', locIds.length > 0 ? locIds : ['00000000-0000-0000-0000-000000000000']);
+    }
+
+    if (provider_location_id) {
+      query = query.eq('provider_location_id', provider_location_id);
+    }
+
+    const { data: pendingVisits, error } = await query;
+    if (error) {
+      return res.status(400).json({ error: error.message, code: 'PENDING_VISITS_QUERY_FAILED' });
+    }
+
+    const now = Date.now();
+    const enriched = (pendingVisits || []).map((v) => {
+      const checkinTime = new Date(v.check_in_at).getTime();
+      const elapsedMs = now - checkinTime;
+      const secondsRemaining = Math.max(0, Math.floor((20 * 60 * 1000 - elapsedMs) / 1000));
+      return {
+        ...v,
+        seconds_remaining: secondsRemaining,
+        expires_at: new Date(checkinTime + 20 * 60 * 1000).toISOString()
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      pending_count: enriched.length,
+      visits: enriched
+    });
+  } catch (error) {
+    console.error('[visitRoutes/pending] error:', error);
+    return res.status(500).json({
+      error: 'Failed to retrieve pending check-ins',
+      code: 'PENDING_VISITS_INTERNAL_ERROR'
+    });
+  }
+});
+
+// ─── 5c. Approve Pending Check-in (Front-Desk 1-Click Validation) ─────────────
+router.patch('/:id/approve', requireAuth, requireRole('super_admin', 'polyfit_ops', 'provider_admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!supabase) {
+      return res.status(503).json({
+        error: 'Database service unavailable',
+        code: 'SERVICE_UNAVAILABLE'
+      });
+    }
+
+    const { data: visit, error: fetchErr } = await supabase
+      .from('visits')
+      .select(`
+        id,
+        status,
+        check_in_at,
+        employee_id,
+        org_id,
+        provider_location_id,
+        provider_locations (
+          id,
+          provider_id,
+          name
+        )
+      `)
+      .eq('id', id)
+      .maybeSingle();
+
+    if (fetchErr || !visit) {
+      return res.status(404).json({ error: 'Visit record not found', code: 'VISIT_NOT_FOUND' });
+    }
+
+    // Tenancy check
+    if (req.primaryRole === 'provider_admin') {
+      if (visit.provider_locations?.provider_id !== req.providerId) {
+        return res.status(403).json({
+          error: 'Unauthorized: Cannot approve visits for another provider facility',
+          code: 'AUTH_FORBIDDEN_PROVIDER'
+        });
+      }
+    }
+
+    if (visit.status === 'verified') {
+      return res.status(400).json({ error: 'Visit is already verified and locked', code: 'VISIT_ALREADY_VERIFIED' });
+    }
+
+    if (visit.status === 'rejected') {
+      return res.status(400).json({ error: 'Visit was already rejected or cancelled', code: 'VISIT_ALREADY_REJECTED' });
+    }
+
+    // Check 20-minute window
+    const elapsedMs = Date.now() - new Date(visit.check_in_at).getTime();
+    if (elapsedMs > 20 * 60 * 1000) {
+      await supabase.from('visits').update({ status: 'rejected' }).eq('id', id);
+      return res.status(400).json({
+        error: 'The 20-minute validation window has expired. Please ask the employee to re-initiate check-in.',
+        code: 'VALIDATION_WINDOW_EXPIRED'
+      });
+    }
+
+    const { data: updatedVisit, error: updateErr } = await supabase
+      .from('visits')
+      .update({
+        status: 'verified',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateErr) {
+      return res.status(400).json({ error: updateErr.message, code: 'VISIT_APPROVAL_FAILED' });
+    }
+
+    await logAuthEvent({
+      userId: req.user.id,
+      eventType: 'visit_approved_by_provider',
+      metadata: {
+        visit_id: id,
+        employee_id: visit.employee_id,
+        location_id: visit.provider_location_id
+      },
+      req
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Check-in validated successfully. Entry approved.',
+      visit: updatedVisit,
+      unlocked: true,
+      gate_relay_ms: 3000
+    });
+  } catch (error) {
+    console.error('[visitRoutes/:id/approve] error:', error);
+    return res.status(500).json({
+      error: 'Failed to approve check-in',
+      code: 'VISIT_APPROVAL_INTERNAL_ERROR'
+    });
+  }
+});
+
+// ─── 5d. Reject Pending Check-in ─────────────────────────────────────────────
+router.patch('/:id/reject', requireAuth, requireRole('super_admin', 'polyfit_ops', 'provider_admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason || reason.trim().length < 3) {
+      return res.status(400).json({
+        error: 'A valid reason for rejection is required (minimum 3 characters)',
+        code: 'REJECTION_REASON_REQUIRED'
+      });
+    }
+
+    if (!supabase) {
+      return res.status(503).json({
+        error: 'Database service unavailable',
+        code: 'SERVICE_UNAVAILABLE'
+      });
+    }
+
+    const { data: visit, error: fetchErr } = await supabase
+      .from('visits')
+      .select(`
+        id,
+        status,
+        check_in_at,
+        employee_id,
+        provider_location_id,
+        provider_locations (
+          provider_id
+        )
+      `)
+      .eq('id', id)
+      .maybeSingle();
+
+    if (fetchErr || !visit) {
+      return res.status(404).json({ error: 'Visit record not found', code: 'VISIT_NOT_FOUND' });
+    }
+
+    // Tenancy check
+    if (req.primaryRole === 'provider_admin') {
+      if (visit.provider_locations?.provider_id !== req.providerId) {
+        return res.status(403).json({
+          error: 'Unauthorized: Cannot reject visits for another provider facility',
+          code: 'AUTH_FORBIDDEN_PROVIDER'
+        });
+      }
+    }
+
+    const { data: updatedVisit, error: updateErr } = await supabase
+      .from('visits')
+      .update({
+        status: 'rejected',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateErr) {
+      return res.status(400).json({ error: updateErr.message, code: 'VISIT_REJECTION_FAILED' });
+    }
+
+    await logAuthEvent({
+      userId: req.user.id,
+      eventType: 'visit_rejected_by_provider',
+      metadata: {
+        visit_id: id,
+        employee_id: visit.employee_id,
+        reason: reason.trim()
+      },
+      req
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Check-in rejected',
+      visit: updatedVisit,
+      reason: reason.trim()
+    });
+  } catch (error) {
+    console.error('[visitRoutes/:id/reject] error:', error);
+    return res.status(500).json({
+      error: 'Failed to reject check-in',
+      code: 'VISIT_REJECTION_INTERNAL_ERROR'
+    });
+  }
+});
+
+// ─── 5e. Turnstile / IoT Automated Verification Webhook ─────────────────────
+const handleTurnstileVerification = async (req, res) => {
+  try {
+    const {
+      token,
+      employee_id,
+      provider_location_id,
+      qr_payload,
+      pending_visit_id
+    } = req.body;
+
+    if (!supabase) {
+      return res.status(503).json({
+        error: 'Database service unavailable',
+        code: 'SERVICE_UNAVAILABLE',
+        unlock: false
+      });
+    }
+
+    // 1. If pending_visit_id is provided, validate existing pending check-in directly
+    if (pending_visit_id) {
+      const { data: visit, error: fetchErr } = await supabase
+        .from('visits')
+        .select('*')
+        .eq('id', pending_visit_id)
+        .maybeSingle();
+
+      if (fetchErr || !visit) {
+        return res.status(404).json({ error: 'Pending visit not found', code: 'VISIT_NOT_FOUND', unlock: false });
+      }
+
+      const elapsedMs = Date.now() - new Date(visit.check_in_at).getTime();
+      if (elapsedMs > 20 * 60 * 1000) {
+        await supabase.from('visits').update({ status: 'rejected' }).eq('id', pending_visit_id);
+        return res.status(400).json({
+          error: 'Validation window expired',
+          code: 'VALIDATION_WINDOW_EXPIRED',
+          unlock: false
+        });
+      }
+
+      const { data: updatedVisit } = await supabase
+        .from('visits')
+        .update({
+          status: 'verified',
+          verification_method: 'turnstile',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', pending_visit_id)
+        .select()
+        .single();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Turnstile gate unlocked. Check-in validated.',
+        unlock: true,
+        gate_relay_ms: 3000,
+        visit: updatedVisit
+      });
+    }
+
+    // 2. Otherwise, verify pass token / QR payload directly at turnstile
+    let resolvedEmployeeId = employee_id;
+    let resolvedLocationId = provider_location_id;
+    let resolvedToken = token;
+
+    if (qr_payload) {
+      const decoded = verifySignedPassPayload(qr_payload);
+      if (!decoded) {
+        return res.status(400).json({
+          error: 'Invalid QR signature',
+          code: 'QR_SIGNATURE_INVALID',
+          unlock: false
+        });
+      }
+      resolvedEmployeeId = decoded.employee_id;
+      resolvedLocationId = resolvedLocationId || decoded.provider_location_id;
+      resolvedToken = resolvedToken || decoded.token;
+    }
+
+    if (!resolvedEmployeeId || !resolvedLocationId || !resolvedToken) {
+      return res.status(400).json({
+        error: 'Missing required credentials (token, employee_id, provider_location_id)',
+        code: 'TURNSTILE_MISSING_FIELDS',
+        unlock: false
+      });
+    }
+
+    // Validate TOTP
+    const employeeSecret = deriveEmployeeSecret(resolvedEmployeeId);
+    const { valid } = verifyTotp(resolvedToken, employeeSecret);
+    if (!valid) {
+      return res.status(400).json({
+        error: 'Invalid or expired TOTP token',
+        code: 'INVALID_TOTP_TOKEN',
+        unlock: false
+      });
+    }
+
+    // Anti-Passback check
+    const { data: apData } = await supabase.rpc('check_anti_passback', {
+      p_employee_id: resolvedEmployeeId,
+      p_provider_location_id: resolvedLocationId
+    });
+
+    if (apData && apData.length > 0 && !apData[0].allowed) {
+      return res.status(409).json({
+        error: `Anti-passback active: Re-entry allowed in ${apData[0].minutes_remaining}m`,
+        code: 'ANTI_PASSBACK_COOLDOWN',
+        unlock: false
+      });
+    }
+
+    // Fetch employee & verify eligibility
+    const { data: employee } = await supabase
+      .from('employees')
+      .select('id, full_name, org_id')
+      .eq('id', resolvedEmployeeId)
+      .single();
+
+    if (!employee) {
+      return res.status(404).json({ error: 'Employee not found', code: 'EMPLOYEE_NOT_FOUND', unlock: false });
+    }
+
+    const eligibilityCheck = await evaluateEmployeeEligibility(
+      employee.id,
+      employee.org_id,
+      resolvedLocationId
+    );
+
+    if (!eligibilityCheck.eligible) {
+      return res.status(403).json({
+        error: eligibilityCheck.reason,
+        code: 'INELIGIBLE_FOR_VISIT',
+        unlock: false
+      });
+    }
+
+    // Insert verified turnstile visit
+    const tokenHash = crypto.createHash('sha256').update(resolvedToken).digest('hex');
+    const { data: newVisit, error: insertError } = await supabase
+      .from('visits')
+      .insert({
+        employee_id: employee.id,
+        org_id: employee.org_id,
+        provider_location_id: resolvedLocationId,
+        verification_method: 'turnstile',
+        status: 'verified',
+        check_in_at: new Date().toISOString(),
+        totp_token_hash: tokenHash
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      return res.status(400).json({ error: insertError.message, code: 'VISIT_RECORDING_FAILED', unlock: false });
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: 'Turnstile gate unlocked. Visit verified.',
+      unlock: true,
+      gate_relay_ms: 3000,
+      visit: newVisit
+    });
+  } catch (error) {
+    console.error('[visitRoutes/turnstile] error:', error);
+    return res.status(500).json({
+      error: 'Turnstile verification internal error',
+      code: 'TURNSTILE_INTERNAL_ERROR',
+      unlock: false
+    });
+  }
+};
+
+router.post('/turnstile-verify', authenticateTurnstile, handleTurnstileVerification);
+router.post('/unlock', authenticateTurnstile, handleTurnstileVerification);
+
+// ─── 5f. Retroactive Check-in Claims (2nd-of-Month Policy Cut-Off) ───────────
+router.post('/retroactive-claim', requireAuth, requireRole('super_admin', 'polyfit_ops', 'provider_admin'), async (req, res) => {
+  try {
+    const {
+      provider_location_id,
+      employee_id,
+      employee_email,
+      visit_time,
+      activity_category,
+      reason,
+      notes
+    } = req.body;
+
+    if (!provider_location_id || (!employee_id && !employee_email) || !visit_time || !reason) {
+      return res.status(400).json({
+        error: 'provider_location_id, employee (id or email), visit_time, and reason are required',
+        code: 'RETROACTIVE_MISSING_FIELDS'
+      });
+    }
+
+    if (!supabase) {
+      return res.status(503).json({
+        error: 'Database service unavailable',
+        code: 'SERVICE_UNAVAILABLE'
+      });
+    }
+
+    // 2nd-of-Month Policy Cut-Off Enforcement
+    const claimDate = new Date(visit_time);
+    const now = new Date();
+    const isPriorMonth = (now.getFullYear() > claimDate.getFullYear()) ||
+      (now.getFullYear() === claimDate.getFullYear() && now.getMonth() > claimDate.getMonth());
+
+    if (isPriorMonth && now.getDate() > 2) {
+      return res.status(403).json({
+        error: 'Retroactive check-in deadline exceeded: Missed check-ins from previous months must be submitted by the 2nd day of the following month for reconciliation.',
+        code: 'RETROACTIVE_CUTOFF_EXCEEDED',
+        deadline_day: 2,
+        visit_month: claimDate.toISOString().slice(0, 7)
+      });
+    }
+
+    // Tenancy check: get provider_id for location
+    const { data: loc } = await supabase
+      .from('provider_locations')
+      .select('id, provider_id, name')
+      .eq('id', provider_location_id)
+      .maybeSingle();
+
+    if (!loc) {
+      return res.status(404).json({ error: 'Provider location not found', code: 'LOCATION_NOT_FOUND' });
+    }
+
+    if (req.primaryRole === 'provider_admin' && loc.provider_id !== req.providerId) {
+      return res.status(403).json({ error: 'Unauthorized: Cannot claim for another provider facility', code: 'AUTH_FORBIDDEN_PROVIDER' });
+    }
+
+    // Find employee
+    let empQuery = supabase.from('employees').select('id, full_name, email, org_id');
+    if (employee_id) {
+      empQuery = empQuery.eq('id', employee_id);
+    } else {
+      empQuery = empQuery.eq('email', employee_email.trim().toLowerCase());
+    }
+
+    const { data: employee } = await empQuery.maybeSingle();
+    if (!employee) {
+      return res.status(404).json({ error: 'Employee not found', code: 'EMPLOYEE_NOT_FOUND' });
+    }
+
+    // Insert retroactive claim
+    const { data: claim, error: insertError } = await supabase
+      .from('retroactive_checkin_requests')
+      .insert({
+        provider_id: loc.provider_id,
+        provider_location_id: loc.id,
+        employee_id: employee.id,
+        visit_time: new Date(visit_time).toISOString(),
+        activity_category: activity_category || 'gym',
+        reason: reason.trim(),
+        notes: notes ? notes.trim() : null,
+        status: 'pending_review',
+        submitted_by: req.user.id
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      return res.status(400).json({ error: insertError.message, code: 'RETROACTIVE_INSERT_FAILED' });
+    }
+
+    await logAuthEvent({
+      userId: req.user.id,
+      eventType: 'retroactive_claim_submitted',
+      metadata: {
+        claim_id: claim.id,
+        location_id: loc.id,
+        employee_id: employee.id,
+        visit_time
+      },
+      req
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Retroactive check-in exception submitted successfully for admin reconciliation',
+      claim
+    });
+  } catch (error) {
+    console.error('[visitRoutes/retroactive-claim] error:', error);
+    return res.status(500).json({
+      error: 'Failed to submit retroactive claim',
+      code: 'RETROACTIVE_INTERNAL_ERROR'
+    });
+  }
+});
+
+router.get('/retroactive-claims', requireAuth, requireRole('super_admin', 'polyfit_ops', 'provider_admin'), async (req, res) => {
+  try {
+    const { provider_location_id } = req.query;
+
+    if (!supabase) {
+      return res.status(503).json({
+        error: 'Database service unavailable',
+        code: 'SERVICE_UNAVAILABLE'
+      });
+    }
+
+    let query = supabase
+      .from('retroactive_checkin_requests')
+      .select(`
+        id,
+        visit_time,
+        activity_category,
+        reason,
+        notes,
+        status,
+        created_at,
+        reviewed_at,
+        employees (
+          id,
+          full_name,
+          email,
+          tier
+        ),
+        provider_locations (
+          id,
+          name,
+          city
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (req.primaryRole === 'provider_admin') {
+      query = query.eq('provider_id', req.providerId);
+    }
+    if (provider_location_id) {
+      query = query.eq('provider_location_id', provider_location_id);
+    }
+
+    const { data: claims, error } = await query;
+    if (error) {
+      return res.status(400).json({ error: error.message, code: 'CLAIMS_QUERY_FAILED' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      claims: claims || []
+    });
+  } catch (error) {
+    console.error('[visitRoutes/retroactive-claims] error:', error);
+    return res.status(500).json({
+      error: 'Failed to retrieve retroactive claims',
+      code: 'CLAIMS_INTERNAL_ERROR'
+    });
+  }
+});
+
+// ─── 5g. Today's Check-ins Operational Summary ──────────────────────────────
+router.get('/today-summary', requireAuth, requireRole('super_admin', 'polyfit_ops', 'provider_admin'), async (req, res) => {
+  try {
+    const { provider_location_id } = req.query;
+
+    if (!supabase) {
+      return res.status(503).json({
+        error: 'Database service unavailable',
+        code: 'SERVICE_UNAVAILABLE'
+      });
+    }
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStartIso = todayStart.toISOString();
+
+    const twentyMinsAgo = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+
+    let locIds = [];
+    if (req.primaryRole === 'provider_admin') {
+      const { data: locs } = await supabase
+        .from('provider_locations')
+        .select('id')
+        .eq('provider_id', req.providerId);
+      locIds = locs?.map((l) => l.id) || [];
+    } else if (provider_location_id) {
+      locIds = [provider_location_id];
+    }
+
+    // Query today's visits
+    let visitsQuery = supabase
+      .from('visits')
+      .select('id, status, verification_method, check_in_at, provider_location_id')
+      .gte('check_in_at', todayStartIso);
+
+    if (locIds.length > 0) {
+      visitsQuery = visitsQuery.in('provider_location_id', locIds);
+    }
+
+    const { data: todayVisits, error: visitErr } = await visitsQuery;
+    if (visitErr) {
+      return res.status(400).json({ error: visitErr.message, code: 'TODAY_SUMMARY_FAILED' });
+    }
+
+    const verified = (todayVisits || []).filter((v) => v.status === 'verified');
+    const disputed = (todayVisits || []).filter((v) => v.status === 'disputed');
+
+    // Query active pending
+    let pendingQuery = supabase
+      .from('visits')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending')
+      .gte('check_in_at', twentyMinsAgo);
+
+    if (locIds.length > 0) {
+      pendingQuery = pendingQuery.in('provider_location_id', locIds);
+    }
+
+    const { count: pendingCount } = await pendingQuery;
+
+    // Rate calculation: default standard rate 5,000 RWF per verified visit
+    const perVisitRate = 5000;
+    const totalEarned = verified.length * perVisitRate;
+
+    return res.status(200).json({
+      success: true,
+      summary: {
+        total_visits_today: verified.length,
+        settlement_earned_today: totalEarned,
+        currency: 'RWF',
+        pending_queue_count: pendingCount || 0,
+        disputed_count: disputed.length,
+        per_visit_rate: perVisitRate
+      }
+    });
+  } catch (error) {
+    console.error('[visitRoutes/today-summary] error:', error);
+    return res.status(500).json({
+      error: 'Failed to retrieve today summary',
+      code: 'TODAY_SUMMARY_INTERNAL_ERROR'
+    });
+  }
+});
+
 // ─── 6. Query Visit History (Role-Scoped) ────────────────────────────────────
 router.get('/', requireAuth, async (req, res) => {
   try {

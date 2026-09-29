@@ -69,9 +69,10 @@ app.get('/health', async (req, res) => {
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
 
-// PF-79: Visit Verification Engine routes (TOTP QR, Anti-Passback, Geofence, Disputes)
+// PF-79 / PF-93: Visit Verification Engine & Partner Operations routes (TOTP QR, 20-min queue, IoT turnstiles)
 const visitRoutes = require('./routes/visitRoutes');
 app.use('/api/visits', visitRoutes);
+app.use('/api/iot', visitRoutes);
 
 // PF-80: Billing & Settlement Engine routes
 const billingRoutes = require('./routes/billingRoutes');

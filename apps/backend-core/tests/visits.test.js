@@ -173,4 +173,89 @@ describe('Visit Verification Engine Test Suite (PF-79)', () => {
     assert.equal(res.status, 401);
     assert.equal(res.body.code, 'AUTH_MISSING_HEADER');
   });
+
+  // ─── 3. Partner Portal & Check-in Operations Tests (PF-93) ───────────────────
+  test('POST /api/visits/checkin-intent - blocks unauthenticated access', async () => {
+    const res = await request(app)
+      .post('/api/visits/checkin-intent')
+      .send({ provider_location_id: 'a0000000-0000-0000-0000-000000000001' });
+
+    assert.equal(res.status, 401);
+    assert.equal(res.body.code, 'AUTH_MISSING_HEADER');
+  });
+
+  test('GET /api/visits/pending - blocks unauthenticated access', async () => {
+    const res = await request(app).get('/api/visits/pending');
+    assert.equal(res.status, 401);
+    assert.equal(res.body.code, 'AUTH_MISSING_HEADER');
+  });
+
+  test('PATCH /api/visits/123/approve - blocks unauthenticated access', async () => {
+    const res = await request(app).patch('/api/visits/123/approve');
+    assert.equal(res.status, 401);
+    assert.equal(res.body.code, 'AUTH_MISSING_HEADER');
+  });
+
+  test('PATCH /api/visits/123/reject - blocks unauthenticated access', async () => {
+    const res = await request(app)
+      .patch('/api/visits/123/reject')
+      .send({ reason: 'Photo mismatch' });
+
+    assert.equal(res.status, 401);
+    assert.equal(res.body.code, 'AUTH_MISSING_HEADER');
+  });
+
+  test('POST /api/visits/turnstile-verify - rejects invalid X-PolyFit-Turnstile-Key', async () => {
+    const res = await request(app)
+      .post('/api/visits/turnstile-verify')
+      .set('X-PolyFit-Turnstile-Key', 'invalid-secret-key')
+      .send({ token: '123456' });
+
+    assert.equal(res.status, 401);
+    assert.equal(res.body.code, 'TURNSTILE_AUTH_INVALID');
+  });
+
+  test('POST /api/visits/turnstile-verify - accepts valid turnstile key and validates fields', async () => {
+    const res = await request(app)
+      .post('/api/visits/turnstile-verify')
+      .set('X-PolyFit-Turnstile-Key', 'polyfit_turnstile_relay_key_2026')
+      .send({});
+
+    // Must pass turnstile auth and fail on missing credentials
+    assert.equal(res.status, 400);
+    assert.equal(res.body.code, 'TURNSTILE_MISSING_FIELDS');
+    assert.equal(res.body.unlock, false);
+  });
+
+  test('POST /api/iot/unlock - alias correctly routes to turnstile handler', async () => {
+    const res = await request(app)
+      .post('/api/iot/unlock')
+      .set('X-PolyFit-Turnstile-Key', 'polyfit_turnstile_relay_key_2026')
+      .send({});
+
+    assert.equal(res.status, 400);
+    assert.equal(res.body.code, 'TURNSTILE_MISSING_FIELDS');
+  });
+
+  test('POST /api/visits/retroactive-claim - blocks unauthenticated access', async () => {
+    const res = await request(app)
+      .post('/api/visits/retroactive-claim')
+      .send({ reason: 'Power cut' });
+
+    assert.equal(res.status, 401);
+    assert.equal(res.body.code, 'AUTH_MISSING_HEADER');
+  });
+
+  test('GET /api/visits/retroactive-claims - blocks unauthenticated access', async () => {
+    const res = await request(app).get('/api/visits/retroactive-claims');
+    assert.equal(res.status, 401);
+    assert.equal(res.body.code, 'AUTH_MISSING_HEADER');
+  });
+
+  test('GET /api/visits/today-summary - blocks unauthenticated access', async () => {
+    const res = await request(app).get('/api/visits/today-summary');
+    assert.equal(res.status, 401);
+    assert.equal(res.body.code, 'AUTH_MISSING_HEADER');
+  });
 });
+
