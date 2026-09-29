@@ -6,6 +6,11 @@ const request = require('supertest');
 const app = require('../index');
 const {
   parseCsv,
+  createSingleEmployee,
+  freezeEmployee,
+  activateEmployee,
+  terminateEmployee,
+  batchUpdateEmployees,
   VALID_TIERS,
   VALID_STATUSES
 } = require('../services/employeeService');
@@ -65,6 +70,22 @@ Paul Kagame,paul@example.com,EMP-010,Executive,ultra_vip`;
       const rows = parseCsv(csv);
       assert.equal(rows.length, 1);
       assert.equal(rows[0].tier, 'standard');
+    });
+
+    test('parseCsv handles first_name and last_name columns and combines into full_name', () => {
+      const csv = `first_name,last_name,email,employee_id,department,tier
+Diane,Gisa,diane.gisa@example.com,EMP-777,Legal,premium
+Claude,Ndayishimiye,claude@example.com,EMP-888,Engineering,standard`;
+
+      const rows = parseCsv(csv);
+      assert.equal(rows.length, 2);
+      assert.equal(rows[0].full_name, 'Diane Gisa');
+      assert.equal(rows[0].email, 'diane.gisa@example.com');
+      assert.equal(rows[0].employee_id_external, 'EMP-777');
+      assert.equal(rows[0].tier, 'premium');
+
+      assert.equal(rows[1].full_name, 'Claude Ndayishimiye');
+      assert.equal(rows[1].tier, 'standard');
     });
 
     test('parseCsv returns empty array for empty or single-header inputs', () => {
@@ -163,6 +184,15 @@ Paul Kagame,paul@example.com,EMP-010,Executive,ultra_vip`;
       const res = await request(app)
         .post(`/api/organizations/${orgId}/employees/bulk`)
         .send({ csv_data: 'full_name,email\nJohn,john@example.com' });
+
+      assert.equal(res.status, 401);
+      assert.equal(res.body.code, 'AUTH_MISSING_HEADER');
+    });
+
+    test('POST /api/organizations/:orgId/employees/batch - blocks unauthenticated access', async () => {
+      const res = await request(app)
+        .post(`/api/organizations/${orgId}/employees/batch`)
+        .send({ action: 'freeze', employee_ids: ['emp-123'] });
 
       assert.equal(res.status, 401);
       assert.equal(res.body.code, 'AUTH_MISSING_HEADER');
@@ -446,6 +476,86 @@ Paul Kagame,paul@example.com,EMP-010,Executive,ultra_vip`;
 
       // Clean up test employee
       await supabase.from('employees').delete().eq('id', testEmployeeId);
+    });
+
+    test('batchUpdateEmployees: validates required fields and actions', async () => {
+      if (!supabase) return;
+
+      await assert.rejects(
+        () => batchUpdateEmployees(testOrgId, { action: 'invalid_action', employee_ids: ['id-1'] }),
+        (err) => err.code === 'EMPLOYEE_BATCH_INVALID_ACTION'
+      );
+
+      await assert.rejects(
+        () => batchUpdateEmployees(testOrgId, { action: 'freeze', employee_ids: [] }),
+        (err) => err.code === 'EMPLOYEE_BATCH_EMPTY_IDS'
+      );
+
+      await assert.rejects(
+        () => batchUpdateEmployees(testOrgId, { action: 'change_tier', employee_ids: ['id-1'], tier: 'unsupported' }),
+        (err) => err.code === 'EMPLOYEE_INVALID_TIER'
+      );
+    });
+
+    test('batchUpdateEmployees: processes batch freeze and reactivate on temporary employees', async () => {
+      if (!supabase) return;
+
+      // Create two temporary employees
+      const emp1 = await createSingleEmployee(testOrgId, {
+        full_name: 'Batch Test 1',
+        email: `batch1-${Date.now()}@example.com`,
+        tier: 'standard'
+      });
+      const emp2 = await createSingleEmployee(testOrgId, {
+        full_name: 'Batch Test 2',
+        email: `batch2-${Date.now()}@example.com`,
+        tier: 'standard'
+      });
+
+      assert.ok(emp1.id);
+      assert.ok(emp2.id);
+
+      // 1. Batch Freeze
+      const freezeRes = await batchUpdateEmployees(testOrgId, {
+        action: 'freeze',
+        employee_ids: [emp1.id, emp2.id]
+      });
+      assert.equal(freezeRes.action, 'freeze');
+      assert.equal(freezeRes.succeeded, 2);
+      assert.equal(freezeRes.failed, 0);
+
+      // Verify status is frozen
+      const { data: frozenRows } = await supabase
+        .from('employees')
+        .select('id, status')
+        .in('id', [emp1.id, emp2.id]);
+      assert.ok(frozenRows.every((r) => r.status === 'frozen'));
+
+      // 2. Batch Change Tier
+      const tierRes = await batchUpdateEmployees(testOrgId, {
+        action: 'change_tier',
+        employee_ids: [emp1.id, emp2.id],
+        tier: 'premium'
+      });
+      assert.equal(tierRes.action, 'change_tier');
+      assert.equal(tierRes.succeeded, 2);
+
+      const { data: tierRows } = await supabase
+        .from('employees')
+        .select('id, tier')
+        .in('id', [emp1.id, emp2.id]);
+      assert.ok(tierRows.every((r) => r.tier === 'premium'));
+
+      // 3. Batch Activate
+      const activateRes = await batchUpdateEmployees(testOrgId, {
+        action: 'activate',
+        employee_ids: [emp1.id, emp2.id]
+      });
+      assert.equal(activateRes.action, 'activate');
+      assert.equal(activateRes.succeeded, 2);
+
+      // Clean up
+      await supabase.from('employees').delete().in('id', [emp1.id, emp2.id]);
     });
   });
 });

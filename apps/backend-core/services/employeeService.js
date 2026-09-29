@@ -67,6 +67,10 @@ function parseCsv(csvText) {
     const clean = h.toLowerCase().replace(/[\s_-]+/g, '');
     if (clean === 'fullname' || clean === 'name' || clean === 'employeename') {
       headerMap[idx] = 'full_name';
+    } else if (clean === 'firstname' || clean === 'first') {
+      headerMap[idx] = 'first_name';
+    } else if (clean === 'lastname' || clean === 'last' || clean === 'surname') {
+      headerMap[idx] = 'last_name';
     } else if (clean === 'email' || clean === 'workemail' || clean === 'emailaddress') {
       headerMap[idx] = 'email';
     } else if (clean === 'employeeid' || clean === 'employeeidexternal' || clean === 'staffid' || clean === 'id') {
@@ -92,10 +96,17 @@ function parseCsv(csvText) {
       status: 'active'
     };
 
+    let firstName = '';
+    let lastName = '';
+
     row.forEach((val, colIdx) => {
       const field = headerMap[colIdx];
       if (field) {
-        if (field === 'tier') {
+        if (field === 'first_name') {
+          firstName = (val || '').trim();
+        } else if (field === 'last_name') {
+          lastName = (val || '').trim();
+        } else if (field === 'tier') {
           const lower = (val || '').toLowerCase().trim();
           item[field] = VALID_TIERS.includes(lower) ? lower : 'standard';
         } else if (field === 'status') {
@@ -108,6 +119,10 @@ function parseCsv(csvText) {
         }
       }
     });
+
+    if (!item.full_name && (firstName || lastName)) {
+      item.full_name = `${firstName} ${lastName}`.trim();
+    }
 
     if (item.email || item.full_name) {
       parsedRows.push(item);
@@ -207,6 +222,8 @@ async function createSingleEmployee(orgId, {
     .eq('org_id', orgId)
     .eq('status', 'active')
     .eq('tier', cleanTier)
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   const targetBenefit = benefitPlan || (await supabase
@@ -214,6 +231,7 @@ async function createSingleEmployee(orgId, {
     .select('id, name, tier, max_monthly_visits')
     .eq('org_id', orgId)
     .eq('status', 'active')
+    .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()).data;
 
@@ -625,6 +643,205 @@ async function terminateEmployee(orgId, employeeId) {
   return updated;
 }
 
+/**
+ * Batch updates employee records (freeze, activate, terminate, change_tier)
+ *
+ * @param {string} orgId - Organization UUID
+ * @param {Object} options - { action, employee_ids, tier }
+ * @returns {Promise<Object>} Summary of batch execution
+ */
+async function batchUpdateEmployees(orgId, { action, employee_ids = [], tier = null }) {
+  if (!supabase) throw new Error('Database service unavailable');
+
+  if (!action || !['freeze', 'activate', 'terminate', 'change_tier'].includes(action)) {
+    throw {
+      status: 400,
+      message: "Valid action ('freeze', 'activate', 'terminate', 'change_tier') is required",
+      code: 'EMPLOYEE_BATCH_INVALID_ACTION'
+    };
+  }
+
+  if (!Array.isArray(employee_ids) || employee_ids.length === 0) {
+    throw {
+      status: 400,
+      message: 'employee_ids array cannot be empty',
+      code: 'EMPLOYEE_BATCH_EMPTY_IDS'
+    };
+  }
+
+  if (action === 'change_tier') {
+    const cleanTier = String(tier || '').toLowerCase().trim();
+    if (!VALID_TIERS.includes(cleanTier)) {
+      throw {
+        status: 400,
+        message: `Invalid tier '${tier}'. Allowed: ${VALID_TIERS.join(', ')}`,
+        code: 'EMPLOYEE_INVALID_TIER'
+      };
+    }
+  }
+
+  // Filter to employees that belong to orgId
+  const { data: matchedEmployees, error: fetchError } = await supabase
+    .from('employees')
+    .select('id, email, status, tier, user_id')
+    .eq('org_id', orgId)
+    .in('id', employee_ids);
+
+  if (fetchError) {
+    throw { status: 500, message: fetchError.message, code: 'EMPLOYEE_BATCH_FETCH_FAILED' };
+  }
+
+  const results = {
+    action,
+    total: employee_ids.length,
+    matched: (matchedEmployees || []).length,
+    succeeded: 0,
+    failed: 0,
+    errors: []
+  };
+
+  if (!matchedEmployees || matchedEmployees.length === 0) {
+    return results;
+  }
+
+  const matchedIds = matchedEmployees.map((e) => e.id);
+
+  if (action === 'freeze') {
+    const { error: updErr } = await supabase
+      .from('employees')
+      .update({ status: 'frozen', updated_at: new Date().toISOString() })
+      .in('id', matchedIds);
+
+    if (updErr) {
+      results.failed = matchedIds.length;
+      results.errors.push({ error: updErr.message });
+      return results;
+    }
+
+    // Suspend active eligibility
+    await supabase
+      .from('eligibility')
+      .update({ status: 'suspended' })
+      .in('employee_id', matchedIds)
+      .eq('status', 'active');
+
+    for (const emp of matchedEmployees) {
+      if (emp.user_id) {
+        try {
+          await supabase.auth.admin.updateUserById(emp.user_id, {
+            app_metadata: { status: 'frozen' }
+          });
+        } catch (e) {}
+      }
+    }
+
+    results.succeeded = matchedIds.length;
+  } else if (action === 'activate') {
+    const { error: updErr } = await supabase
+      .from('employees')
+      .update({ status: 'active', updated_at: new Date().toISOString() })
+      .in('id', matchedIds);
+
+    if (updErr) {
+      results.failed = matchedIds.length;
+      results.errors.push({ error: updErr.message });
+      return results;
+    }
+
+    // Reactivate suspended eligibility
+    await supabase
+      .from('eligibility')
+      .update({ status: 'active' })
+      .in('employee_id', matchedIds)
+      .eq('status', 'suspended');
+
+    for (const emp of matchedEmployees) {
+      if (emp.user_id) {
+        try {
+          await supabase.auth.admin.updateUserById(emp.user_id, {
+            app_metadata: { status: 'active' }
+          });
+        } catch (e) {}
+      }
+    }
+
+    results.succeeded = matchedIds.length;
+  } else if (action === 'terminate') {
+    const { error: updErr } = await supabase
+      .from('employees')
+      .update({ status: 'terminated', updated_at: new Date().toISOString() })
+      .in('id', matchedIds);
+
+    if (updErr) {
+      results.failed = matchedIds.length;
+      results.errors.push({ error: updErr.message });
+      return results;
+    }
+
+    // Expire all eligibility
+    await supabase
+      .from('eligibility')
+      .update({ status: 'expired' })
+      .in('employee_id', matchedIds);
+
+    for (const emp of matchedEmployees) {
+      if (emp.user_id) {
+        try {
+          await supabase.auth.admin.updateUserById(emp.user_id, {
+            app_metadata: { status: 'terminated' }
+          });
+        } catch (e) {}
+      }
+    }
+
+    results.succeeded = matchedIds.length;
+  } else if (action === 'change_tier') {
+    const cleanTier = String(tier).toLowerCase().trim();
+
+    const { error: updErr } = await supabase
+      .from('employees')
+      .update({ tier: cleanTier, updated_at: new Date().toISOString() })
+      .in('id', matchedIds);
+
+    if (updErr) {
+      results.failed = matchedIds.length;
+      results.errors.push({ error: updErr.message });
+      return results;
+    }
+
+    // Find benefit for new tier
+    const { data: targetBenefit } = await supabase
+      .from('benefits')
+      .select('id')
+      .eq('org_id', orgId)
+      .eq('status', 'active')
+      .eq('tier', cleanTier)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (targetBenefit) {
+      await supabase
+        .from('eligibility')
+        .update({ status: 'expired' })
+        .in('employee_id', matchedIds)
+        .eq('status', 'active');
+
+      const newEligibilities = matchedEmployees.map((emp) => ({
+        employee_id: emp.id,
+        benefit_id: targetBenefit.id,
+        status: emp.status === 'active' ? 'active' : 'suspended'
+      }));
+
+      await supabase.from('eligibility').insert(newEligibilities);
+    }
+
+    results.succeeded = matchedIds.length;
+  }
+
+  return results;
+}
+
 module.exports = {
   parseCsv,
   createSingleEmployee,
@@ -632,6 +849,7 @@ module.exports = {
   freezeEmployee,
   activateEmployee,
   terminateEmployee,
+  batchUpdateEmployees,
   VALID_TIERS,
   VALID_STATUSES
 };

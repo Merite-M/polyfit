@@ -8,6 +8,7 @@ const {
   freezeEmployee,
   activateEmployee,
   terminateEmployee,
+  batchUpdateEmployees,
   VALID_TIERS,
   VALID_STATUSES
 } = require('../services/employeeService');
@@ -123,6 +124,41 @@ router.post('/bulk', requireAuth, orgScope, requireRole('super_admin', 'polyfit_
     console.error('[employeeRoutes/bulk] Error:', error);
     return res.status(500).json({
       error: 'Internal server error processing bulk employee import',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+/**
+ * POST /api/organizations/:orgId/employees/batch
+ * Execute batch action on multiple employees (freeze, activate, terminate, change_tier)
+ */
+router.post('/batch', requireAuth, orgScope, requireRole('super_admin', 'polyfit_ops', 'org_admin'), async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const { action, employee_ids, tier } = req.body || {};
+
+    const result = await batchUpdateEmployees(orgId, {
+      action,
+      employee_ids,
+      tier
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Batch action '${action}' processed successfully`,
+      ...result
+    });
+  } catch (error) {
+    if (error.status && error.code) {
+      return res.status(error.status).json({
+        error: error.message,
+        code: error.code
+      });
+    }
+    console.error('[employeeRoutes/batch] Error:', error);
+    return res.status(500).json({
+      error: 'Internal server error executing batch action',
       code: 'INTERNAL_ERROR'
     });
   }
@@ -257,11 +293,36 @@ router.get('/:id', requireAuth, orgScope, async (req, res) => {
       .eq('status', 'verified')
       .gte('check_in_at', startOfMonth);
 
+    // Fetch recent verified visit timeline (up to 10)
+    const { data: recentVisits } = await supabase
+      .from('visits')
+      .select(`
+        id,
+        check_in_at,
+        check_out_at,
+        verification_method,
+        status,
+        provider_locations (
+          id,
+          name,
+          city,
+          providers (
+            id,
+            name,
+            category
+          )
+        )
+      `)
+      .eq('employee_id', id)
+      .order('check_in_at', { ascending: false })
+      .limit(10);
+
     return res.status(200).json({
       employee: {
         ...employee,
         eligibility: eligibility || null,
-        visits_this_month: visitsThisMonth || 0
+        visits_this_month: visitsThisMonth || 0,
+        recent_visits: recentVisits || []
       }
     });
   } catch (error) {
@@ -368,6 +429,8 @@ router.patch('/:id', requireAuth, orgScope, requireRole('super_admin', 'polyfit_
         .eq('org_id', orgId)
         .eq('status', 'active')
         .eq('tier', updatePayload.tier)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (newBenefit) {
