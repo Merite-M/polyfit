@@ -118,8 +118,11 @@ Claude,Ndayishimiye,claude@example.com,EMP-888,Engineering,standard`;
 
   // ─── 3. Domain Model Validation Constants ───────────────────────────────────
   describe('Domain Model & Tier Constraints', () => {
-    test('VALID_TIERS includes basic, standard, and premium', () => {
-      assert.deepEqual(VALID_TIERS, ['basic', 'standard', 'premium']);
+    test('VALID_TIERS includes basic, standard, premium, and executive', () => {
+      assert.ok(VALID_TIERS.includes('basic'));
+      assert.ok(VALID_TIERS.includes('standard'));
+      assert.ok(VALID_TIERS.includes('premium'));
+      assert.ok(VALID_TIERS.includes('executive'));
     });
 
     test('VALID_STATUSES includes active, frozen, and terminated', () => {
@@ -323,7 +326,12 @@ Claude,Ndayishimiye,claude@example.com,EMP-888,Engineering,standard`;
   // ─── 5. Service & Live Database Integration Tests ───────────────────────────
   describe('Live Database Services & Eligibility Engine (< 200ms SLA)', () => {
     const { supabase } = require('../services/supabaseService');
-    const { createBenefitPlan, updateBenefitPlan } = require('../services/benefitService');
+    const {
+      createBenefitPlan,
+      updateBenefitPlan,
+      assignBenefitPlan,
+      calculateBenefitForecast
+    } = require('../services/benefitService');
     const {
       createSingleEmployee,
       freezeEmployee,
@@ -556,6 +564,62 @@ Claude,Ndayishimiye,claude@example.com,EMP-888,Engineering,standard`;
 
       // Clean up
       await supabase.from('employees').delete().in('id', [emp1.id, emp2.id]);
+    });
+
+    test('BenefitService: assigns employees to plan by department with immediate/scheduled timing', async () => {
+      if (!supabase || !createdBenefitId) return;
+
+      const tempDeptEmp = await createSingleEmployee(testOrgId, {
+        full_name: 'Dept Assignee',
+        email: `assign.dept.${Date.now()}@example.com`,
+        department: 'Operations',
+        tier: 'basic'
+      });
+
+      assert.ok(tempDeptEmp.id);
+
+      const assignRes = await assignBenefitPlan(testOrgId, createdBenefitId, {
+        departments: ['Operations'],
+        effectiveTiming: 'immediate'
+      });
+
+      assert.equal(assignRes.success, true);
+      assert.ok(assignRes.assigned_count >= 1);
+      assert.equal(assignRes.benefit_id, createdBenefitId);
+      assert.equal(assignRes.effective_timing, 'immediate');
+
+      // Verify employee eligibility was updated to point to createdBenefitId
+      const { data: activeElig } = await supabase
+        .from('eligibility')
+        .select('benefit_id, status')
+        .eq('employee_id', tempDeptEmp.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      assert.ok(activeElig);
+      assert.equal(activeElig.benefit_id, createdBenefitId);
+
+      // Clean up
+      await supabase.from('employees').delete().eq('id', tempDeptEmp.id);
+    });
+
+    test('BenefitService: calculates real-time budget forecast with Rwandan 30% CIT shield', async () => {
+      if (!supabase) return;
+
+      const forecast = await calculateBenefitForecast(testOrgId, { avgRate: 5000 });
+
+      assert.ok(forecast);
+      assert.equal(forecast.currency, 'RWF');
+      assert.equal(forecast.avg_visit_rate, 5000);
+      assert.ok(typeof forecast.total_headcount === 'number');
+      assert.ok(typeof forecast.total_projected_visits === 'number');
+      assert.ok(typeof forecast.total_employer_liability === 'number');
+      assert.ok(Array.isArray(forecast.tier_breakdown));
+      assert.equal(forecast.tax_incentive.corporate_income_tax_rate, 0.30);
+      assert.equal(
+        forecast.tax_incentive.tax_shield_amount,
+        Math.round(forecast.total_employer_liability * 0.30)
+      );
     });
   });
 });

@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const { supabase } = require('./supabaseService');
 
-const VALID_TIERS = ['basic', 'standard', 'premium'];
+const VALID_TIERS = ['basic', 'standard', 'premium', 'executive'];
 const VALID_STATUSES = ['active', 'frozen', 'terminated'];
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

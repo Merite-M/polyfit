@@ -4,7 +4,9 @@ const {
   createBenefitPlan,
   getBenefitPlans,
   getBenefitPlanById,
-  updateBenefitPlan
+  updateBenefitPlan,
+  assignBenefitPlan,
+  calculateBenefitForecast
 } = require('../services/benefitService');
 
 // Merge params to access :orgId from parent router
@@ -28,7 +30,9 @@ router.post('/', requireAuth, orgScope, requireRole('super_admin', 'polyfit_ops'
       allowed_locations,
       budget_cap_per_employee,
       is_family_eligible,
-      description
+      description,
+      status,
+      effective_timing
     } = req.body;
 
     const benefit = await createBenefitPlan(orgId, {
@@ -40,7 +44,9 @@ router.post('/', requireAuth, orgScope, requireRole('super_admin', 'polyfit_ops'
       allowed_locations,
       budget_cap_per_employee,
       is_family_eligible,
-      description
+      description,
+      status,
+      effective_timing
     });
 
     return res.status(201).json({
@@ -67,7 +73,8 @@ router.post('/', requireAuth, orgScope, requireRole('super_admin', 'polyfit_ops'
 router.get('/', requireAuth, orgScope, async (req, res) => {
   try {
     const { orgId } = req.params;
-    const benefits = await getBenefitPlans(orgId);
+    const { status } = req.query;
+    const benefits = await getBenefitPlans(orgId, { status });
 
     return res.status(200).json({
       benefits: benefits || [],
@@ -80,6 +87,66 @@ router.get('/', requireAuth, orgScope, async (req, res) => {
     console.error('[benefitRoutes/list] Error:', error);
     return res.status(500).json({
       error: 'Internal server error listing benefit plans',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+/**
+ * GET /api/organizations/:orgId/benefits/forecast
+ * Calculate real-time budget forecasting across tiers and headcounts
+ */
+router.get('/forecast', requireAuth, orgScope, async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const { avgRate } = req.query;
+    const forecast = await calculateBenefitForecast(orgId, {
+      avgRate: avgRate ? Number(avgRate) : undefined
+    });
+
+    return res.status(200).json({
+      success: true,
+      forecast
+    });
+  } catch (error) {
+    if (error.status && error.code) {
+      return res.status(error.status).json({ error: error.message, code: error.code });
+    }
+    console.error('[benefitRoutes/forecast] Error:', error);
+    return res.status(500).json({
+      error: 'Internal server error calculating benefit forecast',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+/**
+ * POST /api/organizations/:orgId/benefits/:id/assign
+ * Assign employees to plan individually or bulk by department
+ */
+router.post('/:id/assign', requireAuth, orgScope, requireRole('super_admin', 'polyfit_ops', 'org_admin'), async (req, res) => {
+  try {
+    const { orgId, id } = req.params;
+    const { employeeIds, departments, effectiveTiming } = req.body;
+
+    const result = await assignBenefitPlan(orgId, id, {
+      employeeIds,
+      departments,
+      effectiveTiming
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Assigned ${result.assigned_count} employees to benefit plan`,
+      ...result
+    });
+  } catch (error) {
+    if (error.status && error.code) {
+      return res.status(error.status).json({ error: error.message, code: error.code });
+    }
+    console.error('[benefitRoutes/assign] Error:', error);
+    return res.status(500).json({
+      error: 'Internal server error assigning employees to benefit plan',
       code: 'INTERNAL_ERROR'
     });
   }

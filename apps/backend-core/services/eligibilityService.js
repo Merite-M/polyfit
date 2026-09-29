@@ -295,6 +295,43 @@ async function evaluateEmployeeEligibility(arg1, arg2, arg3, arg4, arg5) {
 
   const remainingVisits = maxVisits !== null ? Math.max(0, maxVisits - usedVisits) : null;
 
+  // Real-time Co-Pay Calculation & Budget Cap Enforcement
+  const perVisitRate = Number(contract.per_visit_rate || 0);
+  const copayPercentage = Number(benefit.co_pay_percentage || 0);
+  const employeeCopay = Math.round(perVisitRate * (copayPercentage / 100));
+  const employerSubsidy = Math.max(0, perVisitRate - employeeCopay);
+
+  const budgetCap = benefit.budget_cap_per_employee !== null && benefit.budget_cap_per_employee !== undefined
+    ? Number(benefit.budget_cap_per_employee)
+    : null;
+
+  let budgetCapExceeded = false;
+  let remainingBudget = null;
+
+  if (budgetCap !== null && budgetCap > 0) {
+    const estimatedAccruedSubsidy = usedVisits * employerSubsidy;
+    remainingBudget = Math.max(0, budgetCap - estimatedAccruedSubsidy);
+    if (estimatedAccruedSubsidy >= budgetCap) {
+      budgetCapExceeded = true;
+    }
+  }
+
+  const copayBreakdown = {
+    percentage: copayPercentage,
+    per_visit_rate: perVisitRate,
+    employee_share_amount: budgetCapExceeded ? perVisitRate : employeeCopay,
+    employer_subsidy_amount: budgetCapExceeded ? 0 : employerSubsidy,
+    currency: 'RWF',
+    budget_cap_per_employee: budgetCap,
+    remaining_budget_this_month: remainingBudget,
+    budget_cap_exceeded: budgetCapExceeded,
+    rule_applied: budgetCapExceeded
+      ? 'BUDGET_CAP_EXCEEDED_FULL_COPAY'
+      : copayPercentage > 0
+        ? 'STANDARD_COPAY_SPLIT'
+        : 'FULLY_SUBSIDIZED'
+  };
+
   return {
     eligible: true,
     reason: 'Employee is eligible for visit',
@@ -316,13 +353,14 @@ async function evaluateEmployeeEligibility(arg1, arg2, arg3, arg4, arg5) {
       name: location.name,
       address: location.address
     },
+    copay: copayBreakdown,
     benefit: {
       id: benefit.id,
       name: benefit.name,
       tier: benefit.tier || null,
-      co_pay_percentage: benefit.co_pay_percentage || 0,
+      co_pay_percentage: copayPercentage,
       max_monthly_visits: maxVisits,
-      budget_cap_per_employee: benefit.budget_cap_per_employee || null
+      budget_cap_per_employee: budgetCap
     },
     contract: {
       id: contract.id,
