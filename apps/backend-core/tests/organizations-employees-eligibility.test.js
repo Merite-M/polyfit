@@ -350,7 +350,7 @@ Claude,Ndayishimiye,claude@example.com,EMP-888,Engineering,standard`;
       if (!supabase) return;
 
       const plan = await createBenefitPlan(testOrgId, {
-        name: 'TechCorp Standard Wellness Plan',
+        name: 'Test Ephemeral Wellness Plan',
         tier: 'standard',
         max_monthly_visits: 8,
         co_pay_percentage: 15,
@@ -359,7 +359,7 @@ Claude,Ndayishimiye,claude@example.com,EMP-888,Engineering,standard`;
       });
 
       assert.ok(plan.id);
-      assert.equal(plan.name, 'TechCorp Standard Wellness Plan');
+      assert.equal(plan.name, 'Test Ephemeral Wellness Plan');
       assert.equal(plan.tier, 'standard');
       assert.equal(plan.max_monthly_visits, 8);
       assert.equal(Number(plan.co_pay_percentage), 15);
@@ -620,6 +620,12 @@ Claude,Ndayishimiye,claude@example.com,EMP-888,Engineering,standard`;
         forecast.tax_incentive.tax_shield_amount,
         Math.round(forecast.total_employer_liability * 0.30)
       );
+
+      // Clean up test benefit plan
+      if (supabase && createdBenefitId) {
+        await supabase.from('eligibility').delete().eq('benefit_id', createdBenefitId);
+        await supabase.from('benefits').delete().eq('id', createdBenefitId);
+      }
     });
   });
 });

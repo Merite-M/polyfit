@@ -28,62 +28,15 @@ import { BudgetForecasterCard } from "@/components/corporate/BudgetForecasterCar
 import { PlanBuilderModal } from "@/components/corporate/PlanBuilderModal";
 import { AssignPlanModal } from "@/components/corporate/AssignPlanModal";
 
-const FALLBACK_PLANS: BenefitPlan[] = [
-  {
-    id: "plan-exec-01",
-    name: "TechCorp Executive Wellness Tier",
-    tier: "executive",
-    status: "active",
-    max_monthly_visits: 16,
-    co_pay_percentage: 0,
-    allowed_provider_categories: ["gym", "pool", "studio", "clinic", "wellness_center"],
-    budget_cap_per_employee: 120000,
-    is_family_eligible: true,
-    description: "Unrestricted access across all network venues including boutique studios and physio clinics. 100% employer subsidized.",
-    enrolled_count: 24,
-    departments: ["Executive", "Finance"],
-    department_counts: { Executive: 8, Finance: 16 },
-    estimated_monthly_liability: 1920000
-  },
-  {
-    id: "plan-std-02",
-    name: "TechCorp Standard Wellness Plan",
-    tier: "standard",
-    status: "active",
-    max_monthly_visits: 8,
-    co_pay_percentage: 15,
-    allowed_provider_categories: ["gym", "pool", "studio"],
-    budget_cap_per_employee: 60000,
-    is_family_eligible: false,
-    description: "Core corporate wellness benefit covering premium gyms, lap pools, and yoga studios with 15% co-pay.",
-    enrolled_count: 98,
-    departments: ["Engineering", "Marketing", "HR"],
-    department_counts: { Engineering: 52, Marketing: 32, HR: 14 },
-    estimated_monthly_liability: 3332000
-  },
-  {
-    id: "plan-basic-03",
-    name: "Essential Fitness & Pool Plan",
-    tier: "basic",
-    status: "active",
-    max_monthly_visits: 4,
-    co_pay_percentage: 40,
-    allowed_provider_categories: ["gym", "pool"],
-    budget_cap_per_employee: 30000,
-    is_family_eligible: false,
-    description: "Essential fitness benefit for shift and operations teams. Covers network gyms and public lap pools.",
-    enrolled_count: 28,
-    departments: ["Operations"],
-    department_counts: { Operations: 28 },
-    estimated_monthly_liability: 336000
-  }
-];
+import { TECHCORP_CANONICAL_DATA } from "@/lib/constants";
 
 export default function PlansPage() {
   const { organizationId, isDemoMode } = useAuth();
-  const activeOrgId = organizationId || "c79a9982-4477-4336-a24b-561419f6c43b";
+  const activeOrgId = organizationId || TECHCORP_CANONICAL_DATA.organization.id;
 
-  const [plans, setPlans] = useState<BenefitPlan[]>(FALLBACK_PLANS);
+  const [plans, setPlans] = useState<BenefitPlan[]>(
+    TECHCORP_CANONICAL_DATA.plans as unknown as BenefitPlan[]
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"all" | "active" | "draft">("all");
   const [activeView, setActiveView] = useState<"grid" | "matrix" | "forecast">("grid");
@@ -111,11 +64,11 @@ export default function PlansPage() {
       if (res && Array.isArray(res.benefits) && res.benefits.length > 0) {
         setPlans(res.benefits);
       } else {
-        setPlans(FALLBACK_PLANS);
+        setPlans(TECHCORP_CANONICAL_DATA.plans as unknown as BenefitPlan[]);
       }
     } catch (err) {
-      console.warn("[PlansPage] Backend unreachable or demo mode, using fallback plans:", err);
-      setPlans(FALLBACK_PLANS);
+      console.warn("[PlansPage] Backend unreachable or demo mode, using canonical plans:", err);
+      setPlans(TECHCORP_CANONICAL_DATA.plans as unknown as BenefitPlan[]);
     } finally {
       setIsLoading(false);
     }

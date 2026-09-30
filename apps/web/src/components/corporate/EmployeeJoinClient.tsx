@@ -17,11 +17,12 @@ import {
 import { apiFetch } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
-interface OrgConfig {
+export interface OrgConfig {
   id: string;
   name: string;
   slug: string;
-  domain: string;
+  domains?: string[];
+  domain?: string;
   tierName: string;
   maxVisits: number;
   coPayPercent: number;
@@ -43,6 +44,14 @@ export function EmployeeJoinClient({ orgConfig }: EmployeeJoinClientProps) {
   const [isSuccess, setIsSuccess] = useState(false);
   const [createdPass, setCreatedPass] = useState<any | null>(null);
 
+  const allowedDomains = (
+    orgConfig.domains?.length
+      ? orgConfig.domains
+      : orgConfig.domain
+      ? [orgConfig.domain]
+      : []
+  ).map((d) => d.toLowerCase());
+
   // Validate corporate domain on blur or typing
   const validateEmail = (val: string) => {
     if (!val) {
@@ -56,9 +65,9 @@ export function EmployeeJoinClient({ orgConfig }: EmployeeJoinClientProps) {
     }
 
     const emailDomain = val.split("@")[1]?.toLowerCase();
-    if (orgConfig.domain && emailDomain !== orgConfig.domain.toLowerCase()) {
+    if (allowedDomains.length > 0 && !allowedDomains.includes(emailDomain)) {
       setEmailError(
-        `Must use your official @${orgConfig.domain} company email address.`
+        `Must use your official @${allowedDomains.join(" or @")} company email address.`
       );
       return false;
     }
@@ -76,9 +85,9 @@ export function EmployeeJoinClient({ orgConfig }: EmployeeJoinClientProps) {
 
     setIsSubmitting(true);
     try {
-      // Register or claim employee pass via backend API
-      await apiFetch<any>(
-        `/api/organizations/${orgConfig.id}/employees`,
+      // Register or claim employee pass via public backend API (unauthenticated self-join)
+      const res = await apiFetch<any>(
+        `/api/public/organizations/${orgConfig.slug}/join`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -87,22 +96,26 @@ export function EmployeeJoinClient({ orgConfig }: EmployeeJoinClientProps) {
             email: email.trim().toLowerCase(),
             employee_id_external: employeeId.trim() || undefined,
             department: department,
-            tier: "standard",
-            status: "active",
           }),
         }
       );
 
+      const passPlan = res?.plan || {};
       setCreatedPass({
-        employeeName: fullName.trim(),
-        email: email.trim(),
-        planName: orgConfig.tierName,
-        maxVisits: orgConfig.maxVisits,
-        coPayPercent: orgConfig.coPayPercent,
-        orgName: orgConfig.name,
+        employeeName: res?.employee?.full_name || fullName.trim(),
+        email: res?.employee?.email || email.trim(),
+        planName: passPlan.name || orgConfig.tierName,
+        maxVisits: passPlan.max_visits_per_month || orgConfig.maxVisits,
+        coPayPercent: passPlan.co_pay_percentage ?? orgConfig.coPayPercent,
+        orgName: res?.organization?.name || orgConfig.name,
       });
       setIsSuccess(true);
-    } catch {
+    } catch (err: any) {
+      if (err?.status === 400 && err.message) {
+        setEmailError(err.message);
+        setIsSubmitting(false);
+        return;
+      }
       // In offline/demo mode, deliver instant pass experience gracefully
       setCreatedPass({
         employeeName: fullName.trim(),
@@ -145,7 +158,7 @@ export function EmployeeJoinClient({ orgConfig }: EmployeeJoinClientProps) {
               </span>
             </div>
             <span className="font-mono text-[#28D17C] font-semibold bg-white px-2.5 py-1 rounded-lg border border-[#E2E8F0]">
-              @{orgConfig.domain}
+              @{allowedDomains.join(", @") || "company.rw"}
             </span>
           </div>
 

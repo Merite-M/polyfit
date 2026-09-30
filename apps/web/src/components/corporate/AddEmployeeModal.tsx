@@ -36,7 +36,7 @@ export function AddEmployeeModal({
   const [email, setEmail] = useState("");
   const [employeeIdExternal, setEmployeeIdExternal] = useState("");
   const [department, setDepartment] = useState("Engineering");
-  const [tier, setTier] = useState<"basic" | "standard" | "premium">("standard");
+  const [tier, setTier] = useState<"basic" | "standard" | "premium" | "executive">("standard");
   const [status, setStatus] = useState<"active" | "frozen">("active");
   const [sendInvite, setSendInvite] = useState(true);
 
@@ -229,12 +229,13 @@ export function AddEmployeeModal({
                 </label>
                 <select
                   value={tier}
-                  onChange={(e) => setTier(e.target.value as "basic" | "standard" | "premium")}
+                  onChange={(e) => setTier(e.target.value as "basic" | "standard" | "premium" | "executive")}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#E2E8F0] bg-white text-xs font-medium text-[#0B1F33] focus:outline-none focus:border-[#28D17C] focus:ring-1 focus:ring-[#28D17C]"
                 >
                   <option value="basic">Basic (4 visits/mo • 20% co-pay)</option>
-                  <option value="standard">Standard (10 visits/mo • 10% co-pay)</option>
+                  <option value="standard">Standard (8 visits/mo • 15% co-pay)</option>
                   <option value="premium">Premium (20 visits/mo • 100% funded)</option>
+                  <option value="executive">Executive (16 visits/mo • 100% funded • All Venues)</option>
                 </select>
               </div>
 

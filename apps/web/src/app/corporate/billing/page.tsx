@@ -22,95 +22,25 @@ import {
   Building,
 } from "lucide-react";
 
-// Default realistic dataset for TechCorp Rwanda demo & offline resilience
-const FALLBACK_INVOICES: InvoiceRecord[] = [
-  {
-    id: "inv-2026-10",
-    invoice_number: "PF-INV-2026-10-0082",
-    billing_period_start: "2026-10-01",
-    billing_period_end: "2026-10-31",
-    total_visits: 145,
-    total_amount: 855500,
-    tax_amount: 130500,
-    status: "sent",
-    due_date: "2026-11-15",
-    created_at: "2026-09-28T09:00:00Z",
-    organizations: {
-      name: "TechCorp Rwanda",
-      tax_id: "108392019",
-      billing_email: "finance@techcorp.rw",
-    },
-  },
-  {
-    id: "inv-2026-09",
-    invoice_number: "PF-INV-2026-09-0045",
-    billing_period_start: "2026-09-01",
-    billing_period_end: "2026-09-30",
-    total_visits: 385,
-    total_amount: 2271500,
-    tax_amount: 346500,
-    status: "overdue",
-    due_date: "2026-09-25",
-    created_at: "2026-09-20T08:00:00Z",
-    organizations: {
-      name: "TechCorp Rwanda",
-      tax_id: "108392019",
-      billing_email: "finance@techcorp.rw",
-    },
-  },
-  {
-    id: "inv-2026-08",
-    invoice_number: "PF-INV-2026-08-0027",
-    billing_period_start: "2026-08-01",
-    billing_period_end: "2026-08-31",
-    total_visits: 340,
-    total_amount: 2006000,
-    tax_amount: 306000,
-    status: "paid",
-    due_date: "2026-09-30",
-    paid_at: "2026-09-12T10:15:00Z",
-    created_at: "2026-08-31T23:59:00Z",
-    organizations: {
-      name: "TechCorp Rwanda",
-      tax_id: "108392019",
-      billing_email: "finance@techcorp.rw",
-    },
-  },
-  {
-    id: "inv-2026-07",
-    invoice_number: "PF-INV-2026-07-0014",
-    billing_period_start: "2026-07-01",
-    billing_period_end: "2026-07-31",
-    total_visits: 280,
-    total_amount: 1652000,
-    tax_amount: 252000,
-    status: "paid",
-    due_date: "2026-08-30",
-    paid_at: "2026-08-18T14:32:00Z",
-    created_at: "2026-07-31T23:59:00Z",
-    organizations: {
-      name: "TechCorp Rwanda",
-      tax_id: "108392019",
-      billing_email: "finance@techcorp.rw",
-    },
-  },
-];
+import { TECHCORP_CANONICAL_DATA } from "@/lib/constants";
 
 export default function BillingPage() {
   const { organizationId, isDemoMode } = useAuth();
-  const activeOrgId = organizationId || "c79a9982-4477-4336-a24b-561419f6c43b";
+  const activeOrgId = organizationId || TECHCORP_CANONICAL_DATA.organization.id;
 
-  const [invoices, setInvoices] = useState<InvoiceRecord[]>(FALLBACK_INVOICES);
+  const [invoices, setInvoices] = useState<InvoiceRecord[]>(
+    TECHCORP_CANONICAL_DATA.invoices as unknown as InvoiceRecord[]
+  );
   const [summary, setSummary] = useState({
-    currentBalance: 3127000,
-    ytdTotalSpent: 6785000,
-    ytdTotalVisits: 1150,
-    avgCostPerVisit: 5900,
-    citTaxShieldRwf: 2035500,
-    overdueAmount: 2271500,
+    currentBalance: TECHCORP_CANONICAL_DATA.economics.currentBalance,
+    ytdTotalSpent: TECHCORP_CANONICAL_DATA.economics.ytdTotalSpent,
+    ytdTotalVisits: TECHCORP_CANONICAL_DATA.economics.ytdTotalVisits,
+    avgCostPerVisit: TECHCORP_CANONICAL_DATA.economics.avgCostPerVisit,
+    citTaxShieldRwf: TECHCORP_CANONICAL_DATA.economics.citTaxShieldRwf,
+    overdueAmount: TECHCORP_CANONICAL_DATA.economics.overdueAmount,
     overdueCount: 1,
-    hasOverdue: true,
-    dueDateStr: "Oct 31, 2026",
+    hasOverdue: TECHCORP_CANONICAL_DATA.economics.hasOverdue,
+    dueDateStr: TECHCORP_CANONICAL_DATA.economics.dueDateStr,
     monthlyTrends: [] as any[],
   });
 

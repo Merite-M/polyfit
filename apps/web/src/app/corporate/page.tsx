@@ -32,44 +32,8 @@ import {
   CreditCard,
   MessageSquare,
 } from "lucide-react";
+import { TECHCORP_CANONICAL_DATA } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-
-// Verified fallback enterprise dataset for TechCorp Rwanda demo & offline resilience
-const TECHCORP_DEMO_DATA = {
-  organization: {
-    id: "c79a9982-4477-4336-a24b-561419f6c43b",
-    name: "TechCorp Rwanda",
-    slug: "techcorp-rwanda",
-    domain: "techcorp.rw",
-    industry: "Technology",
-  },
-  funnel: {
-    totalEligible: 1217,
-    registeredMembers: 789,
-    activeBeneficiaries: 412,
-    totalVisits: 1480,
-    newMembers30d: 54,
-    newBeneficiaries30d: 28,
-    avgVisitsPerActive: 3.6,
-  },
-  economics: {
-    currentInvoiceRwf: 1892000,
-    invoiceStatus: "paid" as const,
-    invoiceNumber: "PF-INV-2026-09-082",
-    pmpmSpendRwf: 4592,
-    citTaxShieldRwf: 567600,
-  },
-  wellness: {
-    wellnessHour: "17:00 - 18:00",
-    peakDay: "Wednesday",
-    categories: {
-      gym: 710,
-      pool: 355,
-      studio: 236,
-      clinic: 179,
-    },
-  },
-};
 
 export default function CorporateDashboardPage() {
   const { organizationId } = useAuth();
@@ -79,14 +43,14 @@ export default function CorporateDashboardPage() {
   const [notification, setNotification] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Live state with offline fallbacks
-  const [funnelData, setFunnelData] = useState(TECHCORP_DEMO_DATA.funnel);
-  const [economicsData, setEconomicsData] = useState(TECHCORP_DEMO_DATA.economics);
+  // Live state initialized from canonical production-grade TechCorp Rwanda dataset
+  const [funnelData, setFunnelData] = useState(TECHCORP_CANONICAL_DATA.funnel);
+  const [economicsData, setEconomicsData] = useState(TECHCORP_CANONICAL_DATA.economics);
 
-  const activeOrgId = organizationId || TECHCORP_DEMO_DATA.organization.id;
-  const activeOrgName = TECHCORP_DEMO_DATA.organization.name;
-  const activeOrgSlug = TECHCORP_DEMO_DATA.organization.slug;
-  const corporateDomain = TECHCORP_DEMO_DATA.organization.domain;
+  const activeOrgId = organizationId || TECHCORP_CANONICAL_DATA.organization.id;
+  const activeOrgName = TECHCORP_CANONICAL_DATA.organization.name;
+  const activeOrgSlug = TECHCORP_CANONICAL_DATA.organization.slug;
+  const corporateDomain = TECHCORP_CANONICAL_DATA.organization.allowed_domains[0] || "techcorp.rw";
 
   const showToast = (msg: string) => {
     setNotification(msg);
@@ -156,38 +120,53 @@ export default function CorporateDashboardPage() {
 
   // 1-Click "Download Census" Handler (standard RFC 4180 CSV export)
   const handleDownloadCensus = () => {
-    const headers = ["Employee ID", "Full Name", "Work Email", "Department", "Benefit Tier", "Status", "Joined Date"];
-    const rows = [
-      ["TC-001", "Jean Mugabo", "jean.mugabo@techcorp.rw", "Engineering", "standard", "active", "2026-01-15"],
-      ["TC-002", "Marie Uwimana", "marie.uwimana@techcorp.rw", "Marketing", "standard", "active", "2026-02-01"],
-      ["TC-003", "Patrick Niyonzima", "patrick.niyonzima@techcorp.rw", "Finance", "premium", "active", "2026-02-15"],
-      ["TC-004", "Claudine Mukandekeza", "claudine.mukandekeza@techcorp.rw", "HR", "standard", "active", "2026-03-01"],
-      ["TC-005", "Eric Habimana", "eric.habimana@techcorp.rw", "Operations", "basic", "active", "2026-03-10"],
-      ["TC-006", "Alice Gasana", "alice.gasana@techcorp.rw", "Engineering", "premium", "active", "2026-04-05"],
-      ["TC-007", "David Karekezi", "david.karekezi@techcorp.rw", "Sales", "standard", "active", "2026-05-12"],
-      ["TC-008", "Grace Umutoni", "grace.umutoni@techcorp.rw", "Engineering", "premium", "active", "2026-06-20"],
+    const headers = [
+      "Employee ID",
+      "Full Name",
+      "Work Email",
+      "Department",
+      "Benefit Tier",
+      "Status",
+      "Joined Date",
     ];
+    const rows = TECHCORP_CANONICAL_DATA.employees.map((emp) => [
+      emp.employee_id_external || "TC-000",
+      emp.full_name,
+      emp.email,
+      emp.department,
+      emp.tier,
+      emp.status,
+      emp.created_at?.split("T")[0] || "2026-01-15",
+    ]);
 
     const escapeCell = (str: string) => `"${str.replace(/"/g, '""')}"`;
     const csvContent =
       "data:text/csv;charset=utf-8," +
-      [headers.map(escapeCell).join(","), ...rows.map((row) => row.map(escapeCell).join(","))].join("\r\n");
+      [
+        headers.map(escapeCell).join(","),
+        ...rows.map((row) => row.map(escapeCell).join(",")),
+      ].join("\r\n");
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `polyfit-census-${activeOrgSlug}-sep-2026.csv`);
+    link.setAttribute(
+      "download",
+      `polyfit-census-${activeOrgSlug}-sep-2026.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    showToast("Employee roster census exported successfully (8 active employee records)");
+    showToast(
+      `Employee roster census exported successfully (${rows.length} verified records)`
+    );
   };
 
   // 1-Click "Download Official EBM Tax PDF"
   const handleDownloadInvoicePdf = () => {
     generateRraEbmInvoicePdf({
-      id: "inv-2026-09-082",
+      id: "PF-INV-2026-09-0045",
       invoice_number: economicsData.invoiceNumber,
       billing_period_start: "2026-09-01",
       billing_period_end: "2026-09-30",
@@ -197,39 +176,38 @@ export default function CorporateDashboardPage() {
         billing_email: "finance@techcorp.rw",
       },
       status: economicsData.invoiceStatus,
-      paid_at: "2026-09-29T10:15:00Z",
-      due_date: "2026-10-31",
+      due_date: "2026-09-30",
       total_visits: funnelData.totalVisits,
-      tax_amount: 288610,
+      tax_amount: 346500,
       total_amount: economicsData.currentInvoiceRwf,
       line_items: [
         {
           provider_name: "Waka Fitness & Wellness Centers",
           provider_category: "Gym & Fitness",
-          visit_count: 710,
-          per_visit_rate: 2200,
-          subtotal: 1562000,
+          visit_count: 284,
+          per_visit_rate: 3500,
+          subtotal: 994000,
         },
         {
           provider_name: "Cercle Sportif de Kigali (Lap Pools)",
           provider_category: "Swimming & Aquatic",
-          visit_count: 355,
-          per_visit_rate: 2800,
-          subtotal: 994000,
+          visit_count: 142,
+          per_visit_rate: 4000,
+          subtotal: 568000,
         },
         {
           provider_name: "Nyashad Movement & Yoga Studios",
           provider_category: "Yoga & Studios",
-          visit_count: 236,
+          visit_count: 110,
           per_visit_rate: 3500,
-          subtotal: 826000,
+          subtotal: 385000,
         },
         {
           provider_name: "Kigali Physio & Wellness Clinic",
           provider_category: "Physiotherapy & Wellness",
-          visit_count: 179,
-          per_visit_rate: 4000,
-          subtotal: 716000,
+          visit_count: 106,
+          per_visit_rate: 4500,
+          subtotal: 477000,
         },
       ],
     });
@@ -266,44 +244,84 @@ export default function CorporateDashboardPage() {
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         {/* EXECUTIVE ATTENTION BANNER (What Needs Your Attention Today) */}
         <section aria-label="Action Items Banner">
-          <div className="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-start md:items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#E9FAF2] text-[#28D17C] flex items-center justify-center flex-shrink-0">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#0B1F33]">
-                    What Needs Your Attention
-                  </span>
-                  <span className="text-[11px] font-semibold text-[#28D17C] bg-[#E9FAF2] px-2 py-0.5 rounded-full">
-                    All Systems Operational
-                  </span>
+          {economicsData.invoiceStatus === "overdue" ? (
+            <div className="p-4 rounded-2xl bg-white border border-[#EF4444]/30 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-start md:items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#FEF2F2] text-[#EF4444] flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
                 </div>
-                <p className="text-xs text-[#526173] mt-0.5">
-                  September statement is <strong className="text-[#28D17C]">PAID</strong>. 
-                  Your workforce join link is active with <strong>{corporateDomain}</strong> email verification.
-                </p>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#0B1F33]">
+                      Action Required
+                    </span>
+                    <span className="text-[11px] font-bold text-[#EF4444] bg-[#FEF2F2] px-2 py-0.5 rounded-full border border-[#EF4444]/20">
+                      Statement Overdue
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#526173] mt-0.5">
+                    September statement <strong>{economicsData.invoiceNumber}</strong> (RWF {economicsData.currentInvoiceRwf.toLocaleString()}) was due on Sep 30, 2026. Settle via MoMo or Bank Transfer to keep benefits active.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <Link
+                  href="/corporate/billing"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#EF4444] hover:bg-[#DC2626] text-white text-xs font-bold transition-all shadow-xs"
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>Review & Settle</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <Link
+                  href="/corporate/employees"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] bg-[#F7F9FC] hover:bg-white text-xs font-semibold text-[#0B1F33] transition-all"
+                >
+                  <span>Manage Roster</span>
+                </Link>
               </div>
             </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-start md:items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#E9FAF2] text-[#28D17C] flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#0B1F33]">
+                      What Needs Your Attention
+                    </span>
+                    <span className="text-[11px] font-semibold text-[#28D17C] bg-[#E9FAF2] px-2 py-0.5 rounded-full">
+                      All Systems Operational
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#526173] mt-0.5">
+                    September statement is <strong className="text-[#28D17C]">PAID</strong>. 
+                    Your workforce join link is active with <strong>{corporateDomain}</strong> email verification.
+                  </p>
+                </div>
+              </div>
 
-            <div className="flex items-center gap-2.5">
-              <button
-                onClick={handleCopyLink}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] bg-[#F7F9FC] hover:bg-white text-xs font-semibold text-[#0B1F33] transition-all"
-              >
-                {copiedLink ? <Check className="w-3.5 h-3.5 text-[#28D17C]" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedLink ? "Link Copied" : "Copy Join Link"}</span>
-              </button>
-              <Link
-                href="/corporate/employees"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-white text-xs font-semibold transition-all shadow-xs"
-              >
-                <span>Add Employee</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={handleCopyLink}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] bg-[#F7F9FC] hover:bg-white text-xs font-semibold text-[#0B1F33] transition-all"
+                >
+                  {copiedLink ? <Check className="w-3.5 h-3.5 text-[#28D17C]" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedLink ? "Link Copied" : "Copy Join Link"}</span>
+                </button>
+                <Link
+                  href="/corporate/employees"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-white text-xs font-semibold transition-all shadow-xs"
+                >
+                  <span>Add Employee</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
         </section>
 
         {/* 3 HIGH-IMPACT EXECUTIVE CARDS */}
@@ -354,7 +372,14 @@ export default function CorporateDashboardPage() {
                   <span className="text-xs font-bold uppercase tracking-wider text-[#8491A3]">
                     September Statement
                   </span>
-                  <div className="w-8 h-8 rounded-lg bg-[#E9FAF2] text-[#28D17C] flex items-center justify-center">
+                  <div
+                    className={cn(
+                      "w-8 h-8 rounded-lg flex items-center justify-center",
+                      economicsData.invoiceStatus === "overdue"
+                        ? "bg-[#FEF2F2] text-[#EF4444]"
+                        : "bg-[#E9FAF2] text-[#28D17C]"
+                    )}
+                  >
                     <Receipt className="w-4 h-4" />
                   </div>
                 </div>
@@ -362,8 +387,15 @@ export default function CorporateDashboardPage() {
                   <span className="text-2xl font-extrabold text-[#0B1F33]">
                     RWF {economicsData.currentInvoiceRwf.toLocaleString()}
                   </span>
-                  <span className="px-2 py-0.5 text-[11px] font-bold rounded-full bg-[#E9FAF2] text-[#28D17C]">
-                    PAID
+                  <span
+                    className={cn(
+                      "px-2 py-0.5 text-[11px] font-bold rounded-full uppercase tracking-wider",
+                      economicsData.invoiceStatus === "overdue"
+                        ? "bg-[#FEF2F2] text-[#EF4444] border border-[#EF4444]/20"
+                        : "bg-[#E9FAF2] text-[#28D17C]"
+                    )}
+                  >
+                    {economicsData.invoiceStatus}
                   </span>
                 </div>
                 <p className="text-xs text-[#8491A3] mt-1">
@@ -381,9 +413,16 @@ export default function CorporateDashboardPage() {
                 </button>
                 <Link
                   href="/corporate/billing"
-                  className="text-xs font-bold text-[#526173] hover:text-[#0B1F33]"
+                  className={cn(
+                    "text-xs font-bold",
+                    economicsData.invoiceStatus === "overdue"
+                      ? "text-[#EF4444] hover:text-[#DC2626]"
+                      : "text-[#526173] hover:text-[#0B1F33]"
+                  )}
                 >
-                  View History &rarr;
+                  {economicsData.invoiceStatus === "overdue"
+                    ? "Settle Statement →"
+                    : "View History →"}
                 </Link>
               </div>
             </div>
@@ -499,8 +538,8 @@ export default function CorporateDashboardPage() {
               <RoiMetricsCard
                 activeEmployees={funnelData.activeBeneficiaries}
                 totalSpendRwf={economicsData.currentInvoiceRwf}
-                wellnessHour={TECHCORP_DEMO_DATA.wellness.wellnessHour}
-                peakDay={TECHCORP_DEMO_DATA.wellness.peakDay}
+                wellnessHour={TECHCORP_CANONICAL_DATA.wellness.wellnessHour}
+                peakDay={TECHCORP_CANONICAL_DATA.wellness.peakDay}
               />
             </section>
 
@@ -512,7 +551,7 @@ export default function CorporateDashboardPage() {
                 </div>
                 <div className="lg:col-span-5">
                   <CategoryDistribution
-                    categories={TECHCORP_DEMO_DATA.wellness.categories}
+                    categories={TECHCORP_CANONICAL_DATA.wellness.categories}
                     totalVisits={funnelData.totalVisits}
                     className="h-full"
                   />

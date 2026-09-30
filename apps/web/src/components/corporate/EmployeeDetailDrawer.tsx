@@ -57,7 +57,7 @@ export interface CorporateEmployee {
   email: string;
   employee_id_external?: string | null;
   department?: string | null;
-  tier: "basic" | "standard" | "premium";
+  tier: "basic" | "standard" | "premium" | "executive" | string;
   status: "active" | "frozen" | "terminated";
   created_at?: string;
   visits_this_month?: number;
@@ -76,7 +76,7 @@ interface EmployeeDetailDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onStatusChange: (id: string, newStatus: "active" | "frozen" | "terminated") => Promise<void>;
-  onTierChange: (id: string, newTier: "basic" | "standard" | "premium") => Promise<void>;
+  onTierChange: (id: string, newTier: "basic" | "standard" | "premium" | "executive") => Promise<void>;
   organizationName?: string;
 }
 
@@ -148,7 +148,7 @@ export function EmployeeDetailDrawer({
     }
   };
 
-  const handleTierSelect = async (newTier: "basic" | "standard" | "premium") => {
+  const handleTierSelect = async (newTier: "basic" | "standard" | "premium" | "executive") => {
     if (newTier === employee.tier || isUpdatingTier) return;
     setIsUpdatingTier(true);
     try {
@@ -340,7 +340,7 @@ export function EmployeeDetailDrawer({
                 </div>
 
                 <div className="flex items-center gap-1">
-                  {(["basic", "standard", "premium"] as const).map((tierName) => (
+                  {(["basic", "standard", "premium", "executive"] as const).map((tierName) => (
                     <button
                       key={tierName}
                       disabled={isUpdatingTier}
@@ -386,10 +386,12 @@ export function EmployeeDetailDrawer({
                   <span>
                     Co-pay:{" "}
                     <strong className="text-[#0B1F33]">
-                      {employee.tier === "premium"
+                      {employee.tier === "executive"
+                        ? "0% (Executive 100% Funded)"
+                        : employee.tier === "premium"
                         ? "0% (100% Employer Funded)"
                         : employee.tier === "standard"
-                        ? "10% Co-Pay"
+                        ? "15% Co-Pay"
                         : "20% Co-Pay"}
                     </strong>
                   </span>
@@ -417,7 +419,7 @@ export function EmployeeDetailDrawer({
                   <span className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-[#E9FAF2] text-[#006D3C] border border-[#28D17C]/20">
                     Yoga & Pilates Studios
                   </span>
-                  {employee.tier === "premium" && (
+                  {(employee.tier === "premium" || employee.tier === "executive") && (
                     <>
                       <span className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-[#E9FAF2] text-[#006D3C] border border-[#28D17C]/20">
                         Physiotherapy Clinics

@@ -2,51 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { EmployeeJoinClient } from "@/components/corporate/EmployeeJoinClient";
-
-const ORGANIZATIONS_DIRECTORY: Record<
-  string,
-  {
-    id: string;
-    name: string;
-    slug: string;
-    domain: string;
-    tierName: string;
-    maxVisits: number;
-    coPayPercent: number;
-    venuesCount: number;
-  }
-> = {
-  "techcorp-rwanda": {
-    id: "c79a9982-4477-4336-a24b-561419f6c43b",
-    name: "TechCorp Rwanda",
-    slug: "techcorp-rwanda",
-    domain: "techcorp.rw",
-    tierName: "TechCorp Standard Wellness Plan",
-    maxVisits: 8,
-    coPayPercent: 15,
-    venuesCount: 52,
-  },
-  "bank-of-kigali": {
-    id: "bok-rwanda-001",
-    name: "Bank of Kigali",
-    slug: "bank-of-kigali",
-    domain: "bk.rw",
-    tierName: "BK Corporate Fitness Pass",
-    maxVisits: 12,
-    coPayPercent: 0,
-    venuesCount: 52,
-  },
-  default: {
-    id: "c79a9982-4477-4336-a24b-561419f6c43b",
-    name: "TechCorp Rwanda",
-    slug: "techcorp-rwanda",
-    domain: "techcorp.rw",
-    tierName: "Standard Corporate Wellness Pass",
-    maxVisits: 8,
-    coPayPercent: 15,
-    venuesCount: 52,
-  },
-};
+import { TECHCORP_CANONICAL_DATA } from "@/lib/constants";
 
 export function generateStaticParams() {
   return [
@@ -63,16 +19,46 @@ export default async function EmployeeJoinPage({ params }: PageProps) {
   const { orgSlug } = await params;
   const slug = (orgSlug || "techcorp-rwanda").toLowerCase();
 
-  const orgConfig =
-    ORGANIZATIONS_DIRECTORY[slug] || {
-      ...ORGANIZATIONS_DIRECTORY.default,
-      name: slug
-        .split("-")
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" "),
-      slug,
-      domain: `${slug.replace(/-/g, "")}.rw`,
-    };
+  let orgConfig = {
+    id: TECHCORP_CANONICAL_DATA.organization.id,
+    name: TECHCORP_CANONICAL_DATA.organization.name,
+    slug: TECHCORP_CANONICAL_DATA.organization.slug,
+    domains: TECHCORP_CANONICAL_DATA.organization.allowed_domains,
+    domain: TECHCORP_CANONICAL_DATA.organization.allowed_domains[0] || "techcorp.rw",
+    tierName: "TechCorp Standard Wellness Plan",
+    maxVisits: 8,
+    coPayPercent: 0,
+    venuesCount: 52,
+  };
+
+  try {
+    const apiBase =
+      process.env.NEXT_PUBLIC_API_URL || "https://polyfit-backend.onrender.com";
+    const res = await fetch(
+      `${apiBase.replace(/\/$/, "")}/api/public/organizations/${slug}`,
+      {
+        next: { revalidate: 60 },
+      }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.organization) {
+        orgConfig = {
+          id: data.organization.id,
+          name: data.organization.name,
+          slug: data.organization.slug || slug,
+          domains: data.organization.allowed_domains || ["techcorp.rw"],
+          domain: (data.organization.allowed_domains || ["techcorp.rw"])[0],
+          tierName: data.default_plan?.name || "Standard Corporate Wellness Pass",
+          maxVisits: data.default_plan?.max_visits_per_month || 8,
+          coPayPercent: data.default_plan?.co_pay_percentage || 0,
+          venuesCount: data.default_plan?.venues_count || 52,
+        };
+      }
+    }
+  } catch {
+    // Graceful fallback to canonical data
+  }
 
   return (
     <div className="min-h-screen bg-[#F7F9FC] text-[#0B1F33] flex flex-col justify-between">

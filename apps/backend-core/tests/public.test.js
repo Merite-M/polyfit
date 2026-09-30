@@ -110,4 +110,61 @@ describe('Public Lead & Demo Pipeline Test Suite (PF-88)', () => {
       assert.ok(res.body.id);
     });
   });
+
+  describe('Public Organization & Self-Service Join Pipeline', () => {
+    test('GET /api/public/organizations/:slug returns 200 and default plan for valid slug', async () => {
+      const res = await request(app).get('/api/public/organizations/techcorp-rwanda');
+      assert.equal(res.status, 200);
+      assert.ok(res.body.organization);
+      assert.equal(res.body.organization.slug, 'techcorp-rwanda');
+      assert.ok(res.body.defaultPlan);
+      assert.ok(Array.isArray(res.body.plans));
+    });
+
+    test('GET /api/public/organizations/:slug returns 404 for non-existent org', async () => {
+      const res = await request(app).get('/api/public/organizations/non-existent-slug-xyz');
+      assert.equal(res.status, 404);
+      assert.equal(res.body.code, 'ORG_NOT_FOUND');
+    });
+
+    test('POST /api/public/organizations/:slug/join blocks unauthorized email domains', async () => {
+      const res = await request(app)
+        .post('/api/public/organizations/techcorp-rwanda/join')
+        .send({
+          full_name: 'Personal Email User',
+          email: 'random.user@gmail.com',
+          department: 'Engineering'
+        });
+
+      assert.equal(res.status, 400);
+      assert.equal(res.body.code, 'UNAUTHORIZED_DOMAIN');
+      assert.match(res.body.error, /authorized/i);
+    });
+
+    test('POST /api/public/organizations/:slug/join activates pass for authorized corporate email', async () => {
+      const uniqueEmail = `join.test.${Date.now()}@techcorp.rw`;
+      const res = await request(app)
+        .post('/api/public/organizations/techcorp-rwanda/join')
+        .send({
+          full_name: 'Auto Enrolled Beneficiary',
+          email: uniqueEmail,
+          employee_id_external: 'JOIN-999',
+          department: 'Design & Innovation'
+        });
+
+      assert.equal(res.status, 200);
+      assert.equal(res.body.success, true);
+      assert.ok(res.body.employee);
+      assert.equal(res.body.employee.email, uniqueEmail);
+      assert.equal(res.body.employee.status, 'active');
+      assert.ok(res.body.plan);
+
+      // Clean up test employee
+      const { supabase } = require('../services/supabaseService');
+      if (supabase && res.body.employee.id) {
+        await supabase.from('eligibility').delete().eq('employee_id', res.body.employee.id);
+        await supabase.from('employees').delete().eq('id', res.body.employee.id);
+      }
+    });
+  });
 });

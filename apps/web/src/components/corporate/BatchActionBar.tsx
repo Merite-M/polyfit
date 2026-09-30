@@ -19,7 +19,7 @@ interface BatchActionBarProps {
   onClearSelection: () => void;
   onBatchFreeze: () => Promise<void>;
   onBatchActivate: () => Promise<void>;
-  onBatchChangeTier: (tier: "basic" | "standard" | "premium") => Promise<void>;
+  onBatchChangeTier: (tier: "basic" | "standard" | "premium" | "executive") => Promise<void>;
   onBatchExport: () => void;
   isLoading?: boolean;
 }
@@ -91,7 +91,7 @@ export function BatchActionBar({
 
             {isTierMenuOpen && (
               <div className="absolute bottom-full mb-2 left-0 w-36 bg-[#0B1F33] border border-[#1E3A5F] rounded-xl shadow-xl p-1 z-50 animate-in fade-in zoom-in-95">
-                {(["basic", "standard", "premium"] as const).map((tier) => (
+                {(["basic", "standard", "premium", "executive"] as const).map((tier) => (
                   <button
                     key={tier}
                     type="button"

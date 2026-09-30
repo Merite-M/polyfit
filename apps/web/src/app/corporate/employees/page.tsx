@@ -35,216 +35,18 @@ import {
 import { BulkUploadModal } from "@/components/corporate/BulkUploadModal";
 import { AddEmployeeModal } from "@/components/corporate/AddEmployeeModal";
 import { BatchActionBar } from "@/components/corporate/BatchActionBar";
-
-// Initial fallback enterprise roster for TechCorp Rwanda demo & offline resilience
-const INITIAL_DEMO_EMPLOYEES: CorporateEmployee[] = [
-  {
-    id: "00fbe4e1-86aa-44bc-ad89-fcce6fb75687",
-    full_name: "Jean Mugabo",
-    email: "jean.mugabo@techcorp.rw",
-    employee_id_external: "EMP001",
-    department: "Engineering",
-    tier: "standard",
-    status: "active",
-    created_at: "2026-01-15T08:30:00Z",
-    visits_this_month: 8,
-    eligibility: {
-      id: "elig-1",
-      status: "active",
-      benefits: {
-        id: "ben-1",
-        name: "TechCorp Standard Wellness Plan",
-        tier: "standard",
-        max_monthly_visits: 10,
-        co_pay_percentage: 10,
-      },
-    },
-    recent_visits: [
-      {
-        id: "v-1",
-        check_in_at: "2026-09-28T17:15:00Z",
-        verification_method: "totp_qr",
-        status: "verified",
-        provider_locations: {
-          id: "loc-1",
-          name: "Kigali Central Facility",
-          city: "Kigali",
-          providers: { id: "p-1", name: "Waka Fitness", category: "gym" },
-        },
-      },
-      {
-        id: "v-2",
-        check_in_at: "2026-09-25T18:00:00Z",
-        verification_method: "totp_qr",
-        status: "verified",
-        provider_locations: {
-          id: "loc-2",
-          name: "Cercle Sportif de Kigali",
-          city: "Kigali",
-          providers: { id: "p-2", name: "Cercle Sportif", category: "pool" },
-        },
-      },
-    ],
-  },
-  {
-    id: "3e501231-7097-4e78-9c0e-445bcbafd0e9",
-    full_name: "Marie Uwimana",
-    email: "marie.uwimana@techcorp.rw",
-    employee_id_external: "EMP002",
-    department: "Marketing",
-    tier: "standard",
-    status: "active",
-    created_at: "2026-02-01T09:00:00Z",
-    visits_this_month: 6,
-    eligibility: {
-      id: "elig-2",
-      status: "active",
-      benefits: {
-        id: "ben-1",
-        name: "TechCorp Standard Wellness Plan",
-        tier: "standard",
-        max_monthly_visits: 10,
-        co_pay_percentage: 10,
-      },
-    },
-    recent_visits: [
-      {
-        id: "v-3",
-        check_in_at: "2026-09-27T07:30:00Z",
-        verification_method: "totp_qr",
-        status: "verified",
-        provider_locations: {
-          id: "loc-1",
-          name: "Kigali Central Facility",
-          city: "Kigali",
-          providers: { id: "p-1", name: "Waka Fitness", category: "gym" },
-        },
-      },
-    ],
-  },
-  {
-    id: "378d7933-329a-441a-acbe-21607e80191d",
-    full_name: "Patrick Niyonzima",
-    email: "patrick.niyonzima@techcorp.rw",
-    employee_id_external: "EMP003",
-    department: "Finance",
-    tier: "premium",
-    status: "active",
-    created_at: "2026-02-15T10:15:00Z",
-    visits_this_month: 16,
-    eligibility: {
-      id: "elig-3",
-      status: "active",
-      benefits: {
-        id: "ben-3",
-        name: "TechCorp Premium Wellness Plan",
-        tier: "premium",
-        max_monthly_visits: 20,
-        co_pay_percentage: 0,
-      },
-    },
-    recent_visits: [
-      {
-        id: "v-4",
-        check_in_at: "2026-09-28T06:45:00Z",
-        verification_method: "totp_qr",
-        status: "verified",
-        provider_locations: {
-          id: "loc-3",
-          name: "Nyashad Pilates & Wellness",
-          city: "Kigali",
-          providers: { id: "p-3", name: "Nyashad Studios", category: "studio" },
-        },
-      },
-    ],
-  },
-  {
-    id: "489bd7e2-393c-4b40-ade5-3832829053a6",
-    full_name: "Claudine Mukandekeza",
-    email: "claudine.mukandekeza@techcorp.rw",
-    employee_id_external: "EMP004",
-    department: "HR",
-    tier: "standard",
-    status: "frozen",
-    created_at: "2026-03-01T11:00:00Z",
-    visits_this_month: 2,
-    eligibility: {
-      id: "elig-4",
-      status: "suspended",
-      benefits: {
-        id: "ben-1",
-        name: "TechCorp Standard Wellness Plan",
-        tier: "standard",
-        max_monthly_visits: 10,
-        co_pay_percentage: 10,
-      },
-    },
-  },
-  {
-    id: "a2e591aa-73e9-4dd4-a141-508551372ec0",
-    full_name: "Eric Habimana",
-    email: "eric.habimana@techcorp.rw",
-    employee_id_external: "EMP005",
-    department: "Operations",
-    tier: "basic",
-    status: "active",
-    created_at: "2026-03-10T14:20:00Z",
-    visits_this_month: 3,
-    eligibility: {
-      id: "elig-5",
-      status: "active",
-      benefits: {
-        id: "ben-2",
-        name: "TechCorp Basic Wellness Plan",
-        tier: "basic",
-        max_monthly_visits: 4,
-        co_pay_percentage: 20,
-      },
-    },
-  },
-  {
-    id: "9912aa44-8833-4df1-8844-332211aabbcc",
-    full_name: "Alice Gasana",
-    email: "alice.gasana@techcorp.rw",
-    employee_id_external: "EMP006",
-    department: "Engineering",
-    tier: "premium",
-    status: "active",
-    created_at: "2026-04-05T09:30:00Z",
-    visits_this_month: 12,
-  },
-  {
-    id: "aa88bb77-1122-4455-8899-ccddeeff0011",
-    full_name: "David Karekezi",
-    email: "david.karekezi@techcorp.rw",
-    employee_id_external: "EMP007",
-    department: "Sales",
-    tier: "standard",
-    status: "active",
-    created_at: "2026-05-12T13:45:00Z",
-    visits_this_month: 7,
-  },
-  {
-    id: "cc33dd44-5566-7788-9900-112233445566",
-    full_name: "Grace Umutoni",
-    email: "grace.umutoni@techcorp.rw",
-    employee_id_external: "EMP008",
-    department: "Engineering",
-    tier: "premium",
-    status: "active",
-    created_at: "2026-06-20T10:00:00Z",
-    visits_this_month: 14,
-  },
-];
+import { TECHCORP_CANONICAL_DATA } from "@/lib/constants";
 
 export default function EmployeesPage() {
   const { organizationId } = useAuth();
-  const activeOrgId = organizationId || "c79a9982-4477-4336-a24b-561419f6c43b";
-  const orgSlug = "techcorp-rwanda";
-  const corporateDomain = "techcorp.rw";
+  const activeOrgId = organizationId || TECHCORP_CANONICAL_DATA.organization.id;
+  const orgSlug = TECHCORP_CANONICAL_DATA.organization.slug;
+  const corporateDomain = TECHCORP_CANONICAL_DATA.organization.allowed_domains[0] || "techcorp.rw";
 
-  // Data State
-  const [employees, setEmployees] = useState<CorporateEmployee[]>(INITIAL_DEMO_EMPLOYEES);
+  // Data State initialized with canonical verified TechCorp Rwanda dataset
+  const [employees, setEmployees] = useState<CorporateEmployee[]>(
+    TECHCORP_CANONICAL_DATA.employees as CorporateEmployee[]
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -370,7 +172,10 @@ export default function EmployeesPage() {
   };
 
   // Single Tier Change Handler
-  const handleTierChange = async (id: string, newTier: "basic" | "standard" | "premium") => {
+  const handleTierChange = async (
+    id: string,
+    newTier: "basic" | "standard" | "premium" | "executive"
+  ) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://polyfit-backend.onrender.com";
 
     // Optimistic update
@@ -451,7 +256,9 @@ export default function EmployeesPage() {
   };
 
   // Batch Change Tier
-  const handleBatchChangeTier = async (newTier: "basic" | "standard" | "premium") => {
+  const handleBatchChangeTier = async (
+    newTier: "basic" | "standard" | "premium" | "executive"
+  ) => {
     if (selectedIds.size === 0) return;
     setIsBatchLoading(true);
     const ids = Array.from(selectedIds);
@@ -713,39 +520,22 @@ export default function EmployeesPage() {
         </div>
       </div>
 
-      {/* Dedicated Company Join Link Banner */}
-      <div className="mt-6 p-4 rounded-2xl bg-[#0B1F33] text-white flex flex-col md:flex-row md:items-center justify-between gap-4 border border-[#1E3A5F]">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#1E3A5F] flex items-center justify-center text-[#28D17C] shrink-0">
-            <Share2 className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#28D17C]">
-                Corporate Self-Onboarding Link
-              </span>
-              <span className="text-[10px] bg-[#1E3A5F] px-2 py-0.5 rounded-full font-mono text-white/90">
-                Restricted to @{corporateDomain}
-              </span>
-            </div>
-            <p className="text-xs text-white/80 mt-0.5">
-              Employees can register their own mobile wellness pass directly using this link.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="px-3 py-1.5 rounded-xl bg-[#142C44] border border-[#1E3A5F] font-mono text-xs text-white/90 truncate max-w-xs select-all">
+      {/* Compact Join Link Badge (Replaces redundant 120px banner) */}
+      <div className="mt-4 flex items-center justify-between px-4 py-2.5 rounded-xl bg-white border border-[#E2E8F0] shadow-2xs">
+        <div className="flex items-center gap-2 text-xs text-[#526173]">
+          <span className="font-semibold text-[#0B1F33]">Workforce Join Link:</span>
+          <span className="font-mono text-[11px] text-[#28D17C] bg-[#E9FAF2] px-2 py-0.5 rounded-md border border-[#28D17C]/20">
             {inviteUrl}
-          </div>
-          <button
-            onClick={handleCopyInviteLink}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] text-xs font-semibold transition-colors cursor-pointer shrink-0"
-          >
-            {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
-            <span>{copiedLink ? "Copied" : "Copy Link"}</span>
-          </button>
+          </span>
+          <span className="hidden sm:inline text-[#8491A3]">(@{corporateDomain})</span>
         </div>
+        <button
+          onClick={handleCopyInviteLink}
+          className="flex items-center gap-1.5 px-3 py-1 rounded-lg border border-[#E2E8F0] bg-[#F7F9FC] hover:bg-white text-xs font-semibold text-[#0B1F33] transition-colors"
+        >
+          {copiedLink ? <Check className="w-3.5 h-3.5 text-[#28D17C]" /> : <Share2 className="w-3.5 h-3.5 text-[#526173]" />}
+          <span>{copiedLink ? "Copied" : "Copy Link"}</span>
+        </button>
       </div>
 
       {/* Search, Filter Pills & Controls Bar */}
@@ -788,6 +578,7 @@ export default function EmployeesPage() {
             <option value="basic">Basic</option>
             <option value="standard">Standard</option>
             <option value="premium">Premium</option>
+            <option value="executive">Executive</option>
           </select>
 
           <button

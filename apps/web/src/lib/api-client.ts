@@ -4,6 +4,8 @@
  * and offline detection across all frontend API service calls.
  */
 
+import { supabase } from './supabase';
+
 export class APIError extends Error {
   public status: number;
   public code?: string;
@@ -68,6 +70,21 @@ export async function apiFetch<T = unknown>(
     );
   }
 
+  // Automatically attach Supabase Auth session token if not explicitly provided
+  const requestHeaders = new Headers(fetchOptions.headers || {});
+  if (!requestHeaders.has('Authorization')) {
+    try {
+      if (typeof window !== 'undefined' && supabase) {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session?.access_token) {
+          requestHeaders.set('Authorization', `Bearer ${data.session.access_token}`);
+        }
+      }
+    } catch {
+      // In offline/demo mode, proceed without session token
+    }
+  }
+
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -77,6 +94,7 @@ export async function apiFetch<T = unknown>(
     try {
       const response = await fetch(resolvedUrl, {
         ...fetchOptions,
+        headers: requestHeaders,
         method,
         signal: controller.signal,
       });
