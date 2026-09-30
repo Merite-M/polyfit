@@ -231,7 +231,7 @@ export default function PartnerLocationsPage() {
                   </button>
 
                   <Link
-                    href="/partner/setup"
+                    href={`/partner/setup?locationId=${loc.id}`}
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#0B1F33] text-white hover:bg-[#132D43] font-semibold transition-colors"
                   >
                     <span>Edit Schedule</span>

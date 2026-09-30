@@ -19,9 +19,10 @@ interface Step11Props {
   onLaunch: () => void;
   isLaunching: boolean;
   onGoToStep: (step: number) => void;
+  isEditing?: boolean;
 }
 
-export function Step11LaunchReview({ state, onLaunch, isLaunching, onGoToStep }: Step11Props) {
+export function Step11LaunchReview({ state, onLaunch, isLaunching, onGoToStep, isEditing }: Step11Props) {
   // Verification Checklist Items
   const checkItems = [
     {
@@ -175,12 +176,12 @@ export function Step11LaunchReview({ state, onLaunch, isLaunching, onGoToStep }:
           {isLaunching ? (
             <>
               <div className="w-5 h-5 rounded-full border-2 border-[#0B1F33] border-t-transparent animate-spin" />
-              <span>Publishing Facility to Network Directory...</span>
+              <span>{isEditing ? 'Saving Facility Updates...' : 'Publishing Facility to Network Directory...'}</span>
             </>
           ) : (
             <>
-              <Rocket className="w-5 h-5" />
-              <span>Confirm & Launch Facility to Network</span>
+              {isEditing ? <CheckCircle2 className="w-5 h-5" /> : <Rocket className="w-5 h-5" />}
+              <span>{isEditing ? 'Save & Apply Facility Updates' : 'Confirm & Launch Facility to Network'}</span>
             </>
           )}
         </button>

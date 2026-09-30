@@ -136,16 +136,8 @@ export const INITIAL_WIZARD_STATE: WizardLocationState = {
   tax_id: '',
 };
 
-export const RWANDAN_BANKS = [
-  { name: 'Bank of Kigali (BK)', swift: 'BKIGRWRW' },
-  { name: 'I&M Bank Rwanda', swift: 'BCRWRWRW' },
-  { name: 'Equity Bank Rwanda', swift: 'EQBLRWRW' },
-  { name: 'BPR Bank Rwanda (Atlas Mara)', swift: 'BPRWRWRW' },
-  { name: 'Ecobank Rwanda', swift: 'ECOCRWRW' },
-  { name: 'Cogebanque (Equity)', swift: 'COGBRWRW' },
-  { name: 'NCBA Bank Rwanda', swift: 'NCBARWRW' },
-  { name: 'Access Bank Rwanda', swift: 'ACCERWRW' },
-];
+import { RWANDAN_BANKS, type RwandanBank } from '@/lib/constants';
+export { RWANDAN_BANKS, type RwandanBank };
 
 export const KIGALI_DISTRICT_PRESETS = [
   { name: 'Kimihurura (Diplomatic / Gastronomy Hub)', lat: -1.9536, lng: 30.0924 },

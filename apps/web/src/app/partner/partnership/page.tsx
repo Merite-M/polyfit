@@ -85,25 +85,6 @@ export default function PartnerPartnershipPage() {
         </div>
       </div>
 
-      {/* Navigation Tab Switcher */}
-      <div className="flex items-center gap-2 border-b border-[#E2E8F0] pb-px">
-        <Link
-          href="/partner/dashboard"
-          className="px-4 py-2 text-xs font-semibold text-[#526173] hover:text-[#0B1F33] transition-colors flex items-center gap-2"
-        >
-          <span>Home Overview & Analytics</span>
-        </Link>
-        <Link
-          href="/partner/partnership"
-          className="px-4 py-2 text-xs font-bold text-[#0B1F33] border-b-2 border-[#28D17C] -mb-px flex items-center gap-2"
-        >
-          <span>Commercial Conditions & Contract Terms</span>
-          <span className="text-[10px] font-bold bg-[#E9FAF2] text-[#008A4B] px-1.5 py-0.2 rounded-full border border-[#B7F1D2]">
-            Wellhub Tour
-          </span>
-        </Link>
-      </div>
-
       {/* Active Contract Terms Summary */}
       <CommercialTermsCard onOpenAmendmentModal={() => setAmendmentModalOpen(true)} />
 

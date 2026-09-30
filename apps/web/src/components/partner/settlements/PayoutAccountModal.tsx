@@ -19,15 +19,7 @@ interface PayoutAccountModalProps {
   onSuccess?: () => void;
 }
 
-const RWANDAN_BANKS = [
-  { name: 'Bank of Kigali (BK)', swift: 'BOKRRWRW' },
-  { name: 'I&M Bank Rwanda', swift: 'BCRWRWRW' },
-  { name: 'Equity Bank Rwanda', swift: 'EQBLRWRW' },
-  { name: 'BPR Bank Rwanda (Atlas Mara)', swift: 'BPRRRWRW' },
-  { name: 'Ecobank Rwanda', swift: 'ECOCRWRW' },
-  { name: 'Cogebanque', swift: 'COGERWRW' },
-  { name: 'NCBA Bank Rwanda', swift: 'NCBARWRW' }
-];
+import { RWANDAN_BANKS } from '@/lib/constants';
 
 export function PayoutAccountModal({ isOpen, onClose, onSuccess }: PayoutAccountModalProps) {
   const { provider, updatePayoutDetails } = usePartner();

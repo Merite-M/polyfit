@@ -1,6 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import {
   Building2,
   ChevronDown,
@@ -9,7 +11,9 @@ import {
   Menu,
   CheckCircle2,
   RefreshCw,
-  Search
+  Search,
+  ScanLine,
+  ArrowRight
 } from 'lucide-react';
 import { usePartner } from '@/contexts/PartnerContext';
 import { FacilityUnitsModal } from './FacilityUnitsModal';
@@ -25,15 +29,36 @@ export function PartnerHeader({
   onOpenRetroactiveClaim,
   onToggleMobileMenu
 }: PartnerHeaderProps) {
-  const { locations, selectedLocationId, setSelectedLocationId, selectedLocation, refreshSummary } = usePartner();
+  const pathname = usePathname();
+  const isCheckinPage = pathname === '/partner/checkins';
+  const { locations, selectedLocationId, setSelectedLocationId, selectedLocation, todaySummary, refreshSummary } = usePartner();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const [unitsModalOpen, setUnitsModalOpen] = React.useState(false);
+
+  // Keyboard shortcut listener: Press 'm' or 'M' to trigger Manual Check-in when on checkins page
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.key === 'm' || e.key === 'M') &&
+        !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)
+      ) {
+        if (isCheckinPage) {
+          e.preventDefault();
+          onOpenManualCheckin();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isCheckinPage, onOpenManualCheckin]);
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
     await refreshSummary();
     setTimeout(() => setIsRefreshing(false), 500);
   };
+
+  const pendingCount = todaySummary?.pending_queue_count || 0;
 
   return (
     <header className="h-16 bg-white border-b border-[#E2E8F0] px-4 lg:px-6 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-xs">
@@ -77,7 +102,7 @@ export function PartnerHeader({
         onClose={() => setUnitsModalOpen(false)}
       />
 
-      {/* Right: Cloud Sync Telemetry & Counter Action CTAs */}
+      {/* Right: Telemetry & Contextual Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Live Cloud Sync Pulse */}
         <button
@@ -93,23 +118,32 @@ export function PartnerHeader({
           <RefreshCw className={`w-3 h-3 text-[#8491A3] ml-1 ${isRefreshing ? 'animate-spin' : ''}`} />
         </button>
 
-        {/* Retroactive Claim Button */}
-        <button
-          onClick={onOpenRetroactiveClaim}
-          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#F7F9FC] hover:bg-[#F1F4F8] text-[#0B1F33] text-xs font-semibold border border-[#E2E8F0] transition-colors"
-        >
-          <ClockAlert className="w-3.5 h-3.5 text-[#F59E0B]" />
-          <span>Missed Check-in</span>
-        </button>
-
-        {/* Manual Backup Check-in CTA */}
-        <button
-          onClick={onOpenManualCheckin}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] text-xs font-bold shadow-xs transition-all active:scale-98"
-        >
-          <PlusCircle className="w-4 h-4 text-[#0B1F33]" />
-          <span>Manual Check-in</span>
-        </button>
+        {/* If on Check-ins page: Render fast Counter Manual Check-in with hotkey badge */}
+        {isCheckinPage ? (
+          <button
+            onClick={onOpenManualCheckin}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] text-xs font-bold shadow-xs transition-all active:scale-98"
+            title="Press 'M' on your keyboard anytime to open Manual Check-in"
+          >
+            <PlusCircle className="w-4 h-4 text-[#0B1F33]" />
+            <span>Manual Check-in</span>
+            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono font-bold bg-[#0B1F33]/15 text-[#0B1F33] rounded">
+              M
+            </kbd>
+          </button>
+        ) : (
+          /* If on other pages (Dashboard, Finance, Setup): If there are pending arrivals, show sleek link */
+          pendingCount > 0 && (
+            <Link
+              href="/partner/checkins"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F59E0B]/15 hover:bg-[#F59E0B]/25 text-[#B45309] border border-[#F59E0B]/30 text-xs font-bold transition-colors"
+            >
+              <span className="w-2 h-2 rounded-full bg-[#F59E0B] animate-ping" />
+              <span>Arriving Visitors ({pendingCount})</span>
+              <ArrowRight className="w-3 h-3 ml-0.5" />
+            </Link>
+          )
+        )}
       </div>
     </header>
   );

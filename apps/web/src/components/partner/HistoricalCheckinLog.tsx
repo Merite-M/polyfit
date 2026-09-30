@@ -19,6 +19,7 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 import { usePartner } from '@/contexts/PartnerContext';
+import { downloadCsv, CsvColumn } from '@/lib/export-csv';
 
 export interface HistoricalVisit {
   id: string;
@@ -231,41 +232,20 @@ export function HistoricalCheckinLog() {
 
   // CSV Export handler
   const handleExportCSV = () => {
-    const headers = [
-      'Visit ID',
-      'Check-in Timestamp',
-      'Beneficiary Name',
-      'Beneficiary ID',
-      'Corporate Employer',
-      'Benefit Tier',
-      'Facility Location',
-      'Verification Method',
-      'Settlement Rate (RWF)',
-      'Status'
+    const columns: CsvColumn<HistoricalVisit>[] = [
+      { header: 'Visit ID', accessor: (v) => v.id },
+      { header: 'Check-in Timestamp', accessor: (v) => v.check_in_at },
+      { header: 'Beneficiary Name', accessor: (v) => v.beneficiary_name },
+      { header: 'Beneficiary ID', accessor: (v) => v.beneficiary_id },
+      { header: 'Corporate Employer', accessor: (v) => v.organization_name },
+      { header: 'Benefit Tier', accessor: (v) => v.tier },
+      { header: 'Facility Location', accessor: (v) => v.location_name },
+      { header: 'Verification Method', accessor: (v) => v.verification_method },
+      { header: 'Settlement Rate (RWF)', accessor: (v) => v.reimbursement_rate },
+      { header: 'Status', accessor: (v) => v.status }
     ];
 
-    const rows = filteredData.map((v) => [
-      v.id,
-      v.check_in_at,
-      `"${v.beneficiary_name}"`,
-      v.beneficiary_id,
-      `"${v.organization_name}"`,
-      v.tier,
-      `"${v.location_name}"`,
-      v.verification_method,
-      v.reimbursement_rate,
-      v.status
-    ]);
-
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `polyfit_partner_checkins_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCsv(`polyfit_partner_checkins_${new Date().toISOString().slice(0, 10)}.csv`, columns, filteredData);
   };
 
   const renderMethodBadge = (method: string) => {

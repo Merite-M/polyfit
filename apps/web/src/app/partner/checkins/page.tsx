@@ -198,17 +198,19 @@ export default function PartnerCheckinsPage() {
           <button
             onClick={() => setManualCheckinOpen(true)}
             className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] font-bold text-xs sm:text-sm transition-colors shadow-xs"
+            title="Manual check-in backup by Beneficiary ID or 6-digit TOTP code"
           >
             <UserCheck className="w-4 h-4" />
-            <span>Counter Backup</span>
+            <span>Manual Check-in</span>
           </button>
 
           <button
             onClick={() => setRetroactiveClaimOpen(true)}
             className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-[#F1F4F8] text-[#0B1F33] font-semibold text-xs sm:text-sm border border-[#E2E8F0] transition-colors shadow-xs"
+            title="Submit a missed check-in technical exception claim"
           >
             <ClockAlert className="w-4 h-4 text-[#F59E0B]" />
-            <span>Missed Check-in</span>
+            <span>Missed Check-in Claim</span>
           </button>
 
           <button
@@ -286,16 +288,16 @@ export default function PartnerCheckinsPage() {
         </div>
       </div>
 
-      {/* Anti-Misuse Policy Banner */}
-      <AntiMisuseBanner />
-
-      {/* Pending Check-ins Queue (20-min Validation Window) */}
+      {/* Pending Check-ins Queue (20-min Validation Window) - Top Front-Desk Priority */}
       <PendingCheckinQueue
         pendingVisits={pendingVisits}
         onApproveSuccess={handleApproveSuccess}
         onRejectClick={(visit) => setRejectTargetVisit(visit)}
         onRefresh={fetchPendingQueue}
       />
+
+      {/* Anti-Misuse Policy Banner */}
+      <AntiMisuseBanner onOpenDisputeModal={() => setDisputeTargetVisit({ id: 'general-flag' } as any)} />
 
       {/* Tab Switcher */}
       <div className="border-b border-[#E2E8F0] flex items-center justify-between">

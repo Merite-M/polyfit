@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   ArrowRight,
@@ -31,9 +31,13 @@ import { Step10PayoutSetup } from '@/components/partner/wizard/Step10PayoutSetup
 import { Step11LaunchReview } from '@/components/partner/wizard/Step11LaunchReview';
 import { LiveSmartphonePreview } from '@/components/partner/wizard/LiveSmartphonePreview';
 
-export default function PartnerSetupPage() {
+function PartnerSetupContent() {
   const router = useRouter();
-  const { provider, createLocation, updatePayoutDetails } = usePartner();
+  const searchParams = useSearchParams();
+  const locationId = searchParams?.get('locationId') || null;
+  const isEditing = Boolean(locationId);
+
+  const { provider, locations, createLocation, updateLocation, updatePayoutDetails } = usePartner();
 
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [formState, setFormState] = useState<WizardLocationState>(INITIAL_WIZARD_STATE);
@@ -42,21 +46,66 @@ export default function PartnerSetupPage() {
   const [launchSuccess, setLaunchSuccess] = useState<boolean>(false);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState<boolean>(false);
 
-  // Restore draft from localStorage on mount
+  const draftKey = locationId
+    ? `polyfit_partner_wizard_draft_${locationId}`
+    : 'polyfit_partner_wizard_draft';
+
+  // Find existing location if editing
+  const existingLoc = locationId ? locations.find((l) => l.id === locationId) : null;
+
+  // Restore draft from localStorage on mount or load from existing location
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('polyfit_partner_wizard_draft');
+        const saved = localStorage.getItem(draftKey);
         if (saved) {
           const parsed = JSON.parse(saved);
           setFormState((prev) => ({ ...prev, ...parsed }));
-          setLastSavedAt('from previous session');
+          setLastSavedAt('from previous draft session');
+          return;
         }
       } catch (err) {
         console.warn('[PartnerSetup] Failed to parse draft:', err);
       }
+
+      // If editing and no prior draft, prefill from existing branch profile
+      if (existingLoc) {
+        setFormState((prev) => ({
+          ...prev,
+          name: existingLoc.name || prev.name,
+          city: existingLoc.city || prev.city,
+          address: existingLoc.address || prev.address,
+          country: existingLoc.country || prev.country,
+          lat: existingLoc.lat ?? prev.lat,
+          lng: existingLoc.lng ?? prev.lng,
+          capacity: existingLoc.capacity ?? prev.capacity,
+          operating_hours: existingLoc.operating_hours || prev.operating_hours,
+          amenities: existingLoc.amenities || prev.amenities,
+          logo_url: existingLoc.photos?.[0] || prev.logo_url,
+          cover_url: existingLoc.photos?.[1] || prev.cover_url,
+          entrance_url: existingLoc.photos?.[2] || prev.entrance_url,
+          gallery_urls: existingLoc.photos?.slice(3) || prev.gallery_urls,
+          phone_number: existingLoc.metadata?.phone?.replace(/^\+\d+\s*/, '') || prev.phone_number,
+          website_url: existingLoc.metadata?.website || prev.website_url,
+          instagram_handle: existingLoc.metadata?.social_links?.instagram || prev.instagram_handle,
+          whatsapp_number: existingLoc.metadata?.social_links?.whatsapp?.replace(/^\+\d+/, '') || prev.whatsapp_number,
+          description: existingLoc.metadata?.description || prev.description,
+          important_notice: existingLoc.metadata?.guidelines || prev.important_notice,
+          first_checkin_rules: existingLoc.metadata?.first_checkin_rules
+            ? {
+                booking_required: Boolean(existingLoc.metadata.first_checkin_rules.booking_required),
+                registration_form_required: Boolean(existingLoc.metadata.first_checkin_rules.registration_form_required),
+                guided_tour_mandatory: Boolean(existingLoc.metadata.first_checkin_rules.guided_tour_mandatory),
+                arrive_early_minutes: Number(existingLoc.metadata.first_checkin_rules.arrive_early_minutes) || 10,
+              }
+            : prev.first_checkin_rules,
+          recommended_gear: existingLoc.metadata?.recommended_gear || prev.recommended_gear,
+          geofence_radius_meters: existingLoc.metadata?.geofence_radius_meters ?? prev.geofence_radius_meters,
+        }));
+        setLastSavedAt('loaded from branch profile');
+      }
     }
-  }, []);
+  }, [draftKey, existingLoc]);
 
   // Auto-save patch
   const handlePatch = useCallback((patch: Partial<WizardLocationState>) => {
@@ -64,7 +113,7 @@ export default function PartnerSetupPage() {
       const next = { ...prev, ...patch };
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem('polyfit_partner_wizard_draft', JSON.stringify(next));
+          localStorage.setItem(draftKey, JSON.stringify(next));
           const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           setLastSavedAt(timeStr);
         } catch (e) {
@@ -73,7 +122,7 @@ export default function PartnerSetupPage() {
       }
       return next;
     });
-  }, []);
+  }, [draftKey]);
 
   const handleNext = () => {
     if (currentStep < 11) {
@@ -93,7 +142,7 @@ export default function PartnerSetupPage() {
     setIsLaunching(true);
 
     try {
-      // 1. Persist Location to Database
+      // 1. Prepare Location Payload
       const locationPayload = {
         name: formState.name || `${provider?.name || 'Partner'} Central Branch`,
         address: formState.address || 'Kigali City Center',
@@ -126,7 +175,11 @@ export default function PartnerSetupPage() {
         status: 'active',
       };
 
-      await createLocation(locationPayload);
+      if (isEditing && locationId) {
+        await updateLocation(locationId, locationPayload);
+      } else {
+        await createLocation(locationPayload);
+      }
 
       // 2. Persist Payout Details if provided
       if (formState.account_number || formState.momo_code) {
@@ -147,7 +200,7 @@ export default function PartnerSetupPage() {
 
       // Clear draft
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('polyfit_partner_wizard_draft');
+        localStorage.removeItem(draftKey);
       }
 
       setLaunchSuccess(true);
@@ -170,7 +223,7 @@ export default function PartnerSetupPage() {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
         lastSavedAt={lastSavedAt}
-        facilityName={formState.name}
+        facilityName={formState.name ? (isEditing ? `Edit: ${formState.name}` : formState.name) : 'New Facility'}
       />
 
       {/* Main 2-Column Responsive Layout */}
@@ -226,6 +279,7 @@ export default function PartnerSetupPage() {
                 setCurrentStep(step);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
+              isEditing={isEditing}
             />
           )}
 
@@ -272,8 +326,8 @@ export default function PartnerSetupPage() {
                   disabled={isLaunching}
                   className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] text-xs font-extrabold shadow-md transition-all cursor-pointer"
                 >
-                  <Rocket className="w-4 h-4" />
-                  <span>Launch Facility</span>
+                  {isEditing ? <Save className="w-4 h-4" /> : <Rocket className="w-4 h-4" />}
+                  <span>{isEditing ? 'Save Facility Updates' : 'Launch Facility'}</span>
                 </button>
               )}
             </div>
@@ -306,7 +360,7 @@ export default function PartnerSetupPage() {
         </div>
       )}
 
-      {/* Launch Success Celebration Modal */}
+      {/* Launch / Update Success Celebration Modal */}
       {launchSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-[#0B1F33]/80 backdrop-blur-xs" />
@@ -316,10 +370,18 @@ export default function PartnerSetupPage() {
             </div>
 
             <h3 className="text-xl font-extrabold text-[#0B1F33]">
-              Facility Successfully Launched!
+              {isEditing ? 'Facility Updated Successfully!' : 'Facility Successfully Launched!'}
             </h3>
             <p className="text-xs text-[#526173] leading-relaxed">
-              <strong>{formState.name || 'Your Facility'}</strong> is now live in the PolyFit Corporate Network directory. Corporate beneficiaries can now locate your venue and check in seamlessly at your front desk.
+              {isEditing ? (
+                <>
+                  Updates to <strong>{formState.name || 'Your Facility'}</strong> have been applied. Corporate beneficiaries and front desk check-in systems will reflect the updated schedules and amenities immediately.
+                </>
+              ) : (
+                <>
+                  <strong>{formState.name || 'Your Facility'}</strong> is now live in the PolyFit Corporate Network directory. Corporate beneficiaries can now locate your venue and check in seamlessly at your front desk.
+                </>
+              )}
             </p>
 
             <div className="pt-2 flex flex-col gap-2">
@@ -342,5 +404,20 @@ export default function PartnerSetupPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PartnerSetupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-20 text-center space-y-3">
+          <div className="w-8 h-8 rounded-full border-2 border-[#28D17C] border-t-transparent animate-spin mx-auto" />
+          <p className="text-xs font-medium text-[#526173]">Loading Facility Onboarding &amp; Schedule Engine...</p>
+        </div>
+      }
+    >
+      <PartnerSetupContent />
+    </Suspense>
   );
 }
