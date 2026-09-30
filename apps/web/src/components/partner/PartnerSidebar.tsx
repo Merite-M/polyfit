@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   ScanLine,
   Receipt,
+  BarChart3,
   Building2,
   SlidersHorizontal,
   ShieldAlert,
@@ -37,10 +38,19 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
       ) : null
     },
     {
-      label: 'Settlements & Payouts',
+      label: 'Finance & Payouts',
       href: '/partner/settlements',
-      icon: Receipt,
-      subBadge: 'PF-94'
+      icon: Receipt
+    },
+    {
+      label: 'Reports & Audit',
+      href: '/partner/reports',
+      icon: BarChart3,
+      badge: (
+        <span className="text-[10px] font-bold bg-[#E9FAF2] text-[#008A4B] px-1.5 py-0.5 rounded-full border border-[#B7F1D2]">
+          4-Tab
+        </span>
+      )
     },
     {
       label: 'Facility & Locations',

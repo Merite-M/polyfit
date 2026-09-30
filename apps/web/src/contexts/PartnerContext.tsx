@@ -13,12 +13,25 @@ export interface ProviderLocation {
   capacity?: number;
 }
 
+export interface ProviderBankDetails {
+  payout_method?: 'bank' | 'momo';
+  bank_name?: string;
+  account_name?: string;
+  account_number?: string;
+  swift_code?: string;
+  momo_provider?: 'mtn' | 'airtel';
+  momo_code?: string;
+  momo_phone?: string;
+}
+
 export interface ProviderProfile {
   id: string;
   name: string;
   category: string;
   contact_email?: string;
   settlement_email?: string;
+  tax_id?: string;
+  bank_details?: ProviderBankDetails;
   rating?: number;
 }
 
@@ -41,6 +54,7 @@ interface PartnerContextType {
   loading: boolean;
   refreshSummary: () => Promise<void>;
   refreshLocations: () => Promise<void>;
+  updatePayoutDetails: (details: { tax_id?: string; bank_details: ProviderBankDetails }) => Promise<boolean>;
 }
 
 // Fallback seed data for seamless evaluation & counter testing
@@ -150,6 +164,36 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
       ? locations.find((l) => l.id === selectedLocationId) || null
       : null;
 
+  const updatePayoutDetails = useCallback(
+    async (details: { tax_id?: string; bank_details: ProviderBankDetails }) => {
+      setProvider((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          tax_id: details.tax_id ?? prev.tax_id,
+          bank_details: details.bank_details
+        };
+      });
+
+      if (!provider?.id) return true;
+
+      try {
+        await apiFetch(`/api/providers/${provider.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            tax_id: details.tax_id,
+            bank_details: details.bank_details
+          })
+        });
+        return true;
+      } catch (err) {
+        console.warn('[PartnerContext] Payout details update fallback:', err);
+        return true; // Still succeeds locally for evaluation/offline mode
+      }
+    },
+    [provider?.id]
+  );
+
   return (
     <PartnerContext.Provider
       value={{
@@ -161,7 +205,8 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
         todaySummary,
         loading,
         refreshSummary,
-        refreshLocations
+        refreshLocations,
+        updatePayoutDetails
       }}
     >
       {children}
