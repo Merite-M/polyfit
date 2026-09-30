@@ -4,11 +4,13 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  LayoutDashboard,
   ScanLine,
   Receipt,
   BarChart3,
   Building2,
   SlidersHorizontal,
+  FileText,
   ShieldAlert,
   HelpCircle,
   LogOut,
@@ -22,11 +24,24 @@ interface PartnerSidebarProps {
   onCloseMobile?: () => void;
 }
 
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  badge?: React.ReactNode;
+  subBadge?: string;
+}
+
 export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
   const pathname = usePathname();
   const { provider, todaySummary } = usePartner();
 
-  const navItems = [
+  const navItems: NavItem[] = [
+    {
+      label: 'Home Overview',
+      href: '/partner/dashboard',
+      icon: LayoutDashboard
+    },
     {
       label: 'Check-in Operations',
       href: '/partner/checkins',
@@ -36,6 +51,16 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
           {todaySummary.pending_queue_count}
         </span>
       ) : null
+    },
+    {
+      label: 'Partnership Hub',
+      href: '/partner/partnership',
+      icon: SlidersHorizontal,
+      badge: (
+        <span className="text-[10px] font-bold bg-[#E9FAF2] text-[#008A4B] px-1.5 py-0.5 rounded-full border border-[#B7F1D2]">
+          Terms
+        </span>
+      )
     },
     {
       label: 'Finance & Payouts',
@@ -61,12 +86,6 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
           Setup
         </span>
       )
-    },
-    {
-      label: 'Partnership Hub',
-      href: '/partner/dashboard',
-      icon: SlidersHorizontal,
-      subBadge: 'PF-96'
     }
   ];
 
@@ -75,7 +94,7 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
       {/* Brand Header */}
       <div className="p-5 border-b border-[#21405A]">
         <Link
-          href="/partner/checkins"
+          href="/partner/dashboard"
           className="flex items-center gap-2.5 group"
           onClick={onCloseMobile}
         >
@@ -152,11 +171,6 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
                 <span>{item.label}</span>
               </div>
               {item.badge}
-              {item.subBadge && !isActive && (
-                <span className="text-[9px] font-semibold text-[#8491A3] bg-[#071521] px-1.5 py-0.5 rounded border border-[#21405A]">
-                  {item.subBadge}
-                </span>
-              )}
             </Link>
           );
         })}

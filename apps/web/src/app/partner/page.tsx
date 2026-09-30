@@ -7,7 +7,7 @@ export default function PartnerRootPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/partner/checkins');
+    router.replace('/partner/dashboard');
   }, [router]);
 
   return (

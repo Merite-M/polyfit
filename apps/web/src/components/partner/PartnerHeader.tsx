@@ -12,6 +12,7 @@ import {
   Search
 } from 'lucide-react';
 import { usePartner } from '@/contexts/PartnerContext';
+import { FacilityUnitsModal } from './FacilityUnitsModal';
 
 interface PartnerHeaderProps {
   onOpenManualCheckin: () => void;
@@ -26,6 +27,7 @@ export function PartnerHeader({
 }: PartnerHeaderProps) {
   const { locations, selectedLocationId, setSelectedLocationId, selectedLocation, refreshSummary } = usePartner();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const [unitsModalOpen, setUnitsModalOpen] = React.useState(false);
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
@@ -45,31 +47,35 @@ export function PartnerHeader({
           <Menu className="w-5 h-5" />
         </button>
 
-        {/* Multi-Branch Location Switcher Dropdown */}
-        <div className="relative">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#8491A3] hidden sm:inline uppercase tracking-wider">
-              Facility:
-            </span>
-            <div className="relative inline-block">
-              <select
-                id="partner-location-select"
-                value={selectedLocationId}
-                onChange={(e) => setSelectedLocationId(e.target.value)}
-                className="appearance-none bg-[#F7F9FC] hover:bg-[#F1F4F8] text-[#0B1F33] font-semibold text-xs md:text-sm pl-3 pr-8 py-2 rounded-lg border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#28D17C] cursor-pointer transition-colors max-w-[220px] sm:max-w-[320px] truncate"
-              >
-                <option value="all">All Locations (Network View)</option>
-                {locations.map((loc) => (
-                  <option key={loc.id} value={loc.id}>
-                    {loc.name} {loc.city ? `• ${loc.city}` : ''}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-[#8491A3] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        {/* Multi-Branch Location Switcher Button & Drawer Trigger */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setUnitsModalOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#F7F9FC] hover:bg-[#F1F4F8] border border-[#E2E8F0] hover:border-[#CBD5E1] transition-all text-left group"
+            title="Click to switch active facility unit or view all locations"
+          >
+            <div className="w-6 h-6 rounded-md bg-[#28D17C]/15 text-[#008A4B] flex items-center justify-center shrink-0">
+              <Building2 className="w-3.5 h-3.5" />
             </div>
-          </div>
+            <div className="min-w-0 max-w-[150px] sm:max-w-[240px] truncate">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-[#0B1F33] truncate">
+                  {selectedLocation ? selectedLocation.name : 'All Facilities'}
+                </span>
+                <span className="text-[10px] font-mono text-[#526173] bg-white px-1.5 py-0.2 rounded border border-[#E2E8F0] shrink-0 hidden sm:inline">
+                  {selectedLocation ? (selectedLocation.name.includes('#') ? selectedLocation.name.split('#')[1]?.replace(')', '') : 'Unit #851931') : `${locations.length} Units`}
+                </span>
+              </div>
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-[#8491A3] group-hover:text-[#0B1F33] transition-colors shrink-0 ml-0.5" />
+          </button>
         </div>
       </div>
+
+      <FacilityUnitsModal
+        isOpen={unitsModalOpen}
+        onClose={() => setUnitsModalOpen(false)}
+      />
 
       {/* Right: Cloud Sync Telemetry & Counter Action CTAs */}
       <div className="flex items-center gap-2 sm:gap-3">

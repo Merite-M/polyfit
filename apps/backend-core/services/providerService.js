@@ -944,6 +944,466 @@ async function getMarketingAssets(providerId) {
   };
 }
 
+/**
+ * Retrieves the comprehensive Home Overview analytics for a provider.
+ * Supports filtering by provider_location_id.
+ *
+ * @param {string} providerId
+ * @param {Object} [options]
+ * @param {string} [options.providerLocationId]
+ * @returns {Promise<Object>} Dashboard overview KPIs, heatmap, and client breakdown
+ */
+async function getProviderDashboardOverview(providerId, options = {}) {
+  if (!supabase) {
+    throw new Error('Database service unavailable');
+  }
+
+  // 1. Verify provider exists
+  const { data: provider, error: provErr } = await supabase
+    .from('providers')
+    .select('id, name, category, status, rating, bank_details, contact_email, settlement_email, tax_id')
+    .eq('id', providerId)
+    .single();
+
+  if (provErr || !provider) {
+    const error = new Error(`Provider not found: ${providerId}`);
+    error.code = 'PROVIDER_NOT_FOUND';
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // 2. Fetch locations
+  const { data: locations } = await supabase
+    .from('provider_locations')
+    .select('id, name, city, address, capacity, metadata, status')
+    .eq('provider_id', providerId);
+
+  const allLocations = locations || [];
+  let targetLocationIds = allLocations.map((l) => l.id);
+
+  if (options.providerLocationId && options.providerLocationId !== 'all') {
+    targetLocationIds = targetLocationIds.filter((id) => id === options.providerLocationId);
+  }
+
+  // 3. Fetch active contracts to determine visit reimbursement rate
+  const { data: contracts } = await supabase
+    .from('provider_contracts')
+    .select('id, org_id, per_visit_rate, monthly_cap, status, organizations(id, name)')
+    .eq('provider_id', providerId);
+
+  const activeContracts = (contracts || []).filter((c) => c.status === 'active');
+  const orgRateMap = new Map();
+  (contracts || []).forEach((c) => {
+    if (c.org_id && c.per_visit_rate) {
+      orgRateMap.set(c.org_id, parseFloat(c.per_visit_rate));
+    }
+  });
+
+  const defaultRate = activeContracts[0]?.per_visit_rate
+    ? parseFloat(activeContracts[0].per_visit_rate)
+    : 5000;
+
+  // 4. Query visits for target locations
+  let visits = [];
+  if (targetLocationIds.length > 0) {
+    const { data: visitsData } = await supabase
+      .from('visits')
+      .select(`
+        id,
+        employee_id,
+        org_id,
+        provider_location_id,
+        check_in_at,
+        verification_method,
+        status,
+        organizations(id, name, logo_url)
+      `)
+      .in('provider_location_id', targetLocationIds)
+      .eq('status', 'verified')
+      .order('check_in_at', { ascending: false });
+
+    visits = visitsData || [];
+  }
+
+  // Calculate timestamps
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const mtdStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  let todayVisitsCount = 0;
+  let yesterdayVisitsCount = 0;
+  const mtdBeneficiaries = new Set();
+  let mtdVisitsCount = 0;
+  let mtdGrossEarnings = 0;
+
+  // 24-hour heatmap array (0 to 23)
+  const hourlyDistribution = Array(24).fill(0);
+  const weekdayHourly = Array(24).fill(0);
+  const weekendHourly = Array(24).fill(0);
+
+  // Top organizations aggregation
+  const orgMap = new Map();
+
+  visits.forEach((v) => {
+    const vTime = new Date(v.check_in_at);
+    const rate = orgRateMap.get(v.org_id) || defaultRate;
+
+    // Today vs Yesterday
+    if (vTime >= todayStart) {
+      todayVisitsCount += 1;
+    } else if (vTime >= yesterdayStart && vTime < todayStart) {
+      yesterdayVisitsCount += 1;
+    }
+
+    // MTD (Month-to-Date)
+    if (vTime >= mtdStart) {
+      mtdVisitsCount += 1;
+      mtdBeneficiaries.add(v.employee_id);
+      mtdGrossEarnings += rate;
+
+      // Heatmap hourly
+      const hour = vTime.getUTCHours();
+      hourlyDistribution[hour] += 1;
+
+      const day = vTime.getUTCDay();
+      if (day === 0 || day === 6) {
+        weekendHourly[hour] += 1;
+      } else {
+        weekdayHourly[hour] += 1;
+      }
+
+      // Organization aggregation
+      const orgId = v.org_id || 'unknown';
+      const orgName = v.organizations?.name || 'Corporate Partner';
+      const orgLogo = v.organizations?.logo_url || null;
+
+      if (!orgMap.has(orgId)) {
+        orgMap.set(orgId, {
+          org_id: orgId,
+          org_name: orgName,
+          logo_url: orgLogo,
+          visit_count: 0,
+          unique_employees: new Set(),
+          earnings: 0
+        });
+      }
+      const orgItem = orgMap.get(orgId);
+      orgItem.visit_count += 1;
+      orgItem.unique_employees.add(v.employee_id);
+      orgItem.earnings += rate;
+    }
+  });
+
+  // Calculate today vs yesterday delta percentage
+  let vsYesterdayDelta = 0;
+  if (yesterdayVisitsCount > 0) {
+    vsYesterdayDelta = Math.round(((todayVisitsCount - yesterdayVisitsCount) / yesterdayVisitsCount) * 100);
+  } else if (todayVisitsCount > 0) {
+    vsYesterdayDelta = 100;
+  }
+
+  // Top organizations formatted
+  const topOrganizations = Array.from(orgMap.values())
+    .map((o) => ({
+      org_id: o.org_id,
+      org_name: o.org_name,
+      logo_url: o.logo_url,
+      visit_count: o.visit_count,
+      unique_employees_count: o.unique_employees.size,
+      gross_earnings: o.earnings,
+      visit_share_pct: mtdVisitsCount > 0 ? Math.round((o.visit_count / mtdVisitsCount) * 100) : 0
+    }))
+    .sort((a, b) => b.visit_count - a.visit_count);
+
+  // Recent 5 verified visits
+  const recentActivity = visits.slice(0, 5).map((v) => ({
+    id: v.id,
+    check_in_at: v.check_in_at,
+    employee_masked: `PF-EMP-${v.employee_id ? v.employee_id.slice(-4).toUpperCase() : '8421'}`,
+    employer_name: v.organizations?.name || 'Corporate Partner',
+    verification_method: v.verification_method || 'totp_qr',
+    location_id: v.provider_location_id
+  }));
+
+  // Payout / Bank Status check
+  const b = provider.bank_details;
+  const isPayoutConfigured = Boolean(
+    b && (
+      (b.payout_method === 'bank' && b.account_number && b.bank_name) ||
+      (b.payout_method === 'momo' && (b.momo_code || b.momo_phone))
+    )
+  );
+
+  return {
+    provider: {
+      id: provider.id,
+      name: provider.name,
+      category: provider.category,
+      rating: provider.rating || 4.8,
+      is_payout_configured: isPayoutConfigured,
+      payout_details: provider.bank_details || null,
+      tax_id: provider.tax_id || null
+    },
+    location_context: {
+      selected_location_id: options.providerLocationId || 'all',
+      total_locations: allLocations.length,
+      locations: allLocations.map((l) => ({
+        id: l.id,
+        name: l.name,
+        city: l.city,
+        address: l.address,
+        capacity: l.capacity,
+        status: l.status || 'active',
+        geofence_radius_meters: l.metadata?.geofence_radius_meters || 150
+      }))
+    },
+    kpis: {
+      today_visits: todayVisitsCount,
+      yesterday_visits: yesterdayVisitsCount,
+      vs_yesterday_delta_pct: vsYesterdayDelta,
+      unique_corporate_visitors_mtd: mtdBeneficiaries.size,
+      mtd_total_visits: mtdVisitsCount,
+      estimated_mtd_revenue_rwf: mtdGrossEarnings,
+      estimated_net_payout_rwf: Math.round(mtdGrossEarnings * 0.90),
+      currency: 'RWF',
+      active_contracts_count: activeContracts.length || (contracts ? contracts.length : 1),
+      per_visit_rate: defaultRate
+    },
+    peak_hours_heatmap: {
+      hours_24: hourlyDistribution,
+      weekday_hours_24: weekdayHourly,
+      weekend_hours_24: weekendHourly,
+      rush_hours: {
+        morning_rush_count: (hourlyDistribution[6] || 0) + (hourlyDistribution[7] || 0) + (hourlyDistribution[8] || 0),
+        lunch_rush_count: (hourlyDistribution[12] || 0) + (hourlyDistribution[13] || 0),
+        evening_rush_count: (hourlyDistribution[17] || 0) + (hourlyDistribution[18] || 0) + (hourlyDistribution[19] || 0)
+      }
+    },
+    top_organizations: topOrganizations,
+    recent_activity: recentActivity
+  };
+}
+
+/**
+ * Retrieves commercial conditions, active contracts, and benefit tier eligibility.
+ * Modeled on Wellhub Partnership Hub.
+ *
+ * @param {string} providerId
+ * @returns {Promise<Object>}
+ */
+async function getProviderCommercialConditions(providerId) {
+  if (!supabase) throw new Error('Database service unavailable');
+
+  // 1. Fetch provider
+  const { data: provider, error: provErr } = await supabase
+    .from('providers')
+    .select('id, name, category, status, tax_id, bank_details')
+    .eq('id', providerId)
+    .single();
+
+  if (provErr || !provider) {
+    const error = new Error(`Provider not found: ${providerId}`);
+    error.code = 'PROVIDER_NOT_FOUND';
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // 2. Fetch contracts
+  const { data: contracts } = await supabase
+    .from('provider_contracts')
+    .select(`
+      id,
+      org_id,
+      provider_id,
+      per_visit_rate,
+      monthly_cap,
+      access_hours,
+      status,
+      effective_from,
+      effective_to,
+      organizations (
+        id,
+        name,
+        industry
+      )
+    `)
+    .eq('provider_id', providerId);
+
+  // 3. Fetch distinct plan tiers from benefits
+  const { data: benefits } = await supabase
+    .from('benefits')
+    .select('tier, name, co_pay_percentage, allowed_provider_categories, max_monthly_visits')
+    .eq('status', 'active');
+
+  const tierMap = new Map();
+  // Standard PolyFit tiers baseline
+  const knownTiers = [
+    {
+      tier: 'basic',
+      name: 'PolyFit Basic Tier',
+      description: 'Entry-level employee wellness tier for standard fitness and basic gym access.',
+      co_pay_percentage: 20,
+      allowed_provider_categories: ['gym', 'pool']
+    },
+    {
+      tier: 'standard',
+      name: 'PolyFit Standard Tier',
+      description: 'Comprehensive corporate plan for full facility workouts, pools, and studios.',
+      co_pay_percentage: 10,
+      allowed_provider_categories: ['gym', 'pool', 'studio']
+    },
+    {
+      tier: 'premium',
+      name: 'PolyFit Premium / Executive Tier',
+      description: 'Executive all-access corporate tier covering all premium facilities, studios, and recovery.',
+      co_pay_percentage: 0,
+      allowed_provider_categories: ['gym', 'pool', 'studio', 'clinic', 'wellness_center']
+    }
+  ];
+
+  knownTiers.forEach((kt) => tierMap.set(kt.tier, kt));
+
+  // Merge live benefit tiers if present
+  (benefits || []).forEach((b) => {
+    if (b.tier && tierMap.has(b.tier)) {
+      const existing = tierMap.get(b.tier);
+      tierMap.set(b.tier, {
+        ...existing,
+        name: b.name || existing.name,
+        co_pay_percentage: b.co_pay_percentage !== null ? parseFloat(b.co_pay_percentage) : existing.co_pay_percentage,
+        allowed_provider_categories: b.allowed_provider_categories || existing.allowed_provider_categories
+      });
+    }
+  });
+
+  const providerCat = provider.category || 'gym';
+  const tierMatrix = Array.from(tierMap.values()).map((t) => {
+    const isAllowed = (t.allowed_provider_categories || []).includes(providerCat);
+    return {
+      tier: t.tier,
+      tier_name: t.name,
+      description: t.description,
+      co_pay_percentage: t.co_pay_percentage,
+      is_eligible_for_entry: isAllowed,
+      restriction_reason: isAllowed
+        ? 'Full access granted for verified corporate beneficiaries under this tier.'
+        : `Access restricted. ${t.name} requires upgrading to access ${providerCat} facilities.`
+    };
+  });
+
+  // Calculate default per-visit rate
+  const activeContracts = (contracts || []).filter((c) => c.status === 'active');
+  const primaryContract = activeContracts[0] || (contracts && contracts[0]) || null;
+  const agreedRate = primaryContract ? parseFloat(primaryContract.per_visit_rate) : 5000;
+
+  return {
+    provider: {
+      id: provider.id,
+      name: provider.name,
+      category: provider.category,
+      status: provider.status
+    },
+    active_contract: primaryContract ? {
+      id: primaryContract.id,
+      tier_classification: 'Tier 1 - Certified Network Facility',
+      per_visit_rate: agreedRate,
+      currency: 'RWF',
+      monthly_cap: primaryContract.monthly_cap || null,
+      access_hours: primaryContract.access_hours || { weekdays: '06:00 - 21:00', weekends: '08:00 - 18:00' },
+      status: primaryContract.status,
+      effective_from: primaryContract.effective_from,
+      effective_to: primaryContract.effective_to,
+      contract_party: primaryContract.organizations?.name || 'PolyFit Aggregator Network'
+    } : {
+      tier_classification: 'Standard Certified Partner',
+      per_visit_rate: 5000,
+      currency: 'RWF',
+      monthly_cap: null,
+      access_hours: { weekdays: '06:00 - 21:00', weekends: '08:00 - 18:00' },
+      status: 'active',
+      contract_party: 'PolyFit Aggregator Network'
+    },
+    all_contracts: (contracts || []).map((c) => ({
+      id: c.id,
+      org_id: c.org_id,
+      org_name: c.organizations?.name || 'Corporate Client',
+      per_visit_rate: parseFloat(c.per_visit_rate),
+      monthly_cap: c.monthly_cap,
+      status: c.status,
+      effective_from: c.effective_from,
+      effective_to: c.effective_to
+    })),
+    tier_access_matrix: tierMatrix,
+    payment_calculation_rules: {
+      gross_rate_per_checkin_rwf: agreedRate,
+      platform_fee_percent: 10,
+      net_payout_per_checkin_rwf: Math.round(agreedRate * 0.90),
+      anti_passback_window_hours: 3,
+      dispute_window_minutes: 20,
+      co_pay_handling: 'PolyFit bills co-pays directly to the employee or client employer. The provider always receives the guaranteed contractual per-visit rate.',
+      disbursement_schedule: 'Monthly on the 15th for all verified check-ins in the previous calendar month via verified Rwandan Bank Transfer or MTN/Airtel MoMo.'
+    }
+  };
+}
+
+/**
+ * Creates a contract amendment or commercial terms inquiry.
+ *
+ * @param {string} providerId
+ * @param {Object} data
+ * @returns {Promise<Object>}
+ */
+async function createAmendmentRequest(providerId, data) {
+  if (!supabase) throw new Error('Database service unavailable');
+
+  const {
+    contract_id = null,
+    request_type,
+    current_rate = null,
+    requested_rate = null,
+    justification,
+    contact_phone = null,
+    contact_email = null
+  } = data;
+
+  if (!request_type) {
+    const error = new Error('request_type is required (rate_review, capacity_expansion, tier_upgrade, terms_inquiry)');
+    error.code = 'AMENDMENT_MISSING_TYPE';
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!justification || typeof justification !== 'string' || !justification.trim()) {
+    const error = new Error('Justification / proposal description is required');
+    error.code = 'AMENDMENT_MISSING_JUSTIFICATION';
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const { data: requestRecord, error: insertErr } = await supabase
+    .from('contract_amendment_requests')
+    .insert({
+      provider_id: providerId,
+      contract_id: contract_id || null,
+      request_type,
+      current_rate: current_rate ? parseFloat(current_rate) : null,
+      requested_rate: requested_rate ? parseFloat(requested_rate) : null,
+      justification: justification.trim(),
+      contact_phone: contact_phone || null,
+      contact_email: contact_email || null,
+      status: 'pending'
+    })
+    .select('*')
+    .single();
+
+  if (insertErr) {
+    throw new Error(`Failed to submit amendment request: ${insertErr.message}`);
+  }
+
+  return requestRecord;
+}
+
 module.exports = {
   VALID_PROVIDER_CATEGORIES,
   VALID_PROVIDER_STATUSES,
@@ -961,5 +1421,9 @@ module.exports = {
   deactivateLocation,
   discoverProviders,
   getMarketingAssets,
-  containsRetailPricing
+  containsRetailPricing,
+  getProviderDashboardOverview,
+  getProviderCommercialConditions,
+  createAmendmentRequest
 };
+

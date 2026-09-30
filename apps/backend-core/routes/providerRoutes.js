@@ -13,7 +13,10 @@ const {
   updateLocation,
   deactivateLocation,
   discoverProviders,
-  getMarketingAssets
+  getMarketingAssets,
+  getProviderDashboardOverview,
+  getProviderCommercialConditions,
+  createAmendmentRequest
 } = require('../services/providerService');
 
 const router = express.Router();
@@ -384,4 +387,76 @@ router.get('/:id/marketing-assets', requireAuth, requireProviderAccess((req) => 
   }
 });
 
+// ─── PF-96: Partner Portal Home Dashboard & Partnership Hub ──────────────────
+
+/**
+ * GET /api/providers/:id/dashboard
+ * Live overview hub metrics: today's visits, delta vs yesterday, MTD earnings,
+ * 24-hour peak hours distribution heatmap, top employer organizations breakdown.
+ */
+router.get('/:id/dashboard', requireAuth, requireProviderAccess((req) => req.params.id), async (req, res) => {
+  try {
+    const { provider_location_id } = req.query;
+    const overview = await getProviderDashboardOverview(req.params.id, {
+      providerLocationId: provider_location_id
+    });
+
+    return res.status(200).json({
+      success: true,
+      ...overview
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      error: error.message,
+      code: error.code || 'PROVIDER_DASHBOARD_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/providers/:id/commercial-conditions
+ * Commercial conditions & contract terms: active signed contract, per-visit rate,
+ * benefit plan tier entry permissions matrix, payment calculation explainer.
+ */
+router.get(['/:id/commercial-conditions', '/:id/partnership'], requireAuth, requireProviderAccess((req) => req.params.id), async (req, res) => {
+  try {
+    const conditions = await getProviderCommercialConditions(req.params.id);
+
+    return res.status(200).json({
+      success: true,
+      ...conditions
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      error: error.message,
+      code: error.code || 'COMMERCIAL_CONDITIONS_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/providers/:id/amendment-request
+ * Submit contract amendment or rate review inquiry to PolyFit Operations.
+ */
+router.post('/:id/amendment-request', requireAuth, requireProviderAccess((req) => req.params.id), async (req, res) => {
+  try {
+    const request = await createAmendmentRequest(req.params.id, req.body);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Contract amendment inquiry submitted successfully to PolyFit Operations.',
+      request
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      error: error.message,
+      code: error.code || 'AMENDMENT_REQUEST_FAILED'
+    });
+  }
+});
+
 module.exports = router;
+

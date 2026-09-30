@@ -15,7 +15,10 @@ const {
   addLocation,
   discoverProviders,
   getMarketingAssets,
-  containsRetailPricing
+  containsRetailPricing,
+  getProviderDashboardOverview,
+  getProviderCommercialConditions,
+  createAmendmentRequest
 } = require('../services/providerService');
 
 const {
@@ -392,4 +395,140 @@ describe('Provider & Network Engine Test Suite (PF-83)', () => {
       );
     });
   });
+
+  // ─── 8. Provider Home Dashboard, Units Switcher & Commercial Hub (PF-96) ───
+  describe('Provider Home Dashboard, Units Switcher & Commercial Hub (PF-96)', () => {
+    test('GET /api/providers/:id/dashboard - blocks unauthenticated access', async () => {
+      const res = await request(app).get(`/api/providers/${KNOWN_PROVIDER_ID}/dashboard`);
+      assert.equal(res.status, 401);
+      assert.equal(res.body.code, 'AUTH_MISSING_HEADER');
+    });
+
+    test('GET /api/providers/:id/commercial-conditions - blocks unauthenticated access', async () => {
+      const res = await request(app).get(`/api/providers/${KNOWN_PROVIDER_ID}/commercial-conditions`);
+      assert.equal(res.status, 401);
+      assert.equal(res.body.code, 'AUTH_MISSING_HEADER');
+    });
+
+    test('POST /api/providers/:id/amendment-request - blocks unauthenticated access', async () => {
+      const res = await request(app)
+        .post(`/api/providers/${KNOWN_PROVIDER_ID}/amendment-request`)
+        .send({ request_type: 'rate_review', justification: 'Higher equipment maintenance' });
+      assert.equal(res.status, 401);
+      assert.equal(res.body.code, 'AUTH_MISSING_HEADER');
+    });
+
+    test('getProviderDashboardOverview returns live KPIs, 24-hr heatmap and top client breakdown', async () => {
+      const overview = await getProviderDashboardOverview(KNOWN_PROVIDER_ID);
+
+      assert.ok(overview.provider);
+      assert.equal(overview.provider.id, KNOWN_PROVIDER_ID);
+      assert.ok(overview.location_context);
+      assert.ok(Array.isArray(overview.location_context.locations));
+
+      // KPIs
+      assert.ok(typeof overview.kpis.today_visits === 'number');
+      assert.ok(typeof overview.kpis.unique_corporate_visitors_mtd === 'number');
+      assert.ok(typeof overview.kpis.estimated_mtd_revenue_rwf === 'number');
+      assert.equal(overview.kpis.currency, 'RWF');
+      assert.ok(overview.kpis.per_visit_rate >= 4000);
+
+      // 24-Hour Peak Heatmap
+      assert.ok(overview.peak_hours_heatmap);
+      assert.equal(overview.peak_hours_heatmap.hours_24.length, 24);
+      assert.ok(overview.peak_hours_heatmap.rush_hours);
+
+      // Top Organizations & Recent Activity
+      assert.ok(Array.isArray(overview.top_organizations));
+      assert.ok(Array.isArray(overview.recent_activity));
+    });
+
+    test('getProviderDashboardOverview filters by specific location ID', async () => {
+      const allOverview = await getProviderDashboardOverview(KNOWN_PROVIDER_ID);
+      const firstLoc = allOverview.location_context.locations[0];
+
+      if (firstLoc) {
+        const filteredOverview = await getProviderDashboardOverview(KNOWN_PROVIDER_ID, {
+          providerLocationId: firstLoc.id
+        });
+        assert.equal(filteredOverview.location_context.selected_location_id, firstLoc.id);
+        assert.ok(filteredOverview.kpis);
+      }
+    });
+
+    test('getProviderCommercialConditions returns active terms, tier matrix and payment rules', async () => {
+      const conditions = await getProviderCommercialConditions(KNOWN_PROVIDER_ID);
+
+      assert.ok(conditions.provider);
+      assert.equal(conditions.provider.id, KNOWN_PROVIDER_ID);
+      assert.ok(conditions.active_contract);
+      assert.equal(conditions.active_contract.currency, 'RWF');
+      assert.ok(conditions.active_contract.per_visit_rate >= 4000);
+
+      // Tier Access Matrix
+      assert.ok(Array.isArray(conditions.tier_access_matrix));
+      const basicTier = conditions.tier_access_matrix.find((t) => t.tier === 'basic');
+      const standardTier = conditions.tier_access_matrix.find((t) => t.tier === 'standard');
+      const premiumTier = conditions.tier_access_matrix.find((t) => t.tier === 'premium');
+
+      assert.ok(basicTier);
+      assert.ok(standardTier);
+      assert.ok(premiumTier);
+      // FitLife is a gym, so standard and basic have gym access
+      assert.equal(standardTier.is_eligible_for_entry, true);
+      assert.equal(premiumTier.is_eligible_for_entry, true);
+
+      // Payment Calculation Explainer Rules
+      assert.ok(conditions.payment_calculation_rules);
+      assert.equal(conditions.payment_calculation_rules.anti_passback_window_hours, 3);
+      assert.equal(conditions.payment_calculation_rules.dispute_window_minutes, 20);
+      assert.equal(conditions.payment_calculation_rules.platform_fee_percent, 10);
+    });
+
+    test('createAmendmentRequest validates required fields and persists request', async () => {
+      // Rejects missing request_type
+      await assert.rejects(
+        async () => {
+          await createAmendmentRequest(KNOWN_PROVIDER_ID, {
+            justification: 'Missing request type'
+          });
+        },
+        (err) => {
+          assert.equal(err.code, 'AMENDMENT_MISSING_TYPE');
+          return true;
+        }
+      );
+
+      // Rejects missing justification
+      await assert.rejects(
+        async () => {
+          await createAmendmentRequest(KNOWN_PROVIDER_ID, {
+            request_type: 'rate_review',
+            justification: '   '
+          });
+        },
+        (err) => {
+          assert.equal(err.code, 'AMENDMENT_MISSING_JUSTIFICATION');
+          return true;
+        }
+      );
+
+      // Creates valid amendment request
+      const requestRecord = await createAmendmentRequest(KNOWN_PROVIDER_ID, {
+        request_type: 'rate_review',
+        current_rate: 5000,
+        requested_rate: 6000,
+        justification: 'Addition of Olympic heated pool and recovery ice baths',
+        contact_phone: '+250788123456',
+        contact_email: 'ops@fitlife.rw'
+      });
+
+      assert.ok(requestRecord.id);
+      assert.equal(requestRecord.provider_id, KNOWN_PROVIDER_ID);
+      assert.equal(requestRecord.request_type, 'rate_review');
+      assert.equal(requestRecord.status, 'pending');
+      assert.equal(parseFloat(requestRecord.requested_rate), 6000);
+    });
+  });
 });
+
