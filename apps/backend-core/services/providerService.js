@@ -6,6 +6,16 @@ const VALID_PROVIDER_STATUSES = ['pending_review', 'active', 'inactive', 'suspen
 const VALID_LOCATION_STATUSES = ['active', 'inactive', 'maintenance'];
 
 /**
+ * Anti-leakage regex validator: prevents facilities from listing retail pricing,
+ * subscriptions, or consumer promotions inside corporate wellness descriptions.
+ */
+function containsRetailPricing(text) {
+  if (!text || typeof text !== 'string') return false;
+  const retailPricePattern = /(?:(\$|€|£|rwf|frw|frs|usd|eur)\s*\d+)|(?:\d+\s*(?:rwf|frw|frs|usd|eur|\$|€|£))|(?:\b(per\s+month|\/month|monthly\s+membership|monthly\s+rate|discount\s+code|promo\s+price|tarif\s+mensuel)\b)/i;
+  return retailPricePattern.test(text);
+}
+
+/**
  * Registers a new wellness provider application.
  * Status is set to 'pending_review' awaiting PolyFit ops/admin approval.
  *
@@ -105,6 +115,7 @@ async function registerProvider({
       operating_hours: loc.operating_hours || null,
       amenities: Array.isArray(loc.amenities) ? loc.amenities : null,
       photos: Array.isArray(loc.photos) ? loc.photos : null,
+      metadata: loc.metadata || null,
       capacity: loc.capacity !== undefined && loc.capacity !== null ? parseInt(loc.capacity, 10) : null,
       status: 'active'
     }));
@@ -410,6 +421,15 @@ async function addLocation(providerId, locData = {}) {
     throw error;
   }
 
+  // Anti-leakage rule: No retail prices or consumer membership promotions in PolyFit network
+  const descToCheck = locData.metadata?.description || locData.description;
+  if (containsRetailPricing(descToCheck)) {
+    const error = new Error('Facility description cannot contain retail prices or membership promotions in the PolyFit corporate network');
+    error.code = 'LOCATION_RETAIL_PRICE_FORBIDDEN';
+    error.statusCode = 400;
+    throw error;
+  }
+
   // Ensure provider exists
   const { data: provider, error: pError } = await supabase
     .from('providers')
@@ -438,6 +458,7 @@ async function addLocation(providerId, locData = {}) {
     operating_hours: locData.operating_hours || null,
     amenities: Array.isArray(locData.amenities) ? locData.amenities : null,
     photos: Array.isArray(locData.photos) ? locData.photos : null,
+    metadata: locData.metadata || null,
     capacity: locData.capacity !== undefined && locData.capacity !== null ? parseInt(locData.capacity, 10) : null,
     status: locData.status && VALID_LOCATION_STATUSES.includes(locData.status) ? locData.status : 'active'
   };
@@ -553,9 +574,19 @@ async function updateLocation(providerId, locationId, updates = {}) {
     'operating_hours',
     'amenities',
     'photos',
+    'metadata',
     'capacity',
     'status'
   ];
+
+  // Anti-leakage rule: No retail prices or consumer membership promotions in PolyFit network
+  const descToUpdate = updates.metadata?.description || updates.description;
+  if (containsRetailPricing(descToUpdate)) {
+    const error = new Error('Facility description cannot contain retail prices or membership promotions in the PolyFit corporate network');
+    error.code = 'LOCATION_RETAIL_PRICE_FORBIDDEN';
+    error.statusCode = 400;
+    throw error;
+  }
 
   const updatePayload = {};
 
@@ -665,6 +696,7 @@ async function discoverProviders({
       operating_hours,
       amenities,
       photos,
+      metadata,
       capacity,
       status,
       provider:providers!inner(
@@ -765,6 +797,7 @@ async function discoverProviders({
       operating_hours: loc.operating_hours,
       amenities: loc.amenities || [],
       photos: loc.photos || [],
+      metadata: loc.metadata || {},
       capacity: loc.capacity,
       provider: {
         id: loc.provider.id,
@@ -927,5 +960,6 @@ module.exports = {
   updateLocation,
   deactivateLocation,
   discoverProviders,
-  getMarketingAssets
+  getMarketingAssets,
+  containsRetailPricing
 };

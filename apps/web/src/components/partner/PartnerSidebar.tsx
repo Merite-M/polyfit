@@ -56,7 +56,11 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
       label: 'Facility & Locations',
       href: '/partner/locations',
       icon: Building2,
-      subBadge: 'PF-95'
+      badge: (
+        <span className="text-[10px] font-bold bg-[#E9FAF2] text-[#008A4B] px-1.5 py-0.5 rounded-full border border-[#B7F1D2]">
+          Setup
+        </span>
+      )
     },
     {
       label: 'Partnership Hub',

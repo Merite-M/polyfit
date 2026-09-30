@@ -14,7 +14,8 @@ const {
   rejectProvider,
   addLocation,
   discoverProviders,
-  getMarketingAssets
+  getMarketingAssets,
+  containsRetailPricing
 } = require('../services/providerService');
 
 const {
@@ -360,6 +361,35 @@ describe('Provider & Network Engine Test Suite (PF-83)', () => {
 
       const terminated = await terminateContract(testContractId);
       assert.equal(terminated.status, 'terminated');
+    });
+  });
+
+  // ─── 7. Location Setup Wizard & Metadata Engine (PF-95) ─────────────────────
+  describe('Location Setup Wizard, Split-Shifts & Anti-Leakage (PF-95)', () => {
+    test('containsRetailPricing accurately catches retail fees and monthly subscription keywords', () => {
+      assert.equal(containsRetailPricing('Membership is 50,000 RWF per month'), true);
+      assert.equal(containsRetailPricing('Daily pass $20 at reception'), true);
+      assert.equal(containsRetailPricing('Discount code WELCOME10 for 10% off'), true);
+      assert.equal(containsRetailPricing('Only 3000 FRW drop in'), true);
+      assert.equal(containsRetailPricing('Premium wellness center with sauna and Olympic pool'), false);
+      assert.equal(containsRetailPricing('Enter via revolving doors, Level 2 elevator'), false);
+    });
+
+    test('addLocation rejects descriptions containing retail prices', async () => {
+      await assert.rejects(
+        async () => {
+          await addLocation(KNOWN_PROVIDER_ID, {
+            name: 'Retail Price Violation Facility',
+            metadata: {
+              description: 'Join today for only 45,000 RWF per month!'
+            }
+          });
+        },
+        (err) => {
+          assert.equal(err.code, 'LOCATION_RETAIL_PRICE_FORBIDDEN');
+          return true;
+        }
+      );
     });
   });
 });

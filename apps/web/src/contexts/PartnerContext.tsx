@@ -9,8 +9,33 @@ export interface ProviderLocation {
   name: string;
   city: string;
   address?: string;
+  country?: string;
+  lat?: number;
+  lng?: number;
+  operating_hours?: Record<string, { is_closed: boolean; shifts: Array<{ open: string; close: string }> }>;
   amenities?: string[];
+  photos?: string[];
   capacity?: number;
+  metadata?: {
+    phone?: string;
+    website?: string;
+    social_links?: {
+      instagram?: string;
+      whatsapp?: string;
+    };
+    description?: string;
+    guidelines?: string;
+    first_checkin_rules?: {
+      booking_required?: boolean;
+      registration_form_required?: boolean;
+      guided_tour_mandatory?: boolean;
+      arrive_early_minutes?: number;
+    };
+    recommended_gear?: string[];
+    entrance_instructions?: string;
+    geofence_radius_meters?: number;
+  };
+  status?: string;
 }
 
 export interface ProviderBankDetails {
@@ -55,6 +80,8 @@ interface PartnerContextType {
   refreshSummary: () => Promise<void>;
   refreshLocations: () => Promise<void>;
   updatePayoutDetails: (details: { tax_id?: string; bank_details: ProviderBankDetails }) => Promise<boolean>;
+  createLocation: (data: Partial<ProviderLocation>) => Promise<{ success: boolean; location?: ProviderLocation; error?: string }>;
+  updateLocation: (locId: string, data: Partial<ProviderLocation>) => Promise<{ success: boolean; location?: ProviderLocation; error?: string }>;
 }
 
 // Fallback seed data for seamless evaluation & counter testing
@@ -194,6 +221,74 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
     [provider?.id]
   );
 
+  const createLocation = useCallback(
+    async (data: Partial<ProviderLocation>) => {
+      if (!provider?.id) return { success: false, error: 'No active provider' };
+      try {
+        const res = await apiFetch<{ success: boolean; location: ProviderLocation; error?: string }>(
+          `/api/providers/${provider.id}/locations`,
+          {
+            method: 'POST',
+            body: JSON.stringify(data)
+          }
+        );
+        if (res?.location) {
+          setLocations((prev) => [...prev, res.location]);
+          return { success: true, location: res.location };
+        }
+        return { success: false, error: res?.error || 'Failed to create location' };
+      } catch (err: any) {
+        console.warn('[PartnerContext] Create location offline fallback:', err);
+        const fallbackLoc: ProviderLocation = {
+          id: `loc-${Date.now()}`,
+          provider_id: provider.id,
+          name: data.name || 'New Facility Branch',
+          city: data.city || 'Kigali',
+          address: data.address || '',
+          country: data.country || 'Rwanda',
+          amenities: data.amenities || [],
+          capacity: data.capacity || 100,
+          lat: data.lat,
+          lng: data.lng,
+          operating_hours: data.operating_hours,
+          photos: data.photos || [],
+          metadata: data.metadata || {},
+          status: 'active'
+        };
+        setLocations((prev) => [...prev, fallbackLoc]);
+        return { success: true, location: fallbackLoc };
+      }
+    },
+    [provider?.id]
+  );
+
+  const updateLocation = useCallback(
+    async (locId: string, data: Partial<ProviderLocation>) => {
+      if (!provider?.id) return { success: false, error: 'No active provider' };
+      try {
+        const res = await apiFetch<{ success: boolean; location: ProviderLocation; error?: string }>(
+          `/api/providers/${provider.id}/locations/${locId}`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+          }
+        );
+        if (res?.location) {
+          setLocations((prev) => prev.map((l) => (l.id === locId ? res.location : l)));
+          return { success: true, location: res.location };
+        }
+        return { success: false, error: res?.error || 'Failed to update location' };
+      } catch (err: any) {
+        console.warn('[PartnerContext] Update location offline fallback:', err);
+        setLocations((prev) =>
+          prev.map((l) => (l.id === locId ? ({ ...l, ...data } as ProviderLocation) : l))
+        );
+        return { success: true };
+      }
+    },
+    [provider?.id]
+  );
+
   return (
     <PartnerContext.Provider
       value={{
@@ -206,7 +301,9 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
         loading,
         refreshSummary,
         refreshLocations,
-        updatePayoutDetails
+        updatePayoutDetails,
+        createLocation,
+        updateLocation
       }}
     >
       {children}
