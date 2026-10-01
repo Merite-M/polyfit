@@ -237,6 +237,93 @@ dialog.pf-native-dialog[open]::backdrop {
   }
 }
 
+/* Sizing variants for larger native modals (e.g. bulk census upload) */
+dialog.pf-native-dialog.pf-dialog-lg {
+  max-width: 48rem;
+}
+
+/* Native HTML <dialog> Off-Canvas Drawer (e.g. EmployeeDetailDrawer) */
+dialog.pf-native-drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  margin: 0;
+  height: 100dvh;
+  max-height: 100dvh;
+  width: 100%;
+  max-width: 34rem;
+  border: none;
+  border-left: 1px solid var(--border);
+  background: var(--surface, #FFFFFF);
+  padding: 0;
+  box-shadow: var(--shadow-modal, 0 20px 25px -5px rgba(11, 31, 51, 0.2));
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, overlay 0.3s allow-discrete, display 0.3s allow-discrete;
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+dialog.pf-native-drawer[open] {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@starting-style {
+  dialog.pf-native-drawer[open] {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+dialog.pf-native-drawer::backdrop {
+  background-color: rgba(11, 31, 51, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), overlay 0.3s allow-discrete, display 0.3s allow-discrete;
+  opacity: 0;
+}
+
+dialog.pf-native-drawer[open]::backdrop {
+  opacity: 1;
+}
+
+@starting-style {
+  dialog.pf-native-drawer[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/* Accessible Form Interaction Validation (:user-invalid / :user-valid) */
+.pf-form-input:user-invalid {
+  border-color: var(--error, #EF4444) !important;
+  background-color: color-mix(in srgb, var(--error, #EF4444) 6%, var(--surface, #FFFFFF)) !important;
+}
+
+.pf-form-input:user-valid:not(:placeholder-shown) {
+  border-color: var(--accent, #28D17C);
+}
+
+.pf-form-hint-error {
+  display: none;
+}
+
+.pf-form-field:has(.pf-form-input:user-invalid) .pf-form-hint-error {
+  display: flex;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog.pf-native-dialog,
+  dialog.pf-native-drawer {
+    transform: none !important;
+    transition-duration: 0.05s !important;
+  }
+  @starting-style {
+    dialog.pf-native-dialog[open],
+    dialog.pf-native-drawer[open] {
+      transform: none !important;
+    }
+  }
+}
+
 /* Off-screen section deferral (Modern Web Guidance defer-rendering-heavy-content) */
 .pf-defer-section {
   content-visibility: auto;
