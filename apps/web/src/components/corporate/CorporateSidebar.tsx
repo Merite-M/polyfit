@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { IsometricHexMark } from "@/components/ui/polyfit-logo";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -71,9 +71,21 @@ export function CorporateSidebar({
   onCloseMobile,
 }: CorporateSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, signOut, isDemoMode, enableDemoMode } = useAuth();
   const [copiedLink, setCopiedLink] = useState(false);
   const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    onCloseMobile?.();
+    if (pathname === href) return;
+    if (typeof document !== "undefined" && "startViewTransition" in document) {
+      e.preventDefault();
+      (document as any).startViewTransition(() => {
+        router.push(href);
+      });
+    }
+  };
 
   const inviteUrl = typeof window !== "undefined"
     ? `${window.location.origin}/join/${organizationSlug}`
@@ -197,11 +209,12 @@ export function CorporateSidebar({
             <Link
               key={item.name}
               href={item.href}
-              onClick={onCloseMobile}
+              onClick={(e) => handleNavClick(e, item.href)}
+              style={isActive ? { viewTransitionName: "corporate-active-pill" } : undefined}
               className={cn(
                 "group flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 relative",
                 isActive
-                  ? "bg-[#28D17C] text-[#0B1F33] font-semibold shadow-sm shadow-[#28D17C]/20"
+                  ? "bg-accent text-accent-foreground font-semibold shadow-xs shadow-accent/20"
                   : "text-[#DAE9E2] hover:bg-[#142C44] hover:text-white"
               )}
             >
@@ -209,7 +222,7 @@ export function CorporateSidebar({
                 <item.icon
                   className={cn(
                     "w-4 h-4 transition-colors",
-                    isActive ? "text-[#0B1F33]" : "text-[#8491A3] group-hover:text-[#28D17C]"
+                    isActive ? "text-accent-foreground" : "text-muted-foreground group-hover:text-accent"
                   )}
                 />
                 <span className="truncate">{item.name}</span>
@@ -220,8 +233,8 @@ export function CorporateSidebar({
                   className={cn(
                     "text-[10px] px-2 py-0.5 rounded-full font-medium tracking-wide",
                     isActive
-                      ? "bg-[#0B1F33] text-[#28D17C]"
-                      : "bg-[#142C44] text-[#00D2B4] border border-[#21405A]"
+                      ? "bg-primary text-accent"
+                      : "bg-[#142C44] text-secondary border border-[#21405A]"
                   )}
                 >
                   {item.badge}

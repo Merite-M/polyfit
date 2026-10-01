@@ -1,17 +1,16 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Crown,
   Shield,
   Layers,
   CheckCircle2,
   Users,
-  Calendar,
-  Percent,
   Building2,
   Edit2,
-  UserPlus
+  UserPlus,
+  ChevronDown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -57,6 +56,8 @@ export const PlanCard: React.FC<PlanCardProps> = ({
   onAssign,
   onSelectCompare
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const tier = (plan.tier || "standard").toLowerCase();
   const isExecutive = tier === "executive" || tier === "premium";
   const isBasic = tier === "basic";
@@ -75,12 +76,12 @@ export const PlanCard: React.FC<PlanCardProps> = ({
   return (
     <div
       className={cn(
-        "group relative flex flex-col justify-between rounded-2xl bg-white border transition-all duration-200 hover:shadow-md",
+        "group relative flex flex-col justify-between rounded-2xl bg-card border transition-all duration-200 hover:shadow-md",
         isExecutive
-          ? "border-[#0B1F33]/20 shadow-sm"
+          ? "border-primary/20 shadow-xs"
           : isDraft
-          ? "border-dashed border-[#CBD5E1] bg-[#F8FAFC]"
-          : "border-[#E2E8F0]"
+          ? "border-dashed border-border bg-muted/20"
+          : "border-border shadow-xs"
       )}
     >
       {/* Top Accent Strip */}
@@ -88,10 +89,10 @@ export const PlanCard: React.FC<PlanCardProps> = ({
         className={cn(
           "h-1.5 w-full rounded-t-2xl",
           isExecutive
-            ? "bg-gradient-to-r from-[#0B1F33] via-[#10B981] to-[#00D2B4]"
+            ? "bg-gradient-to-r from-primary via-emerald-500 to-secondary"
             : isBasic
-            ? "bg-[#94A3B8]"
-            : "bg-[#28D17C]"
+            ? "bg-muted-foreground/40"
+            : "bg-accent"
         )}
       />
 
@@ -103,89 +104,89 @@ export const PlanCard: React.FC<PlanCardProps> = ({
               className={cn(
                 "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider",
                 isExecutive
-                  ? "bg-[#0B1F33] text-white"
+                  ? "bg-primary text-primary-foreground"
                   : isBasic
-                  ? "bg-[#F1F4F8] text-[#526173] border border-[#E2E8F0]"
-                  : "bg-[#E0F9F5] text-[#007A68] border border-[#B7F1D2]"
+                  ? "bg-muted text-muted-foreground border border-border"
+                  : "bg-secondary/15 text-secondary-foreground border border-secondary/20"
               )}
             >
               {isExecutive ? (
-                <Crown className="w-3.5 h-3.5 text-[#F59E0B]" />
+                <Crown className="w-3.5 h-3.5 text-amber-500" />
               ) : isBasic ? (
-                <Layers className="w-3.5 h-3.5 text-[#526173]" />
+                <Layers className="w-3.5 h-3.5 text-muted-foreground" />
               ) : (
-                <Shield className="w-3.5 h-3.5 text-[#28D17C]" />
+                <Shield className="w-3.5 h-3.5 text-accent" />
               )}
               {plan.tier || "Standard Tier"}
             </span>
 
             {isDraft && (
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FEF3C7] text-[#D97706] border border-[#FDE68A]">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/20">
                 Draft
               </span>
             )}
 
             {plan.is_family_eligible && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#EEF2FF] text-[#4F46E5] border border-[#C7D2FE]">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
                 Family Pass
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-1 text-xs text-[#8491A3]">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Users className="w-3.5 h-3.5" />
-            <span className="font-semibold text-[#0B1F33]">{enrolled}</span>
+            <span className="font-semibold text-foreground">{enrolled}</span>
             <span>enrolled</span>
           </div>
         </div>
 
         {/* Plan Name & Description */}
-        <h3 className="text-lg font-bold text-[#0B1F33] leading-snug group-hover:text-[#008A4B] transition-colors">
+        <h3 className="text-lg font-bold text-foreground leading-snug group-hover:text-accent transition-colors">
           {plan.name}
         </h3>
-        <p className="text-xs text-[#526173] mt-1.5 line-clamp-2 leading-relaxed">
+        <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
           {plan.description || "Comprehensive corporate wellness access for employees."}
         </p>
 
         {/* Key Metrics Grid */}
-        <div className="mt-5 grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]/70">
+        <div className="mt-5 grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-muted/40 border border-border">
           <div>
-            <div className="text-[11px] font-medium text-[#8491A3] uppercase tracking-wider">
+            <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
               Visit Allowance
             </div>
-            <div className="text-sm font-bold text-[#0B1F33] mt-0.5 flex items-baseline gap-1">
+            <div className="text-sm font-bold text-foreground mt-0.5 flex items-baseline gap-1">
               <span>{visits}</span>
-              <span className="text-[11px] font-normal text-[#526173]">visits/mo</span>
+              <span className="text-[11px] font-normal text-muted-foreground">visits/mo</span>
             </div>
           </div>
 
           <div>
-            <div className="text-[11px] font-medium text-[#8491A3] uppercase tracking-wider">
+            <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
               Co-Pay Rule
             </div>
-            <div className="text-sm font-bold text-[#0B1F33] mt-0.5">
+            <div className="text-sm font-bold text-foreground mt-0.5">
               {copay === 0 ? (
-                <span className="text-[#008A4B]">100% Covered</span>
+                <span className="text-accent">100% Covered</span>
               ) : (
-                <span className="text-[#D97706]">{copay}% Co-Pay</span>
+                <span className="text-amber-700 dark:text-amber-400">{copay}% Co-Pay</span>
               )}
             </div>
           </div>
 
           <div>
-            <div className="text-[11px] font-medium text-[#8491A3] uppercase tracking-wider">
+            <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
               Budget Cap
             </div>
-            <div className="text-xs font-semibold text-[#0B1F33] mt-0.5 font-mono">
+            <div className="text-xs font-semibold text-foreground mt-0.5 font-mono">
               {budgetCap ? formatRwf(budgetCap) : "Unlimited"}
             </div>
           </div>
 
           <div>
-            <div className="text-[11px] font-medium text-[#8491A3] uppercase tracking-wider">
+            <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
               Est. Monthly
             </div>
-            <div className="text-xs font-semibold text-[#0B1F33] mt-0.5 font-mono">
+            <div className="text-xs font-semibold text-foreground mt-0.5 font-mono">
               {plan.estimated_monthly_liability
                 ? formatRwf(plan.estimated_monthly_liability)
                 : formatRwf(enrolled * visits * 5000 * (1 - copay / 100))}
@@ -195,16 +196,16 @@ export const PlanCard: React.FC<PlanCardProps> = ({
 
         {/* Allowed Categories Tags */}
         <div className="mt-4">
-          <div className="text-[11px] font-medium text-[#8491A3] mb-1.5 uppercase tracking-wider">
+          <div className="text-[11px] font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">
             Covered Network Categories
           </div>
           <div className="flex flex-wrap gap-1.5">
             {(plan.allowed_provider_categories || []).map((cat) => (
               <span
                 key={cat}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium bg-white border border-[#E2E8F0] text-[#334155]"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium bg-card border border-border text-foreground"
               >
-                <CheckCircle2 className="w-3 h-3 text-[#28D17C]" />
+                <CheckCircle2 className="w-3 h-3 text-accent" />
                 {CATEGORY_LABELS[cat] || cat}
               </span>
             ))}
@@ -213,27 +214,71 @@ export const PlanCard: React.FC<PlanCardProps> = ({
 
         {/* Assigned Departments Preview */}
         {plan.departments && plan.departments.length > 0 && (
-          <div className="mt-3.5 pt-3 border-t border-[#E2E8F0]/70 flex items-center gap-1.5 text-xs text-[#526173]">
-            <Building2 className="w-3.5 h-3.5 text-[#8491A3]" />
-            <span className="font-medium text-[#0B1F33]">Teams:</span>
+          <div className="mt-3.5 pt-3 border-t border-border flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="font-medium text-foreground">Teams:</span>
             <span className="truncate">{plan.departments.join(", ")}</span>
           </div>
         )}
+
+        {/* Collapsible Policy & Subsidy Breakdown Drawer (Native interpolate-size) */}
+        <div className="mt-3.5 pt-3 border-t border-border">
+          <button
+            type="button"
+            onClick={() => setIsExpanded(!isExpanded)}
+            aria-expanded={isExpanded}
+            aria-controls={`plan-breakdown-${plan.id}`}
+            className="w-full flex items-center justify-between text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          >
+            <span>{isExpanded ? "Hide Policy Breakdown" : "View Policy & Subsidy Breakdown"}</span>
+            <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200", isExpanded && "rotate-180")} />
+          </button>
+
+          <div
+            id={`plan-breakdown-${plan.id}`}
+            className={cn("pf-accordion-content", isExpanded && "is-open")}
+            data-state={isExpanded ? "open" : "closed"}
+          >
+            <div className="pt-3 space-y-2 text-xs">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground">Employer Subsidy / Visit:</span>
+                <span className="font-semibold text-foreground font-mono">
+                  {formatRwf(Math.round(5000 * (1 - copay / 100)))}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground">Employee Co-Pay / Visit:</span>
+                <span className="font-semibold text-amber-700 dark:text-amber-400 font-mono">
+                  {formatRwf(Math.round(5000 * (copay / 100)))}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground">Est. 30% Tax Shield:</span>
+                <span className="font-semibold text-accent font-mono">
+                  {formatRwf(Math.round((enrolled * visits * 5000 * (1 - copay / 100)) * 0.30))}
+                </span>
+              </div>
+              <div className="p-2 rounded-lg bg-muted/60 text-[10px] text-muted-foreground leading-normal mt-1">
+                Verified visits only &bull; Anti-passback 20-min cooldown &bull; Auto-synced to monthly RRA EBM invoice
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Card Actions Bottom Bar */}
-      <div className="p-4 bg-[#F8FAFC] border-t border-[#E2E8F0] rounded-b-2xl flex items-center justify-between gap-2">
+      <div className="p-4 bg-muted/30 border-t border-border rounded-b-2xl flex items-center justify-between gap-2">
         <button
           onClick={() => onAssign(plan)}
-          className="flex-1 py-2 px-3 rounded-xl bg-white border border-[#0B1F33] text-[#0B1F33] text-xs font-semibold hover:bg-[#F1F4F8] transition-colors flex items-center justify-center gap-1.5"
+          className="flex-1 py-2 px-3 rounded-xl bg-card border border-border text-foreground text-xs font-semibold hover:bg-muted transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
         >
-          <UserPlus className="w-3.5 h-3.5 text-[#007A68]" />
+          <UserPlus className="w-3.5 h-3.5 text-secondary" />
           <span>Assign Roster</span>
         </button>
 
         <button
           onClick={() => onEdit(plan)}
-          className="flex-1 py-2 px-3 rounded-xl bg-[#28D17C] text-[#0B1F33] text-xs font-bold hover:bg-[#22BC6E] transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+          className="flex-1 py-2 px-3 rounded-xl bg-accent text-accent-foreground text-xs font-bold hover:bg-accent/90 transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
         >
           <Edit2 className="w-3.5 h-3.5" />
           <span>Edit Rules</span>

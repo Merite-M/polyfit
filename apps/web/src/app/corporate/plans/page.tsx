@@ -46,12 +46,34 @@ export default function PlansPage() {
   const [editingPlan, setEditingPlan] = useState<BenefitPlan | null>(null);
   const [assigningPlan, setAssigningPlan] = useState<BenefitPlan | null>(null);
 
-  // Notification Toast
   const [notification, setNotification] = useState<string | null>(null);
 
   const showNotification = (msg: string) => {
     setNotification(msg);
     setTimeout(() => setNotification(null), 4000);
+  };
+
+  // Modern Web Guidance: View Transitions for intra-page filter & view changes
+  const handleTabChange = (tab: "all" | "active" | "draft") => {
+    if (tab === activeTab) return;
+    if (typeof document !== "undefined" && "startViewTransition" in document) {
+      (document as any).startViewTransition(() => {
+        setActiveTab(tab);
+      });
+    } else {
+      setActiveTab(tab);
+    }
+  };
+
+  const handleViewChange = (view: "grid" | "matrix" | "forecast") => {
+    if (view === activeView) return;
+    if (typeof document !== "undefined" && "startViewTransition" in document) {
+      (document as any).startViewTransition(() => {
+        setActiveView(view);
+      });
+    } else {
+      setActiveView(view);
+    }
   };
 
   // Fetch benefit plans from backend
@@ -276,39 +298,39 @@ export default function PlansPage() {
         </div>
       </div>
 
-      {/* View Switcher & Tabs */}
-      <div className="mt-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
+      {/* View Switcher & Tabs (View Transitions enabled) */}
+      <div className="mt-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
         {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#F1F4F8] w-fit">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-muted w-fit">
           <button
-            onClick={() => setActiveTab("all")}
+            onClick={() => handleTabChange("all")}
             className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
+              "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
               activeTab === "all"
-                ? "bg-white text-[#0B1F33] shadow-xs"
-                : "text-[#526173] hover:text-[#0B1F33]"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             All Plans ({plans.length})
           </button>
           <button
-            onClick={() => setActiveTab("active")}
+            onClick={() => handleTabChange("active")}
             className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
+              "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
               activeTab === "active"
-                ? "bg-white text-[#0B1F33] shadow-xs"
-                : "text-[#526173] hover:text-[#0B1F33]"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             Active ({plans.filter((p) => p.status !== "draft").length})
           </button>
           <button
-            onClick={() => setActiveTab("draft")}
+            onClick={() => handleTabChange("draft")}
             className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
+              "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
               activeTab === "draft"
-                ? "bg-white text-[#0B1F33] shadow-xs"
-                : "text-[#526173] hover:text-[#0B1F33]"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             Drafts ({plans.filter((p) => p.status === "draft").length})
@@ -316,14 +338,14 @@ export default function PlansPage() {
         </div>
 
         {/* View Switcher Toggle */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#F1F4F8] w-fit">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-muted w-fit">
           <button
-            onClick={() => setActiveView("grid")}
+            onClick={() => handleViewChange("grid")}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all",
+              "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer",
               activeView === "grid"
-                ? "bg-white text-[#0B1F33] shadow-xs"
-                : "text-[#526173] hover:text-[#0B1F33]"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
@@ -331,12 +353,12 @@ export default function PlansPage() {
           </button>
 
           <button
-            onClick={() => setActiveView("matrix")}
+            onClick={() => handleViewChange("matrix")}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all",
+              "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer",
               activeView === "matrix"
-                ? "bg-white text-[#0B1F33] shadow-xs"
-                : "text-[#526173] hover:text-[#0B1F33]"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <Table className="w-3.5 h-3.5" />
@@ -344,15 +366,15 @@ export default function PlansPage() {
           </button>
 
           <button
-            onClick={() => setActiveView("forecast")}
+            onClick={() => handleViewChange("forecast")}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all",
+              "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer",
               activeView === "forecast"
-                ? "bg-white text-[#0B1F33] shadow-xs"
-                : "text-[#526173] hover:text-[#0B1F33]"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Calculator className="w-3.5 h-3.5 text-[#007A68]" />
+            <Calculator className="w-3.5 h-3.5 text-secondary" />
             <span>Budget Forecaster</span>
           </button>
         </div>

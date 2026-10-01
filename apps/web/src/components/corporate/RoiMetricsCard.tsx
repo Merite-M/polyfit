@@ -32,58 +32,60 @@ export function RoiMetricsCard({
   const estimatedProductivityHours = Math.round(activeEmployees * 3.5);
 
   return (
-    <div className={cn("grid grid-cols-1 md:grid-cols-3 gap-4", className)}>
-      {/* 1. Peak "Wellness Hour" Card (Wellhub Signature Indicator) */}
-      <div className="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-sm flex items-center gap-3.5 group">
-        <div className="w-10 h-10 rounded-xl bg-[#E0F9F5] flex items-center justify-center text-[#00D2B4] group-hover:scale-105 transition-transform flex-shrink-0">
-          <Clock className="w-5 h-5" />
+    <div className={cn("pf-roi-container", className)}>
+      <div className="grid grid-cols-1 pf-roi-grid gap-4">
+        {/* 1. Peak "Wellness Hour" Card (Wellhub Signature Indicator) */}
+        <div className="p-4 rounded-2xl bg-card border border-border shadow-xs flex items-center gap-3.5 group">
+          <div className="w-10 h-10 rounded-xl bg-secondary/15 flex items-center justify-center text-secondary group-hover:scale-105 transition-transform flex-shrink-0">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Peak "Wellness Hour"
+            </span>
+            <p className="text-base font-bold text-foreground">
+              {wellnessHour}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              Most active on <span className="font-semibold text-foreground">{peakDay} evenings</span>
+            </p>
+          </div>
         </div>
-        <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8491A3]">
-            Peak "Wellness Hour"
-          </span>
-          <p className="text-base font-bold text-[#0B1F33]">
-            {wellnessHour}
-          </p>
-          <p className="text-[11px] text-[#526173]">
-            Most active on <span className="font-semibold text-[#0B1F33]">{peakDay} evenings</span>
-          </p>
-        </div>
-      </div>
 
-      {/* 2. Projected Healthcare Savings (Wellhub 2.5x Multiplier) */}
-      <div className="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-sm flex items-center gap-3.5 group">
-        <div className="w-10 h-10 rounded-xl bg-[#E9FAF2] flex items-center justify-center text-[#28D17C] group-hover:scale-105 transition-transform flex-shrink-0">
-          <TrendingUp className="w-5 h-5" />
+        {/* 2. Projected Healthcare Savings (Wellhub 2.5x Multiplier) */}
+        <div className="p-4 rounded-2xl bg-card border border-border shadow-xs flex items-center gap-3.5 group">
+          <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent group-hover:scale-105 transition-transform flex-shrink-0">
+            <TrendingUp className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Est. Healthcare Savings
+            </span>
+            <p className="text-base font-bold text-foreground">
+              RWF {estimatedSavingsRwf.toLocaleString()}
+            </p>
+            <p className="text-[11px] text-accent font-semibold">
+              2.5x Return on Wellbeing (ROI)
+            </p>
+          </div>
         </div>
-        <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8491A3]">
-            Est. Healthcare Savings
-          </span>
-          <p className="text-base font-bold text-[#0B1F33]">
-            RWF {estimatedSavingsRwf.toLocaleString()}
-          </p>
-          <p className="text-[11px] text-[#28D17C] font-semibold">
-            2.5x Return on Wellbeing (ROI)
-          </p>
-        </div>
-      </div>
 
-      {/* 3. Tax Deductibility & Productivity Impact */}
-      <div className="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-sm flex items-center gap-3.5 group">
-        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#3B82F6] group-hover:scale-105 transition-transform flex-shrink-0">
-          <ShieldCheck className="w-5 h-5" />
-        </div>
-        <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8491A3]">
-            Tax Deductibility (RRA)
-          </span>
-          <p className="text-base font-bold text-[#0B1F33]">
-            100% Welfare Expense
-          </p>
-          <p className="text-[11px] text-[#526173]">
-            +{estimatedProductivityHours.toLocaleString()} hrs productivity gained
-          </p>
+        {/* 3. Tax Deductibility & Productivity Impact */}
+        <div className="p-4 rounded-2xl bg-card border border-border shadow-xs flex items-center gap-3.5 group">
+          <div className="w-10 h-10 rounded-xl bg-info/15 dark:bg-blue-950/40 flex items-center justify-center text-info group-hover:scale-105 transition-transform flex-shrink-0">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Tax Deductibility (RRA)
+            </span>
+            <p className="text-base font-bold text-foreground">
+              100% Welfare Expense
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              +{estimatedProductivityHours.toLocaleString()} hrs productivity gained
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -85,95 +85,84 @@ export function TopProvidersLeaderboard({
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case "pool":
-        return <Waves className="w-3.5 h-3.5 text-[#00D2B4]" />;
+        return <Waves className="w-3.5 h-3.5 text-secondary" />;
       case "studio":
-        return <Sparkles className="w-3.5 h-3.5 text-[#28D17C]" />;
+        return <Sparkles className="w-3.5 h-3.5 text-accent" />;
       case "clinic":
-        return <HeartPulse className="w-3.5 h-3.5 text-[#3B82F6]" />;
+        return <HeartPulse className="w-3.5 h-3.5 text-info" />;
       default:
-        return <Dumbbell className="w-3.5 h-3.5 text-[#0B1F33]" />;
-    }
-  };
-
-  const getCategoryBadgeClass = (category: string) => {
-    switch (category) {
-      case "pool":
-        return "bg-[#E0F9F5] text-[#00584B] border-[#00D2B4]/30";
-      case "studio":
-        return "bg-[#E9FAF2] text-[#28D17C] border-[#28D17C]/30";
-      case "clinic":
-        return "bg-blue-50 text-blue-700 border-blue-200";
-      default:
-        return "bg-[#F1F4F8] text-[#0B1F33] border-[#E2E8F0]";
+        return <Dumbbell className="w-3.5 h-3.5 text-foreground" />;
     }
   };
 
   return (
-    <div className={cn("p-5 rounded-2xl bg-white border border-[#E2E8F0] shadow-sm flex flex-col justify-between", className)}>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-base font-bold text-[#0B1F33]">
-            Top Visited Wellness Providers
-          </h3>
-          <p className="text-xs text-[#526173]">
-            Venues most frequented by your workforce this billing period
-          </p>
-        </div>
-        <Link
-          href="/network"
-          className="text-xs font-semibold text-[#0B1F33] hover:text-[#28D17C] transition-colors flex items-center gap-1"
-        >
-          <span>Explore Network (29)</span>
-          <ChevronRight className="w-3.5 h-3.5" />
-        </Link>
-      </div>
-
-      <div className="space-y-2.5">
-        {providers.map((p, index) => (
-          <div
-            key={p.id}
-            className="p-3 rounded-xl bg-[#F7F9FC] hover:bg-white border border-[#E2E8F0] transition-all flex items-center justify-between gap-3 group"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="w-5 font-bold text-xs text-[#8491A3] group-hover:text-[#0B1F33] text-center">
-                #{index + 1}
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-white border border-[#E2E8F0] flex items-center justify-center flex-shrink-0 group-hover:border-[#28D17C] transition-colors">
-                {getCategoryIcon(p.category)}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-[#0B1F33] truncate group-hover:text-[#28D17C] transition-colors">
-                  {p.name}
-                </p>
-                <div className="flex items-center gap-1.5 text-[11px] text-[#8491A3] truncate">
-                  <MapPin className="w-3 h-3 text-[#8491A3] flex-shrink-0" />
-                  <span className="truncate">{p.location}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 flex-shrink-0">
-              <div className="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
-                <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                <span>{p.rating.toFixed(1)}</span>
-              </div>
-
-              <div className="text-right">
-                <div className="text-xs font-bold text-[#0B1F33]">
-                  {p.visits} <span className="text-[10px] font-normal text-[#8491A3]">visits</span>
-                </div>
-                <div className="text-[10px] font-medium text-[#28D17C]">
-                  {p.percentage}% of total
-                </div>
-              </div>
-            </div>
+    <div className={cn("pf-leaderboard-container", className)}>
+      <div className="p-5 rounded-2xl bg-card border border-border shadow-xs flex flex-col justify-between h-full">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-base font-bold text-foreground">
+              Top Visited Wellness Providers
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Venues most frequented by your workforce this billing period
+            </p>
           </div>
-        ))}
-      </div>
+          <Link
+            href="/network"
+            className="text-xs font-semibold text-foreground hover:text-accent transition-colors flex items-center gap-1"
+          >
+            <span>Explore Network (29)</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
 
-      <div className="mt-4 pt-3 border-t border-[#F1F4F8] flex items-center justify-between text-[11px] text-[#8491A3]">
-        <span>All visits authenticated via dynamic TOTP</span>
-        <span className="text-[#0B1F33] font-semibold">100% Anti-Passback Enforced</span>
+        <div className="space-y-2.5">
+          {providers.map((p, index) => (
+            <div
+              key={p.id}
+              className="p-3 rounded-xl bg-muted/40 hover:bg-card border border-border transition-all flex items-center justify-between gap-3 group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="w-5 font-bold text-xs text-muted-foreground group-hover:text-foreground text-center">
+                  #{index + 1}
+                </span>
+                <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center flex-shrink-0 group-hover:border-accent transition-colors">
+                  {getCategoryIcon(p.category)}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-foreground truncate group-hover:text-accent transition-colors">
+                    {p.name}
+                  </p>
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground truncate">
+                    <MapPin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                    <span className="truncate">{p.location}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 flex-shrink-0">
+                <div className="hidden pf-leaderboard-rating items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                  <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                  <span>{p.rating.toFixed(1)}</span>
+                </div>
+
+                <div className="text-right">
+                  <div className="text-xs font-bold text-foreground">
+                    {p.visits} <span className="text-[10px] font-normal text-muted-foreground">visits</span>
+                  </div>
+                  <div className="text-[10px] font-medium text-accent">
+                    {p.percentage}% of total
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
+          <span>All visits authenticated via dynamic TOTP</span>
+          <span className="text-foreground font-semibold">100% Anti-Passback Enforced</span>
+        </div>
       </div>
     </div>
   );

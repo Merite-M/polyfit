@@ -13,7 +13,7 @@ export default function CorporateLayout({
   const { user } = useAuth();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F7F9FC]">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop Persistent Sidebar (Fixed 260px) */}
       <div className="hidden lg:block w-64 flex-shrink-0 h-full">
         <CorporateSidebar
@@ -39,9 +39,14 @@ export default function CorporateLayout({
         </div>
       )}
 
-      {/* Main Content Area */}
+      {/* Main Content Area with View Transition Name */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto">
-        <main className="flex-1 pb-16">{children}</main>
+        <main
+          className="flex-1 pb-16"
+          style={{ viewTransitionName: "corporate-main-content" }}
+        >
+          {children}
+        </main>
       </div>
     </div>
   );

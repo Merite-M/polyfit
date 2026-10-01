@@ -219,6 +219,17 @@ export default function CorporateDashboardPage() {
       ? Math.round((funnelData.activeBeneficiaries / funnelData.registeredMembers) * 100)
       : 52;
 
+  const handleTabChange = (tab: "overview" | "analytics") => {
+    if (tab === activeTab) return;
+    if (typeof document !== "undefined" && "startViewTransition" in document) {
+      (document as any).startViewTransition(() => {
+        setActiveTab(tab);
+      });
+    } else {
+      setActiveTab(tab);
+    }
+  };
+
   return (
     <div className="min-h-full">
       {/* Sticky Corporate Navigation Header */}
@@ -469,29 +480,29 @@ export default function CorporateDashboardPage() {
           </div>
         </section>
 
-        {/* TAB CONTROLS: OVERVIEW VS DETAILED ANALYTICS */}
+        {/* TAB CONTROLS: OVERVIEW VS DETAILED ANALYTICS (View Transitions enabled) */}
         <section aria-label="Portal Navigation Tabs">
-          <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-1">
+          <div className="flex items-center justify-between border-b border-border pb-1">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => setActiveTab("overview")}
+                onClick={() => handleTabChange("overview")}
                 className={cn(
-                  "flex items-center gap-2 pb-3 px-1 text-sm font-bold border-b-2 transition-all",
+                  "flex items-center gap-2 pb-3 px-1 text-sm font-bold border-b-2 transition-all cursor-pointer",
                   activeTab === "overview"
-                    ? "border-[#28D17C] text-[#0B1F33]"
-                    : "border-transparent text-[#8491A3] hover:text-[#526173]"
+                    ? "border-accent text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
                 )}
               >
                 <LayoutDashboard className="w-4 h-4" />
                 <span>Executive Overview</span>
               </button>
               <button
-                onClick={() => setActiveTab("analytics")}
+                onClick={() => handleTabChange("analytics")}
                 className={cn(
-                  "flex items-center gap-2 pb-3 px-1 text-sm font-bold border-b-2 transition-all",
+                  "flex items-center gap-2 pb-3 px-1 text-sm font-bold border-b-2 transition-all cursor-pointer",
                   activeTab === "analytics"
-                    ? "border-[#28D17C] text-[#0B1F33]"
-                    : "border-transparent text-[#8491A3] hover:text-[#526173]"
+                    ? "border-accent text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
                 )}
               >
                 <BarChart3 className="w-4 h-4" />
@@ -499,7 +510,7 @@ export default function CorporateDashboardPage() {
               </button>
             </div>
 
-            <span className="text-xs text-[#8491A3]">
+            <span className="text-xs text-muted-foreground">
               {activeTab === "overview" ? "Simplified view for HR management" : "Deep metrics & category utilization"}
             </span>
           </div>
