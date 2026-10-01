@@ -4,3 +4,6 @@ packages:
 allowBuilds:
   core-js: true
   unrs-resolver: true
+fetchRetries: 10
+fetchTimeout: 1800000
+networkConcurrency: 1
