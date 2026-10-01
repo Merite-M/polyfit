@@ -1,14 +1,13 @@
-"use client";
-
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, ShieldCheck, Sparkles, Building2 } from "lucide-react";
+import { ArrowRight, BadgeCheck, ShieldCheck, Sparkles } from "lucide-react";
 import NetworkVisualization from "./network-visualization";
+import { LeadModalTrigger } from "./lead-modal-trigger";
 
 interface HeroProps {
-  onOpenLeadForm: (type: 'employer' | 'provider') => void;
+  onOpenLeadForm?: (type: 'employer' | 'provider') => void;
 }
 
-export default function Hero({ onOpenLeadForm }: HeroProps) {
+export default function Hero({ onOpenLeadForm }: HeroProps = {}) {
   return (
     <section className="relative pt-24 sm:pt-32 pb-16 sm:pb-20 lg:pt-36 lg:pb-24 overflow-hidden bg-[#0B1F33] text-white">
       {/* Background subtle ambient grid/glow */}
@@ -53,14 +52,14 @@ export default function Hero({ onOpenLeadForm }: HeroProps) {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3.5 sm:gap-4 justify-center lg:justify-start pt-2">
-              <button 
-                onClick={() => onOpenLeadForm('employer')}
-                aria-label="Talk to PolyFit - Open employer inquiry form"
+              <LeadModalTrigger 
+                type="employer"
+                ariaLabel="Talk to PolyFit - Open employer inquiry form"
                 className="w-full sm:w-auto bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] px-7 py-3.5 sm:py-4 rounded-[10px] text-base font-bold transition-all duration-150 flex items-center justify-center gap-2 min-h-[48px] shadow-lg shadow-[#28D17C]/20 active:scale-95 cursor-pointer"
               >
                 Talk to PolyFit
                 <ArrowRight className="w-5 h-5 stroke-[2.5]" />
-              </button>
+              </LeadModalTrigger>
 
               <Link 
                 href="/pricing"

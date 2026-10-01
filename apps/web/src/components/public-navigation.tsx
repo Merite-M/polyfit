@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { PolyFitLogo } from "@/components/ui/polyfit-logo";
+import { useLeadModal } from "@/lib/lead-modal";
 
 interface PublicNavigationProps {
   onOpenLeadForm?: (type: 'employer' | 'provider') => void;
@@ -10,6 +11,15 @@ interface PublicNavigationProps {
 
 export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const openLeadModal = useLeadModal((s) => s.open);
+
+  const handleOpenLead = (type: 'employer' | 'provider' = 'employer') => {
+    if (onOpenLeadForm) {
+      onOpenLeadForm(type);
+    } else {
+      openLeadModal(type);
+    }
+  };
 
   const navLinks = [
     { name: "Network", href: "/network" },
@@ -45,13 +55,7 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
             ))}
 
             <button 
-              onClick={() => {
-                if (onOpenLeadForm) {
-                  onOpenLeadForm('employer');
-                } else {
-                  window.location.href = '/demo';
-                }
-              }}
+              onClick={() => handleOpenLead('employer')}
               aria-label="Talk to us - Request employer demo"
               className="bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] px-5 py-2.5 rounded-[10px] text-sm font-bold transition-all duration-150 shadow-xs hover:shadow-sm cursor-pointer"
             >
@@ -93,11 +97,7 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
             <button 
               onClick={() => {
                 setIsMenuOpen(false);
-                if (onOpenLeadForm) {
-                  onOpenLeadForm('employer');
-                } else {
-                  window.location.href = '/demo';
-                }
+                handleOpenLead('employer');
               }}
               aria-label="Talk to us - Request employer demo"
               className="w-full bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] px-5 py-3 rounded-[10px] text-sm font-bold transition-colors min-h-[44px] flex items-center justify-center cursor-pointer"

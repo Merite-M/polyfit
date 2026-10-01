@@ -188,3 +188,58 @@
 .skip-to-main:focus {
   top: 0;
 }
+
+/* Native HTML <dialog> Styling & Modern Web Guidance transitions */
+dialog.pf-native-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: transparent;
+  padding: 0;
+  max-width: 32rem;
+  width: calc(100% - 1.5rem);
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), overlay 0.2s allow-discrete, display 0.2s allow-discrete;
+  opacity: 0;
+  transform: scale(0.96) translateY(6px);
+}
+
+dialog.pf-native-dialog[open] {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+@starting-style {
+  dialog.pf-native-dialog[open] {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+}
+
+dialog.pf-native-dialog::backdrop {
+  background-color: rgba(11, 31, 51, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), overlay 0.2s allow-discrete, display 0.2s allow-discrete;
+  opacity: 0;
+}
+
+dialog.pf-native-dialog[open]::backdrop {
+  opacity: 1;
+}
+
+@starting-style {
+  dialog.pf-native-dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/* Off-screen section deferral (Modern Web Guidance defer-rendering-heavy-content) */
+.pf-defer-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto none auto 600px;
+}
+

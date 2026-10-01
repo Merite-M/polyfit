@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import PublicNavigation from "@/components/public-navigation";
 import Hero from "@/components/landing/hero";
 import CredibilityStrip from "@/components/landing/credibility-strip";
@@ -18,40 +15,28 @@ import Footer from "@/components/landing/footer";
 import LeadForms from "@/components/landing/lead-forms";
 
 export default function Home() {
-  const [isLeadFormOpen, setIsLeadFormOpen] = useState(false);
-  const [leadFormType, setLeadFormType] = useState<'employer' | 'provider'>('employer');
-
-  const openLeadForm = (type: 'employer' | 'provider') => {
-    setLeadFormType(type);
-    setIsLeadFormOpen(true);
-  };
-
   return (
     <div className="min-h-screen bg-[#F7F9FC] text-[#0B1F33] selection:bg-[#28D17C]/20 selection:text-[#0B1F33]">
-      <PublicNavigation onOpenLeadForm={openLeadForm} />
+      <PublicNavigation />
       
       <main id="main-content">
-        <Hero onOpenLeadForm={openLeadForm} />
+        <Hero />
         <CredibilityStrip />
         <ProblemSection />
         <SolutionSection />
         <HowItWorks />
-        <RoiCalculator onOpenLeadForm={openLeadForm} />
-        <NetworkPreview onOpenLeadForm={openLeadForm} />
-        <ForCompanies onOpenLeadForm={openLeadForm} />
-        <ForProviders onOpenLeadForm={openLeadForm} />
+        <RoiCalculator />
+        <NetworkPreview />
+        <ForCompanies />
+        <ForProviders />
         <AboutSection />
-        <FAQSection onOpenLeadForm={openLeadForm} />
-        <EarlyAccessCTA onOpenLeadForm={openLeadForm} />
+        <FAQSection />
+        <EarlyAccessCTA />
       </main>
       
-      <Footer onOpenLeadForm={openLeadForm} />
+      <Footer />
       
-      <LeadForms 
-        isOpen={isLeadFormOpen} 
-        onClose={() => setIsLeadFormOpen(false)}
-        defaultType={leadFormType}
-      />
+      <LeadForms />
     </div>
   );
 }

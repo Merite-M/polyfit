@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { LeadModalTrigger } from "./lead-modal-trigger";
 
 interface FAQSectionProps {
   onOpenLeadForm?: (type: 'employer' | 'provider') => void;
 }
 
-export default function FAQSection({ onOpenLeadForm }: FAQSectionProps) {
+export default function FAQSection({ onOpenLeadForm }: FAQSectionProps = {}) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const faqs = [
@@ -42,7 +43,7 @@ export default function FAQSection({ onOpenLeadForm }: FAQSectionProps) {
   };
 
   return (
-    <section id="faq" className="py-16 sm:py-24 bg-white text-[#0B1F33] border-t border-gray-200/60">
+    <section id="faq-section" className="pf-defer-section py-16 sm:py-24 bg-white text-[#0B1F33] border-t border-gray-200/60">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10 sm:mb-16">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#28D17C] mb-2">
@@ -99,13 +100,13 @@ export default function FAQSection({ onOpenLeadForm }: FAQSectionProps) {
           <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
             Still have questions about corporate partnerships or joining as a gym?
           </p>
-          <button
-            onClick={() => onOpenLeadForm?.('employer')}
-            aria-label="Contact PolyFit team"
-            className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#0B1F33] hover:text-[#28D17C] underline underline-offset-4 transition-colors"
+          <LeadModalTrigger
+            type="employer"
+            ariaLabel="Contact PolyFit team"
+            className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#0B1F33] hover:text-[#28D17C] underline underline-offset-4 transition-colors cursor-pointer"
           >
             Talk to our team →
-          </button>
+          </LeadModalTrigger>
         </div>
       </div>
     </section>

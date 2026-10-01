@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { 
   Dumbbell, 
@@ -13,6 +11,7 @@ import {
   Building2,
   HeartHandshake
 } from "lucide-react";
+import { LeadModalTrigger } from "./lead-modal-trigger";
 
 interface NetworkPreviewProps {
   onOpenLeadForm?: (type: 'employer' | 'provider') => void;
@@ -199,12 +198,12 @@ export default function NetworkPreview({ onOpenLeadForm }: NetworkPreviewProps) 
           </div>
 
           <div className="flex items-center gap-3 w-full md:w-auto">
-            <button
-              onClick={() => onOpenLeadForm?.('provider')}
+            <LeadModalTrigger
+              type="provider"
               className="w-full md:w-auto bg-transparent hover:bg-white/10 text-white border border-white/20 px-5 py-2.5 rounded-[10px] text-xs sm:text-sm font-semibold transition-colors text-center cursor-pointer"
             >
               Partner With PolyFit
-            </button>
+            </LeadModalTrigger>
             <Link
               href="/network"
               className="w-full md:w-auto bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] px-5 py-2.5 rounded-[10px] text-xs sm:text-sm font-bold transition-all text-center whitespace-nowrap cursor-pointer"

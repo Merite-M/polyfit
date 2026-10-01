@@ -1,21 +1,37 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { X, Building2, Dumbbell, Mail, CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useLeadModal, LeadFormType } from "@/lib/lead-modal";
 
 interface LeadFormsProps {
-  isOpen: boolean;
-  onClose: () => void;
-  defaultType?: 'employer' | 'provider';
+  isOpen?: boolean;
+  onClose?: () => void;
+  defaultType?: LeadFormType;
 }
 
-export default function LeadForms({ isOpen, onClose, defaultType = 'employer' }: LeadFormsProps) {
-  const [formType, setFormType] = useState<'employer' | 'provider'>(defaultType);
+export default function LeadForms({ isOpen, onClose, defaultType }: LeadFormsProps = {}) {
+  const storeIsOpen = useLeadModal((s) => s.isOpen);
+  const storeClose = useLeadModal((s) => s.close);
+  const storeDefaultType = useLeadModal((s) => s.defaultType);
+
+  const effectiveIsOpen = isOpen !== undefined ? isOpen : storeIsOpen;
+  const effectiveClose = useCallback(() => {
+    if (onClose) {
+      onClose();
+    } else {
+      storeClose();
+    }
+  }, [onClose, storeClose]);
+  const effectiveDefaultType = defaultType !== undefined ? defaultType : storeDefaultType;
+
+  const [formType, setFormType] = useState<LeadFormType>(effectiveDefaultType);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   const [employerForm, setEmployerForm] = useState({
     name: '',
@@ -38,27 +54,53 @@ export default function LeadForms({ isOpen, onClose, defaultType = 'employer' }:
 
   // Sync formType when defaultType changes or modal opens
   useEffect(() => {
-    if (isOpen) {
-      setFormType(defaultType);
+    if (effectiveIsOpen) {
+      setFormType(effectiveDefaultType);
       setSubmitError(null);
       setFieldErrors({});
     }
-  }, [defaultType, isOpen]);
+  }, [effectiveDefaultType, effectiveIsOpen]);
 
-  // Handle keyboard Escape to close modal
+  // Sync native dialog element with effectiveIsOpen state
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (effectiveIsOpen) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } else {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+  }, [effectiveIsOpen]);
+
+  // Modern Web Guidance fallback for light-dismiss on browsers without closedby support
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    const handleBackdropClick = (event: MouseEvent) => {
+      if ("closedBy" in HTMLDialogElement.prototype) return;
+      if (event.target !== dialog) return;
+
+      const rect = dialog.getBoundingClientRect();
+      const isInside =
+        rect.top <= event.clientY &&
+        event.clientY <= rect.top + rect.height &&
+        rect.left <= event.clientX &&
+        event.clientX <= rect.left + rect.width;
+
+      if (!isInside) {
+        effectiveClose();
       }
     };
-    if (isOpen) {
-      window.addEventListener("keydown", handleKeyDown);
-    }
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+    dialog.addEventListener("click", handleBackdropClick);
+    return () => dialog.removeEventListener("click", handleBackdropClick);
+  }, [effectiveClose]);
 
   const validateEmployerForm = () => {
     const errors: Record<string, string> = {};
@@ -207,7 +249,7 @@ export default function LeadForms({ isOpen, onClose, defaultType = 'employer' }:
         // Auto close after 3.5 seconds
         setTimeout(() => {
           setIsSubmitted(false);
-          onClose();
+          effectiveClose();
         }, 3500);
       }
     } catch (err: unknown) {
@@ -635,14 +677,20 @@ export default function LeadForms({ isOpen, onClose, defaultType = 'employer' }:
   );
 
   return (
-    <div 
-      className="marketing-theme fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-200 animate-in fade-in"
-      role="dialog"
-      aria-modal="true"
+    <dialog
+      ref={dialogRef}
+      id="lead-form-dialog"
+      closedby="any"
+      onClose={effectiveClose}
+      onCancel={(e) => {
+        e.preventDefault();
+        effectiveClose();
+      }}
       aria-labelledby="lead-modal-title"
+      className="pf-native-dialog marketing-theme text-[#0B1F33]"
     >
       <div 
-        className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-lg w-full max-h-[92vh] sm:max-h-[90vh] overflow-y-auto transform transition-all duration-200 text-[#0B1F33]"
+        className="bg-white max-w-lg w-full max-h-[92vh] sm:max-h-[90vh] overflow-y-auto transform transition-all duration-200 text-[#0B1F33]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -669,7 +717,7 @@ export default function LeadForms({ isOpen, onClose, defaultType = 'employer' }:
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={effectiveClose}
             className="p-2 hover:bg-slate-200/70 text-slate-500 hover:text-[#0B1F33] rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-slate-400 flex-shrink-0"
             aria-label="Close dialog"
           >
@@ -710,7 +758,7 @@ export default function LeadForms({ isOpen, onClose, defaultType = 'employer' }:
               </p>
               <div className="mt-6">
                 <button
-                  onClick={onClose}
+                  onClick={effectiveClose}
                   className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-[#0B1F33] font-semibold rounded-lg text-sm transition-colors border border-slate-200"
                 >
                   Close Window
@@ -775,6 +823,6 @@ export default function LeadForms({ isOpen, onClose, defaultType = 'employer' }:
           </p>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

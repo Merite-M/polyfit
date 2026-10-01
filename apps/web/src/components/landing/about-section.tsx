@@ -2,7 +2,7 @@ import { Target } from "lucide-react";
 
 export default function AboutSection() {
   return (
-    <section id="about" className="py-16 sm:py-24 bg-[#F7F9FC] text-[#0B1F33] border-t border-gray-200/60">
+    <section id="about" className="pf-defer-section py-16 sm:py-24 bg-[#F7F9FC] text-[#0B1F33] border-t border-gray-200/60">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#28D17C] mb-2">
           About PolyFit

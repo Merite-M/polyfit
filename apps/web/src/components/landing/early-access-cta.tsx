@@ -1,10 +1,11 @@
 import { Building2, Dumbbell, ArrowRight } from "lucide-react";
+import { LeadModalTrigger } from "./lead-modal-trigger";
 
 interface EarlyAccessCTAProps {
   onOpenLeadForm?: (type: 'employer' | 'provider') => void;
 }
 
-export default function EarlyAccessCTA({ onOpenLeadForm }: EarlyAccessCTAProps) {
+export default function EarlyAccessCTA({ onOpenLeadForm }: EarlyAccessCTAProps = {}) {
   return (
     <section className="py-16 sm:py-24 bg-[#0B1F33] text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -34,14 +35,14 @@ export default function EarlyAccessCTA({ onOpenLeadForm }: EarlyAccessCTAProps) 
                 Explore how PolyFit can transform your employee wellness program with flexible, network-based fitness benefits and full usage visibility.
               </p>
             </div>
-            <button 
-              onClick={() => onOpenLeadForm?.('employer')}
-              aria-label="Explore PolyFit - Open employer inquiry form"
-              className="w-full bg-[#28D17C] hover:bg-[#28D17C]/90 text-[#0B1F33] px-6 py-3.5 sm:py-4 rounded-[10px] text-base font-semibold transition-all duration-150 flex items-center justify-center gap-2 min-h-[48px] shadow-md hover:shadow-lg"
+            <LeadModalTrigger 
+              type="employer"
+              ariaLabel="Explore PolyFit - Open employer inquiry form"
+              className="w-full bg-[#28D17C] hover:bg-[#28D17C]/90 text-[#0B1F33] px-6 py-3.5 sm:py-4 rounded-[10px] text-base font-semibold transition-all duration-150 flex items-center justify-center gap-2 min-h-[48px] shadow-md hover:shadow-lg cursor-pointer"
             >
               <span>Explore PolyFit</span>
               <ArrowRight className="w-5 h-5" />
-            </button>
+            </LeadModalTrigger>
           </div>
 
           {/* Path 2: Provider */}
@@ -57,14 +58,14 @@ export default function EarlyAccessCTA({ onOpenLeadForm }: EarlyAccessCTAProps) 
                 Join the PolyFit network to reach corporate employees, fill off-peak capacity, and grow your facility with verified visit tracking.
               </p>
             </div>
-            <button 
-              onClick={() => onOpenLeadForm?.('provider')}
-              aria-label="Join the network - Open provider registration form"
-              className="w-full border border-white/30 hover:bg-white/10 text-white px-6 py-3.5 sm:py-4 rounded-[10px] text-base font-semibold transition-all duration-150 flex items-center justify-center gap-2 min-h-[48px]"
+            <LeadModalTrigger 
+              type="provider"
+              ariaLabel="Join the network - Open provider registration form"
+              className="w-full border border-white/30 hover:bg-white/10 text-white px-6 py-3.5 sm:py-4 rounded-[10px] text-base font-semibold transition-all duration-150 flex items-center justify-center gap-2 min-h-[48px] cursor-pointer"
             >
               <span>Join the network</span>
               <ArrowRight className="w-5 h-5 text-gray-300" />
-            </button>
+            </LeadModalTrigger>
           </div>
         </div>
 

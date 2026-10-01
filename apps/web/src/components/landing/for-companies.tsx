@@ -1,10 +1,11 @@
 import { ArrowRight, Users, MapPin, BarChart3, Handshake } from "lucide-react";
+import { LeadModalTrigger } from "./lead-modal-trigger";
 
 interface ForCompaniesProps {
   onOpenLeadForm?: (type: 'employer' | 'provider') => void;
 }
 
-export default function ForCompanies({ onOpenLeadForm }: ForCompaniesProps) {
+export default function ForCompanies({ onOpenLeadForm }: ForCompaniesProps = {}) {
   const benefits = [
     {
       icon: Users,
@@ -59,14 +60,14 @@ export default function ForCompanies({ onOpenLeadForm }: ForCompaniesProps) {
         </div>
 
         <div>
-          <button 
-            onClick={() => onOpenLeadForm?.('employer')}
-            aria-label="Talk to PolyFit - Open employer inquiry form"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#0B1F33] hover:bg-[#0B1F33]/90 text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-[10px] text-base font-semibold transition-all duration-150 shadow-md hover:shadow-lg min-h-[48px]"
+          <LeadModalTrigger 
+            type="employer"
+            ariaLabel="Talk to PolyFit - Open employer inquiry form"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#0B1F33] hover:bg-[#0B1F33]/90 text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-[10px] text-base font-semibold transition-all duration-150 shadow-md hover:shadow-lg min-h-[48px] cursor-pointer"
           >
             <span>Talk to PolyFit</span>
             <ArrowRight className="w-5 h-5 text-[#28D17C]" />
-          </button>
+          </LeadModalTrigger>
         </div>
       </div>
     </section>

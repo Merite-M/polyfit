@@ -1,16 +1,17 @@
 import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { PolyFitLogo } from "@/components/ui/polyfit-logo";
+import { LeadModalTrigger } from "./lead-modal-trigger";
 
 interface FooterProps {
   onOpenLeadForm?: (type: 'employer' | 'provider') => void;
 }
 
-export default function Footer({ onOpenLeadForm }: FooterProps) {
+export default function Footer({ onOpenLeadForm }: FooterProps = {}) {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-slate-900 text-white border-t border-white/10" aria-label="Site Footer">
+    <footer className="pf-defer-section bg-slate-900 text-white border-t border-white/10" aria-label="Site Footer">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8 mb-10 sm:mb-12">
           {/* Brand Col (2 cols on md) */}
@@ -74,22 +75,22 @@ export default function Footer({ onOpenLeadForm }: FooterProps) {
                 </Link>
               </li>
               <li>
-                <button
-                  onClick={() => onOpenLeadForm?.('employer')}
-                  aria-label="Employers - Open inquiry modal"
-                  className="hover:text-white transition-colors text-left"
+                <LeadModalTrigger
+                  type="employer"
+                  ariaLabel="Employers - Open inquiry modal"
+                  className="hover:text-white transition-colors text-left cursor-pointer"
                 >
                   Employer Inquiries
-                </button>
+                </LeadModalTrigger>
               </li>
               <li>
-                <button
-                  onClick={() => onOpenLeadForm?.('provider')}
-                  aria-label="Fitness Providers - Open provider registration modal"
-                  className="hover:text-white transition-colors text-left"
+                <LeadModalTrigger
+                  type="provider"
+                  ariaLabel="Fitness Providers - Open provider registration modal"
+                  className="hover:text-white transition-colors text-left cursor-pointer"
                 >
                   Fitness Providers
-                </button>
+                </LeadModalTrigger>
               </li>
               <li>
                 <a href="#about" className="hover:text-white transition-colors">

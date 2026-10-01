@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { Calculator, Users, ShieldCheck, ArrowRight, Sparkles, Building2 } from "lucide-react";
+import { useLeadModal } from "@/lib/lead-modal";
 
 interface RoiCalculatorProps {
   onOpenLeadForm?: (type: 'employer' | 'provider') => void;
 }
 
-export default function RoiCalculator({ onOpenLeadForm }: RoiCalculatorProps) {
+export default function RoiCalculator({ onOpenLeadForm }: RoiCalculatorProps = {}) {
+  const openLeadModal = useLeadModal((s) => s.open);
   const [employees, setEmployees] = useState<number>(120);
   const [budgetPerEmployee, setBudgetPerEmployee] = useState<number>(45000); // RWF per month
 
@@ -169,9 +171,15 @@ export default function RoiCalculator({ onOpenLeadForm }: RoiCalculatorProps) {
 
             {/* CTA Button */}
             <button
-              onClick={() => onOpenLeadForm?.('employer')}
+              onClick={() => {
+                if (onOpenLeadForm) {
+                  onOpenLeadForm('employer');
+                } else {
+                  openLeadModal('employer');
+                }
+              }}
               aria-label="Talk to us to receive a custom proposal"
-              className="w-full bg-[#28D17C] hover:bg-[#28D17C]/90 text-[#0B1F33] py-4 rounded-xl font-bold text-sm transition-all duration-150 flex items-center justify-center gap-2 shadow-lg shadow-[#28D17C]/20"
+              className="w-full bg-[#28D17C] hover:bg-[#28D17C]/90 text-[#0B1F33] py-4 rounded-xl font-bold text-sm transition-all duration-150 flex items-center justify-center gap-2 shadow-lg shadow-[#28D17C]/20 cursor-pointer"
             >
               <span>Talk to Us for a Custom Proposal</span>
               <ArrowRight className="w-4 h-4" />

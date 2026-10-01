@@ -25,17 +25,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`marketing-theme ${inter.variable} antialiased`}>
       <head>
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-        <style>
-          {`
-          .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-          }
-          .material-symbols-outlined[style*="'FILL' 1"] {
-            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-          }
-          `}
-        </style>
+        <link rel="preconnect" href="https://meszhexftehllnsyhbha.supabase.co" />
+        <link rel="dns-prefetch" href="https://meszhexftehllnsyhbha.supabase.co" />
       </head>
       <body className="min-h-screen bg-background text-foreground">
         <ErrorBoundary>

@@ -1,10 +1,11 @@
 import { Users, CheckCircle2, DollarSign, TrendingUp, ArrowRight } from "lucide-react";
+import { LeadModalTrigger } from "./lead-modal-trigger";
 
 interface ForProvidersProps {
   onOpenLeadForm?: (type: 'employer' | 'provider') => void;
 }
 
-export default function ForProviders({ onOpenLeadForm }: ForProvidersProps) {
+export default function ForProviders({ onOpenLeadForm }: ForProvidersProps = {}) {
   const benefits = [
     {
       icon: Users,
@@ -29,7 +30,7 @@ export default function ForProviders({ onOpenLeadForm }: ForProvidersProps) {
   ];
 
   return (
-    <section id="for-providers" className="py-16 sm:py-24 bg-[#F7F9FC] text-[#0B1F33] border-t border-gray-200/60">
+    <section id="for-providers" className="pf-defer-section py-16 sm:py-24 bg-[#F7F9FC] text-[#0B1F33] border-t border-gray-200/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mb-10 sm:mb-16">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#28D17C] mb-2">
@@ -59,14 +60,14 @@ export default function ForProviders({ onOpenLeadForm }: ForProvidersProps) {
         </div>
 
         <div>
-          <button 
-            onClick={() => onOpenLeadForm?.('provider')}
-            aria-label="Become a PolyFit Provider - Open provider registration form"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#28D17C] hover:bg-[#28D17C]/90 text-[#0B1F33] px-6 sm:px-8 py-3.5 sm:py-4 rounded-[10px] text-base font-semibold transition-all duration-150 shadow-md hover:shadow-lg min-h-[48px]"
+          <LeadModalTrigger 
+            type="provider"
+            ariaLabel="Become a PolyFit Provider - Open provider registration form"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#28D17C] hover:bg-[#28D17C]/90 text-[#0B1F33] px-6 sm:px-8 py-3.5 sm:py-4 rounded-[10px] text-base font-semibold transition-all duration-150 shadow-md hover:shadow-lg min-h-[48px] cursor-pointer"
           >
             <span>Become a PolyFit Provider</span>
             <ArrowRight className="w-5 h-5" />
-          </button>
+          </LeadModalTrigger>
         </div>
       </div>
     </section>
