@@ -1,6 +1,4 @@
-"use client";
-
-import { useState } from "react";
+import type { Metadata } from "next";
 import PublicNavigation from "@/components/public-navigation";
 import PricingHero from "@/components/pricing/pricing-hero";
 import PricingTiers from "@/components/pricing/pricing-tiers";
@@ -10,34 +8,26 @@ import PricingFaq from "@/components/pricing/pricing-faq";
 import Footer from "@/components/landing/footer";
 import LeadForms from "@/components/landing/lead-forms";
 
+export const metadata: Metadata = {
+  title: "Corporate Wellness Pricing & Plan Tiers | PolyFit Rwanda",
+  description: "Transparent per-employee subscription plans for Rwandan employers. Full access to gyms, Olympic pools, yoga studios, and thermal recovery with consolidated RRA EBM 18% VAT invoicing.",
+};
+
 export default function PricingPage() {
-  const [isLeadFormOpen, setIsLeadFormOpen] = useState(false);
-  const [leadFormType, setLeadFormType] = useState<'employer' | 'provider'>('employer');
-
-  const openLeadForm = (type: 'employer' | 'provider') => {
-    setLeadFormType(type);
-    setIsLeadFormOpen(true);
-  };
-
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0B1F33] selection:bg-[#28D17C]/20 selection:text-[#0B1F33]">
-      <PublicNavigation onOpenLeadForm={openLeadForm} />
+    <div className="min-h-screen bg-background text-foreground selection:bg-accent/20 selection:text-foreground">
+      <PublicNavigation />
 
       <main id="main-content">
         <PricingHero />
-        <PricingTiers onOpenLeadForm={openLeadForm} />
-        <PricingRoiBanner onOpenLeadForm={openLeadForm} />
+        <PricingTiers />
+        <PricingRoiBanner />
         <FeatureComparison />
-        <PricingFaq onOpenLeadForm={openLeadForm} />
+        <PricingFaq />
       </main>
 
-      <Footer onOpenLeadForm={openLeadForm} />
-
-      <LeadForms
-        isOpen={isLeadFormOpen}
-        onClose={() => setIsLeadFormOpen(false)}
-        defaultType={leadFormType}
-      />
+      <Footer />
+      <LeadForms />
     </div>
   );
 }

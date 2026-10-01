@@ -243,3 +243,83 @@ dialog.pf-native-dialog[open]::backdrop {
   contain-intrinsic-size: auto none auto 600px;
 }
 
+/* ==========================================================================
+   Modern Web Guidance: Container Queries & Fluid Scaling (@container)
+   ========================================================================== */
+
+/* 1. Pricing Card Container Context */
+.pf-pricing-card-container {
+  container-type: inline-size;
+  container-name: pf-pricing-card;
+  width: 100%;
+}
+
+/* 2. Venue Card Container Context */
+.pf-venue-card-container {
+  container-type: inline-size;
+  container-name: pf-venue-card;
+  width: 100%;
+}
+
+/* 3. Feature Comparison Matrix Container Context */
+.pf-comparison-container {
+  container-type: inline-size;
+  container-name: pf-comparison;
+  width: 100%;
+}
+
+/* Fluid Typography powered by Container Query Units (cqi) */
+.pf-fluid-price {
+  font-size: clamp(1.75rem, 7cqi, 2.5rem);
+  line-height: 1.15;
+}
+
+.pf-fluid-heading {
+  font-size: clamp(1.2rem, 5cqi, 1.75rem);
+  line-height: 1.25;
+}
+
+.pf-fluid-subtext {
+  font-size: clamp(0.75rem, 2.8cqi, 0.875rem);
+}
+
+.pf-fluid-badge {
+  font-size: clamp(0.65rem, 2.4cqi, 0.75rem);
+}
+
+/* Adaptive Pricing Card layout triggered by its own container width */
+@container pf-pricing-card (min-width: 380px) {
+  .pf-pricing-card-actions {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+@container pf-pricing-card (max-width: 320px) {
+  .pf-pricing-card-inner {
+    padding: 1.25rem;
+  }
+}
+
+/* Adaptive Venue Card layout triggered by its own container width */
+@container pf-venue-card (min-width: 480px) {
+  .pf-venue-detail-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
+@container pf-venue-card (max-width: 360px) {
+  .pf-venue-card-media {
+    height: 9rem;
+  }
+}
+
+/* Adaptive Feature Comparison Matrix layout */
+@container pf-comparison (max-width: 640px) {
+  .pf-comparison-table {
+    display: block;
+  }
+}
+

@@ -20,6 +20,7 @@ import {
   ChevronRight,
   ExternalLink
 } from "lucide-react";
+import { useLeadModal } from "@/lib/lead-modal";
 
 interface Facility {
   id: string;
@@ -43,7 +44,7 @@ interface FacilityDirectoryProps {
   onOpenLeadForm?: (type: 'employer' | 'provider') => void;
 }
 
-export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryProps) {
+export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryProps = {}) {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [activeCity, setActiveCity] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -51,6 +52,15 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [spotlightIndex, setSpotlightIndex] = useState<number>(0);
   const [isLiveLoading, setIsLiveLoading] = useState<boolean>(false);
+  const openModal = useLeadModal((s) => s.open);
+
+  const handleOpenLead = (type: 'employer' | 'provider' = 'employer') => {
+    if (onOpenLeadForm) {
+      onOpenLeadForm(type);
+    } else {
+      openModal(type);
+    }
+  };
 
   // Curated baseline of verified facilities in Rwanda & East Africa
   const defaultFacilities: Facility[] = [
@@ -273,49 +283,49 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
   };
 
   return (
-    <section id="facility-directory" className="py-16 sm:py-24 bg-white text-[#0B1F33] border-t border-[#E2E8F0]" aria-labelledby="facility-heading">
+    <section id="facility-directory" className="py-16 sm:py-24 bg-card text-card-foreground border-t border-border" aria-labelledby="facility-heading">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header with Telemetry Stats */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E8FBF1] text-[#0E6245] text-xs font-bold uppercase tracking-wider mb-3">
-              <Compass className="w-3.5 h-3.5 text-[#28D17C]" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-subtle text-emerald-800 dark:text-emerald-300 text-xs font-bold uppercase tracking-wider mb-3 border border-accent/20">
+              <Compass className="w-3.5 h-3.5 text-accent" />
               <span>East Africa Wellness Network</span>
             </div>
-            <h2 id="facility-heading" className="text-2xl sm:text-4xl font-extrabold tracking-tight text-[#0B1F33]">
+            <h2 id="facility-heading" className="text-2xl sm:text-4xl font-extrabold tracking-tight text-foreground">
               Discover Vetted Partner Facilities
             </h2>
-            <p className="mt-2 text-sm sm:text-base text-[#64748B] max-w-2xl">
+            <p className="mt-2 text-sm sm:text-base text-muted-foreground max-w-2xl">
               One PolyFit corporate benefit unlocks verified digital access to the region&apos;s leading gyms, lap pools, pilates studios, and thermal recovery spas.
             </p>
           </div>
 
           {/* Quick Counter Proof Strip */}
-          <div className="flex items-center gap-6 bg-[#F8FAFC] border border-[#E2E8F0] px-5 py-3 rounded-[12px] self-start md:self-auto">
+          <div className="flex items-center gap-6 bg-muted/40 border border-border px-5 py-3 rounded-[12px] self-start md:self-auto shadow-2xs">
             <div>
-              <div className="text-xl sm:text-2xl font-extrabold text-[#0B1F33] font-mono">50+</div>
-              <div className="text-[11px] text-[#64748B] font-medium">Vetted Venues</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-foreground font-mono">50+</div>
+              <div className="text-[11px] text-muted-foreground font-medium">Vetted Venues</div>
             </div>
-            <div className="w-px h-8 bg-[#E2E8F0]" />
+            <div className="w-px h-8 bg-border" />
             <div>
-              <div className="text-xl sm:text-2xl font-extrabold text-[#0B1F33] font-mono">4</div>
-              <div className="text-[11px] text-[#64748B] font-medium">Cities Roaming</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-foreground font-mono">4</div>
+              <div className="text-[11px] text-muted-foreground font-medium">Cities Roaming</div>
             </div>
-            <div className="w-px h-8 bg-[#E2E8F0]" />
+            <div className="w-px h-8 bg-border" />
             <div>
-              <div className="text-xl sm:text-2xl font-extrabold text-[#28D17C] font-mono">100%</div>
-              <div className="text-[11px] text-[#64748B] font-medium">Pass Verified</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-accent font-mono">100%</div>
+              <div className="text-[11px] text-muted-foreground font-medium">Pass Verified</div>
             </div>
           </div>
         </div>
 
         {/* Filter Bar & Search Container */}
-        <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[14px] p-4 sm:p-5 mb-8 shadow-xs">
+        <div className="bg-muted/30 border border-border rounded-[14px] p-4 sm:p-5 mb-8 shadow-xs">
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
             {/* Search Input */}
             <div className="relative w-full lg:w-80">
-              <Search className="w-4 h-4 text-[#94A3B8] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 id="facility-search-input"
                 name="facilitySearch"
@@ -324,13 +334,13 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
                 placeholder="Search by venue, district, or amenity..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#CBD5E1] rounded-[10px] text-xs sm:text-sm text-[#0B1F33] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#28D17C] focus:border-transparent transition-all shadow-xs"
+                className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-[10px] text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all shadow-xs"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#94A3B8] hover:text-[#0B1F33]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
                 >
                   Clear
                 </button>
@@ -347,13 +357,13 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
                     key={cat.id}
                     type="button"
                     onClick={() => setActiveCategory(cat.id)}
-                    className={`whitespace-nowrap inline-flex items-center gap-2 px-3.5 py-2 rounded-[10px] text-xs sm:text-sm font-semibold transition-all ${
+                    className={`whitespace-nowrap inline-flex items-center gap-2 px-3.5 py-2 rounded-[10px] text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                       isActive
-                        ? "bg-[#0B1F33] text-white shadow-xs"
-                        : "bg-white text-[#64748B] hover:text-[#0B1F33] border border-[#E2E8F0]"
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "bg-card text-muted-foreground hover:text-foreground border border-border"
                     }`}
                   >
-                    <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#28D17C]" : "text-[#94A3B8]"}`} />
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? "text-accent" : "text-muted-foreground"}`} />
                     <span>{cat.label}</span>
                   </button>
                 );
@@ -363,7 +373,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
             {/* City Filter & View Mode Toggles */}
             <div className="flex items-center gap-2 w-full lg:w-auto justify-between lg:justify-end">
               {/* City selector */}
-              <div className="inline-flex items-center p-0.5 bg-white border border-[#E2E8F0] rounded-[10px]">
+              <div className="inline-flex items-center p-0.5 bg-card border border-border rounded-[10px]">
                 {cities.map((city) => {
                   const isActive = activeCity === city.id;
                   return (
@@ -371,8 +381,8 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
                       key={city.id}
                       type="button"
                       onClick={() => setActiveCity(city.id)}
-                      className={`px-3 py-1.5 rounded-[8px] text-xs font-semibold transition-all ${
-                        isActive ? "bg-[#0B1F33] text-white shadow-xs" : "text-[#64748B] hover:text-[#0B1F33]"
+                      className={`px-3 py-1.5 rounded-[8px] text-xs font-semibold transition-all cursor-pointer ${
+                        isActive ? "bg-primary text-primary-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {city.label}
@@ -382,12 +392,12 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
               </div>
 
               {/* Mobile View Toggle */}
-              <div className="inline-flex md:hidden items-center p-0.5 bg-white border border-[#E2E8F0] rounded-[10px]">
+              <div className="inline-flex md:hidden items-center p-0.5 bg-card border border-border rounded-[10px]">
                 <button
                   type="button"
                   onClick={() => setViewMode('map')}
-                  className={`p-1.5 rounded-[8px] text-xs font-semibold ${
-                    viewMode === 'map' ? "bg-[#0B1F33] text-white" : "text-[#64748B]"
+                  className={`p-1.5 rounded-[8px] text-xs font-semibold cursor-pointer ${
+                    viewMode === 'map' ? "bg-primary text-primary-foreground" : "text-muted-foreground"
                   }`}
                   aria-label="Map View"
                 >
@@ -396,8 +406,8 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
                 <button
                   type="button"
                   onClick={() => setViewMode('list')}
-                  className={`p-1.5 rounded-[8px] text-xs font-semibold ${
-                    viewMode === 'list' ? "bg-[#0B1F33] text-white" : "text-[#64748B]"
+                  className={`p-1.5 rounded-[8px] text-xs font-semibold cursor-pointer ${
+                    viewMode === 'list' ? "bg-primary text-primary-foreground" : "text-muted-foreground"
                   }`}
                   aria-label="List View"
                 >
@@ -574,89 +584,91 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
           {/* Selected Facility Detail Card + Venue List (5 cols on lg) */}
           <div className="lg:col-span-5 flex flex-col gap-6">
             
-            {/* Active Selected Card Detail */}
-            <div className="bg-white border-2 border-[#28D17C] rounded-[14px] overflow-hidden shadow-lg shadow-[#28D17C]/10 transition-all">
-              <div className="relative h-48 w-full bg-slate-100 overflow-hidden">
-                <img
-                  src={selectedFacility.image}
-                  alt={selectedFacility.name}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                
-                <div className="absolute top-3 left-3 bg-[#0B1F33]/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-[#28D17C]" />
-                  <span>{selectedFacility.cityLabel}</span>
-                </div>
-
-                <div className="absolute top-3 right-3 bg-white text-[#0B1F33] px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm">
-                  <Star className="w-3.5 h-3.5 fill-[#F59E0B] text-[#F59E0B]" />
-                  <span>{selectedFacility.rating}</span>
-                </div>
-
-                <div className="absolute bottom-3 left-3 right-3 text-white">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#28D17C]">
-                    {selectedFacility.categoryLabel}
-                  </span>
-                  <h3 className="text-xl font-bold leading-tight">
-                    {selectedFacility.name}
-                  </h3>
-                </div>
-              </div>
-
-              <div className="p-5">
-                <p className="text-xs text-[#64748B] flex items-center gap-1.5 mb-4">
-                  <MapPin className="w-3.5 h-3.5 text-[#94A3B8]" />
-                  <span>{selectedFacility.address}</span>
-                </p>
-
-                {/* Amenities Badges */}
-                <div className="space-y-1.5 mb-5">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
-                    Included Amenities:
+            {/* Active Selected Card Detail with Container Queries */}
+            <div className="pf-venue-card-container">
+              <div className="bg-card border-2 border-accent rounded-[14px] overflow-hidden shadow-lg shadow-accent/10 transition-all text-card-foreground">
+                <div className="pf-venue-card-media relative h-48 w-full bg-slate-800 overflow-hidden">
+                  <img
+                    src={selectedFacility.image}
+                    alt={selectedFacility.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                  
+                  <div className="absolute top-3 left-3 bg-primary/90 text-primary-foreground backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-accent" />
+                    <span>{selectedFacility.cityLabel}</span>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedFacility.amenities.map((amenity, idx) => (
-                      <span
-                        key={idx}
-                        className="bg-[#F1F5F9] text-[#0B1F33] px-2.5 py-1 rounded-[6px] text-xs font-medium"
-                      >
-                        {amenity}
-                      </span>
-                    ))}
+
+                  <div className="absolute top-3 right-3 bg-card text-foreground px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm">
+                    <Star className="w-3.5 h-3.5 fill-[#F59E0B] text-[#F59E0B]" />
+                    <span>{selectedFacility.rating}</span>
+                  </div>
+
+                  <div className="absolute bottom-3 left-3 right-3 text-white">
+                    <span className="pf-fluid-badge font-bold uppercase tracking-wider text-accent">
+                      {selectedFacility.categoryLabel}
+                    </span>
+                    <h3 className="pf-fluid-heading font-bold leading-tight">
+                      {selectedFacility.name}
+                    </h3>
                   </div>
                 </div>
 
-                {/* Security Verification & Access Status */}
-                <div className="bg-[#E8FBF1] border border-[#28D17C]/30 rounded-[10px] p-3 flex items-center justify-between text-xs text-[#0E6245] mb-5">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-[#28D17C]" />
-                    <span className="font-semibold">Digital Anti-Passback Scanner Live</span>
-                  </div>
-                  <span className="text-[11px] font-bold uppercase bg-[#28D17C] text-[#0B1F33] px-2 py-0.5 rounded">
-                    All Tiers
-                  </span>
-                </div>
+                <div className="p-5 pf-venue-card-body">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5 mb-4">
+                    <MapPin className="w-3.5 h-3.5 text-muted-foreground/80" />
+                    <span>{selectedFacility.address}</span>
+                  </p>
 
-                {/* Action CTA */}
-                <button
-                  type="button"
-                  onClick={() => onOpenLeadForm?.('employer')}
-                  className="w-full py-3 px-4 bg-[#28D17C] hover:bg-[#22C55E] text-[#0B1F33] text-xs sm:text-sm font-bold rounded-[10px] transition-all flex items-center justify-center gap-2 shadow-xs"
-                >
-                  <span>Request Employee Access to this Venue</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                  {/* Amenities Badges */}
+                  <div className="space-y-1.5 mb-5">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Included Amenities:
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedFacility.amenities.map((amenity, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-muted text-foreground px-2.5 py-1 rounded-[6px] text-xs font-medium"
+                        >
+                          {amenity}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Security Verification & Access Status */}
+                  <div className="bg-accent-subtle border border-accent/30 rounded-[10px] p-3 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300 mb-5">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-accent" />
+                      <span className="font-semibold">Digital Anti-Passback Scanner Live</span>
+                    </div>
+                    <span className="text-[11px] font-bold uppercase bg-accent text-accent-foreground px-2 py-0.5 rounded shadow-2xs">
+                      All Tiers
+                    </span>
+                  </div>
+
+                  {/* Action CTA */}
+                  <button
+                    type="button"
+                    onClick={() => handleOpenLead('employer')}
+                    className="w-full py-3 px-4 bg-accent hover:bg-emerald-400 text-accent-foreground text-xs sm:text-sm font-bold rounded-[10px] transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                  >
+                    <span>Request Employee Access to this Venue</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Quick List of Nearby Facilities */}
-            <div className="bg-white border border-[#E2E8F0] rounded-[14px] p-4 shadow-xs">
-              <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#F1F5F9]">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#64748B]">
+            <div className="bg-card border border-border rounded-[14px] p-4 shadow-xs text-card-foreground">
+              <div className="flex items-center justify-between mb-3 pb-2 border-b border-border/50">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Matching Network Venues ({filteredFacilities.length})
                 </h4>
-                <span className="text-[11px] text-[#94A3B8]">Click to locate</span>
+                <span className="text-[11px] text-muted-foreground/80">Click to locate</span>
               </div>
 
               <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
@@ -665,17 +677,17 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
                     key={f.id}
                     type="button"
                     onClick={() => setSelectedFacilityId(f.id)}
-                    className={`w-full text-left p-2.5 rounded-[8px] transition-all flex items-center justify-between text-xs ${
+                    className={`w-full text-left p-2.5 rounded-[8px] transition-all flex items-center justify-between text-xs cursor-pointer ${
                       f.id === selectedFacility.id
-                        ? "bg-[#E8FBF1] text-[#0B1F33] font-bold border border-[#28D17C]/30"
-                        : "hover:bg-[#F8FAFC] text-[#475569]"
+                        ? "bg-accent-subtle text-foreground font-bold border border-accent/30"
+                        : "hover:bg-muted/40 text-muted-foreground"
                     }`}
                   >
                     <div className="truncate pr-2">
-                      <div className="font-semibold truncate">{f.name}</div>
-                      <div className="text-[10px] text-[#94A3B8]">{f.cityLabel}</div>
+                      <div className="font-semibold truncate text-foreground">{f.name}</div>
+                      <div className="text-[10px] text-muted-foreground">{f.cityLabel}</div>
                     </div>
-                    <div className="flex items-center gap-1 text-[11px] font-medium text-[#28D17C]">
+                    <div className="flex items-center gap-1 text-[11px] font-medium text-accent">
                       <Star className="w-3 h-3 fill-current" />
                       <span>{f.rating}</span>
                     </div>
@@ -688,14 +700,14 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
         </div>
 
         {/* Premier Partner Spotlight Carousel */}
-        <div className="bg-[#0B1F33] text-white rounded-[14px] p-6 sm:p-10 mb-12 relative overflow-hidden">
+        <div className="bg-primary text-primary-foreground rounded-[14px] p-6 sm:p-10 mb-12 relative overflow-hidden">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
-              <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#28D17C] mb-1">
+              <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-accent mb-1">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Premier Partner Showcase</span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold tracking-tight">
+              <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
                 Featured Wellness Facilities
               </h3>
             </div>
@@ -705,7 +717,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
               <button
                 type="button"
                 onClick={prevSpotlight}
-                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Previous Spotlight"
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -713,7 +725,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
               <button
                 type="button"
                 onClick={nextSpotlight}
-                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Next Spotlight"
               >
                 <ChevronRight className="w-5 h-5" />
@@ -721,72 +733,74 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
             </div>
           </div>
 
-          {/* Spotlight Card */}
+          {/* Spotlight Card with Container Queries */}
           {spotlightFacilities[spotlightIndex] && (
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center bg-white/5 border border-white/10 rounded-[12px] p-6 sm:p-8 backdrop-blur-xs">
-              <div className="md:col-span-5 h-64 rounded-[10px] overflow-hidden">
-                <img
-                  src={spotlightFacilities[spotlightIndex].image}
-                  alt={spotlightFacilities[spotlightIndex].name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              <div className="md:col-span-7 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs font-mono uppercase bg-[#28D17C]/20 text-[#28D17C] px-2.5 py-0.5 rounded-full font-bold">
-                      {spotlightFacilities[spotlightIndex].categoryLabel}
-                    </span>
-                    <span className="text-xs text-gray-400 flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-[#28D17C]" />
-                      {spotlightFacilities[spotlightIndex].cityLabel}
-                    </span>
-                  </div>
-
-                  <h4 className="text-2xl font-bold text-white mb-2">
-                    {spotlightFacilities[spotlightIndex].name}
-                  </h4>
-
-                  <p className="text-xs sm:text-sm text-gray-300 leading-relaxed mb-6">
-                    A premier corporate destination featuring state-of-the-art conditioning equipment, sanitized wellness amenities, and verified digital check-in passes. Fully accessible under PolyFit Professional and Enterprise plans.
-                  </p>
-
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    {spotlightFacilities[spotlightIndex].amenities.map((item, idx) => (
-                      <span
-                        key={idx}
-                        className="bg-white/10 text-gray-200 px-3 py-1 rounded-[6px] text-xs font-medium"
-                      >
-                        {item}
-                      </span>
-                    ))}
-                  </div>
+            <div className="pf-venue-card-container">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center bg-white/5 border border-white/10 rounded-[12px] p-6 sm:p-8 backdrop-blur-xs">
+                <div className="md:col-span-5 h-64 rounded-[10px] overflow-hidden">
+                  <img
+                    src={spotlightFacilities[spotlightIndex].image}
+                    alt={spotlightFacilities[spotlightIndex].name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 fill-[#F59E0B] text-[#F59E0B]" />
-                    <span className="text-sm font-bold text-white">
-                      {spotlightFacilities[spotlightIndex].rating} / 5.0
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      ({spotlightFacilities[spotlightIndex].reviewsCount} corporate visits)
-                    </span>
+                <div className="md:col-span-7 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs font-mono uppercase bg-accent/20 text-accent px-2.5 py-0.5 rounded-full font-bold">
+                        {spotlightFacilities[spotlightIndex].categoryLabel}
+                      </span>
+                      <span className="text-xs text-slate-300 flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-accent" />
+                        {spotlightFacilities[spotlightIndex].cityLabel}
+                      </span>
+                    </div>
+
+                    <h4 className="pf-fluid-heading font-bold text-white mb-2">
+                      {spotlightFacilities[spotlightIndex].name}
+                    </h4>
+
+                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6">
+                      A premier corporate destination featuring state-of-the-art conditioning equipment, sanitized wellness amenities, and verified digital check-in passes. Fully accessible under PolyFit Professional and Enterprise plans.
+                    </p>
+
+                    <div className="flex flex-wrap gap-2 mb-6">
+                      {spotlightFacilities[spotlightIndex].amenities.map((item, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-white/10 text-slate-200 px-3 py-1 rounded-[6px] text-xs font-medium"
+                        >
+                          {item}
+                        </span>
+                      ))}
+                    </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedFacilityId(spotlightFacilities[spotlightIndex].id);
-                      const el = document.getElementById("facility-directory");
-                      el?.scrollIntoView({ behavior: "smooth" });
-                    }}
-                    className="text-xs font-bold text-[#28D17C] hover:underline flex items-center gap-1"
-                  >
-                    <span>View on Map</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                    <div className="flex items-center gap-2">
+                      <Star className="w-4 h-4 fill-[#F59E0B] text-[#F59E0B]" />
+                      <span className="text-sm font-bold text-white">
+                        {spotlightFacilities[spotlightIndex].rating} / 5.0
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        ({spotlightFacilities[spotlightIndex].reviewsCount} corporate visits)
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedFacilityId(spotlightFacilities[spotlightIndex].id);
+                        const el = document.getElementById("facility-directory");
+                        el?.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      className="text-xs font-bold text-accent hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>View on Map</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -794,15 +808,15 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
         </div>
 
         {/* Become a Provider Partner Acquisition CTA */}
-        <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[14px] p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xs">
+        <div className="bg-card border border-border rounded-[14px] p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xs text-card-foreground">
           <div>
-            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#0E6245] bg-[#E8FBF1] px-3 py-1 rounded-full mb-3">
+            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 bg-accent-subtle px-3 py-1 rounded-full mb-3 border border-accent/20">
               <span>Partner Facility Network</span>
             </div>
-            <h3 className="text-xl sm:text-2xl font-extrabold text-[#0B1F33]">
+            <h3 className="text-xl sm:text-2xl font-extrabold text-foreground">
               Own or Operate a Wellness Facility in East Africa?
             </h3>
-            <p className="text-xs sm:text-sm text-[#64748B] max-w-xl mt-1.5 leading-relaxed">
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mt-1.5 leading-relaxed">
               Join Rwanda&apos;s fastest growing corporate wellness aggregator. Fill off-peak capacity with verified corporate beneficiaries, eliminate bad debt, and receive automated monthly settlement deposits.
             </p>
           </div>
@@ -810,8 +824,8 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             <button
               type="button"
-              onClick={() => onOpenLeadForm?.('provider')}
-              className="px-6 py-3.5 bg-[#0B1F33] hover:bg-slate-800 text-white text-xs sm:text-sm font-bold rounded-[10px] transition-colors whitespace-nowrap text-center"
+              onClick={() => handleOpenLead('provider')}
+              className="px-6 py-3.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm font-bold rounded-[10px] transition-colors whitespace-nowrap text-center cursor-pointer shadow-xs"
             >
               Apply to Become a Partner
             </button>

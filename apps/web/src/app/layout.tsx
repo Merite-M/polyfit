@@ -27,6 +27,35 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://meszhexftehllnsyhbha.supabase.co" />
         <link rel="dns-prefetch" href="https://meszhexftehllnsyhbha.supabase.co" />
+        {/* Speculation Rules API for instant pre-rendering of high-intent conversion routes (Modern Web Guidance) */}
+        <script
+          type="speculationrules"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              prefetch: [
+                {
+                  urls: ["/pricing", "/network", "/demo"],
+                  eagerness: "moderate"
+                }
+              ],
+              prerender: [
+                {
+                  where: {
+                    and: [
+                      { href_matches: "/*" },
+                      { not: { href_matches: "/corporate/*" } },
+                      { not: { href_matches: "/partner/*" } },
+                      { not: { href_matches: "/join/*" } },
+                      { not: { href_matches: "/api/*" } },
+                      { not: { selector_matches: "[rel~=nofollow]" } }
+                    ]
+                  },
+                  eagerness: "moderate"
+                }
+              ]
+            })
+          }}
+        />
       </head>
       <body className="min-h-screen bg-background text-foreground">
         <ErrorBoundary>

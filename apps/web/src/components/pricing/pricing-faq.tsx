@@ -2,13 +2,22 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { useLeadModal } from "@/lib/lead-modal";
 
 interface PricingFaqProps {
   onOpenLeadForm?: (type: 'employer' | 'provider') => void;
 }
 
-export default function PricingFaq({ onOpenLeadForm }: PricingFaqProps) {
+export default function PricingFaq({ onOpenLeadForm }: PricingFaqProps = {}) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const openModal = useLeadModal((s) => s.open);
+  const handleOpenLead = (type: 'employer' | 'provider' = 'employer') => {
+    if (onOpenLeadForm) {
+      onOpenLeadForm(type);
+    } else {
+      openModal(type);
+    }
+  };
 
   const faqs = [
     {
@@ -48,16 +57,16 @@ export default function PricingFaq({ onOpenLeadForm }: PricingFaqProps) {
   };
 
   return (
-    <section className="py-12 sm:py-16 bg-[#F8FAFC] border-t border-[#E2E8F0]" aria-labelledby="pricing-faq-heading">
+    <section className="py-12 sm:py-16 bg-background border-t border-border" aria-labelledby="pricing-faq-heading">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10 sm:mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E8FBF1] text-[#0E6245] text-xs font-bold uppercase tracking-wider mb-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-subtle text-emerald-800 dark:text-emerald-300 text-xs font-bold uppercase tracking-wider mb-3 border border-accent/20">
             Common Inquiries
           </div>
-          <h2 id="pricing-faq-heading" className="text-2xl sm:text-3xl font-extrabold text-[#0B1F33] tracking-tight">
+          <h2 id="pricing-faq-heading" className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
             Frequently Asked Questions by Employers
           </h2>
-          <p className="mt-2 text-sm sm:text-base text-[#64748B]">
+          <p className="mt-2 text-sm sm:text-base text-muted-foreground">
             Everything HR, procurement, and finance leaders need to know before onboarding their team.
           </p>
         </div>
@@ -69,20 +78,20 @@ export default function PricingFaq({ onOpenLeadForm }: PricingFaqProps) {
             return (
               <div
                 key={index}
-                className="bg-white border border-[#E2E8F0] rounded-[14px] overflow-hidden transition-all duration-150 shadow-xs"
+                className="bg-card border border-border rounded-[14px] overflow-hidden transition-all duration-150 shadow-xs"
               >
                 <button
                   type="button"
                   onClick={() => toggleFaq(index)}
-                  className="w-full text-left px-5 sm:px-6 py-4 sm:py-5 flex items-center justify-between gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#28D17C]"
+                  className="w-full text-left px-5 sm:px-6 py-4 sm:py-5 flex items-center justify-between gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer"
                   aria-expanded={isOpen}
                 >
-                  <span className="text-sm sm:text-base font-bold text-[#0B1F33]">
+                  <span className="text-sm sm:text-base font-bold text-foreground">
                     {faq.question}
                   </span>
                   <div
-                    className={`w-7 h-7 rounded-full bg-[#F1F5F9] flex items-center justify-center flex-shrink-0 transition-transform duration-200 ${
-                      isOpen ? "rotate-180 bg-[#E8FBF1] text-[#28D17C]" : "text-[#64748B]"
+                    className={`w-7 h-7 rounded-full bg-muted flex items-center justify-center flex-shrink-0 transition-transform duration-200 ${
+                      isOpen ? "rotate-180 bg-accent-subtle text-accent" : "text-muted-foreground"
                     }`}
                   >
                     <ChevronDown className="w-4 h-4" />
@@ -90,7 +99,7 @@ export default function PricingFaq({ onOpenLeadForm }: PricingFaqProps) {
                 </button>
 
                 {isOpen && (
-                  <div className="px-5 sm:px-6 pb-5 pt-1 text-xs sm:text-sm text-[#475569] leading-relaxed border-t border-[#F1F5F9]">
+                  <div className="px-5 sm:px-6 pb-5 pt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed border-t border-border/60">
                     {faq.answer}
                   </div>
                 )}
@@ -100,17 +109,17 @@ export default function PricingFaq({ onOpenLeadForm }: PricingFaqProps) {
         </div>
 
         {/* Still Have Questions Box */}
-        <div className="mt-10 text-center bg-white border border-[#E2E8F0] rounded-[14px] p-6 sm:p-8">
-          <h3 className="text-base font-bold text-[#0B1F33]">
+        <div className="mt-10 text-center bg-card border border-border rounded-[14px] p-6 sm:p-8">
+          <h3 className="text-base font-bold text-foreground">
             Have custom contract requirements or regional office branches?
           </h3>
-          <p className="text-xs sm:text-sm text-[#64748B] max-w-xl mx-auto mt-1 mb-4">
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto mt-1 mb-4">
             Our enterprise advisory team will design a customized multi-city benefit package matching your specific headcount and wellness objectives.
           </p>
           <button
             type="button"
-            onClick={() => onOpenLeadForm?.('employer')}
-            className="inline-flex items-center justify-center px-6 py-2.5 bg-[#28D17C] hover:bg-[#22C55E] text-[#0B1F33] text-xs sm:text-sm font-bold rounded-[10px] shadow-sm transition-all"
+            onClick={() => handleOpenLead('employer')}
+            className="inline-flex items-center justify-center px-6 py-2.5 bg-accent hover:bg-emerald-400 text-accent-foreground text-xs sm:text-sm font-bold rounded-[10px] shadow-sm transition-all cursor-pointer"
           >
             Speak With Our Corporate Team
           </button>

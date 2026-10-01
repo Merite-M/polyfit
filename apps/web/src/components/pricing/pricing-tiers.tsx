@@ -2,14 +2,24 @@
 
 import { useState } from "react";
 import { Check, Sparkles, Building2, ShieldCheck, Zap, ArrowRight } from "lucide-react";
+import { useLeadModal } from "@/lib/lead-modal";
 
 interface PricingTiersProps {
   onOpenLeadForm?: (type: 'employer' | 'provider') => void;
 }
 
-export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps) {
+export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {}) {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
   const [currency, setCurrency] = useState<'RWF' | 'USD'>('RWF');
+  const openModal = useLeadModal((s) => s.open);
+
+  const handleOpenLead = (type: 'employer' | 'provider' = 'employer') => {
+    if (onOpenLeadForm) {
+      onOpenLeadForm(type);
+    } else {
+      openModal(type);
+    }
+  };
 
   const tiers = [
     {
@@ -131,19 +141,19 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps) {
   };
 
   return (
-    <section className="py-12 sm:py-16 bg-[#F8FAFC]" aria-labelledby="pricing-tiers-heading">
+    <section className="py-12 sm:py-16 bg-background" aria-labelledby="pricing-tiers-heading">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Toggles Container */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-12 sm:mb-16">
           {/* Currency Toggle */}
-          <div className="inline-flex items-center p-1 bg-white border border-[#E2E8F0] rounded-[12px] shadow-xs">
+          <div className="inline-flex items-center p-1 bg-card border border-border rounded-[12px] shadow-xs">
             <button
               type="button"
               onClick={() => setCurrency("RWF")}
-              className={`px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-[8px] transition-all ${
+              className={`px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-[8px] transition-all cursor-pointer ${
                 currency === "RWF"
-                  ? "bg-[#0B1F33] text-white shadow-xs"
-                  : "text-[#64748B] hover:text-[#0B1F33]"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
               aria-pressed={currency === "RWF"}
             >
@@ -152,10 +162,10 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps) {
             <button
               type="button"
               onClick={() => setCurrency("USD")}
-              className={`px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-[8px] transition-all ${
+              className={`px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-[8px] transition-all cursor-pointer ${
                 currency === "USD"
-                  ? "bg-[#0B1F33] text-white shadow-xs"
-                  : "text-[#64748B] hover:text-[#0B1F33]"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
               aria-pressed={currency === "USD"}
             >
@@ -164,14 +174,14 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps) {
           </div>
 
           {/* Billing Cycle Toggle */}
-          <div className="inline-flex items-center p-1 bg-white border border-[#E2E8F0] rounded-[12px] shadow-xs">
+          <div className="inline-flex items-center p-1 bg-card border border-border rounded-[12px] shadow-xs">
             <button
               type="button"
               onClick={() => setBillingCycle("monthly")}
-              className={`px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-[8px] transition-all ${
+              className={`px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-[8px] transition-all cursor-pointer ${
                 billingCycle === "monthly"
-                  ? "bg-[#0B1F33] text-white shadow-xs"
-                  : "text-[#64748B] hover:text-[#0B1F33]"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
               aria-pressed={billingCycle === "monthly"}
             >
@@ -180,22 +190,22 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps) {
             <button
               type="button"
               onClick={() => setBillingCycle("annual")}
-              className={`inline-flex items-center gap-2 px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-[8px] transition-all ${
+              className={`inline-flex items-center gap-2 px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-[8px] transition-all cursor-pointer ${
                 billingCycle === "annual"
-                  ? "bg-[#0B1F33] text-white shadow-xs"
-                  : "text-[#64748B] hover:text-[#0B1F33]"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
               aria-pressed={billingCycle === "annual"}
             >
               <span>Annual Billing</span>
-              <span className="bg-[#28D17C] text-[#0B1F33] text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">
+              <span className="bg-accent text-accent-foreground text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">
                 Save 15%
               </span>
             </button>
           </div>
         </div>
 
-        {/* Pricing Cards Grid */}
+        {/* Pricing Cards Container Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
           {tiers.map((tier) => {
             const priceDisplay = formatPrice(tier.pricing[currency]);
@@ -204,109 +214,113 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps) {
             return (
               <div
                 key={tier.id}
-                className={`relative flex flex-col justify-between bg-white rounded-[14px] p-6 sm:p-8 transition-all duration-200 ${
-                  tier.popular
-                    ? "border-2 border-[#28D17C] shadow-xl shadow-[#28D17C]/10 lg:-translate-y-2 z-10"
-                    : "border border-[#E2E8F0] shadow-sm hover:shadow-md hover:border-slate-300"
-                }`}
+                className="pf-pricing-card-container"
               >
-                {/* Popular Ribbon */}
-                {tier.popular && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#28D17C] text-[#0B1F33] text-xs font-bold uppercase tracking-wider px-4 py-1 rounded-full shadow-sm flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Most Popular Choice</span>
-                  </div>
-                )}
+                <div
+                  className={`pf-pricing-card-inner relative h-full flex flex-col justify-between bg-card text-card-foreground rounded-[14px] p-6 sm:p-8 transition-all duration-200 ${
+                    tier.popular
+                      ? "border-2 border-accent shadow-xl shadow-accent/10 lg:-translate-y-2 z-10"
+                      : "border border-border shadow-sm hover:shadow-md hover:border-border/80"
+                  }`}
+                >
+                  {/* Popular Ribbon */}
+                  {tier.popular && (
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-xs font-bold uppercase tracking-wider px-4 py-1 rounded-full shadow-sm flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Most Popular Choice</span>
+                    </div>
+                  )}
 
-                <div>
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xl font-bold text-[#0B1F33] tracking-tight">{tier.name}</h3>
-                    <span className="text-[11px] font-semibold text-[#64748B] bg-[#F1F5F9] px-2.5 py-1 rounded-[6px]">
-                      {tier.badge}
-                    </span>
-                  </div>
-
-                  <p className="text-sm text-[#64748B] min-h-[40px] mb-6 leading-relaxed">
-                    {tier.description}
-                  </p>
-
-                  {/* Target Employee Size */}
-                  <div className="inline-flex items-center gap-2 text-xs font-medium text-[#0B1F33] bg-[#E8FBF1] text-[#0E6245] px-3 py-1.5 rounded-[8px] mb-6">
-                    <Building2 className="w-3.5 h-3.5 text-[#28D17C]" />
-                    <span>Target: <strong>{tier.target}</strong></span>
-                  </div>
-
-                  {/* Price */}
-                  <div className="mb-6 pb-6 border-b border-[#F1F5F9]">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl sm:text-4xl font-extrabold text-[#0B1F33] font-mono tracking-tight">
-                        {priceDisplay}
+                  <div>
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="pf-fluid-heading font-bold text-foreground tracking-tight">{tier.name}</h3>
+                      <span className="pf-fluid-badge font-semibold text-muted-foreground bg-muted px-2.5 py-1 rounded-[6px]">
+                        {tier.badge}
                       </span>
-                      {!isCustom && (
-                        <span className="text-xs text-[#64748B] font-medium">
-                          {tier.pricing[currency].period}
+                    </div>
+
+                    <p className="text-sm text-muted-foreground min-h-[40px] mb-6 leading-relaxed">
+                      {tier.description}
+                    </p>
+
+                    {/* Target Employee Size */}
+                    <div className="inline-flex items-center gap-2 text-xs font-medium bg-accent-subtle text-emerald-800 dark:text-emerald-300 px-3 py-1.5 rounded-[8px] mb-6 border border-accent/20">
+                      <Building2 className="w-3.5 h-3.5 text-accent" />
+                      <span>Target: <strong>{tier.target}</strong></span>
+                    </div>
+
+                    {/* Price */}
+                    <div className="mb-6 pb-6 border-b border-border">
+                      <div className="flex items-baseline gap-2">
+                        <span className="pf-fluid-price font-extrabold text-foreground font-mono tracking-tight">
+                          {priceDisplay}
                         </span>
+                        {!isCustom && (
+                          <span className="text-xs text-muted-foreground font-medium">
+                            {tier.pricing[currency].period}
+                          </span>
+                        )}
+                      </div>
+                      {billingCycle === "annual" && !isCustom && (
+                        <p className="text-xs text-accent font-semibold mt-1 flex items-center gap-1">
+                          <Check className="w-3 h-3" /> Billed annually with 15% corporate savings
+                        </p>
+                      )}
+                      {isCustom && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Volume discounts & dedicated partner facility agreements
+                        </p>
                       )}
                     </div>
-                    {billingCycle === "annual" && !isCustom && (
-                      <p className="text-xs text-[#28D17C] font-semibold mt-1 flex items-center gap-1">
-                        <Check className="w-3 h-3" /> Billed annually with 15% corporate savings
-                      </p>
-                    )}
-                    {isCustom && (
-                      <p className="text-xs text-[#64748B] mt-1">
-                        Volume discounts & dedicated partner facility agreements
-                      </p>
-                    )}
-                  </div>
 
-                  {/* Features List */}
-                  <div className="space-y-3 mb-8">
-                    <p className="text-xs font-bold uppercase tracking-wider text-[#64748B]">
-                      Plan Includes:
-                    </p>
-                    {tier.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-[#0B1F33]">
-                        <div className="w-4 h-4 rounded-full bg-[#E8FBF1] text-[#28D17C] flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Check className="w-3 h-3 stroke-[2.5]" />
-                        </div>
-                        <span className="leading-snug">{feature}</span>
-                      </div>
-                    ))}
-
-                    {tier.notIncluded.length > 0 && (
-                      <div className="pt-2 space-y-2 opacity-50">
-                        {tier.notIncluded.map((item, idx) => (
-                          <div key={idx} className="flex items-start gap-2.5 text-xs text-[#94A3B8]">
-                            <span className="w-4 text-center font-mono text-xs">—</span>
-                            <span className="line-through">{item}</span>
+                    {/* Features List */}
+                    <div className="space-y-3 mb-8">
+                      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        Plan Includes:
+                      </p>
+                      {tier.features.map((feature, idx) => (
+                        <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground">
+                          <div className="w-4 h-4 rounded-full bg-accent-subtle text-accent flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <Check className="w-3 h-3 stroke-[2.5]" />
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                          <span className="leading-snug">{feature}</span>
+                        </div>
+                      ))}
 
-                {/* Card CTA */}
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => onOpenLeadForm?.('employer')}
-                    className={`w-full py-3.5 px-6 rounded-[10px] text-sm font-bold transition-all duration-150 flex items-center justify-center gap-2 ${
-                      tier.popular
-                        ? "bg-[#28D17C] hover:bg-[#22C55E] text-[#0B1F33] shadow-md hover:shadow-lg hover:shadow-[#28D17C]/20"
-                        : tier.id === "enterprise"
-                        ? "bg-[#0B1F33] hover:bg-slate-800 text-white shadow-sm"
-                        : "bg-slate-100 hover:bg-slate-200 text-[#0B1F33]"
-                    }`}
-                  >
-                    <span>{tier.ctaText}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                  <p className="text-[11px] text-center text-[#94A3B8] mt-2.5">
-                    {tier.id === "enterprise" ? "Custom enterprise SLA" : "Includes full RRA EBM tax compliance"}
-                  </p>
+                      {tier.notIncluded.length > 0 && (
+                        <div className="pt-2 space-y-2 opacity-50">
+                          {tier.notIncluded.map((item, idx) => (
+                            <div key={idx} className="flex items-start gap-2.5 text-xs text-muted-foreground">
+                              <span className="w-4 text-center font-mono text-xs">—</span>
+                              <span className="line-through">{item}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card CTA */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenLead('employer')}
+                      className={`w-full py-3.5 px-6 rounded-[10px] text-sm font-bold transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer ${
+                        tier.popular
+                          ? "bg-accent hover:bg-emerald-400 text-accent-foreground shadow-md hover:shadow-lg hover:shadow-accent/20"
+                          : tier.id === "enterprise"
+                          ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+                          : "bg-muted hover:bg-muted/80 text-foreground"
+                      }`}
+                    >
+                      <span>{tier.ctaText}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                    <p className="text-[11px] text-center text-muted-foreground mt-2.5">
+                      {tier.id === "enterprise" ? "Custom enterprise SLA" : "Includes full RRA EBM tax compliance"}
+                    </p>
+                  </div>
                 </div>
               </div>
             );
@@ -314,24 +328,24 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps) {
         </div>
 
         {/* Guarantee Banner */}
-        <div className="mt-12 bg-white border border-[#E2E8F0] rounded-[14px] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xs">
+        <div className="mt-12 bg-card border border-border rounded-[14px] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xs text-card-foreground">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-[#E8FBF1] text-[#28D17C] flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-accent-subtle text-accent flex items-center justify-center flex-shrink-0 border border-accent/20">
               <ShieldCheck className="w-6 h-6 stroke-[2]" />
             </div>
             <div>
-              <h4 className="text-base font-bold text-[#0B1F33]">
+              <h4 className="text-base font-bold text-foreground">
                 100% Tax Compliant & Fully Vetted Network
               </h4>
-              <p className="text-xs sm:text-sm text-[#64748B] mt-0.5">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                 Every subscription includes single consolidated RRA EBM 18% VAT invoicing, real-time anti-passback biometric security, and dedicated settlement for all partner facilities.
               </p>
             </div>
           </div>
           <button
             type="button"
-            onClick={() => onOpenLeadForm?.('employer')}
-            className="whitespace-nowrap px-6 py-2.5 bg-[#0B1F33] hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold rounded-[10px] transition-colors"
+            onClick={() => handleOpenLead('employer')}
+            className="whitespace-nowrap px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm font-semibold rounded-[10px] transition-colors cursor-pointer"
           >
             Schedule 15-Min Briefing
           </button>
