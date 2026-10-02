@@ -249,5 +249,49 @@ describe('Employee Portal & Mobile Telemetry Test Suite (PF-109)', () => {
         assert.equal(fac.provider.category, 'pool');
       });
     });
+
+    test('GET /api/employee/providers - blocks unauthenticated access like /network', async () => {
+      const res = await request(app).get('/api/employee/providers');
+      assert.equal(res.status, 401);
+      assert.equal(res.body.code, 'AUTH_MISSING_HEADER');
+    });
+  });
+
+  // ─── 6. Corporate Onboarding & Domain Resolution (POST /auth/verify-domain) ─
+  describe('Corporate Domain Recognition (POST /api/employee/auth/verify-domain)', () => {
+    test('rejects request with missing or invalid email format', async () => {
+      const res = await request(app)
+        .post('/api/employee/auth/verify-domain')
+        .send({ email: 'invalid-email' });
+
+      assert.equal(res.status, 400);
+      assert.equal(res.body.code, 'VALIDATION_ERROR');
+      assert.equal(res.body.recognized, false);
+    });
+
+    test('returns 404 for unrecognized non-corporate email domain', async () => {
+      const res = await request(app)
+        .post('/api/employee/auth/verify-domain')
+        .send({ email: 'user@unregistered-company-xyz.com' });
+
+      assert.equal(res.status, 404);
+      assert.equal(res.body.code, 'DOMAIN_NOT_ENROLLED');
+      assert.equal(res.body.recognized, false);
+    });
+
+    test('recognizes enrolled corporate domain in < 100ms', async () => {
+      const startTime = Date.now();
+      const res = await request(app)
+        .post('/api/employee/auth/verify-domain')
+        .send({ email: 'jean.mugabo@techcorp.rw' });
+
+      const duration = Date.now() - startTime;
+      assert.equal(res.status, 200);
+      assert.equal(res.body.recognized, true);
+      assert.equal(res.body.organization.name, 'TechCorp Rwanda');
+      assert.ok(res.body.benefit);
+      assert.ok(['standard', 'premium', 'basic', 'executive'].includes(res.body.benefit.tier));
+      assert.ok(duration < 500, `Domain resolution took too long: ${duration}ms`);
+    });
   });
 });
