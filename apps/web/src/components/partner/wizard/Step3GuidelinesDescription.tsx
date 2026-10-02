@@ -29,14 +29,14 @@ export function Step3GuidelinesDescription({ state, onChange }: Step3Props) {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#E9FAF2] text-[#008A4B] text-xs font-bold uppercase tracking-wider mb-2">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent-subtle text-success text-xs font-bold uppercase tracking-wider mb-2">
           <FileText className="w-3.5 h-3.5" />
           <span>Step 3 of 11 • Description & Guidelines</span>
         </div>
-        <h2 className="text-xl sm:text-2xl font-bold text-[#0B1F33]">
+        <h2 className="text-xl sm:text-2xl font-bold text-primary">
           Facility Story & What to Know Before Visiting
         </h2>
-        <p className="text-xs sm:text-sm text-[#526173] mt-1">
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
           Tell corporate employees about your facility ambiance, high-end equipment, and amenities. PolyFit enforces strict anti-retail price protection.
         </p>
       </div>
@@ -44,12 +44,12 @@ export function Step3GuidelinesDescription({ state, onChange }: Step3Props) {
       {/* DOs & DON'Ts Guidance Banner (Wellhub Benchmark) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* DO Card */}
-        <div className="bg-[#E9FAF2]/70 border border-[#B7F1D2] rounded-xl p-4 space-y-2">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#008A4B]">
-            <CheckCircle className="w-4 h-4 text-[#28D17C]" />
+        <div className="bg-accent-subtle/70 border border-accent/30 rounded-xl p-4 space-y-2">
+          <div className="flex items-center gap-2 text-xs font-bold text-success">
+            <CheckCircle className="w-4 h-4 text-accent" />
             <span>DO Highlight</span>
           </div>
-          <ul className="text-xs text-[#065F46] space-y-1.5 list-disc list-inside">
+          <ul className="text-xs text-success space-y-1.5 list-disc list-inside">
             <li>Activities, equipment brands (Eleiko, Hammer Strength, Balanced Body)</li>
             <li>Venue vibe, natural lighting, and accessibility</li>
             <li>Locker room perks: hot showers, Finnish sauna, steam</li>
@@ -58,12 +58,12 @@ export function Step3GuidelinesDescription({ state, onChange }: Step3Props) {
         </div>
 
         {/* DON'T Card */}
-        <div className="bg-[#FEF2F2] border border-[#FECACA] rounded-xl p-4 space-y-2">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#DC2626]">
-            <XCircle className="w-4 h-4 text-[#EF4444]" />
+        <div className="bg-error/10 border border-error/20 rounded-xl p-4 space-y-2">
+          <div className="flex items-center gap-2 text-xs font-bold text-error">
+            <XCircle className="w-4 h-4 text-error" />
             <span>DON&apos;T Mention Retail Prices</span>
           </div>
-          <ul className="text-xs text-[#991B1B] space-y-1.5 list-disc list-inside">
+          <ul className="text-xs text-error space-y-1.5 list-disc list-inside">
             <li>Do NOT list retail prices (e.g. 50,000 RWF per month)</li>
             <li>Do NOT promote walk-in discounts or direct memberships</li>
             <li>Corporate employee access is dictated by their employer plan</li>
@@ -74,8 +74,8 @@ export function Step3GuidelinesDescription({ state, onChange }: Step3Props) {
 
       {/* Anti-Leakage Warning Alert if triggered */}
       {priceLeakageDetected && (
-        <div className="bg-[#FFFBEB] border-2 border-[#F59E0B] rounded-xl p-4 flex items-start gap-3 text-xs text-[#92400E] animate-shake">
-          <AlertTriangle className="w-5 h-5 text-[#F59E0B] shrink-0 mt-0.5" />
+        <div className="bg-warning/10 border-2 border-warning/30 rounded-xl p-4 flex items-start gap-3 text-xs text-warning animate-shake">
+          <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
           <div className="space-y-1">
             <span className="font-bold text-sm block">Retail Price or Subscription Term Detected</span>
             <p>
@@ -86,47 +86,45 @@ export function Step3GuidelinesDescription({ state, onChange }: Step3Props) {
       )}
 
       {/* Main Description Textarea */}
-      <div className="bg-white rounded-xl border border-[#E2E8F0] p-4 sm:p-5 space-y-2 shadow-xs">
+      <div className="bg-card rounded-xl border border-border p-4 sm:p-5 space-y-2 shadow-xs">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-[#0B1F33]">
-            Public Facility Description <span className="text-[#EF4444]">*</span>
+          <label className="text-xs font-bold text-primary">
+            Public Facility Description <span className="text-error">*</span>
           </label>
-          <span className="text-[11px] text-[#8491A3]">
+          <span className="text-[11px] text-subdued">
             {(state.description || '').length} characters (min 40 recommended)
           </span>
         </div>
 
         <textarea
-          rows={5}
           placeholder="e.g. Welcome to Kigali's premier conditioning and wellness center. Located on Level 2 of Kigali City Tower, our facility offers Olympic lifting platforms, a dedicated reformer pilates studio, a panoramic cardio floor, and luxury recovery saunas. Certified coaches are on deck to assist corporate beneficiaries..."
           value={state.description}
           onChange={(e) => onChange({ description: e.target.value })}
-          className={`w-full p-3 bg-[#F7F9FC] border rounded-lg text-xs sm:text-sm text-[#0B1F33] focus:outline-none focus:ring-2 ${
+          className={`pf-textarea w-full p-3 bg-muted border rounded-lg text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 ${
             priceLeakageDetected
-              ? 'border-[#F59E0B] focus:ring-[#F59E0B]'
-              : 'border-[#CBD5E1] focus:ring-[#28D17C]'
+              ? 'border-warning focus:ring-warning'
+              : 'border-border focus:ring-accent'
           }`}
         />
       </div>
 
       {/* Important Information / What to know before visit */}
-      <div className="bg-white rounded-xl border border-[#E2E8F0] p-4 sm:p-5 space-y-2 shadow-xs">
+      <div className="bg-card rounded-xl border border-border p-4 sm:p-5 space-y-2 shadow-xs">
         <div className="flex items-center gap-2">
-          <Info className="w-4 h-4 text-[#28D17C]" />
-          <label className="text-xs font-bold text-[#0B1F33]">
+          <Info className="w-4 h-4 text-accent" />
+          <label className="text-xs font-bold text-primary">
             Important Visitor Guidelines / What to Know Before Visiting
           </label>
         </div>
-        <p className="text-[11px] text-[#526173]">
+        <p className="text-[11px] text-muted-foreground">
           Displayed prominently under &quot;Need to Know&quot; on the employee app screen.
         </p>
 
         <textarea
-          rows={3}
           placeholder="e.g. Clean indoor athletic shoes are strictly mandatory on the gym floor. Please present your corporate badge or PolyFit TOTP QR code at the reception desk upon arrival. Lockers are provided; please bring your own padlock or purchase one at the front desk."
           value={state.important_notice}
           onChange={(e) => onChange({ important_notice: e.target.value })}
-          className="w-full p-3 bg-[#F7F9FC] border border-[#CBD5E1] rounded-lg text-xs sm:text-sm text-[#0B1F33] focus:outline-none focus:ring-2 focus:ring-[#28D17C]"
+          className="pf-textarea-sm w-full p-3 bg-muted border border-border rounded-lg text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
         />
       </div>
     </div>

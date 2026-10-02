@@ -205,17 +205,16 @@ export function MisuseDisputeModal({
             </div>
 
             <div>
-              <label htmlFor="dispute-notes-textarea" className="block text-xs font-bold text-[#0B1F33] mb-1">
-                Staff Observation & Evidence <span className="text-[#EF4444]">*</span>
+              <label htmlFor="dispute-notes-textarea" className="block text-xs font-bold text-primary mb-1">
+                Staff Observation & Evidence <span className="text-error">*</span>
               </label>
               <textarea
                 id="dispute-notes-textarea"
-                rows={3}
                 placeholder="Describe what occurred at the counter (e.g. presented physical ID name did not match app profile, photo mismatch, CCTV timestamp)..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 required
-                className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-[#E2E8F0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF4444] text-[#0B1F33]"
+                className="pf-textarea-sm w-full px-3 py-2 text-xs sm:text-sm bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-error text-foreground"
               />
             </div>
 

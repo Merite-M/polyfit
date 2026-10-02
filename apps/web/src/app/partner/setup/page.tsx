@@ -230,47 +230,49 @@ function PartnerSetupContent() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Active Step Form (7 or 8 cols on lg) */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-6">
-          {currentStep === 1 && (
+          {/* Wizard Steps — CSS-driven show/hide via data-active + @starting-style transitions.
+              Steps are never unmounted so discrete CSS entry/exit animations fire correctly. */}
+          <div className="pf-wizard-step" data-active={String(currentStep === 1)}>
             <Step1HoursSplitShift state={formState} onChange={handlePatch} />
-          )}
+          </div>
 
-          {currentStep === 2 && (
+          <div className="pf-wizard-step" data-active={String(currentStep === 2)}>
             <Step2ContactSocial state={formState} onChange={handlePatch} />
-          )}
+          </div>
 
-          {currentStep === 3 && (
+          <div className="pf-wizard-step" data-active={String(currentStep === 3)}>
             <Step3GuidelinesDescription state={formState} onChange={handlePatch} />
-          )}
+          </div>
 
-          {currentStep === 4 && (
+          <div className="pf-wizard-step" data-active={String(currentStep === 4)}>
             <Step4FirstCheckinRules state={formState} onChange={handlePatch} />
-          )}
+          </div>
 
-          {currentStep === 5 && (
+          <div className="pf-wizard-step" data-active={String(currentStep === 5)}>
             <Step5MultiCategoryAmenities state={formState} onChange={handlePatch} />
-          )}
+          </div>
 
-          {currentStep === 6 && (
+          <div className="pf-wizard-step" data-active={String(currentStep === 6)}>
             <Step6LogoUpload state={formState} onChange={handlePatch} />
-          )}
+          </div>
 
-          {currentStep === 7 && (
+          <div className="pf-wizard-step" data-active={String(currentStep === 7)}>
             <Step7CoverPhoto state={formState} onChange={handlePatch} />
-          )}
+          </div>
 
-          {currentStep === 8 && (
+          <div className="pf-wizard-step" data-active={String(currentStep === 8)}>
             <Step8EntrancePhoto state={formState} onChange={handlePatch} />
-          )}
+          </div>
 
-          {currentStep === 9 && (
+          <div className="pf-wizard-step" data-active={String(currentStep === 9)}>
             <Step9FacilityGallery state={formState} onChange={handlePatch} />
-          )}
+          </div>
 
-          {currentStep === 10 && (
+          <div className="pf-wizard-step" data-active={String(currentStep === 10)}>
             <Step10PayoutSetup state={formState} onChange={handlePatch} />
-          )}
+          </div>
 
-          {currentStep === 11 && (
+          <div className="pf-wizard-step" data-active={String(currentStep === 11)}>
             <Step11LaunchReview
               state={formState}
               onLaunch={handleConfirmLaunch}
@@ -281,18 +283,18 @@ function PartnerSetupContent() {
               }}
               isEditing={isEditing}
             />
-          )}
+          </div>
 
           {/* Wizard Footer Controls (Back / Continue) */}
-          <div className="flex items-center justify-between pt-6 border-t border-[#E2E8F0]">
+          <div className="flex items-center justify-between pt-6 border-t border-border">
             <button
               type="button"
               onClick={handlePrev}
               disabled={currentStep === 1}
               className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border transition-colors ${
                 currentStep === 1
-                  ? 'bg-transparent text-[#CBD5E1] border-transparent cursor-not-allowed'
-                  : 'bg-white hover:bg-[#F1F4F8] text-[#0B1F33] border-[#E2E8F0] shadow-xs cursor-pointer'
+                  ? 'bg-transparent text-border border-transparent cursor-not-allowed'
+                  : 'bg-card hover:bg-muted text-primary border-border shadow-xs cursor-pointer'
               }`}
             >
               <ArrowLeft className="w-4 h-4" />
@@ -304,9 +306,9 @@ function PartnerSetupContent() {
               <button
                 type="button"
                 onClick={() => setMobilePreviewOpen(true)}
-                className="lg:hidden inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0B1F33] text-white text-xs font-bold shadow-sm"
+                className="lg:hidden inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm"
               >
-                <Smartphone className="w-3.5 h-3.5 text-[#28D17C]" />
+                <Smartphone className="w-3.5 h-3.5 text-accent" />
                 <span>Preview Card</span>
               </button>
 
@@ -314,7 +316,7 @@ function PartnerSetupContent() {
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] text-xs font-bold shadow-xs transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-accent-foreground text-xs font-bold shadow-xs transition-all cursor-pointer"
                 >
                   <span>Continue to Step {currentStep + 1}</span>
                   <ArrowRight className="w-4 h-4" />
@@ -324,7 +326,7 @@ function PartnerSetupContent() {
                   type="button"
                   onClick={handleConfirmLaunch}
                   disabled={isLaunching}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] text-xs font-extrabold shadow-md transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-accent-foreground text-xs font-extrabold shadow-md transition-all cursor-pointer"
                 >
                   {isEditing ? <Save className="w-4 h-4" /> : <Rocket className="w-4 h-4" />}
                   <span>{isEditing ? 'Save Facility Updates' : 'Launch Facility'}</span>

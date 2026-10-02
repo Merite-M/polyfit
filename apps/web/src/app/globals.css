@@ -584,5 +584,76 @@ dialog.pf-native-drawer[open]::backdrop {
   }
 }
 
+/* ==========================================================================
+   PF-116 Partner Portal: Wizard Step Transitions, field-sizing & Token Aliases
+   ========================================================================== */
 
+/* 1. Missing Tailwind v4 @theme aliases (extend existing @theme inline block) */
+@theme inline {
+  --color-accent-hover: var(--pf-green-hover);
+  --color-accent-subtle: var(--pf-green-subtle);
+  --color-subdued: #8491A3;
+  --color-navy: var(--pf-navy);
+}
 
+/* 2. Auto-sizing textarea (field-sizing: content — Baseline 2024) */
+.pf-textarea {
+  field-sizing: content;
+  height: auto;
+  min-height: 5lh;       /* guarantee at least 5 line-heights */
+  max-height: 20lh;      /* cap at 20 lines to prevent infinite expansion */
+  overflow-y: auto;
+  resize: none;          /* no manual resize needed; it auto-sizes */
+}
+
+/* Smaller variant for short-form notes / guidelines */
+.pf-textarea-sm {
+  field-sizing: content;
+  height: auto;
+  min-height: 3lh;
+  max-height: 12lh;
+  overflow-y: auto;
+  resize: none;
+}
+
+/* 3. Wizard Step Discrete Transitions
+      Uses @starting-style (entry) + transition-behavior: allow-discrete (exit)
+      Steps are shown/hidden via data-active attribute, not JS unmounting,
+      so CSS transitions can fire on both enter and leave directions. */
+.pf-wizard-step {
+  display: none;
+  opacity: 0;
+  translate: 0 10px;
+  transition:
+    opacity 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    translate 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    display 240ms allow-discrete;
+}
+
+.pf-wizard-step[data-active="true"] {
+  display: block;
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* Entry animation: where the step starts FROM when first becoming active */
+@starting-style {
+  .pf-wizard-step[data-active="true"] {
+    opacity: 0;
+    translate: 0 14px;
+  }
+}
+
+/* Reduced motion safeguards */
+@media (prefers-reduced-motion: reduce) {
+  .pf-wizard-step {
+    transition: display 0.05s allow-discrete !important;
+    translate: none !important;
+  }
+
+  @starting-style {
+    .pf-wizard-step[data-active="true"] {
+      translate: none !important;
+    }
+  }
+}

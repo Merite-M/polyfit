@@ -171,15 +171,14 @@ export function AmendmentRequestModal({ isOpen, onClose }: AmendmentRequestModal
 
             {/* Justification Textarea */}
             <div>
-              <label className="block text-xs font-bold text-[#0B1F33] mb-1">
-                Proposal Details & Justification <span className="text-[#DC2626]">*</span>
+              <label className="block text-xs font-bold text-primary mb-1">
+                Proposal Details & Justification <span className="text-error">*</span>
               </label>
               <textarea
-                rows={3}
                 placeholder="Explain the rationale (e.g. new Olympic pool added, increased operational overhead, expansion to new branch)..."
                 value={justification}
                 onChange={(e) => setJustification(e.target.value)}
-                className="w-full text-xs rounded-xl bg-[#F7F9FC] border border-[#E2E8F0] p-2.5 text-[#0B1F33] placeholder:text-[#8491A3] focus:outline-none focus:ring-2 focus:ring-[#28D17C]"
+                className="pf-textarea-sm w-full text-xs rounded-xl bg-muted border border-border p-2.5 text-foreground placeholder:text-subdued focus:outline-none focus:ring-2 focus:ring-accent"
                 required
               />
             </div>
