@@ -251,14 +251,14 @@ PolyFit is:
 3. **Core Infrastructure** - Eligibility, visits, utilization tracking
 4. **Billing & Settlement** - Employer invoicing, provider settlement
 5. **Basic Reporting** - Employer utilization reports, provider settlement reports
+6. **Mobile Employee Application (EPIC-06)** - Lean 3-tab Expo 56 app for dynamic TOTP access, offline pass vault, and provider discovery
 
 ### Deferred
 
-- Mobile apps (employee app)
 - Advanced analytics
-- Multi-category expansion (beyond gyms)
+- Multi-category expansion (beyond gyms, pools, studios)
 - Provider self-service portal
-- Employee wellness challenges
+- Employee wellness challenges and social feeds
 
 ---
 
@@ -307,6 +307,16 @@ If YES to any:
 **PolyFit = Corporate Wellness Aggregator**
 **NOT = Gym Management Software**
 
-Keep this distinction in every line of code, every API endpoint, every UI component, and every database table.
-
 When in doubt, ask: "Does this serve the aggregator model or a single gym?"
+
+---
+
+## Mobile Application Standards & Skills Directive
+
+Whenever working on the mobile employee application (`apps/mobile-employee-app`):
+1. **Always read [`.agents/rules/mobile-app-expo.md`](file:///e:/PolyFit/polyfit/.agents/rules/mobile-app-expo.md)** for architecture, design tokens, and aggregator rules.
+2. **Proactively consult installed workspace skills** in `.agents/skills/`:
+   - [`expo-native-ui`](file:///e:/PolyFit/polyfit/.agents/skills/expo-native-ui/SKILL.md) — Native UI components, Apple HIG & Material design, visual effects, and storage.
+   - [`expo-router`](file:///e:/PolyFit/polyfit/.agents/skills/expo-router/SKILL.md) — File-based navigation, typed routes, modals, and sheets.
+   - [`expo-animation`](file:///e:/PolyFit/polyfit/.agents/skills/expo-animation/SKILL.md) — 60/120 FPS Reanimated spring physics, gestures, and transitions.
+   - [`vercel-react-native-skills`](file:///e:/PolyFit/polyfit/.agents/skills/vercel-react-native-skills/SKILL.md) — Performance rules, list virtualization, and zero-stutter rendering.

@@ -1,5 +1,14 @@
 # PolyFit Mobile Application — Architecture & Implementation Rules
 
+## Mandatory Agent Skills Directive
+Before generating, refactoring, or reviewing any mobile code in `apps/mobile-employee-app`, every agent **MUST proactively consult the installed workspace skills**:
+1. **[`expo-native-ui`](file:///e:/PolyFit/polyfit/.agents/skills/expo-native-ui/SKILL.md)**: For Apple HIG / Material styling, `@expo/ui` native controls, SF Symbols/Material icons, blur effects (`expo-blur`), and storage (`expo-secure-store`).
+2. **[`expo-router`](file:///e:/PolyFit/polyfit/.agents/skills/expo-router/SKILL.md)**: For file-based routing, native stacks, tabs, sheet modals (`presentation: 'formSheet'`), and route params.
+3. **[`expo-animation`](file:///e:/PolyFit/polyfit/.agents/skills/expo-animation/SKILL.md)**: For Reanimated spring physics, gesture handling, entering/exiting micro-animations, and haptics.
+4. **[`vercel-react-native-skills`](file:///e:/PolyFit/polyfit/.agents/skills/vercel-react-native-skills/SKILL.md)**: For list virtualization, GPU-accelerated transforms, and render performance.
+
+---
+
 ## Product & Actor Context
 
 **The PolyFit Mobile Application (`apps/mobile-employee-app`) serves the Corporate Employee / Beneficiary.**
