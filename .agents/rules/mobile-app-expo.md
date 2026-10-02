@@ -58,35 +58,32 @@ All UI components must strictly match the Stitch Design System (`projects/164986
 
 ---
 
-## Core Mobile Feature Pillars
+## Core Mobile Architecture (Lean 3-Tab Model)
 
-1. **Frictionless Corporate Onboarding**:
+The V1 application is intentionally lean and distraction-free. It has exactly **3 tabs** and **1 onboarding gate**:
+
+1. **Frictionless Corporate Onboarding (`PF-105`)**:
    * Automatic employer recognition via work email domain (`@bk.rw`, `@equitybank.co.ke`).
-   * Alternative HR invite code / external employee ID flow for deskless staff.
-   * Transparent corporate subsidy card presentation before entering main app.
-2. **Multi-Category Wellness Discovery**:
-   * Interactive Map + low-bandwidth List View toggle.
-   * Multi-category taxonomy chips: Fitness, Swimming, Yoga & Pilates, Sauna & Recovery, Padel & Tennis, Physiotherapy.
-   * Accurate GPS distance calculation and *"Included in your Plan"* badge indicators.
-3. **Dynamic Anti-Screenshot Access Pass**:
-   * Dynamic RFC 6238 TOTP QR code rotating every 15 seconds.
-   * Circular animated SVG countdown ring.
-   * Continuous animated gradient ripple overlay with embedded dynamic watermark (employee name, company, live timestamp).
-   * Dual-modality support: Show dynamic QR to turnstile/scanner OR scan partner desk QR plaque with camera.
-4. **100% Offline Cryptographic Pass Vault**:
-   * Pre-cached 24-hour token seed stored in SecureStore.
-   * App must successfully generate valid, rotating TOTP passes even in subterranean basements or Airplane Mode.
-   * Optimistic local visit queue syncing automatically in the background when connectivity returns.
-5. **Mobile Money Co-Pay Wallet (MTN MoMo / Airtel Money)**:
-   * Native USSD/STK push prompt for copays and top-ups without credit cards.
-   * Auto-deduct copay when accessing higher-tier facilities.
-6. **Class & Session Booking**:
-   * Timetable schedule browser with real-time room capacity quotas (`3 spots left`).
-   * 30-minute pre-session check-in unlock window.
-   * Anti-no-show cooldown enforcement.
-7. **Family & Dependents Plan**:
-   * Corporate-negotiated spouse/child add-on passes.
-   * 1-tap profile switcher on Pass screen (`My Pass` ↔ `Dependent Pass`).
+   * Clean corporate subsidy card presentation before entering the main app.
+2. **Tab 1: Access Pass (`PF-101`)**:
+   * 1-tap dynamic RFC 6238 TOTP QR code rotating every 15 seconds.
+   * Built-in **100% Offline Cryptographic Pass Vault**: pre-cached token seed in `SecureStore` ensures passes work in basements with zero cellular data.
+   * Circular animated countdown ring and animated watermark overlay to prevent static screenshot sharing.
+   * Dual-modality support: display QR to receptionist scanner OR scan partner desk QR plaque with camera.
+3. **Tab 2: Provider Discovery (`PF-100`)**:
+   * Clean Map + low-bandwidth List View toggle.
+   * Simple category chips: All, Fitness, Swimming, Yoga, Spa/Recovery.
+   * GPS distance calculation and *"Included in your Plan"* badge indicators.
+4. **Tab 3: Profile & Benefit Status (`PF-102`)**:
+   * Beneficiary name, corporate email, employer badge (`Bank of Kigali`).
+   * Active Benefit Card: Plan Tier, remaining monthly visit count, renewal date.
+   * Simple recent visit history and clean sign-out.
+
+### Features Excluded from V1 (Zero-Bloat Rule)
+* ❌ **NO Corporate Social Challenges / Leaderboards**: Kept out to prevent social feed clutter.
+* ❌ **NO In-App Co-Pay Wallets**: Employer subsidizes standard plans; payment screens are unnecessary.
+* ❌ **NO Class Booking Engine**: Early partner facilities operate on drop-in access; waitlists and seat reservation penalties add friction.
+* ❌ **NO Family / Dependent Switchers**: Deferred until corporate accounts complete primary employee onboarding.
 
 ---
 
