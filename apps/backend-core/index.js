@@ -112,6 +112,10 @@ app.use('/api/provider-contracts', contractRoutes);
 // PF-88: Public Lead & Demo Request Pipeline
 const publicRoutes = require('./routes/publicRoutes');
 app.use('/api/public', publicRoutes);
+
+// PF-109 / EPIC-06: Dedicated Mobile Employee Portal API (High-performance telemetry aggregator & offline pass seed)
+const employeePortalRoutes = require('./routes/employeePortalRoutes');
+app.use('/api/employee', employeePortalRoutes);
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Server Start ─────────────────────────────────────────────────────────────
