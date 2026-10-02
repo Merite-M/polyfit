@@ -168,7 +168,52 @@ const DEFAULT_HISTORICAL_VISITS: HistoricalVisit[] = [
     tier: 'Executive',
     organization_name: 'MTN Rwandacell',
     location_name: 'Kigali Central Facility'
-  }
+  },
+  // Multi-week extended audits for 60fps virtualization testing
+  ...Array.from({ length: 35 }, (_, idx) => {
+    const day = 22 - Math.floor(idx / 2);
+    const dayStr = day < 10 ? `0${day}` : `${day}`;
+    const hour = 7 + (idx % 12);
+    const hourStr = hour < 10 ? `0${hour}` : `${hour}`;
+    const minute = (idx * 17) % 60;
+    const minStr = minute < 10 ? `0${minute}` : `${minute}`;
+    const orgs = [
+      'Bank of Kigali Plc',
+      'MTN Rwandacell',
+      'I&M Bank Rwanda',
+      'Bboxx Capital Rwanda',
+      'Rwanda Development Board'
+    ];
+    const names = [
+      ['Eric Manzi', 'BK-2041', 'e.manzi@bk.rw', 'Executive'],
+      ['Diane Uwimana', 'MTN-3301', 'd.uwimana@mtn.rw', 'Standard'],
+      ['Aimable Bizimana', 'IM-7712', 'a.bizimana@imbank.rw', 'Standard'],
+      ['Fiona Gasana', 'BBX-1190', 'f.gasana@bboxx.com', 'Executive'],
+      ['Claude Rukundo', 'RDB-9902', 'c.rukundo@rdb.rw', 'Executive'],
+      ['Nadine Ingabire', 'BK-6623', 'n.ingabire@bk.rw', 'Standard'],
+      ['Olivier Nkurunziza', 'MTN-5541', 'o.nkurunziza@mtn.rw', 'Executive']
+    ];
+    const [name, bId, email, tier] = names[idx % names.length];
+    const org = orgs[idx % orgs.length];
+    const methods = ['totp_qr', 'turnstile', 'manual', 'nfc'];
+    const method = methods[idx % methods.length];
+    const isDisputed = idx === 11 || idx === 24;
+
+    return {
+      id: `vis-hist-ext-${idx + 11}`,
+      check_in_at: `2026-09-${dayStr}T${hourStr}:${minStr}:00Z`,
+      status: (isDisputed ? 'disputed' : 'verified') as HistoricalVisit['status'],
+      verification_method: method,
+      reimbursement_rate: 5000,
+      beneficiary_name: name,
+      beneficiary_id: bId,
+      beneficiary_email: email,
+      tier,
+      organization_name: org,
+      location_name: idx % 3 === 0 ? 'Nyarutarama Health Branch' : 'Kigali Central Facility',
+      is_disputed: isDisputed
+    };
+  })
 ];
 
 export function HistoricalCheckinLog() {
@@ -177,7 +222,7 @@ export function HistoricalCheckinLog() {
   const [orgFilter, setOrgFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
-  const pageSize = 8;
+  const [pageSize, setPageSize] = useState(15);
 
   // Filtered dataset
   const filteredData = useMemo(() => {
@@ -404,21 +449,21 @@ export function HistoricalCheckinLog() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse table-fixed min-w-[960px]">
             <thead>
               <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[11px] font-semibold text-[#526173] uppercase tracking-wider">
-                <th className="py-3 px-4">Date & Time</th>
-                <th className="py-3 px-4">Beneficiary</th>
-                <th className="py-3 px-4">Corporate Client</th>
-                <th className="py-3 px-4">Facility Location</th>
-                <th className="py-3 px-4">Verification</th>
-                <th className="py-3 px-4">Settlement Rate</th>
-                <th className="py-3 px-4 text-right">Reconciliation Status</th>
+                <th className="py-3 px-4 w-[155px]">Date & Time</th>
+                <th className="py-3 px-4 w-[210px]">Beneficiary</th>
+                <th className="py-3 px-4 w-[210px]">Corporate Client</th>
+                <th className="py-3 px-4 w-[170px]">Facility Location</th>
+                <th className="py-3 px-4 w-[130px]">Verification</th>
+                <th className="py-3 px-4 w-[125px]">Settlement Rate</th>
+                <th className="py-3 px-4 w-[160px] text-right">Reconciliation Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0] text-xs sm:text-sm">
               {paginatedRows.map((row) => (
-                <tr key={row.id} className="hover:bg-[#F8FAFC] transition-colors">
+                <tr key={row.id} className="pf-table-row-deferred hover:bg-[#F8FAFC] transition-colors">
                   {/* Timestamp */}
                   <td className="py-3 px-4 whitespace-nowrap">
                     <div className="font-mono text-[#0B1F33] font-medium">
@@ -490,10 +535,28 @@ export function HistoricalCheckinLog() {
         </div>
 
         {/* Pagination Footer */}
-        <div className="p-3 border-t border-[#E2E8F0] flex items-center justify-between text-xs text-[#526173] bg-[#FBFDFE]">
-          <div>
-            Showing <strong className="text-[#0B1F33]">{paginatedRows.length}</strong> of{' '}
-            <strong className="text-[#0B1F33]">{filteredData.length}</strong> entries
+        <div className="p-3 border-t border-[#E2E8F0] flex flex-wrap items-center justify-between gap-3 text-xs text-[#526173] bg-[#FBFDFE]">
+          <div className="flex items-center gap-3">
+            <div>
+              Showing <strong className="text-[#0B1F33]">{paginatedRows.length}</strong> of{' '}
+              <strong className="text-[#0B1F33]">{filteredData.length}</strong> entries
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px]">
+              <span>Rows per page:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="bg-white border border-[#E2E8F0] rounded px-1.5 py-0.5 text-[#0B1F33] font-medium"
+              >
+                <option value={10}>10</option>
+                <option value={15}>15</option>
+                <option value={30}>30</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button

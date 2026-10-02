@@ -516,6 +516,73 @@ dialog.pf-native-drawer[open]::backdrop {
   .pf-accordion-content {
     transition: none !important;
   }
+
+  .pf-stream-card-enter,
+  .pf-feed-row-enter,
+  .pf-feed-row-new {
+    transform: none !important;
+    animation: none !important;
+    transition-duration: 0.05s !important;
+  }
+
+  @starting-style {
+    .pf-stream-card-enter,
+    .pf-feed-row-enter {
+      transform: none !important;
+    }
+  }
 }
+
+/* ==========================================================================
+   PF-115 Partner Portal: Table Virtualization & Stream Transitions
+   ========================================================================== */
+
+/* 1. content-visibility: auto Table Virtualization (Modern Web Guidance) */
+.pf-table-row-deferred {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 60px;
+}
+
+/* 2. Discrete Entry Transitions (@starting-style & transition-behavior: allow-discrete) */
+.pf-stream-card-enter {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease-out, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), display 0.3s allow-discrete;
+}
+
+@starting-style {
+  .pf-stream-card-enter {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+.pf-feed-row-enter {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.28s ease-out, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.8s ease;
+}
+
+@starting-style {
+  .pf-feed-row-enter {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* Newly admitted visit kinetic highlight */
+.pf-feed-row-new {
+  animation: pf-flash-green 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pf-flash-green {
+  0% {
+    background-color: rgba(40, 209, 124, 0.22);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
 
 

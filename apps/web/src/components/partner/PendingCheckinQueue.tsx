@@ -140,7 +140,7 @@ export function PendingCheckinQueue({
           return (
             <div
               key={item.id}
-              className={`pt-3 first:pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all ${
+              className={`pf-stream-card-enter pt-3 first:pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all ${
                 isUnlocked ? 'bg-[#E9FAF2] p-3 rounded-lg border border-[#28D17C]/40' : ''
               }`}
             >

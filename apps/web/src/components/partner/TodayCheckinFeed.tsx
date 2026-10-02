@@ -396,14 +396,14 @@ export function TodayCheckinFeed({ onFlagDispute, refreshTrigger }: TodayCheckin
                 .map((n) => n[0])
                 .join('')
                 .slice(0, 2)
-                .toUpperCase();
+              const isVeryRecent = Math.abs(Date.now() - new Date(visit.check_in_at).getTime()) < 20000;
 
               return (
                 <tr
                   key={visit.id}
-                  className={`hover:bg-[#F8FAFC] transition-colors ${
-                    isFlagged ? 'bg-[#FFFBEB]' : ''
-                  }`}
+                  className={`pf-feed-row-enter hover:bg-[#F8FAFC] transition-colors ${
+                    isVeryRecent ? 'pf-feed-row-new' : ''
+                  } ${isFlagged ? 'bg-[#FFFBEB]' : ''}`}
                 >
                   {/* Beneficiary Profile */}
                   <td className="py-3.5 px-4">

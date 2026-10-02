@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   X,
   ClockAlert,
@@ -26,6 +26,8 @@ interface RetroactiveClaimModalProps {
 
 export function RetroactiveClaimModal({ isOpen, onClose, onSuccess }: RetroactiveClaimModalProps) {
   const { locations, selectedLocationId } = usePartner();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
   const [incidentDate, setIncidentDate] = useState(() => {
     const d = new Date();
     return d.toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
@@ -42,7 +44,65 @@ export function RetroactiveClaimModal({ isOpen, onClose, onSuccess }: Retroactiv
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  if (!isOpen) return null;
+  const handleResetAndClose = useCallback(() => {
+    setEmployeeIdentifier('');
+    setEmployeeName('');
+    setEvidenceRef('');
+    setNotes('');
+    setErrorMsg(null);
+    setIsSuccess(false);
+    onClose();
+  }, [onClose]);
+
+  // Synchronize native <dialog> with React isOpen prop
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (isOpen) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } else {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+  }, [isOpen]);
+
+  // Progressive Fallback for Light-Dismiss (Modern Web Guidance)
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    const handleBackdropClick = (event: MouseEvent) => {
+      if (event.target !== dialog) return;
+      const rect = dialog.getBoundingClientRect();
+      const isDialogContent = (
+        rect.top <= event.clientY &&
+        event.clientY <= rect.top + rect.height &&
+        rect.left <= event.clientX &&
+        event.clientX <= rect.left + rect.width
+      );
+
+      if (!isDialogContent) {
+        handleResetAndClose();
+      }
+    };
+
+    const handleCancel = (e: Event) => {
+      e.preventDefault();
+      handleResetAndClose();
+    };
+
+    dialog.addEventListener('click', handleBackdropClick);
+    dialog.addEventListener('cancel', handleCancel);
+
+    return () => {
+      dialog.removeEventListener('click', handleBackdropClick);
+      dialog.removeEventListener('cancel', handleCancel);
+    };
+  }, [handleResetAndClose]);
 
   // Check 2nd of the month policy locally for immediate UX feedback
   const isCutoffExceeded = () => {
@@ -93,19 +153,16 @@ export function RetroactiveClaimModal({ isOpen, onClose, onSuccess }: Retroactiv
     }
   };
 
-  const handleResetAndClose = () => {
-    setEmployeeIdentifier('');
-    setEmployeeName('');
-    setEvidenceRef('');
-    setNotes('');
-    setErrorMsg(null);
-    setIsSuccess(false);
-    onClose();
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B1F33]/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-[#E2E8F0] overflow-hidden max-h-[90vh] flex flex-col">
+    <dialog
+      ref={dialogRef}
+      {...({ closedby: 'any' } as any)}
+      aria-labelledby="retroactive-claim-title"
+      aria-describedby="retroactive-claim-desc"
+      className="pf-native-dialog pf-dialog-lg bg-white rounded-2xl shadow-modal border border-[#E2E8F0] overflow-hidden p-0 max-w-lg w-[calc(100%-2rem)] max-h-[90vh]"
+      onClose={handleResetAndClose}
+    >
+      <div className="bg-white w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="bg-[#F8FAFC] border-b border-[#E2E8F0] px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2.5">
@@ -113,13 +170,19 @@ export function RetroactiveClaimModal({ isOpen, onClose, onSuccess }: Retroactiv
               <ClockAlert className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-[#0B1F33] text-sm">Submit Missed Check-in Claim</h3>
-              <p className="text-[11px] text-[#526173]">Power blackout & technical outage reconciliation</p>
+              <h3 id="retroactive-claim-title" className="font-bold text-[#0B1F33] text-sm">
+                Submit Missed Check-in Claim
+              </h3>
+              <p id="retroactive-claim-desc" className="text-[11px] text-[#526173]">
+                Power blackout & technical outage reconciliation
+              </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={handleResetAndClose}
-            className="p-1 rounded-lg text-[#8491A3] hover:text-[#0B1F33] hover:bg-[#E2E8F0] transition-colors"
+            className="p-1.5 rounded-lg text-[#8491A3] hover:text-[#0B1F33] hover:bg-[#E2E8F0] transition-colors"
+            aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
           </button>
@@ -128,6 +191,7 @@ export function RetroactiveClaimModal({ isOpen, onClose, onSuccess }: Retroactiv
         {/* Success View */}
         {isSuccess ? (
           <div className="p-6 text-center space-y-4">
+
             <div className="w-16 h-16 rounded-full bg-[#E9FAF2] text-[#28D17C] mx-auto flex items-center justify-center border border-[#28D17C]/30 shadow-xs animate-in zoom-in duration-200">
               <CheckCircle2 className="w-8 h-8" />
             </div>
@@ -322,6 +386,6 @@ export function RetroactiveClaimModal({ isOpen, onClose, onSuccess }: Retroactiv
           </form>
         )}
       </div>
-    </div>
+    </dialog>
   );
 }

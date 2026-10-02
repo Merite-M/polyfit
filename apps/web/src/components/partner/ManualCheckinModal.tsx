@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   X,
   UserCheck,
@@ -24,6 +24,8 @@ interface ManualCheckinModalProps {
 
 export function ManualCheckinModal({ isOpen, onClose, onSuccess }: ManualCheckinModalProps) {
   const { locations, selectedLocationId } = usePartner();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
   const [identifier, setIdentifier] = useState('');
   const [locationId, setLocationId] = useState(
     selectedLocationId !== 'all' ? selectedLocationId : locations[0]?.id || ''
@@ -38,7 +40,63 @@ export function ManualCheckinModal({ isOpen, onClose, onSuccess }: ManualCheckin
     relayMs: number;
   } | null>(null);
 
-  if (!isOpen) return null;
+  const handleResetAndClose = useCallback(() => {
+    setIdentifier('');
+    setNotes('');
+    setErrorMsg(null);
+    setSuccessResult(null);
+    onClose();
+  }, [onClose]);
+
+  // Synchronize native <dialog> with React isOpen prop
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (isOpen) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } else {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+  }, [isOpen]);
+
+  // Progressive Fallback for Light-Dismiss (Modern Web Guidance)
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    const handleBackdropClick = (event: MouseEvent) => {
+      if (event.target !== dialog) return;
+      const rect = dialog.getBoundingClientRect();
+      const isDialogContent = (
+        rect.top <= event.clientY &&
+        event.clientY <= rect.top + rect.height &&
+        rect.left <= event.clientX &&
+        event.clientX <= rect.left + rect.width
+      );
+
+      if (!isDialogContent) {
+        handleResetAndClose();
+      }
+    };
+
+    const handleCancel = (e: Event) => {
+      e.preventDefault();
+      handleResetAndClose();
+    };
+
+    dialog.addEventListener('click', handleBackdropClick);
+    dialog.addEventListener('cancel', handleCancel);
+
+    return () => {
+      dialog.removeEventListener('click', handleBackdropClick);
+      dialog.removeEventListener('cancel', handleCancel);
+    };
+  }, [handleResetAndClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,17 +153,15 @@ export function ManualCheckinModal({ isOpen, onClose, onSuccess }: ManualCheckin
     }
   };
 
-  const handleResetAndClose = () => {
-    setIdentifier('');
-    setNotes('');
-    setErrorMsg(null);
-    setSuccessResult(null);
-    onClose();
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B1F33]/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-[#E2E8F0] overflow-hidden">
+    <dialog
+      ref={dialogRef}
+      {...({ closedby: 'any' } as any)}
+      aria-labelledby="manual-checkin-title"
+      aria-describedby="manual-checkin-desc"
+      className="pf-native-dialog bg-white rounded-2xl shadow-modal border border-[#E2E8F0] overflow-hidden p-0 max-w-md w-[calc(100%-2rem)]"
+    >
+      <div className="bg-white w-full overflow-hidden">
         {/* Header */}
         <div className="bg-[#F8FAFC] border-b border-[#E2E8F0] px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -113,13 +169,19 @@ export function ManualCheckinModal({ isOpen, onClose, onSuccess }: ManualCheckin
               <UserCheck className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-[#0B1F33] text-sm">Counter Manual Check-in</h3>
-              <p className="text-[11px] text-[#526173]">Direct entry when beneficiary phone is unavailable</p>
+              <h3 id="manual-checkin-title" className="font-bold text-[#0B1F33] text-sm">
+                Counter Manual Check-in
+              </h3>
+              <p id="manual-checkin-desc" className="text-[11px] text-[#526173]">
+                Direct entry when beneficiary phone is unavailable
+              </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={handleResetAndClose}
-            className="p-1 rounded-lg text-[#8491A3] hover:text-[#0B1F33] hover:bg-[#E2E8F0] transition-colors"
+            className="p-1.5 rounded-lg text-[#8491A3] hover:text-[#0B1F33] hover:bg-[#E2E8F0] transition-colors"
+            aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
           </button>
@@ -159,6 +221,7 @@ export function ManualCheckinModal({ isOpen, onClose, onSuccess }: ManualCheckin
             </div>
 
             <button
+              type="button"
               onClick={handleResetAndClose}
               className="w-full py-2.5 rounded-xl bg-[#0B1F33] hover:bg-[#122A44] text-white text-xs font-bold transition-colors shadow-xs"
             >
@@ -175,33 +238,47 @@ export function ManualCheckinModal({ isOpen, onClose, onSuccess }: ManualCheckin
               </div>
             )}
 
-            <div>
-              <label className="block text-xs font-bold text-[#0B1F33] mb-1">
+            {/* Beneficiary Identifier with :user-invalid Validation */}
+            <div className="pf-form-field">
+              <label htmlFor="manual-identifier-input" className="block text-xs font-bold text-[#0B1F33] mb-1">
                 Beneficiary Identifier <span className="text-[#EF4444]">*</span>
               </label>
+              <span id="manual-identifier-hint" className="block text-[11px] text-[#8491A3] mb-1.5">
+                Format: Badge code (e.g. <code className="bg-[#F1F4F8] px-1 py-0.2 rounded text-[#0B1F33]">BK-8902</code>) or corporate email
+              </span>
               <div className="relative">
-                <Search className="w-4 h-4 text-[#8491A3] absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-[#8491A3] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
+                  id="manual-identifier-input"
                   type="text"
-                  placeholder="Enter employee ID (e.g. BK-8902) or work email..."
+                  name="identifier"
+                  placeholder="Enter employee ID or work email..."
                   value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
+                  onChange={(e) => {
+                    setIdentifier(e.target.value);
+                    if (errorMsg) setErrorMsg(null);
+                  }}
                   required
+                  minLength={3}
+                  pattern=".{3,}"
                   autoFocus
-                  className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-white border border-[#E2E8F0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#28D17C] text-[#0B1F33]"
+                  aria-describedby="manual-identifier-hint"
+                  aria-errormessage="manual-identifier-error"
+                  className="pf-form-input w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-white border border-[#E2E8F0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#28D17C] text-[#0B1F33] transition-colors"
                 />
               </div>
-              <p className="text-[11px] text-[#8491A3] mt-1">
-                Quick test: try <code className="bg-[#F1F4F8] px-1 py-0.5 rounded text-[#0B1F33]">BK-8902</code> or{' '}
-                <code className="bg-[#F1F4F8] px-1 py-0.5 rounded text-[#0B1F33]">a.umutoni@bk.rw</code>
-              </p>
+              <div id="manual-identifier-error" className="pf-form-hint-error text-xs text-[#EF4444] mt-1.5 items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>Please enter a valid employee code (minimum 3 characters) or work email</span>
+              </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#0B1F33] mb-1">
+              <label htmlFor="manual-location-select" className="block text-xs font-bold text-[#0B1F33] mb-1">
                 Facility / Branch Location
               </label>
               <select
+                id="manual-location-select"
                 value={locationId}
                 onChange={(e) => setLocationId(e.target.value)}
                 className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-[#E2E8F0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#28D17C] text-[#0B1F33]"
@@ -215,10 +292,11 @@ export function ManualCheckinModal({ isOpen, onClose, onSuccess }: ManualCheckin
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#0B1F33] mb-1">
+              <label htmlFor="manual-notes-input" className="block text-xs font-bold text-[#0B1F33] mb-1">
                 Counter Reason / Staff Note
               </label>
               <input
+                id="manual-notes-input"
                 type="text"
                 placeholder="e.g., Phone battery depleted, screen cracked..."
                 value={notes}
@@ -253,6 +331,7 @@ export function ManualCheckinModal({ isOpen, onClose, onSuccess }: ManualCheckin
           </form>
         )}
       </div>
-    </div>
+    </dialog>
   );
 }
+
