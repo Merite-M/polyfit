@@ -592,6 +592,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
                     src={selectedFacility.image}
                     alt={selectedFacility.name}
                     className="w-full h-full object-cover"
+                    fetchPriority="high"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                   

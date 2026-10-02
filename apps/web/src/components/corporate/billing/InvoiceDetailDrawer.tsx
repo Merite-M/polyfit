@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { formatRwf, formatInvoiceDate, generateRraEbmInvoicePdf } from "@/lib/invoice-pdf";
 import { apiFetch } from "@/lib/api-client";
 import {
@@ -57,6 +57,55 @@ export function InvoiceDetailDrawer({
   const [isLoadingAudit, setIsLoadingAudit] = useState(false);
   const [auditSearchQuery, setAuditSearchQuery] = useState("");
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [cachedInvoice, setCachedInvoice] = useState<any>(invoice);
+
+  useEffect(() => {
+    if (invoice) setCachedInvoice(invoice);
+  }, [invoice]);
+
+  const activeInvoice = invoice || cachedInvoice;
+
+  // Synchronize native <dialog> element
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (isOpen) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } else {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+  }, [isOpen]);
+
+  // Modern Web Guidance fallback for light-dismiss
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if ("closedBy" in HTMLDialogElement.prototype) return;
+    if (e.target !== dialog) return;
+
+    const rect = dialog.getBoundingClientRect();
+    const isInside =
+      rect.top <= e.clientY &&
+      e.clientY <= rect.top + rect.height &&
+      rect.left <= e.clientX &&
+      e.clientX <= rect.left + rect.width;
+
+    if (!isInside) {
+      onClose();
+    }
+  };
+
+  const handleCancel = (e: React.SyntheticEvent<HTMLDialogElement, Event>) => {
+    e.preventDefault();
+    onClose();
+  };
+
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   // Fetch granular audit visits whenever the drawer opens for an invoice
@@ -263,11 +312,21 @@ export function InvoiceDetailDrawer({
   const taxAmount = Number(invoice.tax_amount) || Math.round(totalAmount * (0.18 / 1.18));
   const subtotalBeforeTax = totalAmount - taxAmount;
 
+  if (!activeInvoice && !isOpen) return null;
+  const currentInvoice = activeInvoice || invoice;
+
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+    <dialog
+      ref={dialogRef}
+      onClick={handleBackdropClick}
+      onCancel={handleCancel}
+      closedby="any"
+      className="pf-native-drawer p-0 bg-transparent text-foreground"
+      aria-labelledby="invoice-drawer-title"
+    >
+      <div className="relative w-full max-w-2xl bg-card text-card-foreground h-full shadow-modal flex flex-col">
         {/* Top Header */}
-        <div className="p-6 border-b border-[#E2E8F0] flex items-center justify-between bg-[#F7F9FC]">
+        <div className="p-6 border-b border-border flex items-center justify-between bg-muted/60">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#006D3C]/10 text-[#006D3C] flex items-center justify-center flex-shrink-0">
               <FileText className="w-5 h-5" />
@@ -749,6 +808,6 @@ export function InvoiceDetailDrawer({
           </div>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

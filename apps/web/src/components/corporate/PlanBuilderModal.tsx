@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   X,
   Layers,
@@ -26,11 +26,11 @@ interface PlanBuilderModalProps {
 }
 
 const CATEGORY_OPTIONS = [
-  { id: "gym", label: "Fitness & Gyms", desc: "Access to free weights, cardio, strength equipment" },
-  { id: "pool", label: "Swimming Pools", desc: "Access to Olympic and hotel lap pools" },
-  { id: "studio", label: "Yoga & Pilates Studios", desc: "Group classes, HIIT, barre, and spin" },
-  { id: "clinic", label: "Physiotherapy & Sports Clinics", desc: "Injury recovery, chiropractic, massage" },
-  { id: "wellness_center", label: "Holistic Wellness Centers", desc: "Sauna, steam, recovery, cryotherapy" }
+  { id: "gym", label: "Fitness Centers & Strength", desc: "Access to strength equipment, cardio suites, and weights" },
+  { id: "pool", label: "Aquatic & Lap Pools", desc: "Access to Olympic and hotel lap pools" },
+  { id: "studio", label: "Yoga, Pilates & Group Studios", desc: "Group classes, HIIT, barre, and spin" },
+  { id: "clinic", label: "Physiotherapy & Recovery Clinics", desc: "Injury recovery, chiropractic, sports massage" },
+  { id: "wellness_center", label: "Holistic Wellness Centers", desc: "Thermal baths, sauna, steam, and cryotherapy" }
 ];
 
 export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
@@ -39,6 +39,8 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
   onSave,
   initialPlan
 }) => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
   const [name, setName] = useState("");
   const [tier, setTier] = useState<string>("standard");
   const [status, setStatus] = useState<string>("active");
@@ -84,7 +86,46 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
     setError(null);
   }, [initialPlan, isOpen]);
 
-  if (!isOpen) return null;
+  // Synchronize native <dialog> with isOpen state
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (isOpen) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } else {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+  }, [isOpen]);
+
+  // Modern Web Guidance fallback for light-dismiss
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if ("closedBy" in HTMLDialogElement.prototype) return;
+    if (e.target !== dialog) return;
+
+    const rect = dialog.getBoundingClientRect();
+    const isInside =
+      rect.top <= e.clientY &&
+      e.clientY <= rect.top + rect.height &&
+      rect.left <= e.clientX &&
+      e.clientX <= rect.left + rect.width;
+
+    if (!isInside) {
+      onClose();
+    }
+  };
+
+  // Synchronize native Escape key cancel event
+  const handleCancel = (e: React.SyntheticEvent<HTMLDialogElement, Event>) => {
+    e.preventDefault();
+    onClose();
+  };
 
   const toggleCategory = (catId: string) => {
     setSelectedCategories((prev) =>
@@ -135,21 +176,30 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
   ).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B1F33]/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white border border-[#E2E8F0] shadow-2xl flex flex-col">
+    <dialog
+      ref={dialogRef}
+      onClick={handleBackdropClick}
+      onCancel={handleCancel}
+      closedby="any"
+      className="pf-native-dialog pf-dialog-lg p-0 bg-transparent text-foreground"
+      aria-labelledby="plan-builder-title"
+    >
+      <div className="relative w-full max-h-[90vh] overflow-y-auto rounded-2xl bg-card border border-border shadow-modal flex flex-col text-card-foreground">
         {/* Modal Header */}
-        <div className="sticky top-0 z-10 px-6 py-4 border-b border-[#E2E8F0] bg-white flex items-center justify-between">
+        <div className="sticky top-0 z-10 px-6 py-4 border-b border-border bg-card/95 backdrop-blur-xs flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-[#0B1F33]">
+            <h2 id="plan-builder-title" className="text-lg font-bold text-foreground">
               {initialPlan ? "Edit Corporate Benefit Plan" : "Create Corporate Benefit Plan"}
             </h2>
-            <p className="text-xs text-[#526173] mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Configure subsidy tiers, visit allowances, and co-pay rules for your employees.
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#F1F4F8] hover:bg-[#E2E8F0] text-[#526173] flex items-center justify-center transition-colors"
+            aria-label="Close dialog"
+            className="w-8 h-8 rounded-full bg-muted hover:bg-border text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -158,7 +208,7 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
         {/* Modal Body / Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6 flex-1">
           {error && (
-            <div className="p-3.5 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] text-xs flex items-center gap-2">
+            <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -166,13 +216,13 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
 
           {/* Section 1: Identity & Tier */}
           <div className="space-y-4">
-            <h3 className="text-xs font-bold text-[#8491A3] uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               1. Plan Identity & Tier Classification
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-[#0B1F33] mb-1.5">
+                <label className="block text-xs font-semibold text-foreground mb-1.5">
                   Plan Name *
                 </label>
                 <input
@@ -181,18 +231,18 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
                   placeholder="e.g. Executive Wellness Tier"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E2E8F0] text-xs text-[#0B1F33] focus:border-[#28D17C] focus:ring-1 focus:ring-[#28D17C] outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-input text-xs text-foreground bg-background focus:border-ring focus:ring-1 focus:ring-ring outline-none transition-colors pf-form-input"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#0B1F33] mb-1.5">
+                <label className="block text-xs font-semibold text-foreground mb-1.5">
                   Tier Level
                 </label>
                 <select
                   value={tier}
                   onChange={(e) => setTier(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E2E8F0] text-xs text-[#0B1F33] bg-white focus:border-[#28D17C] focus:ring-1 focus:ring-[#28D17C] outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-input text-xs text-foreground bg-background focus:border-ring focus:ring-1 focus:ring-ring outline-none transition-colors"
                 >
                   <option value="executive">Executive Tier (High-touch & Premium)</option>
                   <option value="premium">Premium Tier</option>
@@ -204,7 +254,7 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-[#0B1F33] mb-1.5">
+                <label className="block text-xs font-semibold text-foreground mb-1.5">
                   Plan Lifecycle Status
                 </label>
                 <div className="flex gap-2">
@@ -212,10 +262,10 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
                     type="button"
                     onClick={() => setStatus("active")}
                     className={cn(
-                      "flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-colors",
+                      "flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-colors cursor-pointer",
                       status === "active"
-                        ? "bg-[#E9FAF2] border-[#B7F1D2] text-[#008A4B]"
-                        : "bg-white border-[#E2E8F0] text-[#526173]"
+                        ? "bg-accent-subtle border-accent/40 text-accent-foreground font-bold"
+                        : "bg-card border-border text-muted-foreground hover:bg-muted"
                     )}
                   >
                     Active (Publish now)
@@ -224,10 +274,10 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
                     type="button"
                     onClick={() => setStatus("draft")}
                     className={cn(
-                      "flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-colors",
+                      "flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-colors cursor-pointer",
                       status === "draft"
-                        ? "bg-[#FEF3C7] border-[#FDE68A] text-[#D97706]"
-                        : "bg-white border-[#E2E8F0] text-[#526173]"
+                        ? "bg-warning/15 border-warning/30 text-warning font-bold"
+                        : "bg-card border-border text-muted-foreground hover:bg-muted"
                     )}
                   >
                     Draft (Internal review)
@@ -236,7 +286,7 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#0B1F33] mb-1.5">
+                <label className="block text-xs font-semibold text-foreground mb-1.5">
                   Brief Description
                 </label>
                 <input
@@ -244,21 +294,21 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
                   placeholder="e.g. 100% employer paid across all network venues"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E2E8F0] text-xs text-[#0B1F33] focus:border-[#28D17C] focus:ring-1 focus:ring-[#28D17C] outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-input text-xs text-foreground bg-background focus:border-ring focus:ring-1 focus:ring-ring outline-none transition-colors"
                 />
               </div>
             </div>
           </div>
 
           {/* Section 2: Quota & Co-Pay Rules */}
-          <div className="space-y-4 pt-4 border-t border-[#E2E8F0]">
-            <h3 className="text-xs font-bold text-[#8491A3] uppercase tracking-wider">
+          <div className="space-y-4 pt-4 border-t border-border">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               2. Visit Quotas & Co-Pay Cost-Sharing
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-[#0B1F33] mb-1.5">
+                <label className="block text-xs font-semibold text-foreground mb-1.5">
                   Max Monthly Visits *
                 </label>
                 <div className="relative">
@@ -269,14 +319,14 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
                     required
                     value={maxVisits}
                     onChange={(e) => setMaxVisits(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E2E8F0] text-xs text-[#0B1F33] font-bold focus:border-[#28D17C] outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-input text-xs text-foreground bg-background font-bold focus:border-ring outline-none transition-colors"
                   />
-                  <span className="absolute right-3 top-2.5 text-xs text-[#8491A3]">visits/mo</span>
+                  <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">visits/mo</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#0B1F33] mb-1.5">
+                <label className="block text-xs font-semibold text-foreground mb-1.5">
                   Employee Co-Pay (%)
                 </label>
                 <div className="relative">
@@ -286,17 +336,17 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
                     max={100}
                     value={copayPct}
                     onChange={(e) => setCopayPct(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E2E8F0] text-xs text-[#0B1F33] font-bold focus:border-[#28D17C] outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-input text-xs text-foreground bg-background font-bold focus:border-ring outline-none transition-colors"
                   />
-                  <span className="absolute right-3 top-2.5 text-xs text-[#8491A3]">% co-pay</span>
+                  <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">% co-pay</span>
                 </div>
-                <div className="text-[10px] text-[#526173] mt-1">
+                <div className="text-[10px] text-muted-foreground mt-1">
                   {copayPct === 0 ? "0% = 100% employer funded" : `Employee pays ${copayPct}% per visit`}
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#0B1F33] mb-1.5">
+                <label className="block text-xs font-semibold text-foreground mb-1.5">
                   Monthly Budget Cap
                 </label>
                 <div className="relative">
@@ -306,21 +356,21 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
                     placeholder="Unlimited"
                     value={budgetCap}
                     onChange={(e) => setBudgetCap(e.target.value === "" ? "" : Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E2E8F0] text-xs text-[#0B1F33] font-mono focus:border-[#28D17C] outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-input text-xs text-foreground bg-background font-mono focus:border-ring outline-none transition-colors"
                   />
-                  <span className="absolute right-3 top-2.5 text-xs text-[#8491A3]">RWF</span>
+                  <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">RWF</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Section 3: Provider Category Access */}
-          <div className="space-y-4 pt-4 border-t border-[#E2E8F0]">
+          <div className="space-y-4 pt-4 border-t border-border">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-[#8491A3] uppercase tracking-wider">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 3. Allowed Network Provider Categories
               </h3>
-              <span className="text-xs text-[#526173]">
+              <span className="text-xs text-muted-foreground">
                 {selectedCategories.length} categories enabled
               </span>
             </div>
@@ -335,21 +385,21 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
                     className={cn(
                       "p-3 rounded-xl border cursor-pointer transition-all flex items-start gap-2.5",
                       checked
-                        ? "bg-[#E9FAF2]/40 border-[#28D17C] shadow-xs"
-                        : "bg-white border-[#E2E8F0] hover:bg-[#F8FAFC]"
+                        ? "bg-accent-subtle/50 border-accent shadow-xs"
+                        : "bg-card border-border hover:bg-muted"
                     )}
                   >
                     <div
                       className={cn(
                         "w-4 h-4 rounded mt-0.5 flex items-center justify-center transition-colors",
-                        checked ? "bg-[#28D17C] text-white" : "border border-[#CBD5E1]"
+                        checked ? "bg-accent text-accent-foreground" : "border border-border"
                       )}
                     >
-                      {checked && <CheckCircle2 className="w-3 h-3 text-white" />}
+                      {checked && <CheckCircle2 className="w-3 h-3 text-accent-foreground" />}
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-[#0B1F33]">{cat.label}</div>
-                      <div className="text-[11px] text-[#526173] leading-snug">{cat.desc}</div>
+                      <div className="text-xs font-bold text-foreground">{cat.label}</div>
+                      <div className="text-[11px] text-muted-foreground leading-snug">{cat.desc}</div>
                     </div>
                   </div>
                 );
@@ -358,16 +408,16 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
           </div>
 
           {/* Section 4: Family Pass & Effective Timing */}
-          <div className="space-y-4 pt-4 border-t border-[#E2E8F0]">
-            <h3 className="text-xs font-bold text-[#8491A3] uppercase tracking-wider">
+          <div className="space-y-4 pt-4 border-t border-border">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               4. Family Policy & Activation Schedule
             </h3>
 
             {/* Family Pass Toggle */}
-            <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-between">
+            <div className="p-3.5 rounded-xl bg-muted border border-border flex items-center justify-between">
               <div>
-                <div className="text-xs font-bold text-[#0B1F33]">Family & Dependent Coverage</div>
-                <div className="text-[11px] text-[#526173]">
+                <div className="text-xs font-bold text-foreground">Family & Dependent Coverage</div>
+                <div className="text-[11px] text-muted-foreground">
                   Allow employees to register a spouse or dependent under this plan quota.
                 </div>
               </div>
@@ -375,13 +425,13 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
                 type="checkbox"
                 checked={isFamilyEligible}
                 onChange={(e) => setIsFamilyEligible(e.target.checked)}
-                className="w-4 h-4 accent-[#28D17C] cursor-pointer"
+                className="w-4 h-4 accent-accent cursor-pointer"
               />
             </div>
 
             {/* Effective Timing */}
             <div>
-              <label className="block text-xs font-semibold text-[#0B1F33] mb-2">
+              <label className="block text-xs font-semibold text-foreground mb-2">
                 Effective Timing for Plan Updates
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -390,8 +440,8 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
                   className={cn(
                     "p-3 rounded-xl border cursor-pointer transition-colors flex items-start gap-2.5",
                     effectiveTiming === "immediate"
-                      ? "bg-[#E0F9F5]/40 border-[#00D2B4]"
-                      : "bg-white border-[#E2E8F0]"
+                      ? "bg-secondary/15 border-secondary"
+                      : "bg-card border-border"
                   )}
                 >
                   <input
@@ -399,11 +449,11 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
                     name="timing"
                     checked={effectiveTiming === "immediate"}
                     onChange={() => setEffectiveTiming("immediate")}
-                    className="mt-0.5 accent-[#00D2B4]"
+                    className="mt-0.5 accent-secondary"
                   />
                   <div>
-                    <div className="text-xs font-bold text-[#0B1F33]">Apply Immediately</div>
-                    <div className="text-[11px] text-[#526173]">
+                    <div className="text-xs font-bold text-foreground">Apply Immediately</div>
+                    <div className="text-[11px] text-muted-foreground">
                       Take effect right now for all assigned employees.
                     </div>
                   </div>
@@ -414,8 +464,8 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
                   className={cn(
                     "p-3 rounded-xl border cursor-pointer transition-colors flex items-start gap-2.5",
                     effectiveTiming === "next_billing_cycle"
-                      ? "bg-[#E0F9F5]/40 border-[#00D2B4]"
-                      : "bg-white border-[#E2E8F0]"
+                      ? "bg-secondary/15 border-secondary"
+                      : "bg-card border-border"
                   )}
                 >
                   <input
@@ -423,11 +473,11 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
                     name="timing"
                     checked={effectiveTiming === "next_billing_cycle"}
                     onChange={() => setEffectiveTiming("next_billing_cycle")}
-                    className="mt-0.5 accent-[#00D2B4]"
+                    className="mt-0.5 accent-secondary"
                   />
                   <div>
-                    <div className="text-xs font-bold text-[#0B1F33]">Next Billing Cycle</div>
-                    <div className="text-[11px] text-[#526173]">
+                    <div className="text-xs font-bold text-foreground">Next Billing Cycle</div>
+                    <div className="text-[11px] text-muted-foreground">
                       Take effect on <strong>{nextBillingCycleDate}</strong> for payroll stability.
                     </div>
                   </div>
@@ -437,18 +487,18 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
           </div>
 
           {/* Modal Footer Actions */}
-          <div className="pt-4 border-t border-[#E2E8F0] flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-border flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-[#CBD5E1] text-[#526173] text-xs font-semibold hover:bg-[#F8FAFC] transition-colors"
+              className="px-4 py-2.5 rounded-xl border border-input text-muted-foreground text-xs font-semibold hover:bg-muted transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2.5 rounded-xl bg-[#28D17C] text-[#0B1F33] text-xs font-bold hover:bg-[#22BC6E] transition-colors shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+              className="px-5 py-2.5 rounded-xl bg-accent text-accent-foreground text-xs font-bold hover:bg-accent-hover transition-colors shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
             >
               {isSubmitting ? (
                 <span>Saving Plan...</span>
@@ -459,6 +509,6 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </dialog>
   );
 };

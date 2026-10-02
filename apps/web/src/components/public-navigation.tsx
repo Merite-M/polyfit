@@ -57,7 +57,7 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
             <button 
               onClick={() => handleOpenLead('employer')}
               aria-label="Talk to us - Request employer demo"
-              className="bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] px-5 py-2.5 rounded-[10px] text-sm font-bold transition-all duration-150 shadow-xs hover:shadow-sm cursor-pointer"
+              className="bg-accent hover:bg-accent-hover text-accent-foreground px-5 py-2.5 rounded-[10px] text-sm font-bold transition-all duration-150 shadow-xs hover:shadow-sm cursor-pointer"
             >
               Talk to us
             </button>
@@ -100,7 +100,7 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
                 handleOpenLead('employer');
               }}
               aria-label="Talk to us - Request employer demo"
-              className="w-full bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] px-5 py-3 rounded-[10px] text-sm font-bold transition-colors min-h-[44px] flex items-center justify-center cursor-pointer"
+              className="w-full bg-accent hover:bg-accent-hover text-accent-foreground px-5 py-3 rounded-[10px] text-sm font-bold transition-colors min-h-[44px] flex items-center justify-center cursor-pointer"
             >
               Talk to us
             </button>

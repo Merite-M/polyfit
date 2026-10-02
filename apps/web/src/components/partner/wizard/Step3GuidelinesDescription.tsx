@@ -121,7 +121,7 @@ export function Step3GuidelinesDescription({ state, onChange }: Step3Props) {
         </p>
 
         <textarea
-          placeholder="e.g. Clean indoor athletic shoes are strictly mandatory on the gym floor. Please present your corporate badge or PolyFit TOTP QR code at the reception desk upon arrival. Lockers are provided; please bring your own padlock or purchase one at the front desk."
+          placeholder="e.g. Clean indoor athletic shoes are strictly mandatory on the fitness and workout floor. Please present your corporate badge or PolyFit TOTP QR code at the reception desk upon arrival. Lockers are provided; please bring your own padlock or purchase one at the front desk."
           value={state.important_notice}
           onChange={(e) => onChange({ important_notice: e.target.value })}
           className="pf-textarea-sm w-full p-3 bg-muted border border-border rounded-lg text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"

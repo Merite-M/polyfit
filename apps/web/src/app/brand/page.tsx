@@ -727,6 +727,7 @@ export default function BrandPage() {
                   src="/brand/brand_1.png"
                   alt="PolyFit Brand Board 1: Corporate stationery, architectural signage, and app icon"
                   fill
+                  priority={true}
                   className="object-cover"
                 />
               </div>

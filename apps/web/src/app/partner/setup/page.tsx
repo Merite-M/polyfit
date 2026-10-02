@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -45,6 +45,28 @@ function PartnerSetupContent() {
   const [isLaunching, setIsLaunching] = useState<boolean>(false);
   const [launchSuccess, setLaunchSuccess] = useState<boolean>(false);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState<boolean>(false);
+  const mobilePreviewDialogRef = useRef<HTMLDialogElement>(null);
+  const celebrationDialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = mobilePreviewDialogRef.current;
+    if (!dialog) return;
+    if (mobilePreviewOpen) {
+      if (!dialog.open) dialog.showModal();
+    } else {
+      if (dialog.open) dialog.close();
+    }
+  }, [mobilePreviewOpen]);
+
+  useEffect(() => {
+    const dialog = celebrationDialogRef.current;
+    if (!dialog) return;
+    if (launchSuccess) {
+      if (!dialog.open) dialog.showModal();
+    } else {
+      if (dialog.open) dialog.close();
+    }
+  }, [launchSuccess]);
 
   const draftKey = locationId
     ? `polyfit_partner_wizard_draft_${locationId}`
@@ -343,68 +365,74 @@ function PartnerSetupContent() {
       </div>
 
       {/* Mobile Preview Modal Drawer */}
-      {mobilePreviewOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+      <dialog
+        ref={mobilePreviewDialogRef}
+        closedby="any"
+        onCancel={() => setMobilePreviewOpen(false)}
+        className="pf-native-dialog p-0 bg-transparent text-foreground lg:hidden"
+        aria-label="Mobile preview of facility"
+      >
+        <div className="relative max-h-[90vh] overflow-y-auto p-4 bg-background rounded-2xl border border-border shadow-modal">
+          <button
+            type="button"
             onClick={() => setMobilePreviewOpen(false)}
-          />
-          <div className="relative z-10 max-h-[90vh] overflow-y-auto">
-            <button
-              type="button"
-              onClick={() => setMobilePreviewOpen(false)}
-              className="absolute -top-10 right-0 text-white text-xs font-bold bg-white/20 px-3 py-1 rounded-full"
-            >
-              Close Preview ✕
-            </button>
+            aria-label="Close preview"
+            className="absolute top-2 right-2 text-foreground text-xs font-bold bg-muted hover:bg-border px-3 py-1 rounded-full cursor-pointer"
+          >
+            Close Preview ✕
+          </button>
+          <div className="pt-6">
             <LiveSmartphonePreview state={formState} />
           </div>
         </div>
-      )}
+      </dialog>
 
       {/* Launch / Update Success Celebration Modal */}
-      {launchSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-[#0B1F33]/80 backdrop-blur-xs" />
-          <div className="relative w-full max-w-md bg-white rounded-2xl p-6 text-center shadow-2xl border border-[#E2E8F0] z-10 space-y-4">
-            <div className="w-16 h-16 rounded-full bg-[#E9FAF2] text-[#28D17C] flex items-center justify-center mx-auto border-4 border-[#B7F1D2]">
-              <CheckCircle2 className="w-10 h-10" />
-            </div>
+      <dialog
+        ref={celebrationDialogRef}
+        closedby="any"
+        onCancel={() => setLaunchSuccess(false)}
+        className="pf-native-dialog p-0 bg-transparent text-foreground"
+        aria-labelledby="launch-success-title"
+      >
+        <div className="relative w-full max-w-md bg-card rounded-2xl p-6 text-center shadow-modal border border-border text-card-foreground space-y-4">
+          <div className="w-16 h-16 rounded-full bg-accent-subtle text-accent-foreground flex items-center justify-center mx-auto border-4 border-accent/30">
+            <CheckCircle2 className="w-10 h-10" />
+          </div>
 
-            <h3 className="text-xl font-extrabold text-[#0B1F33]">
-              {isEditing ? 'Facility Updated Successfully!' : 'Facility Successfully Launched!'}
-            </h3>
-            <p className="text-xs text-[#526173] leading-relaxed">
-              {isEditing ? (
-                <>
-                  Updates to <strong>{formState.name || 'Your Facility'}</strong> have been applied. Corporate beneficiaries and front desk check-in systems will reflect the updated schedules and amenities immediately.
-                </>
-              ) : (
-                <>
-                  <strong>{formState.name || 'Your Facility'}</strong> is now live in the PolyFit Corporate Network directory. Corporate beneficiaries can now locate your venue and check in seamlessly at your front desk.
-                </>
-              )}
-            </p>
+          <h3 id="launch-success-title" className="text-xl font-extrabold text-foreground">
+            {isEditing ? 'Facility Updated Successfully!' : 'Facility Successfully Launched!'}
+          </h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {isEditing ? (
+              <>
+                Updates to <strong>{formState.name || 'Your Facility'}</strong> have been applied. Corporate beneficiaries and front desk check-in systems will reflect the updated schedules and amenities immediately.
+              </>
+            ) : (
+              <>
+                <strong>{formState.name || 'Your Facility'}</strong> is now live in the PolyFit Corporate Network directory. Corporate beneficiaries can now locate your venue and check in seamlessly at your front desk.
+              </>
+            )}
+          </p>
 
-            <div className="pt-2 flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => router.push('/partner/locations')}
-                className="w-full py-2.5 bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] text-xs font-bold rounded-xl transition-colors shadow-xs"
-              >
-                Go to Location Management Hub
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push('/partner/checkins')}
-                className="w-full py-2.5 bg-[#F1F4F8] hover:bg-[#E2E8F0] text-[#0B1F33] text-xs font-bold rounded-xl transition-colors"
-              >
-                Open Live Check-in Operations
-              </button>
-            </div>
+          <div className="pt-2 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => router.push('/partner/locations')}
+              className="w-full py-2.5 bg-accent hover:bg-accent-hover text-accent-foreground text-xs font-bold rounded-xl transition-colors shadow-xs cursor-pointer"
+            >
+              Go to Location Management Hub
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/partner/checkins')}
+              className="w-full py-2.5 bg-muted hover:bg-border text-foreground text-xs font-bold rounded-xl transition-colors cursor-pointer"
+            >
+              Open Live Check-in Operations
+            </button>
           </div>
         </div>
-      )}
+      </dialog>
     </div>
   );
 }

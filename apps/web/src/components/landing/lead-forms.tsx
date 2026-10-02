@@ -131,7 +131,7 @@ export default function LeadForms({ isOpen, onClose, defaultType }: LeadFormsPro
       errors.name = "Please enter your full contact name";
     }
     if (!providerForm.business.trim()) {
-      errors.business = "Please enter your gym or facility business name";
+      errors.business = "Please enter your wellness facility business name";
     }
     if (!providerForm.location.trim()) {
       errors.location = "Please enter your facility location in Rwanda";
@@ -428,8 +428,8 @@ export default function LeadForms({ isOpen, onClose, defaultType }: LeadFormsPro
           disabled={isSubmitting}
           value={employerForm.message}
           onChange={(e) => setEmployerForm({ ...employerForm, message: e.target.value })}
-          className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-white text-[#0B1F33] border border-slate-300 text-sm placeholder:text-slate-400 rounded-lg focus:ring-2 focus:ring-[#28D17C] focus:border-[#28D17C] outline-none transition-all resize-none disabled:opacity-50"
-          placeholder="Tell us about your locations, existing gym subsidies, or desired launch timeline..."
+          className="pf-textarea-sm w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-white text-foreground border border-input text-sm placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all disabled:opacity-50"
+          placeholder="Tell us about your locations, corporate wellness subsidies, or desired launch timeline..."
         />
       </div>
 
@@ -486,8 +486,8 @@ export default function LeadForms({ isOpen, onClose, defaultType }: LeadFormsPro
       </div>
 
       <div>
-        <label htmlFor="provider-business" className="block text-xs sm:text-sm font-semibold text-[#0B1F33] mb-1">
-          Facility / Gym Business Name <span className="text-red-500">*</span>
+        <label htmlFor="provider-business" className="block text-xs sm:text-sm font-semibold text-foreground mb-1">
+          Wellness Facility / Partner Business Name <span className="text-destructive">*</span>
         </label>
         <input
           id="provider-business"
@@ -566,7 +566,7 @@ export default function LeadForms({ isOpen, onClose, defaultType }: LeadFormsPro
             className={`w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-white text-[#0B1F33] border text-sm placeholder:text-slate-400 ${
               fieldErrors.email ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-[#3B82F6] focus:border-[#3B82F6]'
             } rounded-lg focus:ring-2 outline-none transition-all disabled:opacity-50`}
-            placeholder="manager@gym.rw"
+            placeholder="manager@wellness.rw"
           />
           {fieldErrors.email && (
             <p id="provider-email-error" className="mt-1 text-xs text-red-600 font-medium flex items-center gap-1">

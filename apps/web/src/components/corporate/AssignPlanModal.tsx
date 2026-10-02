@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   X,
   Users,
@@ -43,12 +43,51 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
   onAssignSubmit,
   availableDepartments = DEFAULT_DEPARTMENTS
 }) => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
   const [effectiveTiming, setEffectiveTiming] = useState<"immediate" | "next_billing_cycle">("immediate");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen || !plan) return null;
+  // Synchronize native <dialog> element
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (isOpen) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } else {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+  }, [isOpen]);
+
+  // Modern Web Guidance fallback for light-dismiss
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if ("closedBy" in HTMLDialogElement.prototype) return;
+    if (e.target !== dialog) return;
+
+    const rect = dialog.getBoundingClientRect();
+    const isInside =
+      rect.top <= e.clientY &&
+      e.clientY <= rect.top + rect.height &&
+      rect.left <= e.clientX &&
+      e.clientX <= rect.left + rect.width;
+
+    if (!isInside) {
+      onClose();
+    }
+  };
+
+  const handleCancel = (e: React.SyntheticEvent<HTMLDialogElement, Event>) => {
+    e.preventDefault();
+    onClose();
+  };
 
   const toggleDept = (deptName: string) => {
     setSelectedDepts((prev) =>
@@ -99,23 +138,34 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
     1
   ).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
+  if (!plan && !isOpen) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B1F33]/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg rounded-2xl bg-white border border-[#E2E8F0] shadow-2xl overflow-hidden flex flex-col">
+    <dialog
+      ref={dialogRef}
+      onClick={handleBackdropClick}
+      onCancel={handleCancel}
+      closedby="any"
+      className="pf-native-dialog p-0 bg-transparent text-foreground"
+      aria-labelledby="assign-plan-title"
+    >
+      <div className="relative w-full max-w-lg rounded-2xl bg-card border border-border shadow-modal overflow-hidden flex flex-col text-card-foreground">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-[#E2E8F0] bg-[#F8FAFC] flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-border bg-muted/60 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-[#0B1F33] flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#007A68]" />
-              <span>Assign Roster to {plan.name}</span>
+            <h2 id="assign-plan-title" className="text-base font-bold text-foreground flex items-center gap-2">
+              <Users className="w-4 h-4 text-secondary" />
+              <span>Assign Roster to {plan?.name || "Corporate Plan"}</span>
             </h2>
-            <p className="text-xs text-[#526173] mt-0.5">
-              Bulk assign corporate departments to the {plan.tier || "Standard"} tier.
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Bulk assign corporate departments to the {plan?.tier || "Standard"} tier.
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white border border-[#E2E8F0] hover:bg-[#F1F4F8] text-[#526173] flex items-center justify-center transition-colors"
+            aria-label="Close dialog"
+            className="w-8 h-8 rounded-full bg-card border border-border hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -124,39 +174,41 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && (
-            <div className="p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] text-xs flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {/* Target Plan Summary Pill */}
-          <div className="p-3.5 rounded-xl bg-[#E0F9F5]/40 border border-[#B7F1D2] flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#28D17C]" />
-              <div>
-                <div className="text-xs font-bold text-[#0B1F33]">{plan.name}</div>
-                <div className="text-[11px] text-[#007A68]">
-                  {plan.max_monthly_visits} visits/mo • {plan.co_pay_percentage}% co-pay
+          {plan && (
+            <div className="p-3.5 rounded-xl bg-secondary/10 border border-secondary/30 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-accent" />
+                <div>
+                  <div className="text-xs font-bold text-foreground">{plan.name}</div>
+                  <div className="text-[11px] text-secondary-foreground/80">
+                    {plan.max_monthly_visits} visits/mo • {plan.co_pay_percentage}% co-pay
+                  </div>
                 </div>
               </div>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-card border border-secondary/30 text-secondary">
+                {plan.tier || "Standard"}
+              </span>
             </div>
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-white border border-[#B7F1D2] text-[#007A68]">
-              {plan.tier || "Standard"}
-            </span>
-          </div>
+          )}
 
           {/* Department Selection */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-bold text-[#0B1F33] flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-[#8491A3]" />
+              <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
                 <span>Select Company Departments</span>
               </label>
               <button
                 type="button"
                 onClick={selectAllDepts}
-                className="text-[11px] text-[#007A68] hover:underline font-semibold"
+                className="text-[11px] text-secondary hover:underline font-semibold cursor-pointer"
               >
                 {selectedDepts.length === availableDepartments.length ? "Deselect All" : "Select All"}
               </button>
@@ -172,22 +224,22 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
                     className={cn(
                       "p-2.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between",
                       checked
-                        ? "bg-[#E9FAF2] border-[#28D17C] text-[#008A4B]"
-                        : "bg-white border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#334155]"
+                        ? "bg-accent-subtle/60 border-accent text-accent-foreground font-semibold"
+                        : "bg-card border-border hover:bg-muted text-foreground"
                     )}
                   >
                     <div className="flex items-center gap-2">
                       <div
                         className={cn(
                           "w-4 h-4 rounded flex items-center justify-center text-xs transition-colors",
-                          checked ? "bg-[#28D17C] text-white" : "border border-[#CBD5E1]"
+                          checked ? "bg-accent text-accent-foreground" : "border border-border"
                         )}
                       >
-                        {checked && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                        {checked && <CheckCircle2 className="w-3.5 h-3.5 text-accent-foreground" />}
                       </div>
                       <span className="text-xs font-semibold">{dept.name}</span>
                     </div>
-                    <span className="text-[11px] font-mono font-medium text-[#8491A3]">
+                    <span className="text-[11px] font-mono font-medium text-muted-foreground">
                       {dept.count} staff
                     </span>
                   </div>
@@ -198,7 +250,7 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
 
           {/* Effective Timing */}
           <div>
-            <label className="block text-xs font-semibold text-[#0B1F33] mb-2">
+            <label className="block text-xs font-semibold text-foreground mb-2">
               When should this assignment take effect?
             </label>
             <div className="grid grid-cols-2 gap-2.5">
@@ -207,12 +259,12 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
                 className={cn(
                   "p-3 rounded-xl border cursor-pointer transition-colors text-left",
                   effectiveTiming === "immediate"
-                    ? "bg-[#E0F9F5]/40 border-[#00D2B4]"
-                    : "bg-white border-[#E2E8F0]"
+                    ? "bg-secondary/15 border-secondary"
+                    : "bg-card border-border"
                 )}
               >
-                <div className="text-xs font-bold text-[#0B1F33]">Apply Immediately</div>
-                <div className="text-[11px] text-[#526173] mt-0.5">
+                <div className="text-xs font-bold text-foreground">Apply Immediately</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
                   Update active passes today
                 </div>
               </div>
@@ -222,12 +274,12 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
                 className={cn(
                   "p-3 rounded-xl border cursor-pointer transition-colors text-left",
                   effectiveTiming === "next_billing_cycle"
-                    ? "bg-[#E0F9F5]/40 border-[#00D2B4]"
-                    : "bg-white border-[#E2E8F0]"
+                    ? "bg-secondary/15 border-secondary"
+                    : "bg-card border-border"
                 )}
               >
-                <div className="text-xs font-bold text-[#0B1F33]">Next Billing Cycle</div>
-                <div className="text-[11px] text-[#526173] mt-0.5">
+                <div className="text-xs font-bold text-foreground">Next Billing Cycle</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
                   Effective {nextBillingCycleDate}
                 </div>
               </div>
@@ -235,9 +287,9 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
           </div>
 
           {/* Allocation Summary Bar */}
-          <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-between text-xs">
-            <span className="text-[#526173]">Total Staff to Migrate:</span>
-            <span className="font-bold text-[#0B1F33] font-mono text-sm">
+          <div className="p-3.5 rounded-xl bg-muted border border-border flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Total Staff to Migrate:</span>
+            <span className="font-bold text-foreground font-mono text-sm">
               {totalSelectedHeadcount} employees
             </span>
           </div>
@@ -247,20 +299,20 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-[#CBD5E1] text-[#526173] text-xs font-semibold hover:bg-[#F8FAFC] transition-colors"
+              className="px-4 py-2 rounded-xl border border-input text-muted-foreground text-xs font-semibold hover:bg-muted transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || selectedDepts.length === 0}
-              className="px-5 py-2 rounded-xl bg-[#28D17C] text-[#0B1F33] text-xs font-bold hover:bg-[#22BC6E] transition-colors shadow-sm disabled:opacity-50"
+              className="px-5 py-2 rounded-xl bg-accent text-accent-foreground text-xs font-bold hover:bg-accent-hover transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? "Assigning..." : `Assign ${totalSelectedHeadcount} Employees`}
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </dialog>
   );
 };
