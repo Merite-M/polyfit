@@ -141,13 +141,17 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
 
         {/* Beneficiary Identity Row */}
         <View style={styles.beneficiaryRow}>
-          <View>
+          <View style={styles.beneficiaryCol}>
             <Text style={styles.beneficiaryLabel}>BENEFICIARY</Text>
-            <Text style={styles.beneficiaryName}>{employeeName}</Text>
-            <Text style={styles.beneficiaryDept}>{department}</Text>
+            <Text style={styles.beneficiaryName} numberOfLines={1}>{employeeName}</Text>
+            <Text style={styles.beneficiaryDept} numberOfLines={1}>{department}</Text>
           </View>
           <View style={styles.tierBadge}>
-            <Text style={styles.tierBadgeText}>{tierName}</Text>
+            <Text style={styles.tierBadgeText} numberOfLines={1}>
+              {tierName.includes('Tier')
+                ? tierName.replace(orgName, '').replace(/Standard Corporate/i, 'Corporate').trim() || 'Corporate Tier'
+                : tierName}
+            </Text>
           </View>
         </View>
 
@@ -332,8 +336,13 @@ const styles = StyleSheet.create({
   beneficiaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    gap: 12,
     marginBottom: Spacing.three,
+  },
+  beneficiaryCol: {
+    flex: 1,
+    minWidth: 0,
   },
   beneficiaryLabel: {
     fontSize: 9,
@@ -356,14 +365,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(40, 209, 124, 0.12)',
     borderWidth: 1,
     borderColor: 'rgba(40, 209, 124, 0.3)',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
+    maxWidth: '45%',
   },
   tierBadgeText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     color: Palette.green,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 
   qrFrameWrapper: {

@@ -81,7 +81,7 @@ export const SubsidyShowcaseStep: React.FC = () => {
           </Text>
         </View>
 
-        {/* Apple Wallet Style Digital Membership Card */}
+        {/* Apple Wallet Style Digital Corporate Pass */}
         <View style={styles.passCard}>
           {/* Card Top: Employer Header */}
           <View style={styles.cardHeader}>
@@ -170,7 +170,7 @@ export const SubsidyShowcaseStep: React.FC = () => {
         <View style={styles.safetyRow}>
           <WifiOff size={14} color={Palette.teal} />
           <Text style={styles.safetyText}>
-            Offline Ready: Dynamic pass works in gym basements without mobile data.
+            Offline Ready: Dynamic pass works in underground partner facilities without mobile data.
           </Text>
         </View>
 

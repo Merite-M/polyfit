@@ -128,6 +128,7 @@ const styles = StyleSheet.create({
   },
   screenViewport: {
     flex: 1,
+    paddingTop: 36,
   },
   homeIndicatorContainer: {
     position: 'absolute',

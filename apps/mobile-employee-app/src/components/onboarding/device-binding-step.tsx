@@ -129,7 +129,7 @@ export const DeviceBindingStep: React.FC<DeviceBindingStepProps> = ({ onFinish }
             <View style={styles.optionTextContainer}>
               <Text style={styles.optionTitle}>Nearby Turnstile Detection</Text>
               <Text style={styles.optionDesc}>
-                Auto-suggest facilities when you arrive at partner gyms.
+                Auto-suggest facilities when you arrive at partner wellness facilities.
               </Text>
             </View>
             <Switch

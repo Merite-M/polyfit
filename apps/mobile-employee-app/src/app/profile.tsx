@@ -50,7 +50,7 @@ export default function ProfileScreen() {
       {/* Top Header */}
       <View style={styles.topHeader}>
         <Text style={styles.headerTitle}>Profile & Benefit</Text>
-        <Text style={styles.headerSub}>Corporate eligibility & membership credentials</Text>
+        <Text style={styles.headerSub}>Corporate eligibility & benefit credentials</Text>
       </View>
 
       <ScrollView

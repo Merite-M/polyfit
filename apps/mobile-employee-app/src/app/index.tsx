@@ -225,6 +225,7 @@ export default function AccessPassScreen() {
       </View>
 
       <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
@@ -304,7 +305,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#071521',
     paddingHorizontal: Spacing.four,
-    paddingTop: Platform.OS === 'ios' ? 44 : 20,
+    paddingTop: Platform.OS === 'ios' ? 44 : (Platform.OS === 'web' ? 6 : 20),
+  },
+  scrollView: {
+    flex: 1,
   },
   topHeader: {
     flexDirection: 'row',
