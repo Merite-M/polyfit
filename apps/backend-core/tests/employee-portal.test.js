@@ -397,4 +397,38 @@ describe('Employee Portal & Mobile Telemetry Test Suite (PF-109)', () => {
       assert.equal(res.body.employee.status, 'active');
     });
   });
+
+  // ─── 8. In-App Desk Plaque Scanner (PF-101 Modality B) ──────────────────────
+  describe('In-App Desk Plaque Scanner (POST /api/employee/scan-plaque)', () => {
+    test('blocks unauthenticated access without bearer token', async () => {
+      const res = await request(app)
+        .post('/api/employee/scan-plaque')
+        .send({ provider_location_id: 'b0000000-0000-0000-0000-000000000010' });
+
+      assert.equal(res.status, 401);
+      assert.equal(res.body.code, 'AUTH_MISSING_HEADER');
+    });
+
+    test('rejects request with empty or malformed bearer token', async () => {
+      const res = await request(app)
+        .post('/api/employee/scan-plaque')
+        .set('Authorization', 'Bearer ')
+        .send({ provider_location_id: 'b0000000-0000-0000-0000-000000000010' });
+
+      assert.equal(res.status, 401);
+      assert.equal(res.body.code, 'AUTH_INVALID_TOKEN_FORMAT');
+    });
+
+    test('rejects invalid bearer token format', async () => {
+      const res = await request(app)
+        .post('/api/employee/scan-plaque')
+        .set('Authorization', 'Basic invalidtoken')
+        .send({ provider_location_id: 'b0000000-0000-0000-0000-000000000010' });
+
+      assert.equal(res.status, 401);
+      assert.equal(res.body.code, 'AUTH_INVALID_TOKEN_FORMAT');
+    });
+  });
 });
+
+

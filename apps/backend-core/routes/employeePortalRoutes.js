@@ -8,6 +8,7 @@ const {
   getEmployeeVisits,
   getEmployeeNetwork
 } = require('../services/employeePortalService');
+const { evaluateEmployeeEligibility } = require('../services/eligibilityService');
 
 const router = express.Router();
 
@@ -764,4 +765,197 @@ router.post(['/benefit/activate', '/benefit/activation'], async (req, res) => {
   }
 });
 
+/**
+ * POST /api/employee/scan-plaque
+ * In-App Counter Scanner for Desk Plaques (PF-101 Modality B)
+ * Verifies employee scan of partner reception desk QR plaque.
+ * Validates GPS geofence (200m), anti-passback cooldown (30 min), monthly quota,
+ * records verified visit, and returns celebration receipt payload.
+ */
+router.post('/scan-plaque', requireAuth, async (req, res) => {
+  try {
+    const { provider_location_id, employee_id, lat, lng, offline_token, scanned_at } = req.body || {};
+
+    if (!provider_location_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'provider_location_id is required',
+        code: 'MISSING_PROVIDER_LOCATION'
+      });
+    }
+
+    const { supabase } = require('../services/supabaseService');
+    if (!supabase) {
+      return res.status(503).json({
+        success: false,
+        error: 'Database service unavailable',
+        code: 'DB_UNAVAILABLE'
+      });
+    }
+
+    // 1. Resolve employee
+    const { employee, error: empErr, status: empStatus, code: empCode } = await getEmployeeForAuthUser(req, employee_id);
+    if (empErr || !employee) {
+      return res.status(empStatus || 404).json({
+        success: false,
+        error: empErr || 'Employee profile not found',
+        code: empCode || 'EMPLOYEE_NOT_FOUND'
+      });
+    }
+
+    if (employee.status !== 'active') {
+      return res.status(403).json({
+        success: false,
+        error: `Employee account status is '${employee.status}'. Active corporate account required`,
+        code: 'EMPLOYEE_INACTIVE'
+      });
+    }
+
+    // 2. Evaluate Eligibility & Quota
+    const eligibilityResult = await evaluateEmployeeEligibility(
+      employee.id,
+      employee.org_id,
+      provider_location_id
+    );
+
+    if (!eligibilityResult.eligible) {
+      return res.status(403).json({
+        success: false,
+        error: eligibilityResult.reason,
+        code: 'INELIGIBLE_FOR_VISIT',
+        details: eligibilityResult
+      });
+    }
+
+    const { location, benefit, usedVisits, maxVisits } = eligibilityResult;
+
+    // 3. Geofence Check (200m max radius)
+    let geofencePassed = true;
+    let distanceMeters = null;
+
+    if (lat !== undefined && lng !== undefined) {
+      const userLat = parseFloat(lat);
+      const userLng = parseFloat(lng);
+
+      const { data: geoData, error: geoError } = await supabase.rpc('verify_geofence', {
+        p_location_id: provider_location_id,
+        p_user_lat: userLat,
+        p_user_lng: userLng
+      });
+
+      if (!geoError && geoData && geoData.length > 0) {
+        geofencePassed = geoData[0].within_geofence;
+        distanceMeters = geoData[0].distance_meters;
+      } else if (location.lat && location.lng) {
+        const { getDistanceFromLatLonInM } = require('@polyfit/shared-utils');
+        distanceMeters = Math.round(
+          getDistanceFromLatLonInM(userLat, userLng, Number(location.lat), Number(location.lng))
+        );
+        geofencePassed = distanceMeters <= 200;
+      }
+
+      if (!geofencePassed) {
+        return res.status(403).json({
+          success: false,
+          error: `Geofence check failed: You are ${distanceMeters}m away from ${location.name} (maximum allowed: 200m)`,
+          code: 'GEOFENCE_OUT_OF_BOUNDS',
+          distance_meters: distanceMeters,
+          max_allowed_radius_meters: 200
+        });
+      }
+    }
+
+    // 4. Anti-Passback Cooldown Check (30 minutes)
+    const { data: apData, error: apError } = await supabase.rpc('check_anti_passback', {
+      p_employee_id: employee.id,
+      p_provider_location_id: provider_location_id
+    });
+
+    if (!apError && apData && apData.length > 0 && !apData[0].allowed) {
+      return res.status(409).json({
+        success: false,
+        error: `Anti-passback cooldown active: Re-entry allowed in ${apData[0].minutes_remaining} minutes`,
+        code: 'ANTI_PASSBACK_COOLDOWN',
+        minutes_remaining: apData[0].minutes_remaining,
+        last_visit_at: apData[0].last_visit_at
+      });
+    }
+
+    // 5. Insert verified visit record
+    const visitTimestamp = scanned_at ? new Date(scanned_at).toISOString() : new Date().toISOString();
+    const { data: newVisit, error: insertError } = await supabase
+      .from('visits')
+      .insert({
+        employee_id: employee.id,
+        org_id: employee.org_id,
+        provider_location_id,
+        verification_method: 'counter_plaque_scan',
+        status: 'verified',
+        check_in_at: visitTimestamp,
+        geo_lat: lat ? parseFloat(lat) : null,
+        geo_lng: lng ? parseFloat(lng) : null
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      return res.status(400).json({
+        success: false,
+        error: insertError.message,
+        code: 'VISIT_RECORDING_FAILED'
+      });
+    }
+
+    const { logAuthEvent } = require('../services/auditService');
+    await logAuthEvent({
+      userId: req.user?.id || employee.id,
+      eventType: 'visit_verified_counter_plaque',
+      metadata: {
+        visit_id: newVisit.id,
+        employee_id: employee.id,
+        provider_location_id,
+        verification_method: 'counter_plaque_scan'
+      },
+      req
+    });
+
+    const updatedUsed = (usedVisits || 0) + 1;
+    const remainingVisits = maxVisits !== null ? Math.max(0, maxVisits - updatedUsed) : 'unlimited';
+
+    return res.status(201).json({
+      success: true,
+      message: `Access granted! Welcome to ${location.name}.`,
+      visit: {
+        id: newVisit.id,
+        status: newVisit.status,
+        check_in_at: newVisit.check_in_at,
+        verification_method: 'counter_plaque_scan'
+      },
+      facility: {
+        id: location.id,
+        name: location.name,
+        distance_meters: distanceMeters
+      },
+      quota: {
+        used_this_month: updatedUsed,
+        max_monthly_visits: maxVisits,
+        remaining_visits: remainingVisits
+      },
+      employee: {
+        id: employee.id,
+        full_name: employee.full_name,
+        org_name: employee.organizations?.name || 'Bank of Kigali'
+      }
+    });
+  } catch (err) {
+    console.error('[employeePortal/scan-plaque] Error:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error processing counter plaque scan',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
 module.exports = router;
+
