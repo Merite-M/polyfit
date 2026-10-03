@@ -4,16 +4,17 @@
  * Lean 3-Tab Aggregator Architecture (Pass, Network, Profile)
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { QrCode, Compass, User } from 'lucide-react-native';
 import { Palette, Spacing, Radius } from '@/constants/theme';
 import AccessPassScreen from '@/app/index';
 import ExploreNetworkScreen from '@/app/explore';
 import ProfileScreen from '@/app/profile';
+import { useTabStore } from '@/stores/tab-store';
 
 export default function AppTabs() {
-  const [activeTab, setActiveTab] = useState<'pass' | 'explore' | 'profile'>('pass');
+  const { activeTab, setActiveTab } = useTabStore();
 
   return (
     <View style={styles.container}>

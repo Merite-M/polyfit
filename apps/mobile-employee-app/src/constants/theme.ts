@@ -113,6 +113,8 @@ export const Radius = {
   btn: 10,
   card: 14,
   lg: 14,
+  xl: 20,
+  '2xl': 24,
   full: 9999,
 } as const;
 

@@ -13,9 +13,12 @@ import {
   ScrollView,
   Platform,
   Alert,
+  Pressable,
 } from 'react-native';
+import { MapPin, X } from 'lucide-react-native';
 import { Palette, Spacing, Radius } from '@/constants/theme';
 import { useAuthStore } from '@/stores/auth-store';
+import { useTabStore } from '@/stores/tab-store';
 import { DynamicQrPass } from '@/components/pass/dynamic-qr-pass';
 import { PassVerificationStatus } from '@/components/pass/pass-verification-status';
 import { CounterScannerModal, ScannedPlaqueData } from '@/components/pass/counter-scanner-modal';
@@ -31,6 +34,8 @@ export default function AccessPassScreen() {
     offlineTokenSeed,
     session,
   } = useAuthStore();
+
+  const { preselectedFacility, clearPreselectedFacility } = useTabStore();
 
   // Modal States
   const [scannerVisible, setScannerVisible] = useState(false);
@@ -244,11 +249,35 @@ export default function AccessPassScreen() {
           onToggleOffline={() => setIsOffline(!isOffline)}
         />
 
+        {/* Preselected Facility Target Banner (From Tab 2 Check In Here CTA) */}
+        {preselectedFacility && (
+          <View style={styles.selectedFacilityBanner}>
+            <View style={styles.selectedFacilityIcon}>
+              <MapPin size={15} color={Palette.green} />
+            </View>
+            <View style={styles.selectedFacilityInfo}>
+              <Text style={styles.selectedFacilityTitle} numberOfLines={1}>
+                Targeting: {preselectedFacility.location_name}
+              </Text>
+              <Text style={styles.selectedFacilitySub}>
+                {preselectedFacility.neighborhood} • Present dynamic QR to receptionist
+              </Text>
+            </View>
+            <Pressable
+              style={styles.selectedFacilityDismiss}
+              onPress={clearPreselectedFacility}
+              hitSlop={8}
+            >
+              <X size={15} color={Palette.textMuted} />
+            </Pressable>
+          </View>
+        )}
+
         {/* Pre-Check Verification Engine Status Banners */}
         <PassVerificationStatus
           isOutOfGeofence={isOutOfGeofence}
-          distanceMeters={450}
-          targetFacilityName="Cercle Sportif Olympic Pool"
+          distanceMeters={preselectedFacility?.distance_meters || 450}
+          targetFacilityName={preselectedFacility?.location_name || 'Cercle Sportif Olympic Pool'}
           inCooldown={inCooldown}
           cooldownRemainingSeconds={cooldownRemainingSeconds}
           isQuotaExhausted={isQuotaExhausted}
@@ -370,5 +399,41 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: Spacing.eight,
+  },
+
+  selectedFacilityBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: 'rgba(40, 209, 124, 0.1)',
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    borderColor: 'rgba(40, 209, 124, 0.3)',
+    padding: Spacing.three,
+    marginBottom: Spacing.two,
+  },
+  selectedFacilityIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(40, 209, 124, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedFacilityInfo: {
+    flex: 1,
+  },
+  selectedFacilityTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  selectedFacilitySub: {
+    fontSize: 11,
+    color: Palette.textSecondary,
+    marginTop: 1,
+  },
+  selectedFacilityDismiss: {
+    padding: 4,
   },
 });
