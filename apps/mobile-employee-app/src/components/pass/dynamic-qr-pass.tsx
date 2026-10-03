@@ -495,6 +495,7 @@ const styles = StyleSheet.create({
   statusNoticeText: {
     fontSize: 11,
     color: Palette.textMuted,
+    flex: 1,
   },
 
   scanPlaqueBtn: {
@@ -516,6 +517,7 @@ const styles = StyleSheet.create({
   },
   scanBtnTextCol: {
     flex: 1,
+    flexShrink: 1,
   },
   scanBtnTitle: {
     fontSize: 15,
@@ -548,7 +550,8 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   quotaPillSub: {
-    fontSize: 10,
+    fontSize: 9,
+    textAlign: 'center',
     fontWeight: '600',
     color: Palette.textMuted,
     textTransform: 'uppercase',
