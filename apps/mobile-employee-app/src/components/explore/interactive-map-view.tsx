@@ -4,15 +4,18 @@
  * neighborhood clusters, and slide-up facility preview cards.
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
   useWindowDimensions,
+  PanResponder,
+  Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
+import * as Linking from 'expo-linking';
 import {
   MapPin,
   Crosshair,
@@ -27,10 +30,13 @@ import {
   Flame,
   Activity,
   Layers,
+  Navigation,
+  QrCode,
 } from 'lucide-react-native';
 import { Palette, Spacing, Radius } from '@/constants/theme';
 import { DiscoveredFacility, ProviderCategory } from '@/types/discovery';
 import { getCategoryColor, getCategoryLabel } from './facility-card';
+import { useTabStore } from '@/stores/tab-store';
 
 interface InteractiveMapViewProps {
   facilities: DiscoveredFacility[];
@@ -68,8 +74,52 @@ export function InteractiveMapView({
   const mapWidth = Math.min(width, 600);
   const mapHeight = 440;
 
+  const { navigateToPassWithFacility } = useTabStore();
   const [zoomLevel, setZoomLevel] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+
+  const panStartRef = useRef({ x: 0, y: 0 });
+  const panOffsetRef = useRef({ x: 0, y: 0 });
+  panOffsetRef.current = panOffset;
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_, gestureState) =>
+          Math.abs(gestureState.dx) > 6 || Math.abs(gestureState.dy) > 6,
+        onPanResponderGrant: () => {
+          panStartRef.current = { ...panOffsetRef.current };
+        },
+        onPanResponderMove: (_, gestureState) => {
+          setPanOffset({
+            x: panStartRef.current.x + gestureState.dx,
+            y: panStartRef.current.y + gestureState.dy,
+          });
+        },
+      }),
+    []
+  );
+
+  const handleOpenDirections = (fac: DiscoveredFacility) => {
+    if (!fac.lat || !fac.lng) {
+      const query = encodeURIComponent(`${fac.location_name}, Kigali, Rwanda`);
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
+      return;
+    }
+    const { lat, lng } = fac;
+    const url =
+      Platform.OS === 'ios'
+        ? `maps://app?daddr=${lat},${lng}&q=${encodeURIComponent(fac.location_name)}`
+        : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    Linking.openURL(url).catch(() => {
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`);
+    });
+  };
+
+  const handleQuickCheckIn = (fac: DiscoveredFacility) => {
+    navigateToPassWithFacility(fac);
+  };
 
   // Map latitude/longitude to X/Y pixel coordinates
   const projectCoords = (lat: number, lng: number) => {
@@ -119,10 +169,14 @@ export function InteractiveMapView({
   return (
     <View style={styles.mapContainer}>
       {/* Visual Cartographic Canvas */}
-      <Pressable
+      <View
         style={[styles.canvasSurface, { width: mapWidth, height: mapHeight }]}
-        onPress={() => onSelectFacility(null as any)}
+        {...panResponder.panHandlers}
       >
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={() => onSelectFacility(null as any)}
+        />
         {/* Cartographic Grid & Roads Background Graphic */}
         <View style={styles.gridOverlay}>
           {/* Main Boulevards Graphic */}
@@ -192,7 +246,7 @@ export function InteractiveMapView({
             </Pressable>
           );
         })}
-      </Pressable>
+      </View>
 
       {/* Floating Map Controls */}
       <View style={styles.controlsTopRow}>
@@ -286,8 +340,31 @@ export function InteractiveMapView({
               </View>
             </View>
 
-            <View style={styles.previewChevronBlock}>
-              <ChevronRight size={18} color={Palette.green} />
+            {/* Quick Actions (Route & Check In) */}
+            <View style={styles.previewActionsColumn}>
+              <Pressable
+                style={styles.previewRouteBtn}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleOpenDirections(selectedFacility);
+                }}
+                hitSlop={6}
+              >
+                <Navigation size={12} color={Palette.teal} />
+                <Text style={styles.previewRouteText}>Route</Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.previewCheckinBtn}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleQuickCheckIn(selectedFacility);
+                }}
+                hitSlop={6}
+              >
+                <QrCode size={12} color="#0B1F33" />
+                <Text style={styles.previewCheckinText}>Check In</Text>
+              </Pressable>
             </View>
           </Pressable>
         </View>
@@ -595,7 +672,39 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
   },
-  previewChevronBlock: {
-    paddingRight: 4,
+  previewActionsColumn: {
+    justifyContent: 'center',
+    gap: 6,
+    paddingLeft: 4,
+  },
+  previewRouteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#132D43',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: Radius.inner,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 210, 180, 0.3)',
+  },
+  previewRouteText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Palette.teal,
+  },
+  previewCheckinBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Palette.green,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: Radius.inner,
+  },
+  previewCheckinText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0B1F33',
   },
 });

@@ -25,14 +25,18 @@ import {
   Car,
   Lock,
   ShowerHead,
+  Navigation,
+  QrCode,
 } from 'lucide-react-native';
 import { Palette, Spacing, Radius } from '@/constants/theme';
 import { DiscoveredFacility, ProviderCategory } from '@/types/discovery';
-import { getFacilityOperatingStatus } from '@/services/discovery-service';
+import { getFacilityOperatingStatus, formatCommuteEstimate } from '@/services/discovery-service';
 
 interface FacilityCardProps {
   facility: DiscoveredFacility;
   onPress: (facility: DiscoveredFacility) => void;
+  onQuickCheckIn?: (facility: DiscoveredFacility) => void;
+  onOpenDirections?: (facility: DiscoveredFacility) => void;
 }
 
 // Category color token mapper
@@ -86,7 +90,12 @@ function renderAmenityIcon(amenity: string, color: string = Palette.textMuted) {
   return <Activity size={12} color={color} />;
 }
 
-export const FacilityCard = memo(function FacilityCard({ facility, onPress }: FacilityCardProps) {
+export const FacilityCard = memo(function FacilityCard({
+  facility,
+  onPress,
+  onQuickCheckIn,
+  onOpenDirections,
+}: FacilityCardProps) {
   const categoryColor = getCategoryColor(facility.provider.category);
   const categoryLabel = getCategoryLabel(facility.provider.category);
   const operatingStatus = getFacilityOperatingStatus(facility.operating_hours);
@@ -138,7 +147,7 @@ export const FacilityCard = memo(function FacilityCard({ facility, onPress }: Fa
           <View style={styles.telemetryPill}>
             <MapPin size={11} color={Palette.teal} />
             <Text style={styles.telemetryText}>
-              {facility.distance_km ? `${facility.distance_km} km` : facility.neighborhood}
+              {formatCommuteEstimate(facility.distance_km)}
             </Text>
           </View>
 
@@ -183,7 +192,7 @@ export const FacilityCard = memo(function FacilityCard({ facility, onPress }: Fa
           )}
         </View>
 
-        {/* Footer: Live Operating Status */}
+          {/* Footer: Live Operating Status & Quick Actions */}
         <View style={styles.cardFooter}>
           <View style={styles.statusRow}>
             <View
@@ -206,7 +215,35 @@ export const FacilityCard = memo(function FacilityCard({ facility, onPress }: Fa
             </Text>
           </View>
 
-          <Text style={styles.viewDetailsPrompt}>View Details →</Text>
+          <View style={styles.cardQuickActionsGroup}>
+            {onOpenDirections && (
+              <Pressable
+                style={styles.cardQuickRouteBtn}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onOpenDirections(facility);
+                }}
+                hitSlop={6}
+              >
+                <Navigation size={12} color={Palette.teal} />
+                <Text style={styles.cardQuickRouteText}>Route</Text>
+              </Pressable>
+            )}
+
+            {onQuickCheckIn && (
+              <Pressable
+                style={styles.cardQuickCheckinBtn}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onQuickCheckIn(facility);
+                }}
+                hitSlop={6}
+              >
+                <QrCode size={12} color="#0B1F33" />
+                <Text style={styles.cardQuickCheckinText}>Check In</Text>
+              </Pressable>
+            )}
+          </View>
         </View>
       </View>
     </Pressable>
@@ -440,9 +477,39 @@ const styles = StyleSheet.create({
   statusTextClosed: {
     color: '#FCA5A5',
   },
-  viewDetailsPrompt: {
+  cardQuickActionsGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cardQuickRouteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0, 210, 180, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 210, 180, 0.25)',
+  },
+  cardQuickRouteText: {
     fontSize: 11,
     fontWeight: '700',
     color: Palette.teal,
+  },
+  cardQuickCheckinBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Palette.green,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  cardQuickCheckinText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#0B1F33',
   },
 });

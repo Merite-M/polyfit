@@ -49,7 +49,7 @@ export default function AppTabs() {
             <Compass size={20} color={activeTab === 'explore' ? Palette.green : Palette.textMuted} />
           </View>
           <Text style={[styles.tabLabel, activeTab === 'explore' && styles.tabLabelActive]}>
-            Network
+            Explore
           </Text>
         </Pressable>
 

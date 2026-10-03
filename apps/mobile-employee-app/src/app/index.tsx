@@ -234,21 +234,6 @@ export default function AccessPassScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Developer & Co-founder Simulator Toolbar */}
-        <DemoSimulationBar
-          isOutOfGeofence={isOutOfGeofence}
-          onToggleGeofence={() => setIsOutOfGeofence(!isOutOfGeofence)}
-          inCooldown={inCooldown}
-          onToggleCooldown={() => {
-            setInCooldown(!inCooldown);
-            setCooldownRemainingSeconds(860);
-          }}
-          isQuotaExhausted={isQuotaExhausted}
-          onToggleQuota={() => setIsQuotaExhausted(!isQuotaExhausted)}
-          isOffline={isOffline}
-          onToggleOffline={() => setIsOffline(!isOffline)}
-        />
-
         {/* Preselected Facility Target Banner (From Tab 2 Check In Here CTA) */}
         {preselectedFacility && (
           <View style={styles.selectedFacilityBanner}>
@@ -301,6 +286,21 @@ export default function AccessPassScreen() {
           offlineSeed={offlineTokenSeed}
           isOffline={isOffline}
           onOpenScanner={() => setScannerVisible(true)}
+        />
+
+        {/* Developer & Co-founder Simulator Toolbar */}
+        <DemoSimulationBar
+          isOutOfGeofence={isOutOfGeofence}
+          onToggleGeofence={() => setIsOutOfGeofence(!isOutOfGeofence)}
+          inCooldown={inCooldown}
+          onToggleCooldown={() => {
+            setInCooldown(!inCooldown);
+            setCooldownRemainingSeconds(860);
+          }}
+          isQuotaExhausted={isQuotaExhausted}
+          onToggleQuota={() => setIsQuotaExhausted(!isQuotaExhausted)}
+          isOffline={isOffline}
+          onToggleOffline={() => setIsOffline(!isOffline)}
         />
       </ScrollView>
 

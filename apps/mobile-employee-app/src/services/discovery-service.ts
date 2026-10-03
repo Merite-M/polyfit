@@ -39,6 +39,17 @@ export function calculateDistanceKm(
   return Number((R * c).toFixed(2));
 }
 
+// Commute estimate helper (walking vs driving)
+export function formatCommuteEstimate(distKm?: number | null): string {
+  if (distKm === null || distKm === undefined || isNaN(distKm)) return 'Nearby';
+  if (distKm < 0.9) {
+    const mins = Math.max(1, Math.round(distKm * 12));
+    return `${mins} min walk (${Math.round(distKm * 1000)}m)`;
+  }
+  const driveMins = Math.max(2, Math.round(distKm * 2.5));
+  return `${driveMins} min drive (${distKm} km)`;
+}
+
 // Extract neighborhood from address or name
 export function extractNeighborhood(address?: string | null, name?: string | null): string {
   const text = `${address || ''} ${name || ''}`.toLowerCase();

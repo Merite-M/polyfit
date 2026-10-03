@@ -16,7 +16,9 @@ import {
   Pressable,
   ActivityIndicator,
   Platform,
+  RefreshControl,
 } from 'react-native';
+import * as Linking from 'expo-linking';
 import {
   Search,
   SlidersHorizontal,
@@ -28,9 +30,10 @@ import {
   Compass,
 } from 'lucide-react-native';
 import { Palette, Spacing, Radius } from '@/constants/theme';
-import { ProviderCategory } from '@/types/discovery';
+import { ProviderCategory, DiscoveredFacility } from '@/types/discovery';
 import { useDiscoveryStore } from '@/stores/discovery-store';
 import { useAuthStore } from '@/stores/auth-store';
+import { useTabStore } from '@/stores/tab-store';
 import { FacilityCard } from '@/components/explore/facility-card';
 import { InteractiveMapView } from '@/components/explore/interactive-map-view';
 import { FilterBottomSheet } from '@/components/explore/filter-bottom-sheet';
@@ -86,6 +89,28 @@ export default function ExploreNetworkScreen() {
     includedInPlanOnly,
     selectedAmenities,
   } = useDiscoveryStore();
+
+  const { navigateToPassWithFacility } = useTabStore();
+
+  const handleOpenDirections = (fac: DiscoveredFacility) => {
+    if (!fac.lat || !fac.lng) {
+      const query = encodeURIComponent(`${fac.location_name}, Kigali, Rwanda`);
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
+      return;
+    }
+    const { lat, lng } = fac;
+    const url =
+      Platform.OS === 'ios'
+        ? `maps://app?daddr=${lat},${lng}&q=${encodeURIComponent(fac.location_name)}`
+        : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    Linking.openURL(url).catch(() => {
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`);
+    });
+  };
+
+  const handleQuickCheckIn = (fac: DiscoveredFacility) => {
+    navigateToPassWithFacility(fac);
+  };
 
   // Load facilities on initial mount with employee's allowed corporate categories
   useEffect(() => {
@@ -323,6 +348,8 @@ export default function ExploreNetworkScreen() {
               key={facility.location_id}
               facility={facility}
               onPress={openDetailModal}
+              onOpenDirections={handleOpenDirections}
+              onQuickCheckIn={handleQuickCheckIn}
             />
           ))}
         </ScrollView>
@@ -331,6 +358,14 @@ export default function ExploreNetworkScreen() {
           style={styles.viewportScroll}
           contentContainerStyle={styles.listViewportContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoading}
+              onRefresh={() => loadFacilities(benefit?.allowed_categories)}
+              tintColor={Palette.green}
+              colors={[Palette.green]}
+            />
+          }
         >
           {filteredFacilities.length === 0 ? (
             <View style={styles.emptyContainer}>
@@ -352,6 +387,8 @@ export default function ExploreNetworkScreen() {
                 key={facility.location_id}
                 facility={facility}
                 onPress={openDetailModal}
+                onOpenDirections={handleOpenDirections}
+                onQuickCheckIn={handleQuickCheckIn}
               />
             ))
           )}
@@ -378,7 +415,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#071521',
-    paddingTop: Platform.OS === 'ios' ? 44 : 20,
+    paddingTop: Platform.OS === 'web' ? 12 : (Platform.OS === 'ios' ? 44 : 20),
   },
 
   // Header & Segmented Control
