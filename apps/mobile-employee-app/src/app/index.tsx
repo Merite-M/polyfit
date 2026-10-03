@@ -1,6 +1,7 @@
 /**
  * PolyFit Corporate Employee App - Tab 1: Access Pass
  * PF-105: Frictionless Corporate Employee Onboarding & Benefit Activation
+ * Compliant with expo-native-ui, expo-animation, and vercel-react-native-skills
  */
 
 import React, { useState, useEffect } from 'react';
@@ -9,8 +10,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  SafeAreaView,
+  Pressable,
   Platform,
 } from 'react-native';
 import {
@@ -20,12 +20,13 @@ import {
   Sparkles,
   WifiOff,
   LogOut,
-  RefreshCw,
   Clock,
   CheckCircle2,
-  ChevronRight,
+  QrCode,
+  Dumbbell,
+  Waves,
 } from 'lucide-react-native';
-import { Palette, Spacing, Radius } from '@/constants/theme';
+import { Palette, Spacing, Radius, Fonts } from '@/constants/theme';
 import { useAuthStore } from '@/stores/auth-store';
 
 export default function AccessPassScreen() {
@@ -38,7 +39,7 @@ export default function AccessPassScreen() {
     loadDemoAccount,
   } = useAuthStore();
 
-  // Dynamic TOTP code generator simulation with 60-second window
+  const [activeSegment, setActiveSegment] = useState<'pass' | 'facilities' | 'account'>('pass');
   const [totpCode, setTotpCode] = useState('782 914');
   const [secondsRemaining, setSecondsRemaining] = useState(58);
 
@@ -49,7 +50,6 @@ export default function AccessPassScreen() {
       const rem = 60 - (seconds % 60);
       setSecondsRemaining(rem);
 
-      // Simple deterministic rotating pass code based on seed & 60s epoch
       const epochWindow = Math.floor(now.getTime() / 60000);
       const seedVal = (offlineTokenSeed || 'default-seed')
         .split('')
@@ -71,321 +71,357 @@ export default function AccessPassScreen() {
   const isFullySponsored = benefit?.is_fully_sponsored ?? true;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.container}>
+      {/* Top Header */}
+      <View style={styles.topHeader}>
+        <View style={styles.brandRow}>
+          <View style={styles.brandBadge}>
+            <Text style={styles.brandBadgeText}>P</Text>
+          </View>
+          <View>
+            <Text style={styles.brandTitle}>
+              POLY<Text style={{ color: Palette.green }}>FIT</Text>
+            </Text>
+            <Text style={styles.brandSubtitle}>Corporate Wellness Network</Text>
+          </View>
+        </View>
+
+        <View style={styles.statusBadge}>
+          <View style={styles.statusPulse} />
+          <Text style={styles.statusBadgeText}>ACTIVE PASS</Text>
+        </View>
+      </View>
+
+      {/* Segment Switcher */}
+      <View style={styles.segmentContainer}>
+        <Pressable
+          style={[styles.segmentBtn, activeSegment === 'pass' && styles.segmentBtnActive]}
+          onPress={() => setActiveSegment('pass')}
+        >
+          <Text style={[styles.segmentText, activeSegment === 'pass' && styles.segmentTextActive]}>
+            Digital Pass
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={[styles.segmentBtn, activeSegment === 'facilities' && styles.segmentBtnActive]}
+          onPress={() => setActiveSegment('facilities')}
+        >
+          <Text style={[styles.segmentText, activeSegment === 'facilities' && styles.segmentTextActive]}>
+            Facilities
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={[styles.segmentBtn, activeSegment === 'account' && styles.segmentBtnActive]}
+          onPress={() => setActiveSegment('account')}
+        >
+          <Text style={[styles.segmentText, activeSegment === 'account' && styles.segmentTextActive]}>
+            Account
+          </Text>
+        </Pressable>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
-        {/* Top Header */}
-        <View style={styles.header}>
-          <View>
-            <View style={styles.logoRow}>
-              <View style={styles.logoIcon}>
-                <Text style={styles.logoIconText}>P</Text>
+        showsVerticalScrollIndicator={false}
+      >
+        {activeSegment === 'pass' && (
+          <View style={styles.passTabContent}>
+            {/* Apple Wallet Style Hero Pass Card */}
+            <View style={styles.heroPassCard}>
+              {/* Card Header */}
+              <View style={styles.cardHeader}>
+                <View style={styles.orgInfo}>
+                  <Building2 size={16} color={Palette.teal} />
+                  <Text style={styles.orgName}>{orgName}</Text>
+                  <View style={styles.domainChip}>
+                    <Text style={styles.domainChipText}>{orgDomain}</Text>
+                  </View>
+                </View>
+                <View style={styles.verifiedChip}>
+                  <ShieldCheck size={14} color={Palette.green} />
+                  <Text style={styles.verifiedChipText}>VERIFIED</Text>
+                </View>
               </View>
-              <Text style={styles.brandTitle}>
-                POLY<Text style={styles.brandAccent}>FIT</Text>
-              </Text>
-            </View>
-            <Text style={styles.screenSubtitle}>Corporate Wellness Network</Text>
-          </View>
 
-          <View style={styles.statusBadge}>
-            <View style={styles.statusPulse} />
-            <Text style={styles.statusBadgeText}>PASS ACTIVE</Text>
-          </View>
-        </View>
-
-        {/* Corporate Pass Card */}
-        <View style={styles.passCard}>
-          {/* Organization Affiliation Bar */}
-          <View style={styles.passHeader}>
-            <View style={styles.orgInfo}>
-              <Building2 size={16} color={Palette.teal} />
-              <Text style={styles.orgNameText}>{orgName}</Text>
-              <View style={styles.domainChip}>
-                <Text style={styles.domainChipText}>{orgDomain}</Text>
+              {/* Beneficiary Row */}
+              <View style={styles.beneficiaryRow}>
+                <View>
+                  <Text style={styles.beneficiaryLabel}>BENEFICIARY</Text>
+                  <Text style={styles.beneficiaryName}>{employeeName}</Text>
+                  <Text style={styles.beneficiaryDept}>{department}</Text>
+                </View>
+                <View style={styles.tierBadge}>
+                  <Text style={styles.tierBadgeText}>{tierName}</Text>
+                </View>
               </View>
-            </View>
-            <View style={styles.verifiedChip}>
-              <ShieldCheck size={14} color={Palette.green} />
-              <Text style={styles.verifiedChipText}>VERIFIED</Text>
-            </View>
-          </View>
 
-          {/* Beneficiary Details */}
-          <View style={styles.beneficiarySection}>
-            <View>
-              <Text style={styles.beneficiaryLabel}>BENEFICIARY</Text>
-              <Text style={styles.beneficiaryName}>{employeeName}</Text>
-              <Text style={styles.beneficiaryDept}>{department}</Text>
-            </View>
-            <View style={styles.benefitTierPill}>
-              <Text style={styles.benefitTierText}>{tierName}</Text>
-            </View>
-          </View>
+              {/* Dynamic TOTP Access Display */}
+              <View style={styles.totpContainer}>
+                <View style={styles.totpHeader}>
+                  <QrCode size={14} color={Palette.teal} />
+                  <Text style={styles.totpLabel}>RECEPTION CHECK-IN CODE</Text>
+                </View>
+                <Text style={styles.totpCode}>{totpCode}</Text>
 
-          {/* Dynamic TOTP Access Display */}
-          <View style={styles.totpContainer}>
-            <Text style={styles.totpLabel}>DYNAMIC ACCESS CODE</Text>
-            <Text style={styles.totpCode}>{totpCode}</Text>
+                {/* Progress countdown */}
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressBar,
+                      { width: `${(secondsRemaining / 60) * 100}%` },
+                    ]}
+                  />
+                </View>
 
-            {/* Countdown Bar */}
-            <View style={styles.progressContainer}>
-              <View
-                style={[
-                  styles.progressBar,
-                  { width: `${(secondsRemaining / 60) * 100}%` },
-                ]}
-              />
-            </View>
+                <View style={styles.timerMetaRow}>
+                  <View style={styles.timerRow}>
+                    <Clock size={12} color={Palette.textMuted} />
+                    <Text style={styles.timerText}>Refreshes in {secondsRemaining}s</Text>
+                  </View>
+                  <View style={styles.offlineRow}>
+                    <WifiOff size={12} color={Palette.teal} />
+                    <Text style={styles.offlineText}>Offline Ready (Basement Safe)</Text>
+                  </View>
+                </View>
+              </View>
 
-            <View style={styles.timerMetaRow}>
-              <View style={styles.timerRow}>
-                <Clock size={12} color={Palette.textMuted} />
-                <Text style={styles.timerText}>
-                  Refreshes in {secondsRemaining}s
+              {/* Pass Footer */}
+              <View style={styles.cardFooter}>
+                <Text style={styles.scanNotice}>
+                  Show this dynamic code or NFC tap at provider front desk
                 </Text>
               </View>
-              <View style={styles.offlineRow}>
-                <WifiOff size={12} color={Palette.teal} />
-                <Text style={styles.offlineText}>Offline Ready (Basement Safe)</Text>
+            </View>
+
+            {/* Quota & Allocation Summary Pill */}
+            <View style={styles.quotaPillContainer}>
+              <View style={styles.quotaPillItem}>
+                <Text style={styles.quotaPillNum}>{monthlyVisits}</Text>
+                <Text style={styles.quotaPillSub}>Monthly Visits</Text>
+              </View>
+              <View style={styles.quotaPillDivider} />
+              <View style={styles.quotaPillItem}>
+                <Text style={[styles.quotaPillNum, { color: Palette.green }]}>
+                  {monthlyVisits}
+                </Text>
+                <Text style={styles.quotaPillSub}>Remaining</Text>
+              </View>
+              <View style={styles.quotaPillDivider} />
+              <View style={styles.quotaPillItem}>
+                <Text style={styles.quotaPillNum}>
+                  {isFullySponsored ? '0 RWF' : 'Co-Pay'}
+                </Text>
+                <Text style={styles.quotaPillSub}>Employee Cost</Text>
               </View>
             </View>
           </View>
+        )}
 
-          {/* Pass Footer */}
-          <View style={styles.passFooter}>
-            <View style={styles.passIdRow}>
-              <Text style={styles.passIdText}>
-                TOKEN: {(offlineTokenSeed || 'b0000000').slice(0, 16).toUpperCase()}...
-              </Text>
-            </View>
-            <Text style={styles.scanNotice}>
-              Show this screen or NFC tap at provider reception
+        {activeSegment === 'facilities' && (
+          <View style={styles.facilitiesContent}>
+            <Text style={styles.sectionHeading}>Included Kigali Network</Text>
+            <Text style={styles.sectionSub}>
+              Access all partner locations with zero out-of-pocket charges:
             </Text>
-          </View>
-        </View>
 
-        {/* Subsidy & Usage Allocation Card */}
-        <View style={styles.subsidyCard}>
-          <View style={styles.subsidyHeader}>
-            <View style={styles.subsidyTitleRow}>
-              <Sparkles size={18} color={Palette.green} />
-              <Text style={styles.subsidyCardTitle}>Benefit Utilization</Text>
-            </View>
-            <View style={styles.subsidyPill}>
-              <Text style={styles.subsidyPillText}>
-                {subsidyPct}% Employer Funded
-              </Text>
-            </View>
-          </View>
-
-          {/* Usage Meter */}
-          <View style={styles.usageRow}>
-            <View style={styles.usageStat}>
-              <Text style={styles.usageValue}>{monthlyVisits}</Text>
-              <Text style={styles.usageLabel}>Monthly Visits</Text>
-            </View>
-            <View style={styles.usageDivider} />
-            <View style={styles.usageStat}>
-              <Text style={[styles.usageValue, { color: Palette.green }]}>
-                {monthlyVisits}
-              </Text>
-              <Text style={styles.usageLabel}>Remaining</Text>
-            </View>
-            <View style={styles.usageDivider} />
-            <View style={styles.usageStat}>
-              <Text style={styles.usageValue}>
-                {isFullySponsored ? '0 RWF' : 'Co-Pay'}
-              </Text>
-              <Text style={styles.usageLabel}>Employee Cost</Text>
+            <View style={styles.facilityList}>
+              {[
+                { title: 'Fitness Centers & Gyms', count: '18 Locations', desc: 'Full weight rooms, cardio & machines' },
+                { title: 'Olympic & Leisure Pools', count: '8 Locations', desc: 'Lap swimming and recovery thermal pools' },
+                { title: 'Yoga & Pilates Studios', count: '12 Locations', desc: 'Group sessions, mats and wellness classes' },
+                { title: 'Recovery & Physio Clinics', count: '7 Locations', desc: 'Sports therapy and post-workout clinics' },
+              ].map((item, idx) => (
+                <View key={idx} style={styles.facilityCard}>
+                  <View style={styles.facilityCardHeader}>
+                    <Text style={styles.facilityCardTitle}>{item.title}</Text>
+                    <View style={styles.facilityCountBadge}>
+                      <Text style={styles.facilityCountText}>{item.count}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.facilityCardDesc}>{item.desc}</Text>
+                </View>
+              ))}
             </View>
           </View>
+        )}
 
-          <View style={styles.resetRow}>
-            <Calendar size={14} color={Palette.textMuted} />
-            <Text style={styles.resetText}>
-              Usage cycle resets on 1st of next month
+        {activeSegment === 'account' && (
+          <View style={styles.accountContent}>
+            <Text style={styles.sectionHeading}>Corporate Profile</Text>
+            <Text style={styles.sectionSub}>
+              Switch demo profiles to test multi-tenant subsidy configurations:
             </Text>
-          </View>
-        </View>
 
-        {/* Eligible Facility Network */}
-        <View style={styles.facilityCard}>
-          <Text style={styles.facilityTitle}>Included Wellness Providers</Text>
-          <Text style={styles.facilitySubtitle}>
-            Access all verified facilities across Kigali with zero out-of-pocket
-            charges:
-          </Text>
-
-          <View style={styles.categoryGrid}>
-            {[
-              'Gyms & Fitness Centers',
-              'Olympic Pools & Swimming',
-              'Yoga & Pilates Studios',
-              'Physiotherapy Clinics',
-              'Wellness Centers',
-            ].map((cat, idx) => (
-              <View key={idx} style={styles.categoryChip}>
-                <CheckCircle2 size={13} color={Palette.teal} />
-                <Text style={styles.categoryChipText}>{cat}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Co-Founder / Demo Switcher & Account Controls */}
-        <View style={styles.demoCard}>
-          <Text style={styles.demoTitle}>Account & Demo Controls</Text>
-          <Text style={styles.demoSubtitle}>
-            Switch corporate employer profile to verify multi-tenant aggregator
-            subsidy logic:
-          </Text>
-
-          <View style={styles.demoBtnRow}>
-            <TouchableOpacity
-              style={[
-                styles.demoBtn,
-                orgDomain === 'bk.rw' && styles.demoBtnActive,
-              ]}
-              onPress={() => loadDemoAccount('bk')}>
-              <Text
+            <View style={styles.demoSwitcher}>
+              <Pressable
                 style={[
-                  styles.demoBtnText,
-                  orgDomain === 'bk.rw' && styles.demoBtnTextActive,
-                ]}>
-                Bank of Kigali (100%)
-              </Text>
-            </TouchableOpacity>
+                  styles.demoOptionBtn,
+                  orgDomain === 'bk.rw' && styles.demoOptionBtnActive,
+                ]}
+                onPress={() => loadDemoAccount('bk')}
+              >
+                <Building2 size={16} color={orgDomain === 'bk.rw' ? Palette.green : Palette.textMuted} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.demoOptionTitle}>Bank of Kigali</Text>
+                  <Text style={styles.demoOptionSub}>100% Fully Sponsored • 12 Visits/mo</Text>
+                </View>
+              </Pressable>
 
-            <TouchableOpacity
-              style={[
-                styles.demoBtn,
-                orgDomain === 'techcorp.rw' && styles.demoBtnActive,
-              ]}
-              onPress={() => loadDemoAccount('techcorp')}>
-              <Text
+              <Pressable
                 style={[
-                  styles.demoBtnText,
-                  orgDomain === 'techcorp.rw' && styles.demoBtnTextActive,
-                ]}>
-                TechCorp (85%)
-              </Text>
-            </TouchableOpacity>
-          </View>
+                  styles.demoOptionBtn,
+                  orgDomain === 'techcorp.rw' && styles.demoOptionBtnActive,
+                ]}
+                onPress={() => loadDemoAccount('techcorp')}
+              >
+                <Building2 size={16} color={orgDomain === 'techcorp.rw' ? Palette.green : Palette.textMuted} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.demoOptionTitle}>TechCorp Rwanda</Text>
+                  <Text style={styles.demoOptionSub}>85% Corporate Subsidy • 10 Visits/mo</Text>
+                </View>
+              </Pressable>
+            </View>
 
-          <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-            <LogOut size={16} color="#FF5A65" />
-            <Text style={styles.logoutButtonText}>
-              Log Out / Re-test Onboarding Flow
-            </Text>
-          </TouchableOpacity>
-        </View>
+            <Pressable
+              style={({ pressed }) => [
+                styles.logoutBtn,
+                pressed && { opacity: 0.7 },
+              ]}
+              onPress={logout}
+            >
+              <LogOut size={16} color="#FF5A65" />
+              <Text style={styles.logoutBtnText}>Log Out / Re-test Onboarding Flow</Text>
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
     backgroundColor: '#071521',
-  },
-  scrollContent: {
     paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
-    paddingBottom: Spacing.eight,
+    paddingTop: Platform.OS === 'ios' ? 44 : 20,
   },
-  header: {
+  topHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.four,
+    marginBottom: Spacing.three,
   },
-  logoRow: {
+  brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  logoIcon: {
+  brandBadge: {
     width: 28,
     height: 28,
-    borderRadius: 7,
+    borderRadius: 8,
     backgroundColor: Palette.green,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoIconText: {
+  brandBadgeText: {
     color: '#0B1F33',
     fontWeight: '900',
     fontSize: 16,
   },
   brandTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
-    letterSpacing: 1,
     color: '#FFFFFF',
+    letterSpacing: 0.8,
   },
-  brandAccent: {
-    color: Palette.green,
-  },
-  screenSubtitle: {
-    fontSize: 12,
+  brandSubtitle: {
+    fontSize: 10,
     color: Palette.textMuted,
-    marginTop: 2,
+    marginTop: -2,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     backgroundColor: 'rgba(40, 209, 124, 0.15)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(40, 209, 124, 0.4)',
+    borderColor: 'rgba(40, 209, 124, 0.35)',
   },
   statusPulse: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: Palette.green,
   },
   statusBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '800',
     color: Palette.green,
     letterSpacing: 0.5,
   },
 
-  // Pass Card
-  passCard: {
+  segmentContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#0D2235',
+    borderRadius: Radius.btn,
+    padding: 4,
+    marginBottom: Spacing.three,
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: Radius.sm,
+  },
+  segmentBtnActive: {
+    backgroundColor: '#1E3A52',
+  },
+  segmentText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Palette.textMuted,
+  },
+  segmentTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+
+  scrollContent: {
+    paddingBottom: Spacing.eight,
+  },
+
+  passTabContent: {
+    gap: Spacing.three,
+  },
+  heroPassCard: {
     backgroundColor: '#0B1F33',
     borderRadius: Radius.lg,
     borderWidth: 1,
     borderColor: 'rgba(40, 209, 124, 0.35)',
     padding: Spacing.four,
-    marginBottom: Spacing.four,
-    shadowColor: Palette.green,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
+    boxShadow: '0 8px 30px rgba(0, 0, 0, 0.4), 0 0 16px rgba(40, 209, 124, 0.15)',
   },
-  passHeader: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingBottom: Spacing.three,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   orgInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
-  orgNameText: {
+  orgName: {
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 15,
@@ -398,14 +434,14 @@ const styles = StyleSheet.create({
   },
   domainChipText: {
     color: Palette.teal,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
   },
   verifiedChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(40, 209, 124, 0.1)',
+    backgroundColor: 'rgba(40, 209, 124, 0.12)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -416,7 +452,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
-  beneficiarySection: {
+  beneficiaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
@@ -424,8 +460,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.four,
   },
   beneficiaryLabel: {
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 9,
+    fontWeight: '800',
     color: Palette.textMuted,
     letterSpacing: 1,
     marginBottom: 2,
@@ -436,38 +472,41 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   beneficiaryDept: {
-    fontSize: 13,
+    fontSize: 12,
     color: Palette.teal,
-    fontWeight: '500',
     marginTop: 2,
   },
-  benefitTierPill: {
+  tierBadge: {
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
-  benefitTierText: {
+  tierBadgeText: {
     color: '#E2E8F0',
     fontSize: 11,
     fontWeight: '600',
   },
 
-  // TOTP Access Container
   totpContainer: {
     backgroundColor: '#071521',
     borderRadius: Radius.md,
-    padding: Spacing.four,
+    padding: Spacing.three,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
+  totpHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
   totpLabel: {
     fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
     color: Palette.textMuted,
-    marginBottom: 6,
   },
   totpCode: {
     fontSize: 34,
@@ -475,15 +514,15 @@ const styles = StyleSheet.create({
     letterSpacing: 4,
     color: Palette.green,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    marginBottom: Spacing.three,
+    marginBottom: Spacing.two,
   },
-  progressContainer: {
+  progressTrack: {
     height: 4,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 2,
     alignSelf: 'stretch',
     overflow: 'hidden',
-    marginBottom: Spacing.two,
+    marginBottom: 8,
   },
   progressBar: {
     height: '100%',
@@ -515,198 +554,141 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  passFooter: {
+  cardFooter: {
     marginTop: Spacing.three,
     alignItems: 'center',
   },
-  passIdRow: {
-    marginBottom: 4,
-  },
-  passIdText: {
-    fontSize: 10,
-    color: Palette.textMuted,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-  },
   scanNotice: {
     fontSize: 11,
-    color: '#A0AEC0',
+    color: Palette.textSecondary,
     textAlign: 'center',
   },
 
-  // Subsidy Card
-  subsidyCard: {
-    backgroundColor: '#0D2235',
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    padding: Spacing.four,
-    marginBottom: Spacing.four,
-  },
-  subsidyHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.three,
-  },
-  subsidyTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  subsidyCardTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  subsidyPill: {
-    backgroundColor: 'rgba(40, 209, 124, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  subsidyPillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Palette.green,
-  },
-  usageRow: {
+  quotaPillContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: '#071521',
+    backgroundColor: '#0D2235',
     borderRadius: Radius.md,
     paddingVertical: Spacing.three,
-    marginBottom: Spacing.two,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
-  usageStat: {
+  quotaPillItem: {
     alignItems: 'center',
   },
-  usageValue: {
+  quotaPillNum: {
     fontSize: 18,
     fontWeight: '800',
     color: '#FFFFFF',
   },
-  usageLabel: {
+  quotaPillSub: {
     fontSize: 11,
     color: Palette.textMuted,
     marginTop: 2,
   },
-  usageDivider: {
+  quotaPillDivider: {
     width: 1,
-    height: 28,
+    height: 26,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
-  resetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
-  },
-  resetText: {
-    fontSize: 11,
-    color: Palette.textMuted,
-  },
 
-  // Facility Card
+  facilitiesContent: {
+    gap: Spacing.two,
+  },
+  sectionHeading: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  sectionSub: {
+    fontSize: 13,
+    color: Palette.textSecondary,
+    marginBottom: Spacing.three,
+  },
+  facilityList: {
+    gap: 10,
+  },
   facilityCard: {
     backgroundColor: '#0D2235',
-    borderRadius: Radius.lg,
+    borderRadius: Radius.md,
+    padding: Spacing.three,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    padding: Spacing.four,
-    marginBottom: Spacing.four,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
-  facilityTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
+  facilityCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 4,
   },
-  facilitySubtitle: {
-    fontSize: 12,
-    color: Palette.textMuted,
-    marginBottom: Spacing.three,
-    lineHeight: 16,
-  },
-  categoryGrid: {
-    gap: 8,
-  },
-  categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#071521',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: Radius.sm,
-  },
-  categoryChipText: {
-    fontSize: 13,
-    color: '#E2E8F0',
-    fontWeight: '500',
-  },
-
-  // Demo & Account Card
-  demoCard: {
-    backgroundColor: '#0B1F33',
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    padding: Spacing.four,
-  },
-  demoTitle: {
+  facilityCardTitle: {
     fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 4,
   },
-  demoSubtitle: {
+  facilityCountBadge: {
+    backgroundColor: 'rgba(0, 210, 180, 0.12)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  facilityCountText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Palette.teal,
+  },
+  facilityCardDesc: {
     fontSize: 12,
     color: Palette.textMuted,
-    marginBottom: Spacing.three,
-    lineHeight: 16,
   },
-  demoBtnRow: {
+
+  accountContent: {
+    gap: Spacing.three,
+  },
+  demoSwitcher: {
+    gap: 10,
+  },
+  demoOptionBtn: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: Spacing.three,
-  },
-  demoBtn: {
-    flex: 1,
-    backgroundColor: '#071521',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: Radius.md,
-    paddingVertical: 10,
     alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#0D2235',
+    borderRadius: Radius.md,
+    padding: Spacing.three,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  demoBtnActive: {
+  demoOptionBtnActive: {
     borderColor: Palette.green,
-    backgroundColor: 'rgba(40, 209, 124, 0.1)',
+    backgroundColor: 'rgba(40, 209, 124, 0.08)',
   },
-  demoBtnText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Palette.textMuted,
-  },
-  demoBtnTextActive: {
-    color: Palette.green,
+  demoOptionTitle: {
+    fontSize: 14,
     fontWeight: '700',
+    color: '#FFFFFF',
   },
-  logoutButton: {
+  demoOptionSub: {
+    fontSize: 11,
+    color: Palette.textMuted,
+    marginTop: 2,
+  },
+  logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 10,
+    backgroundColor: 'rgba(255, 90, 101, 0.1)',
+    borderRadius: Radius.btn,
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: 'rgba(255, 90, 101, 0.3)',
-    borderRadius: Radius.md,
-    backgroundColor: 'rgba(255, 90, 101, 0.08)',
+    marginTop: Spacing.two,
   },
-  logoutButtonText: {
-    fontSize: 12,
-    fontWeight: '700',
+  logoutBtnText: {
     color: '#FF5A65',
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

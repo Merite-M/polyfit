@@ -1,20 +1,21 @@
 /**
- * Digital Pass Provisioning & Device Binding Step (PF-105 Step 3)
- * Biometrics quick-unlock & transparent location permission setup
+ * PolyFit Corporate Employee App - Step 4: Device Permissions & Pass Provisioning
+ * PF-105: Frictionless Corporate Employee Onboarding & Benefit Activation
+ * Compliant with expo-native-ui, expo-animation, and vercel-react-native-skills
  */
 
 import React, { useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   Switch,
   Platform,
 } from 'react-native';
+import { ShieldCheck, Fingerprint, MapPin, ArrowRight, Lock } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth-store';
-import { Palette, Radius, Spacing, Fonts, Shadows } from '@/constants/theme';
-import { PolyFitBrandHeader } from './polyfit-brand-header';
+import { Palette, Radius, Spacing, Fonts } from '@/constants/theme';
 
 interface DeviceBindingStepProps {
   onFinish: () => void;
@@ -71,182 +72,252 @@ export const DeviceBindingStep: React.FC<DeviceBindingStepProps> = ({ onFinish }
   };
 
   return (
-    <View style={styles.container}>
-      <PolyFitBrandHeader compact />
-
-      <View style={styles.card}>
-        {/* Status indicator */}
-        <View style={styles.statusRow}>
-          <View style={styles.statusDot} />
-          <Text style={styles.statusText}>Benefit Provisioned • Offline Vault Ready</Text>
+    <View style={styles.screenContainer}>
+      {/* Top Header */}
+      <View style={styles.topBar}>
+        <View style={styles.brandRow}>
+          <View style={styles.brandBadge}>
+            <Text style={styles.brandBadgeText}>P</Text>
+          </View>
+          <Text style={styles.brandTitle}>
+            POLY<Text style={{ color: Palette.green }}>FIT</Text>
+          </Text>
         </View>
 
-        <Text style={styles.title}>Secure Device Setup</Text>
-        <Text style={styles.subtitle}>
-          Configure instant biometric launch and nearby facility detection for frictionless check-ins.
-        </Text>
+        <View style={styles.readyBadge}>
+          <ShieldCheck size={14} color={Palette.green} />
+          <Text style={styles.readyText}>READY</Text>
+        </View>
+      </View>
 
-        {/* Biometrics Toggle Card */}
-        <View style={styles.optionCard}>
-          <View style={styles.optionHeader}>
-            <Text style={styles.optionIcon}>🔐</Text>
-            <View style={styles.optionDetails}>
+      {/* Main Content Area */}
+      <View style={styles.contentBody}>
+        {/* Title */}
+        <View style={styles.headerBlock}>
+          <Text style={styles.screenTitle}>Pass Provisioned!</Text>
+          <Text style={styles.screenSubtitle}>
+            Your cryptographic pass is securely bound to this device. Choose your preferences for check-in:
+          </Text>
+        </View>
+
+        {/* Options List */}
+        <View style={styles.optionsList}>
+          {/* Biometrics Toggle Card */}
+          <View style={styles.optionCard}>
+            <View style={styles.iconCircle}>
+              <Fingerprint size={22} color={Palette.green} />
+            </View>
+            <View style={styles.optionTextContainer}>
               <Text style={styles.optionTitle}>Biometric Quick-Unlock</Text>
               <Text style={styles.optionDesc}>
-                Open your digital pass instantly with FaceID / TouchID without typing passwords.
+                Open pass instantly with FaceID / fingerprint at reception.
               </Text>
             </View>
             <Switch
               value={localBio}
               onValueChange={handleToggleBio}
-              trackColor={{ false: '#E2E8F0', true: Palette.green }}
+              trackColor={{ false: '#1E293B', true: Palette.green }}
               thumbColor="#FFFFFF"
             />
           </View>
-        </View>
 
-        {/* Location Permission Card */}
-        <View style={styles.optionCard}>
-          <View style={styles.optionHeader}>
-            <Text style={styles.optionIcon}>📍</Text>
-            <View style={styles.optionDetails}>
-              <Text style={styles.optionTitle}>Nearby Facility Detection</Text>
+          {/* Location Permission Card */}
+          <View style={styles.optionCard}>
+            <View style={styles.iconCircle}>
+              <MapPin size={22} color={Palette.teal} />
+            </View>
+            <View style={styles.optionTextContainer}>
+              <Text style={styles.optionTitle}>Nearby Turnstile Detection</Text>
               <Text style={styles.optionDesc}>
-                PolyFit uses your location to show partner gyms within walking distance and verify entrance turnstiles.
+                Auto-suggest facilities when you arrive at partner gyms.
               </Text>
             </View>
             <Switch
               value={localLoc}
               onValueChange={handleToggleLoc}
-              trackColor={{ false: '#E2E8F0', true: Palette.green }}
+              trackColor={{ false: '#1E293B', true: Palette.green }}
               thumbColor="#FFFFFF"
             />
           </View>
         </View>
 
-        {/* Security Assurance */}
-        <View style={styles.securityBox}>
-          <Text style={styles.securityText}>
-            🔒 Your cryptographic TOTP pass key is stored in your device&rsquo;s native hardware SecureStore. Your personal biometric data never leaves your phone.
+        {/* Privacy Note */}
+        <View style={styles.privacyNote}>
+          <Lock size={14} color={Palette.teal} />
+          <Text style={styles.privacyText}>
+            PolyFit never tracks or sells personal movement data. Location is strictly used for reception check-in verification.
           </Text>
         </View>
+      </View>
 
-        {/* Finish CTA */}
-        <TouchableOpacity style={styles.finishButton} onPress={handleComplete} activeOpacity={0.88}>
-          <Text style={styles.finishButtonText}>Open My Digital Pass →</Text>
-        </TouchableOpacity>
+      {/* Bottom Pinned Action Bar */}
+      <View style={styles.bottomBar}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.continueButton,
+            pressed && { transform: [{ scale: 0.98 }] },
+          ]}
+          onPress={handleComplete}
+        >
+          <View style={styles.continueButtonContent}>
+            <Text style={styles.continueButtonText}>Open My Digital Pass</Text>
+            <ArrowRight size={18} color="#0B1F33" />
+          </View>
+        </Pressable>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
+  screenContainer: {
+    flex: 1,
+    backgroundColor: '#071521',
+    justifyContent: 'space-between',
     paddingHorizontal: Spacing.four,
+    paddingTop: Platform.OS === 'ios' ? 44 : 24,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
   },
-  card: {
-    backgroundColor: Palette.card,
-    borderRadius: Radius.card,
-    borderWidth: 1,
-    borderColor: Palette.cardBorder,
-    padding: Spacing.four,
-    ...Shadows.card,
-  },
-  statusRow: {
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Palette.greenSubtle,
-    borderRadius: Radius.full,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    alignSelf: 'flex-start',
-    marginBottom: Spacing.two,
+    justifyContent: 'space-between',
+    marginBottom: Spacing.four,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  brandBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     backgroundColor: Palette.green,
-    marginRight: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  statusText: {
-    fontFamily: Fonts?.sans,
-    fontSize: 11,
-    fontWeight: '700',
-    color: Palette.greenText,
+  brandBadgeText: {
+    color: '#0B1F33',
+    fontWeight: '900',
+    fontSize: 16,
   },
-  title: {
-    fontFamily: Fonts?.sans,
-    fontSize: 20,
-    fontWeight: '700',
-    color: Palette.navy,
-    marginBottom: 4,
+  brandTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.8,
   },
-  subtitle: {
-    fontFamily: Fonts?.sans,
-    fontSize: 13,
+  readyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(40, 209, 124, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  readyText: {
+    color: Palette.green,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+
+  contentBody: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingBottom: Spacing.four,
+  },
+  headerBlock: {
+    marginBottom: Spacing.five,
+  },
+  screenTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+    marginBottom: 8,
+  },
+  screenSubtitle: {
+    fontSize: 15,
     color: Palette.textSecondary,
-    lineHeight: 18,
+    lineHeight: 22,
+  },
+
+  optionsList: {
+    gap: 12,
     marginBottom: Spacing.four,
   },
   optionCard: {
-    backgroundColor: Palette.canvas,
-    borderRadius: Radius.btn,
-    borderWidth: 1,
-    borderColor: Palette.cardBorder,
-    padding: Spacing.three,
-    marginBottom: Spacing.three,
-  },
-  optionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#0D2235',
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    padding: Spacing.three,
+    gap: 12,
   },
-  optionIcon: {
-    fontSize: 22,
-    marginRight: Spacing.three,
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#071521',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  optionDetails: {
+  optionTextContainer: {
     flex: 1,
-    marginRight: Spacing.two,
   },
   optionTitle: {
-    fontFamily: Fonts?.sans,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
-    color: Palette.navy,
+    color: '#FFFFFF',
     marginBottom: 2,
   },
   optionDesc: {
-    fontFamily: Fonts?.sans,
-    fontSize: 11,
+    fontSize: 12,
     color: Palette.textMuted,
     lineHeight: 16,
   },
-  securityBox: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: Radius.inner,
-    padding: Spacing.three,
-    marginBottom: Spacing.four,
+
+  privacyNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(0, 210, 180, 0.08)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: Radius.sm,
   },
-  securityText: {
-    fontFamily: Fonts?.sans,
+  privacyText: {
+    flex: 1,
     fontSize: 11,
-    color: Palette.textSecondary,
+    color: Palette.teal,
     lineHeight: 15,
   },
-  finishButton: {
+
+  bottomBar: {
+    gap: 10,
+  },
+  continueButton: {
+    height: 54,
     backgroundColor: Palette.green,
     borderRadius: Radius.btn,
-    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Shadows.card,
+    boxShadow: '0 4px 14px rgba(40, 209, 124, 0.35)',
   },
-  finishButtonText: {
-    fontFamily: Fonts?.sans,
+  continueButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  continueButtonText: {
+    color: '#0B1F33',
     fontSize: 16,
-    fontWeight: '700',
-    color: Palette.navy, // STRICT CONTRAST: NAVY ON GREEN
+    fontWeight: '800',
+    fontFamily: Fonts?.sans,
   },
 });

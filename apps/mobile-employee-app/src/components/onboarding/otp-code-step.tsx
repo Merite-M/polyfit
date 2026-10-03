@@ -1,6 +1,7 @@
 /**
- * OTP / Magic Link Verification Step (PF-105 Step 1.4)
- * High-contrast 6-digit PIN input with auto-paste, resend timer, and instant validation
+ * PolyFit Corporate Employee App - Step 2: OTP Verification
+ * PF-105: Frictionless Corporate Employee Onboarding & Benefit Activation
+ * Compliant with expo-native-ui, expo-animation, and vercel-react-native-skills
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -8,19 +9,18 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   ActivityIndicator,
   Platform,
 } from 'react-native';
+import { ArrowLeft, ArrowRight, Sparkles, RefreshCw } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth-store';
-import { Palette, Radius, Spacing, Fonts, Shadows } from '@/constants/theme';
-import { PolyFitBrandHeader } from './polyfit-brand-header';
+import { Palette, Radius, Spacing, Fonts } from '@/constants/theme';
 
 export const OtpCodeStep: React.FC = () => {
   const {
     email,
-    organization,
     demoOtp,
     isLoading,
     error,
@@ -34,15 +34,12 @@ export const OtpCodeStep: React.FC = () => {
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
   useEffect(() => {
-    // Focus first input box on mount
     const timer = setTimeout(() => {
       inputRefs.current[0]?.focus();
-    }, 200);
-
+    }, 250);
     return () => clearTimeout(timer);
   }, []);
 
-  // Countdown timer for resend
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const interval = setInterval(() => {
@@ -52,17 +49,16 @@ export const OtpCodeStep: React.FC = () => {
   }, [resendCooldown]);
 
   const handleDigitChange = (index: number, text: string) => {
-    const val = text.slice(-1); // only keep last typed character
+    const clean = text.replace(/[^0-9]/g, '');
+    const val = clean.slice(-1);
     const newDigits = [...digits];
     newDigits[index] = val;
     setDigits(newDigits);
 
-    // Auto-advance to next box if digit entered
     if (val && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // Auto-submit if all 6 digits are filled
     const fullCode = newDigits.join('');
     if (fullCode.length === 6 && !newDigits.includes('')) {
       submitVerifyAccess(fullCode);
@@ -91,228 +87,313 @@ export const OtpCodeStep: React.FC = () => {
   const isComplete = digits.every((d) => d !== '');
 
   return (
-    <View style={styles.container}>
-      <PolyFitBrandHeader compact />
+    <View style={styles.screenContainer}>
+      {/* Top Header & Progress Stepper */}
+      <View style={styles.topBar}>
+        <Pressable
+          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]}
+          onPress={() => setStep('welcome')}
+        >
+          <ArrowLeft size={18} color="#FFFFFF" />
+        </Pressable>
 
-      <View style={styles.card}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Enter Verification Code</Text>
-          <Text style={styles.subtitle}>
-            We dispatched a 6-digit access code to{' '}
-            <Text style={styles.highlightEmail}>{email}</Text>
+        {/* Step Progress Pills (Step 2 of 3) */}
+        <View style={styles.stepperContainer}>
+          <View style={[styles.stepPill, styles.stepPillCompleted]} />
+          <View style={[styles.stepPill, styles.stepPillActive]} />
+          <View style={styles.stepPill} />
+        </View>
+      </View>
+
+      {/* Main Content Area */}
+      <View style={styles.contentBody}>
+        {/* Title & Subtitle */}
+        <View style={styles.headerBlock}>
+          <Text style={styles.screenTitle}>Enter verification code</Text>
+          <Text style={styles.screenSubtitle}>
+            We sent a 6-digit access code to{' '}
+            <Text style={styles.highlightEmail}>{email || 'your corporate email'}</Text>.
           </Text>
         </View>
 
-        {/* 6-Digit OTP Boxes */}
+        {/* 6 Digit Input Boxes */}
         <View style={styles.otpRow}>
-          {digits.map((digit, idx) => (
-            <TextInput
-              key={idx}
-              ref={(ref) => {
-                inputRefs.current[idx] = ref;
-              }}
-              style={[
-                styles.otpBox,
-                digit ? styles.otpBoxFilled : null,
-                inputRefs.current[idx]?.isFocused?.() ? styles.otpBoxFocused : null,
-              ]}
-              value={digit}
-              onChangeText={(text) => handleDigitChange(idx, text)}
-              onKeyPress={(e) => handleKeyPress(idx, e)}
-              keyboardType="number-pad"
-              maxLength={1}
-              selectTextOnFocus
-              textAlign="center"
-            />
-          ))}
+          {digits.map((digit, idx) => {
+            const isFocused = inputRefs.current[idx]?.isFocused?.();
+            const isFilled = digit.length > 0;
+            return (
+              <TextInput
+                key={idx}
+                ref={(ref) => {
+                  inputRefs.current[idx] = ref;
+                }}
+                style={[
+                  styles.otpBox,
+                  isFilled && styles.otpBoxFilled,
+                  isFocused && styles.otpBoxFocused,
+                ]}
+                value={digit}
+                onChangeText={(text) => handleDigitChange(idx, text)}
+                onKeyPress={(e) => handleKeyPress(idx, e)}
+                keyboardType="number-pad"
+                maxLength={1}
+                selectTextOnFocus
+                textAlign="center"
+              />
+            );
+          })}
         </View>
 
-        {/* Demo Helper Pill */}
+        {/* Demo Auto-Fill Chip */}
         {demoOtp || __DEV__ ? (
-          <TouchableOpacity style={styles.demoPill} onPress={handleFillDemo} activeOpacity={0.8}>
-            <Text style={styles.demoPillText}>
-              ⚡ Demo Access Code: <Text style={styles.demoCodeBold}>{demoOtp || '123456'}</Text> (Tap to Auto-fill)
+          <Pressable
+            style={({ pressed }) => [
+              styles.demoChip,
+              pressed && { transform: [{ scale: 0.98 }] },
+            ]}
+            onPress={handleFillDemo}
+          >
+            <Sparkles size={14} color={Palette.green} />
+            <Text style={styles.demoChipText}>
+              Demo Code: <Text style={styles.demoCodeBold}>{demoOtp || '123456'}</Text> (Tap to auto-fill)
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         ) : null}
 
-        {/* Error message */}
-        {error ? (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
+        {/* Error Banner */}
+        {error && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>{error}</Text>
           </View>
-        ) : null}
+        )}
+      </View>
+
+      {/* Bottom Pinned Action Bar */}
+      <View style={styles.bottomBar}>
+        <View style={styles.resendRow}>
+          <Pressable
+            onPress={handleResend}
+            disabled={resendCooldown > 0}
+            style={({ pressed }) => [pressed && { opacity: 0.6 }]}
+          >
+            <Text style={[styles.resendText, resendCooldown > 0 && styles.resendTextDisabled]}>
+              {resendCooldown > 0
+                ? `Resend code in ${resendCooldown}s`
+                : 'Resend verification code'}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setStep('welcome')}
+            style={({ pressed }) => [pressed && { opacity: 0.6 }]}
+          >
+            <Text style={styles.changeEmailText}>Wrong email?</Text>
+          </Pressable>
+        </View>
 
         {/* Primary CTA */}
-        <TouchableOpacity
-          style={[styles.verifyButton, (!isComplete || isLoading) && styles.verifyButtonDisabled]}
+        <Pressable
+          style={({ pressed }) => [
+            styles.continueButton,
+            (!isComplete || isLoading) && styles.continueButtonDisabled,
+            pressed && isComplete && { transform: [{ scale: 0.98 }] },
+          ]}
           onPress={() => submitVerifyAccess(digits.join(''))}
           disabled={!isComplete || isLoading}
-          activeOpacity={0.88}
         >
           {isLoading ? (
-            <ActivityIndicator color={Palette.navy} />
+            <ActivityIndicator color="#0B1F33" />
           ) : (
-            <Text style={styles.verifyButtonText}>Verify & Unlock Benefit →</Text>
+            <View style={styles.continueButtonContent}>
+              <Text style={styles.continueButtonText}>Verify & Unlock Benefit</Text>
+              <ArrowRight size={18} color="#0B1F33" />
+            </View>
           )}
-        </TouchableOpacity>
-
-        {/* Resend & Change Email Footer */}
-        <View style={styles.footerRow}>
-          <TouchableOpacity onPress={handleResend} disabled={resendCooldown > 0} activeOpacity={0.7}>
-            <Text style={[styles.resendText, resendCooldown > 0 && styles.resendTextDisabled]}>
-              {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => setStep('welcome')} activeOpacity={0.7}>
-            <Text style={styles.changeEmailText}>Use different email</Text>
-          </TouchableOpacity>
-        </View>
+        </Pressable>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
+  screenContainer: {
+    flex: 1,
+    backgroundColor: '#071521',
+    justifyContent: 'space-between',
     paddingHorizontal: Spacing.four,
+    paddingTop: Platform.OS === 'ios' ? 44 : 24,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
   },
-  card: {
-    backgroundColor: Palette.card,
-    borderRadius: Radius.card,
-    borderWidth: 1,
-    borderColor: Palette.cardBorder,
-    padding: Spacing.four,
-    ...Shadows.card,
-  },
-  header: {
+  topBar: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: Spacing.four,
   },
-  title: {
-    fontFamily: Fonts?.sans,
-    fontSize: 20,
-    fontWeight: '700',
-    color: Palette.navy,
-    marginBottom: Spacing.one,
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  subtitle: {
-    fontFamily: Fonts?.sans,
-    fontSize: 13,
+  stepperContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  stepPill: {
+    width: 20,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  stepPillCompleted: {
+    backgroundColor: 'rgba(40, 209, 124, 0.4)',
+    width: 20,
+  },
+  stepPillActive: {
+    backgroundColor: Palette.green,
+    width: 28,
+  },
+
+  contentBody: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingBottom: Spacing.four,
+  },
+  headerBlock: {
+    marginBottom: Spacing.five,
+  },
+  screenTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+    marginBottom: 8,
+  },
+  screenSubtitle: {
+    fontSize: 15,
     color: Palette.textSecondary,
-    textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 22,
   },
   highlightEmail: {
+    color: '#FFFFFF',
     fontWeight: '700',
-    color: Palette.navy,
   },
+
   otpRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     gap: 8,
     marginBottom: Spacing.four,
   },
   otpBox: {
-    flex: 1,
-    height: 52,
+    width: 46,
+    height: 56,
+    minWidth: 0,
+    backgroundColor: '#0D2235',
+    borderRadius: Radius.md,
     borderWidth: 1.5,
-    borderColor: Palette.cardBorder,
-    borderRadius: Radius.btn,
-    backgroundColor: Palette.canvas,
-    fontFamily: Fonts?.mono,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     fontSize: 22,
-    fontWeight: '700',
-    color: Palette.navy,
-    alignItems: 'center',
-    justifyContent: 'center',
+    fontWeight: '800',
+    color: '#FFFFFF',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    textAlign: 'center',
+    paddingHorizontal: 0,
+    outlineStyle: 'none' as any,
   },
   otpBoxFilled: {
-    borderColor: Palette.navy,
-    backgroundColor: '#FFFFFF',
+    borderColor: 'rgba(40, 209, 124, 0.5)',
+    backgroundColor: '#112C42',
   },
   otpBoxFocused: {
     borderColor: Palette.green,
-    backgroundColor: '#FFFFFF',
+    boxShadow: '0 0 12px rgba(40, 209, 124, 0.25)',
   },
-  demoPill: {
-    backgroundColor: Palette.greenSubtle,
-    borderWidth: 1,
-    borderColor: Palette.greenBorder,
-    borderRadius: Radius.inner,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    marginBottom: Spacing.three,
-  },
-  demoPillText: {
-    fontFamily: Fonts?.sans,
-    fontSize: 12,
-    fontWeight: '600',
-    color: Palette.greenText,
-  },
-  demoCodeBold: {
-    fontWeight: '800',
-    fontFamily: Fonts?.mono,
-    letterSpacing: 1,
-  },
-  errorBox: {
-    backgroundColor: Palette.errorBg,
-    borderRadius: Radius.inner,
-    borderWidth: 1,
-    borderColor: Palette.errorBorder,
-    padding: Spacing.two,
-    marginBottom: Spacing.three,
-  },
-  errorText: {
-    fontFamily: Fonts?.sans,
-    fontSize: 12,
-    color: Palette.errorText,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  verifyButton: {
-    backgroundColor: Palette.green,
-    borderRadius: Radius.btn,
-    height: 48,
+
+  demoChip: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Spacing.one,
+    gap: 8,
+    backgroundColor: 'rgba(40, 209, 124, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(40, 209, 124, 0.3)',
+    borderRadius: Radius.btn,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: Spacing.three,
   },
-  verifyButtonDisabled: {
-    opacity: 0.5,
+  demoChipText: {
+    color: '#E2E8F0',
+    fontSize: 12,
+    fontWeight: '600',
   },
-  verifyButtonText: {
-    fontFamily: Fonts?.sans,
-    fontSize: 15,
-    fontWeight: '700',
-    color: Palette.navy,
+  demoCodeBold: {
+    color: Palette.green,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+
+  errorBanner: {
+    backgroundColor: 'rgba(255, 90, 101, 0.12)',
+    borderRadius: Radius.sm,
+    padding: 10,
     alignItems: 'center',
-    marginTop: Spacing.four,
-    paddingTop: Spacing.three,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F3F7',
+  },
+  errorBannerText: {
+    color: '#FF5A65',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+
+  bottomBar: {
+    gap: Spacing.three,
+  },
+  resendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
   },
   resendText: {
-    fontFamily: Fonts?.sans,
     fontSize: 13,
+    color: Palette.teal,
     fontWeight: '600',
-    color: Palette.navy,
   },
   resendTextDisabled: {
     color: Palette.textMuted,
   },
   changeEmailText: {
-    fontFamily: Fonts?.sans,
     fontSize: 13,
-    fontWeight: '500',
     color: Palette.textSecondary,
     textDecorationLine: 'underline',
+  },
+
+  continueButton: {
+    height: 54,
+    backgroundColor: Palette.green,
+    borderRadius: Radius.btn,
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 4px 14px rgba(40, 209, 124, 0.35)',
+  },
+  continueButtonDisabled: {
+    opacity: 0.45,
+    boxShadow: 'none',
+  },
+  continueButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  continueButtonText: {
+    color: '#0B1F33',
+    fontSize: 16,
+    fontWeight: '800',
+    fontFamily: Fonts?.sans,
   },
 });

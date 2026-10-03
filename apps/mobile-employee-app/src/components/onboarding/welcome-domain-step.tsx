@@ -1,6 +1,7 @@
 /**
- * Welcome & Domain Recognition Step (PF-105 Path A & Path B)
- * Real-time domain resolution in < 500ms with dynamic employer branding
+ * PolyFit Corporate Employee App - Step 1: Welcome & Domain Recognition
+ * PF-105: Frictionless Corporate Employee Onboarding & Benefit Activation
+ * Compliant with expo-native-ui, expo-animation, and vercel-react-native-skills
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -8,15 +9,15 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   ActivityIndicator,
   Animated,
   Platform,
 } from 'react-native';
+import { Mail, KeyRound, Building2, Check, Sparkles, ArrowRight } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth-store';
-import { Palette, Radius, Spacing, Fonts, Shadows } from '@/constants/theme';
-import { PolyFitBrandHeader } from './polyfit-brand-header';
+import { Palette, Radius, Spacing, Fonts } from '@/constants/theme';
 
 export const WelcomeDomainStep: React.FC = () => {
   const {
@@ -40,23 +41,31 @@ export const WelcomeDomainStep: React.FC = () => {
   const [inputCode, setInputCode] = useState(inviteCode);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Animated fade & slide for recognized employer card
-  const cardAnim = useRef(new Animated.Value(0)).current;
+  // Animated slide & scale for employer recognition card
+  const cardScale = useRef(new Animated.Value(0.95)).current;
+  const cardOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (organization) {
-      Animated.spring(cardAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }).start();
+      Animated.parallel([
+        Animated.spring(cardScale, {
+          toValue: 1,
+          tension: 65,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cardOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
     } else {
-      cardAnim.setValue(0);
+      cardScale.setValue(0.95);
+      cardOpacity.setValue(0);
     }
   }, [organization]);
 
-  // Debounced email domain resolution
   const handleEmailChange = (text: string) => {
     setInputEmail(text);
     setEmail(text);
@@ -65,7 +74,7 @@ export const WelcomeDomainStep: React.FC = () => {
       clearTimeout(debounceTimer.current);
     }
 
-    if (text.includes('@') && text.split('@')[1]?.length >= 3) {
+    if (text.includes('@') && text.split('@')[1]?.includes('.')) {
       debounceTimer.current = setTimeout(() => {
         resolveEmailDomain(text);
       }, 350);
@@ -73,12 +82,11 @@ export const WelcomeDomainStep: React.FC = () => {
   };
 
   const handleCodeChange = (text: string) => {
-    const upper = text.toUpperCase();
-    setInputCode(upper);
-    setInviteCode(upper);
-
-    if (upper.length >= 6) {
-      resolveInviteToken(upper);
+    const clean = text.trim().toUpperCase();
+    setInputCode(clean);
+    setInviteCode(clean);
+    if (clean.length >= 6) {
+      resolveInviteToken(clean);
     }
   };
 
@@ -98,415 +106,405 @@ export const WelcomeDomainStep: React.FC = () => {
     }
   };
 
+  const isEmailMode = authMethod === 'email';
+  const hasValue = isEmailMode ? inputEmail.length > 0 : inputCode.length > 0;
+
   return (
-    <View style={styles.container}>
-      <PolyFitBrandHeader />
+    <View style={styles.screenContainer}>
+      {/* Top Header & Progress Stepper */}
+      <View style={styles.topBar}>
+        <View style={styles.brandRow}>
+          <View style={styles.brandBadge}>
+            <Text style={styles.brandBadgeText}>P</Text>
+          </View>
+          <Text style={styles.brandTitle}>
+            POLY<Text style={{ color: Palette.green }}>FIT</Text>
+          </Text>
+        </View>
 
-      {/* Hero Welcome Message */}
-      <View style={styles.heroTextContainer}>
-        <Text style={styles.headline}>Activate Your Corporate Benefit</Text>
-        <Text style={styles.subheadline}>
-          PolyFit connects you to Kigali & East Africa’s premier fitness, swimming, and wellness network.
-        </Text>
+        {/* Step Progress Pills */}
+        <View style={styles.stepperContainer}>
+          <View style={[styles.stepPill, styles.stepPillActive]} />
+          <View style={styles.stepPill} />
+          <View style={styles.stepPill} />
+        </View>
       </View>
 
-      {/* Path Switcher (Dual Pathway A vs B) */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tabButton, authMethod === 'email' && styles.tabButtonActive]}
-          onPress={() => setAuthMethod('email')}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.tabText, authMethod === 'email' && styles.tabTextActive]}>
-            Work Email
+      {/* Main Content Area */}
+      <View style={styles.contentBody}>
+        {/* Title & Microcopy */}
+        <View style={styles.headerBlock}>
+          <Text style={styles.screenTitle}>
+            {isEmailMode ? "What's your work email?" : 'Enter your HR token'}
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabButton, authMethod === 'invite' && styles.tabButtonActive]}
-          onPress={() => setAuthMethod('invite')}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.tabText, authMethod === 'invite' && styles.tabTextActive]}>
-            HR Invite Code
+          <Text style={styles.screenSubtitle}>
+            {isEmailMode
+              ? "We'll instantly unlock your company's subsidized wellness benefit."
+              : 'Enter the 6-character code provided by your HR administrator.'}
           </Text>
-        </TouchableOpacity>
-      </View>
+        </View>
 
-      {/* Main Input Form */}
-      <View style={styles.inputCard}>
-        {authMethod === 'email' ? (
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Corporate Work Email</Text>
-            <View style={[styles.inputWrapper, organization && styles.inputWrapperSuccess]}>
-              <TextInput
-                style={styles.textInput}
-                placeholder="e.g. jean.mugisha@bk.rw"
-                placeholderTextColor={Palette.textMuted}
-                value={inputEmail}
-                onChangeText={handleEmailChange}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              {isLoading ? (
-                <ActivityIndicator size="small" color={Palette.navy} style={styles.inputIcon} />
-              ) : organization ? (
-                <View style={styles.verifiedBadge}>
-                  <Text style={styles.verifiedBadgeText}>✓ Enrolled</Text>
-                </View>
-              ) : null}
-            </View>
-            <Text style={styles.hint}>
-              Enter your corporate domain to automatically unlock your company subsidy.
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>HR Invite Token</Text>
-            <View style={[styles.inputWrapper, organization && styles.inputWrapperSuccess]}>
-              <TextInput
-                style={[styles.textInput, styles.codeFont]}
-                placeholder="e.g. BK-8821"
-                placeholderTextColor={Palette.textMuted}
-                value={inputCode}
-                onChangeText={handleCodeChange}
-                autoCapitalize="characters"
-                autoCorrect={false}
-                maxLength={10}
-              />
-              {isLoading ? (
-                <ActivityIndicator size="small" color={Palette.navy} style={styles.inputIcon} />
-              ) : organization ? (
-                <View style={styles.verifiedBadge}>
-                  <Text style={styles.verifiedBadgeText}>✓ Valid Token</Text>
-                </View>
-              ) : null}
-            </View>
-            <Text style={styles.hint}>
-              6-character token provided by your company HR administrator.
-            </Text>
-          </View>
-        )}
+        {/* Input Card Container */}
+        <View style={styles.inputCard}>
+          <View style={styles.inputWrapper}>
+            {isEmailMode ? (
+              <Mail size={20} color={organization ? Palette.green : Palette.textMuted} />
+            ) : (
+              <KeyRound size={20} color={organization ? Palette.green : Palette.textMuted} />
+            )}
 
-        {/* Dynamic Employer Recognition Card */}
-        {organization ? (
-          <Animated.View
-            style={[
-              styles.employerCard,
-              {
-                opacity: cardAnim,
-                transform: [
-                  {
-                    translateY: cardAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [12, 0],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <View style={styles.employerHeader}>
-              <View style={styles.employerIconCircle}>
-                <Text style={styles.employerInitial}>{organization.name.charAt(0)}</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder={isEmailMode ? 'e.g. jean.mugisha@bk.rw' : 'e.g. BK-8821'}
+              placeholderTextColor={Palette.textMuted}
+              value={isEmailMode ? inputEmail : inputCode}
+              onChangeText={isEmailMode ? handleEmailChange : handleCodeChange}
+              autoCapitalize={isEmailMode ? 'none' : 'characters'}
+              autoCorrect={false}
+              keyboardType={isEmailMode ? 'email-address' : 'default'}
+              returnKeyType="done"
+              onSubmitEditing={handleContinue}
+            />
+
+            {organization && (
+              <View style={styles.verifiedBadge}>
+                <Check size={14} color={Palette.green} />
+                <Text style={styles.verifiedText}>Enrolled</Text>
               </View>
-              <View style={styles.employerInfo}>
-                <Text style={styles.employerWelcome}>Welcome team member!</Text>
+            )}
+          </View>
+
+          {/* Error Message */}
+          {error && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorBannerText}>{error}</Text>
+            </View>
+          )}
+
+          {/* Employer Recognized Card (Springs into view) */}
+          {organization && (
+            <Animated.View
+              style={[
+                styles.recognizedEmployerCard,
+                {
+                  opacity: cardOpacity,
+                  transform: [{ scale: cardScale }],
+                },
+              ]}
+            >
+              <View style={styles.employerIconBadge}>
+                <Building2 size={20} color={Palette.green} />
+              </View>
+              <View style={styles.employerDetails}>
                 <Text style={styles.employerName}>{organization.name}</Text>
+                <View style={styles.subsidyRow}>
+                  <Sparkles size={12} color={Palette.teal} />
+                  <Text style={styles.subsidyHighlight}>
+                    {benefit?.is_fully_sponsored
+                      ? '100% Covered by Employer'
+                      : `${benefit?.subsidy_percentage}% Corporate Subsidy`}
+                  </Text>
+                </View>
               </View>
-            </View>
+            </Animated.View>
+          )}
+        </View>
 
-            <View style={styles.subsidyPill}>
-              <Text style={styles.subsidyPillText}>
-                {benefit?.is_fully_sponsored
-                  ? '✨ 100% Employer Funded Benefit'
-                  : `✨ ${benefit?.subsidy_percentage}% Corporate Subsidy`}
-              </Text>
-            </View>
-          </Animated.View>
-        ) : null}
+        {/* Pathway Switcher Text Link */}
+        <Pressable
+          style={styles.switchPathwayButton}
+          onPress={() => {
+            const nextMode = isEmailMode ? 'invite' : 'email';
+            setAuthMethod(nextMode);
+          }}
+        >
+          <Text style={styles.switchPathwayText}>
+            {isEmailMode
+              ? 'Have an HR invite code instead? →'
+              : 'Use company email domain instead →'}
+          </Text>
+        </Pressable>
+      </View>
 
-        {/* Error message */}
-        {error ? (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
+      {/* Bottom Pinned Action Bar */}
+      <View style={styles.bottomBar}>
+        {/* Quick Demo Pre-sets */}
+        <View style={styles.demoPresetContainer}>
+          <Text style={styles.demoLabel}>DEMO ROSTERS:</Text>
+          <Pressable
+            style={({ pressed }) => [
+              styles.demoChip,
+              pressed && { opacity: 0.7 },
+            ]}
+            onPress={() => loadDemoAccount('bk')}
+          >
+            <Text style={styles.demoChipText}>Bank of Kigali</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              styles.demoChip,
+              pressed && { opacity: 0.7 },
+            ]}
+            onPress={() => loadDemoAccount('techcorp')}
+          >
+            <Text style={styles.demoChipText}>TechCorp</Text>
+          </Pressable>
+        </View>
 
-        {/* Action Button */}
-        <TouchableOpacity
-          style={[styles.primaryButton, (!inputEmail && !inputCode) && styles.primaryButtonDisabled]}
+        {/* Primary Action Button */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.continueButton,
+            !hasValue && styles.continueButtonDisabled,
+            pressed && hasValue && { transform: [{ scale: 0.98 }] },
+          ]}
           onPress={handleContinue}
-          disabled={isLoading || (!inputEmail && !inputCode)}
-          activeOpacity={0.88}
+          disabled={isLoading || !hasValue}
         >
           {isLoading ? (
-            <ActivityIndicator color={Palette.navy} />
+            <ActivityIndicator color="#0B1F33" />
           ) : (
-            <Text style={styles.primaryButtonText}>
-              {organization ? 'Continue to Verification →' : 'Find My Company Benefit'}
-            </Text>
+            <View style={styles.continueButtonContent}>
+              <Text style={styles.continueButtonText}>
+                {organization ? 'Continue to Verification' : 'Check My Benefit'}
+              </Text>
+              <ArrowRight size={18} color="#0B1F33" />
+            </View>
           )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Quick Demo Corporate Profiles (for Exec Demos & Evaluations) */}
-      <View style={styles.demoSection}>
-        <Text style={styles.demoTitle}>QUICK DEMO PROFILES</Text>
-        <View style={styles.demoRow}>
-          <TouchableOpacity
-            style={styles.demoChip}
-            onPress={() => loadDemoAccount('bk')}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.demoChipText}>Bank of Kigali (bk.rw)</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.demoChip}
-            onPress={() => loadDemoAccount('techcorp')}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.demoChipText}>TechCorp (techcorp.rw)</Text>
-          </TouchableOpacity>
-        </View>
+        </Pressable>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
+  screenContainer: {
+    flex: 1,
+    backgroundColor: '#071521',
+    justifyContent: 'space-between',
     paddingHorizontal: Spacing.four,
+    paddingTop: Platform.OS === 'ios' ? 44 : 24,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
   },
-  heroTextContainer: {
+  topBar: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: Spacing.four,
   },
-  headline: {
-    fontFamily: Fonts?.sans,
-    fontSize: 22,
-    fontWeight: '700',
-    color: Palette.navy,
-    textAlign: 'center',
-    marginBottom: Spacing.one,
-  },
-  subheadline: {
-    fontFamily: Fonts?.sans,
-    fontSize: 14,
-    color: Palette.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-    maxWidth: 420,
-  },
-  tabContainer: {
+  brandRow: {
     flexDirection: 'row',
-    backgroundColor: '#ECEFF4',
-    borderRadius: Radius.btn,
-    padding: 3,
-    marginBottom: Spacing.three,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 10,
     alignItems: 'center',
-    borderRadius: Radius.btn - 2,
+    gap: 8,
   },
-  tabButtonActive: {
-    backgroundColor: Palette.card,
-    ...Shadows.card,
+  brandBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: Palette.green,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  tabText: {
-    fontFamily: Fonts?.sans,
-    fontSize: 13,
-    fontWeight: '600',
+  brandBadgeText: {
+    color: '#0B1F33',
+    fontWeight: '900',
+    fontSize: 16,
+  },
+  brandTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.8,
+  },
+  stepperContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  stepPill: {
+    width: 20,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  stepPillActive: {
+    backgroundColor: Palette.green,
+    width: 28,
+  },
+
+  contentBody: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingBottom: Spacing.four,
+  },
+  headerBlock: {
+    marginBottom: Spacing.five,
+  },
+  screenTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+    marginBottom: 8,
+  },
+  screenSubtitle: {
+    fontSize: 15,
     color: Palette.textSecondary,
+    lineHeight: 22,
   },
-  tabTextActive: {
-    color: Palette.navy,
-  },
+
   inputCard: {
-    backgroundColor: Palette.card,
+    backgroundColor: '#0D2235',
     borderRadius: Radius.card,
     borderWidth: 1,
-    borderColor: Palette.cardBorder,
-    padding: Spacing.four,
-    ...Shadows.card,
-  },
-  fieldGroup: {
-    marginBottom: Spacing.three,
-  },
-  label: {
-    fontFamily: Fonts?.sans,
-    fontSize: 13,
-    fontWeight: '600',
-    color: Palette.navy,
-    marginBottom: Spacing.one,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    padding: Spacing.three,
+    gap: Spacing.two,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Palette.cardBorder,
+    backgroundColor: '#071521',
     borderRadius: Radius.btn,
-    backgroundColor: Palette.canvas,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     paddingHorizontal: Spacing.three,
-  },
-  inputWrapperSuccess: {
-    borderColor: Palette.green,
-    backgroundColor: '#FAFCFA',
+    height: 56,
+    gap: 10,
   },
   textInput: {
     flex: 1,
-    height: 48,
+    fontSize: 16,
+    color: '#FFFFFF',
     fontFamily: Fonts?.sans,
-    fontSize: 15,
-    color: Palette.navy,
-  },
-  codeFont: {
-    fontFamily: Fonts?.mono,
-    letterSpacing: 2,
-    fontWeight: '700',
-  },
-  inputIcon: {
-    marginLeft: Spacing.two,
+    outlineStyle: 'none' as any,
   },
   verifiedBadge: {
-    backgroundColor: Palette.greenSubtle,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(40, 209, 124, 0.12)',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: Radius.full,
-    borderWidth: 1,
-    borderColor: Palette.greenBorder,
+    borderRadius: 12,
   },
-  verifiedBadgeText: {
-    fontFamily: Fonts?.sans,
+  verifiedText: {
+    color: Palette.green,
     fontSize: 11,
     fontWeight: '700',
-    color: Palette.greenText,
   },
-  hint: {
-    fontFamily: Fonts?.sans,
+
+  errorBanner: {
+    backgroundColor: 'rgba(255, 90, 101, 0.12)',
+    borderRadius: Radius.sm,
+    padding: 8,
+  },
+  errorBannerText: {
+    color: '#FF5A65',
     fontSize: 12,
-    color: Palette.textMuted,
-    marginTop: 6,
-  },
-  employerCard: {
-    backgroundColor: Palette.greenSubtle,
-    borderRadius: Radius.inner,
-    borderWidth: 1,
-    borderColor: Palette.greenBorder,
-    padding: Spacing.three,
-    marginBottom: Spacing.three,
-  },
-  employerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacing.two,
-  },
-  employerIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: Radius.full,
-    backgroundColor: Palette.navy,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.three,
-  },
-  employerInitial: {
-    fontFamily: Fonts?.sans,
-    fontSize: 18,
-    fontWeight: '800',
-    color: Palette.green,
-  },
-  employerInfo: {
-    flex: 1,
-  },
-  employerWelcome: {
-    fontFamily: Fonts?.sans,
-    fontSize: 12,
-    color: Palette.greenText,
-    fontWeight: '600',
-  },
-  employerName: {
-    fontFamily: Fonts?.sans,
-    fontSize: 16,
-    fontWeight: '700',
-    color: Palette.navy,
-  },
-  subsidyPill: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: Spacing.two,
-    paddingVertical: 4,
-    borderRadius: Radius.full,
-    alignSelf: 'flex-start',
-  },
-  subsidyPillText: {
-    fontFamily: Fonts?.sans,
-    fontSize: 12,
-    fontWeight: '700',
-    color: Palette.navy,
-  },
-  errorBox: {
-    backgroundColor: Palette.errorBg,
-    borderRadius: Radius.inner,
-    borderWidth: 1,
-    borderColor: Palette.errorBorder,
-    padding: Spacing.two,
-    marginBottom: Spacing.three,
-  },
-  errorText: {
-    fontFamily: Fonts?.sans,
-    fontSize: 12,
-    color: Palette.errorText,
     fontWeight: '500',
   },
-  primaryButton: {
-    backgroundColor: Palette.green,
-    borderRadius: Radius.btn,
-    height: 48,
+
+  recognizedEmployerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#132D43',
+    borderRadius: Radius.md,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(40, 209, 124, 0.3)',
+    marginTop: 4,
+  },
+  employerIconBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: 'rgba(40, 209, 124, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Spacing.one,
   },
-  primaryButtonDisabled: {
-    opacity: 0.5,
+  employerDetails: {
+    flex: 1,
   },
-  primaryButtonText: {
-    fontFamily: Fonts?.sans,
-    fontSize: 15,
+  employerName: {
+    fontSize: 16,
     fontWeight: '700',
-    color: Palette.navy, // STRICT CONTRAST: NAVY ON GREEN
+    color: '#FFFFFF',
   },
-  demoSection: {
-    marginTop: Spacing.five,
-    alignItems: 'center',
-  },
-  demoTitle: {
-    fontFamily: Fonts?.sans,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
-    color: Palette.textMuted,
-    marginBottom: Spacing.two,
-  },
-  demoRow: {
+  subsidyRow: {
     flexDirection: 'row',
-    gap: Spacing.two,
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  subsidyHighlight: {
+    fontSize: 12,
+    color: Palette.teal,
+    fontWeight: '600',
+  },
+
+  switchPathwayButton: {
+    alignSelf: 'center',
+    paddingVertical: 14,
+    marginTop: Spacing.two,
+  },
+  switchPathwayText: {
+    fontSize: 13,
+    color: Palette.teal,
+    fontWeight: '600',
+  },
+
+  bottomBar: {
+    gap: Spacing.three,
+  },
+  demoPresetContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  demoLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Palette.textMuted,
+    letterSpacing: 0.5,
   },
   demoChip: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#0D2235',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: Palette.cardBorder,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: Radius.full,
-    ...Shadows.card,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   demoChipText: {
-    fontFamily: Fonts?.sans,
-    fontSize: 12,
+    color: '#E2E8F0',
+    fontSize: 11,
     fontWeight: '600',
-    color: Palette.navy,
+  },
+
+  continueButton: {
+    height: 54,
+    backgroundColor: Palette.green,
+    borderRadius: Radius.btn,
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 4px 14px rgba(40, 209, 124, 0.35)',
+  },
+  continueButtonDisabled: {
+    opacity: 0.45,
+    boxShadow: 'none',
+  },
+  continueButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  continueButtonText: {
+    color: '#0B1F33',
+    fontSize: 16,
+    fontWeight: '800',
+    fontFamily: Fonts?.sans,
   },
 });

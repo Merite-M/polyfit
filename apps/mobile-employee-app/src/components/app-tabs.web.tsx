@@ -1,115 +1,101 @@
-import {
-  Tabs,
-  TabList,
-  TabTrigger,
-  TabSlot,
-  TabTriggerSlotProps,
-  TabListProps,
-} from 'expo-router/ui';
-import { SymbolView } from 'expo-symbols';
-import { Pressable, useColorScheme, View, StyleSheet } from 'react-native';
+/**
+ * PolyFit Corporate Employee App - Native Mobile Tab Navigation (Web)
+ * Compliant with expo-native-ui, expo-animation, and vercel-react-native-skills
+ */
 
-import { ExternalLink } from './external-link';
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
-
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import React, { useState } from 'react';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { QrCode, Compass } from 'lucide-react-native';
+import { Palette, Spacing, Radius } from '@/constants/theme';
+import AccessPassScreen from '@/app/index';
+import ExploreNetworkScreen from '@/app/explore';
 
 export default function AppTabs() {
-  return (
-    <Tabs>
-      <TabSlot style={{ height: '100%' }} />
-      <TabList asChild>
-        <CustomTabList>
-          <TabTrigger name="home" href="/" asChild>
-            <TabButton>Home</TabButton>
-          </TabTrigger>
-          <TabTrigger name="explore" href="/explore" asChild>
-            <TabButton>Explore</TabButton>
-          </TabTrigger>
-        </CustomTabList>
-      </TabList>
-    </Tabs>
-  );
-}
-
-export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
-  return (
-    <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView
-        type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
-        style={styles.tabButtonView}>
-        <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
-          {children}
-        </ThemedText>
-      </ThemedView>
-    </Pressable>
-  );
-}
-
-export function CustomTabList(props: TabListProps) {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const [activeTab, setActiveTab] = useState<'pass' | 'explore'>('pass');
 
   return (
-    <View {...props} style={styles.tabListContainer}>
-      <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Expo Starter
-        </ThemedText>
+    <View style={styles.container}>
+      {/* Screen Viewport */}
+      <View style={styles.screenArea}>
+        {activeTab === 'pass' && <AccessPassScreen />}
+        {activeTab === 'explore' && <ExploreNetworkScreen />}
+      </View>
 
-        {props.children}
+      {/* Native Bottom Tab Bar */}
+      <View style={styles.tabBar}>
+        <Pressable
+          style={[styles.tabItem, activeTab === 'pass' && styles.tabItemActive]}
+          onPress={() => setActiveTab('pass')}
+        >
+          <View style={[styles.tabIconBadge, activeTab === 'pass' && styles.tabIconBadgeActive]}>
+            <QrCode size={20} color={activeTab === 'pass' ? Palette.green : Palette.textMuted} />
+          </View>
+          <Text style={[styles.tabLabel, activeTab === 'pass' && styles.tabLabelActive]}>
+            My Pass
+          </Text>
+        </Pressable>
 
-        <ExternalLink href="https://docs.expo.dev" asChild>
-          <Pressable style={styles.externalPressable}>
-            <ThemedText type="link">Docs</ThemedText>
-            <SymbolView
-              tintColor={colors.text}
-              name={{ ios: 'arrow.up.right.square', web: 'link' }}
-              size={12}
-            />
-          </Pressable>
-        </ExternalLink>
-      </ThemedView>
+        <Pressable
+          style={[styles.tabItem, activeTab === 'explore' && styles.tabItemActive]}
+          onPress={() => setActiveTab('explore')}
+        >
+          <View style={[styles.tabIconBadge, activeTab === 'explore' && styles.tabIconBadgeActive]}>
+            <Compass size={20} color={activeTab === 'explore' ? Palette.green : Palette.textMuted} />
+          </View>
+          <Text style={[styles.tabLabel, activeTab === 'explore' && styles.tabLabelActive]}>
+            Network
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  tabListContainer: {
-    position: 'absolute',
-    width: '100%',
-    padding: Spacing.three,
+  container: {
+    flex: 1,
+    backgroundColor: '#071521',
+  },
+  screenArea: {
+    flex: 1,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    height: Platform.OS === 'ios' ? 74 : 64,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+    backgroundColor: '#0B1F33',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    boxShadow: '0 -4px 16px rgba(0, 0, 0, 0.3)',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.four,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
+    gap: 3,
+    paddingVertical: 4,
+  },
+  tabItemActive: {},
+  tabIconBadge: {
+    width: 36,
+    height: 32,
     alignItems: 'center',
-    flexDirection: 'row',
-  },
-  innerContainer: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.five,
-    borderRadius: Spacing.five,
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexGrow: 1,
-    gap: Spacing.two,
-    maxWidth: MaxContentWidth,
-  },
-  brandText: {
-    marginRight: 'auto',
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  tabButtonView: {
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.three,
-  },
-  externalPressable: {
-    flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
-    gap: Spacing.one,
-    marginLeft: Spacing.three,
+    borderRadius: Radius.sm,
+  },
+  tabIconBadgeActive: {
+    backgroundColor: 'rgba(40, 209, 124, 0.12)',
+  },
+  tabLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Palette.textMuted,
+  },
+  tabLabelActive: {
+    color: Palette.green,
+    fontWeight: '700',
   },
 });

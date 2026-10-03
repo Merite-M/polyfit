@@ -9,6 +9,8 @@ import OnboardingScreen from '@/app/onboarding/index';
 import { useAuthStore } from '@/stores/auth-store';
 import { Colors, Palette } from '@/constants/theme';
 
+import { MobileShell } from '@/components/mobile-shell';
+
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -41,7 +43,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AnimatedSplashOverlay />
-      {isBenefitActivated ? <AppTabs /> : <OnboardingScreen />}
+      <MobileShell>
+        {isBenefitActivated ? <AppTabs /> : <OnboardingScreen />}
+      </MobileShell>
     </ThemeProvider>
   );
 }
