@@ -599,11 +599,13 @@ const styles = StyleSheet.create({
   },
   previewInfo: {
     flex: 1,
+    minWidth: 0,
   },
   previewTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    flexWrap: 'wrap',
+    gap: 4,
     marginBottom: 3,
   },
   previewCategoryPill: {

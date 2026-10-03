@@ -12,6 +12,7 @@ import {
   StyleSheet,
   Pressable,
   Platform,
+  ScrollView,
 } from 'react-native';
 import {
   CheckCircle2,
@@ -73,7 +74,8 @@ export const CheckinSuccessModal: React.FC<CheckinSuccessModalProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.modalBackdrop}>
-        <View style={styles.cardContainer}>
+        <ScrollView style={{ width: '100%' }} contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          <View style={styles.cardContainer}>
           {/* Pulsing Concentric Green Halo */}
           <View style={styles.haloOuterRing}>
             <View style={styles.haloInnerRing}>
@@ -149,8 +151,9 @@ export const CheckinSuccessModal: React.FC<CheckinSuccessModalProps> = ({
             <Text style={styles.doneBtnText}>Done</Text>
           </Pressable>
         </View>
-      </View>
-    </Modal>
+      </ScrollView>
+    </View>
+  </Modal>
   );
 };
 
@@ -161,6 +164,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: Spacing.four,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: Spacing.four,
   },
   cardContainer: {
     width: '100%',

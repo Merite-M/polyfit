@@ -12,6 +12,8 @@ import {
   StyleSheet,
   Pressable,
   Platform,
+  ScrollView,
+  useWindowDimensions,
 } from 'react-native';
 import {
   X,
@@ -68,6 +70,8 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
   onClose,
   onScanSuccess,
 }) => {
+  const { width: windowWidth } = useWindowDimensions();
+  const targetSize = Math.min(windowWidth - 64, 250);
   const [torchEnabled, setTorchEnabled] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
 
@@ -121,10 +125,11 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
           </Pressable>
         </View>
 
-        {/* Viewfinder Area */}
-        <View style={styles.viewfinderArea}>
-          {/* Target Reticle Frame */}
-          <View style={styles.targetFrame}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Viewfinder Area */}
+          <View style={styles.viewfinderArea}>
+            {/* Target Reticle Frame */}
+            <View style={[styles.targetFrame, { width: targetSize, height: targetSize }]}>
             {/* 4 Corner Crosshairs */}
             <View style={[styles.corner, styles.cornerTL]} />
             <View style={[styles.corner, styles.cornerTR]} />
@@ -180,7 +185,8 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
               </Pressable>
             ))}
           </View>
-        </View>
+          </View>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -190,6 +196,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#071521',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
   },
   header: {
     flexDirection: 'row',
