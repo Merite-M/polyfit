@@ -8,12 +8,12 @@ import React, { useEffect } from 'react';
 import {
   View,
   Text,
-  Modal,
   StyleSheet,
   Pressable,
   Platform,
   ScrollView,
 } from 'react-native';
+import { AppModal } from '@/components/common/app-modal';
 import {
   CheckCircle2,
   Building2,
@@ -67,7 +67,7 @@ export const CheckinSuccessModal: React.FC<CheckinSuccessModalProps> = ({
     : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <Modal
+    <AppModal
       visible={visible}
       animationType="fade"
       transparent
@@ -153,7 +153,7 @@ export const CheckinSuccessModal: React.FC<CheckinSuccessModalProps> = ({
         </View>
       </ScrollView>
     </View>
-  </Modal>
+  </AppModal>
   );
 };
 

@@ -20,6 +20,13 @@ export function MobileShell({ children }: MobileShellProps) {
       <View style={styles.nativeContainer}>
         <StatusBar barStyle="light-content" backgroundColor="#0B1F33" />
         {children}
+        {Platform.OS === 'web' && (
+          <View
+            nativeID="polyfit-mobile-modal-portal"
+            style={styles.modalPortalContainer}
+            pointerEvents="box-none"
+          />
+        )}
       </View>
     );
   }
@@ -46,6 +53,15 @@ export function MobileShell({ children }: MobileShellProps) {
             {children}
           </View>
 
+          {/* Dedicated Modal Portal Target for Web Previews */}
+          {Platform.OS === 'web' && (
+            <View
+              nativeID="polyfit-mobile-modal-portal"
+              style={styles.modalPortalContainer}
+              pointerEvents="box-none"
+            />
+          )}
+
           {/* iOS Home Indicator Bar */}
           <View style={styles.homeIndicatorContainer}>
             <View style={styles.homeIndicator} />
@@ -60,6 +76,16 @@ const styles = StyleSheet.create({
   nativeContainer: {
     flex: 1,
     backgroundColor: '#071521',
+  },
+  modalPortalContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 90,
+    overflow: 'hidden',
+    pointerEvents: 'box-none',
   },
   desktopBackdrop: {
     flex: 1,

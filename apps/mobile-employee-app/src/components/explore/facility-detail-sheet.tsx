@@ -9,12 +9,12 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
   Pressable,
   ScrollView,
   Platform,
   useWindowDimensions,
 } from 'react-native';
+import { AppModal } from '@/components/common/app-modal';
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
 import * as Haptics from 'expo-haptics';
@@ -67,7 +67,8 @@ export function FacilityDetailSheet({
 }: FacilityDetailSheetProps) {
   const { navigateToPassWithFacility } = useTabStore();
   const { width: windowWidth } = useWindowDimensions();
-  const slideWidth = Math.min(windowWidth, 420);
+  const isDesktopWeb = Platform.OS === 'web' && windowWidth > 600;
+  const slideWidth = isDesktopWeb ? 378 : Math.min(windowWidth, 420);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [hoursExpanded, setHoursExpanded] = useState(false);
 
@@ -116,7 +117,7 @@ export function FacilityDetailSheet({
   };
 
   return (
-    <Modal
+    <AppModal
       visible={visible}
       transparent
       animationType="slide"
@@ -352,7 +353,7 @@ export function FacilityDetailSheet({
           </View>
         </View>
       </View>
-    </Modal>
+    </AppModal>
   );
 }
 

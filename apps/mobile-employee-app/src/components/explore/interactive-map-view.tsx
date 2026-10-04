@@ -71,7 +71,8 @@ export function InteractiveMapView({
   selectedFacility,
 }: InteractiveMapViewProps) {
   const { width } = useWindowDimensions();
-  const mapWidth = Math.min(width, 600);
+  const isDesktopWeb = Platform.OS === 'web' && width > 600;
+  const mapWidth = isDesktopWeb ? 378 : Math.min(width, 600);
   const mapHeight = 440;
 
   const { navigateToPassWithFacility } = useTabStore();

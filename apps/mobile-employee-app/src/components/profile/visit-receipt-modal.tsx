@@ -4,7 +4,8 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { AppModal } from '@/components/common/app-modal';
 import {
   ShieldCheck,
   X,
@@ -54,7 +55,7 @@ export function VisitReceiptModal({
       : 'Desk Verification';
 
   return (
-    <Modal
+    <AppModal
       visible={visible}
       transparent
       animationType="fade"
@@ -145,7 +146,7 @@ export function VisitReceiptModal({
           </Pressable>
         </View>
       </View>
-    </Modal>
+    </AppModal>
   );
 }
 

@@ -8,13 +8,13 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  Modal,
   StyleSheet,
   Pressable,
   Platform,
   ScrollView,
   useWindowDimensions,
 } from 'react-native';
+import { AppModal } from '@/components/common/app-modal';
 import {
   X,
   Zap,
@@ -97,7 +97,7 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
   };
 
   return (
-    <Modal
+    <AppModal
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
@@ -190,7 +190,7 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
         </ScrollView>
       </View>
       </View>
-    </Modal>
+    </AppModal>
   );
 };
 

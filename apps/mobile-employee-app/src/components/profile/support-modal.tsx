@@ -4,7 +4,8 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, Linking, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Linking, ScrollView } from 'react-native';
+import { AppModal } from '@/components/common/app-modal';
 import {
   MessageSquare,
   Mail,
@@ -74,7 +75,7 @@ export function SupportModal({
   };
 
   return (
-    <Modal
+    <AppModal
       visible={visible}
       transparent
       animationType="slide"
@@ -185,7 +186,7 @@ export function SupportModal({
           </Pressable>
         </View>
       </View>
-    </Modal>
+    </AppModal>
   );
 }
 

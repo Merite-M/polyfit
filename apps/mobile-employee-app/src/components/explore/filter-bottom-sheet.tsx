@@ -8,12 +8,12 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
   Pressable,
   ScrollView,
   Switch,
   Platform,
 } from 'react-native';
+import { AppModal } from '@/components/common/app-modal';
 import {
   X,
   RotateCcw,
@@ -64,7 +64,7 @@ export function FilterBottomSheet({ visible, onClose }: FilterBottomSheetProps) 
   const count = activeFilterCount();
 
   return (
-    <Modal
+    <AppModal
       visible={visible}
       transparent
       animationType="slide"
@@ -223,7 +223,7 @@ export function FilterBottomSheet({ visible, onClose }: FilterBottomSheetProps) 
           </View>
         </View>
       </View>
-    </Modal>
+    </AppModal>
   );
 }
 
