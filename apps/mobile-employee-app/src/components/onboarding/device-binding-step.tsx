@@ -10,6 +10,7 @@ import {
   Text,
   Pressable,
   StyleSheet,
+  ScrollView,
   Switch,
   Platform,
 } from 'react-native';
@@ -73,7 +74,10 @@ export const DeviceBindingStep: React.FC<DeviceBindingStepProps> = ({ onFinish }
 
   return (
     <View style={styles.screenContainer}>
-      {/* Top Header */}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Top Header */}
       <View style={styles.topBar}>
         <View style={styles.brandRow}>
           <View style={styles.brandBadge}>
@@ -164,7 +168,8 @@ export const DeviceBindingStep: React.FC<DeviceBindingStepProps> = ({ onFinish }
             <ArrowRight size={18} color="#0B1F33" />
           </View>
         </Pressable>
-      </View>
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -173,10 +178,13 @@ const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
     backgroundColor: '#071521',
-    justifyContent: 'space-between',
     paddingHorizontal: Spacing.four,
     paddingTop: Platform.OS === 'ios' ? 44 : 24,
     paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
   },
   topBar: {
     flexDirection: 'row',

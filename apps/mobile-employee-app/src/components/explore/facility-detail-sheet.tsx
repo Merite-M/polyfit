@@ -13,6 +13,7 @@ import {
   Pressable,
   ScrollView,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
@@ -65,6 +66,8 @@ export function FacilityDetailSheet({
   onClose,
 }: FacilityDetailSheetProps) {
   const { navigateToPassWithFacility } = useTabStore();
+  const { width: windowWidth } = useWindowDimensions();
+  const slideWidth = Math.min(windowWidth, 420);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [hoursExpanded, setHoursExpanded] = useState(false);
 
@@ -146,7 +149,7 @@ export function FacilityDetailSheet({
                 scrollEventThrottle={16}
               >
                 {photos.map((uri, idx) => (
-                  <View key={idx} style={styles.carouselSlide}>
+                  <View key={idx} style={[styles.carouselSlide, { width: slideWidth }]}>
                     <Image
                       source={{ uri }}
                       style={styles.carouselImage}
@@ -397,7 +400,6 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   carouselSlide: {
-    width: 420,
     height: 220,
   },
   carouselImage: {
@@ -650,7 +652,8 @@ const styles = StyleSheet.create({
     borderRadius: Radius.btn,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.06)',
-    width: '48%',
+    minWidth: '45%',
+    flex: 1,
   },
   amenityMatrixIcon: {
     width: 24,

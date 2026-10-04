@@ -449,10 +449,12 @@ const styles = StyleSheet.create({
   },
   perksRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
   perkChip: {
     flex: 1,
+    minWidth: 95,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,

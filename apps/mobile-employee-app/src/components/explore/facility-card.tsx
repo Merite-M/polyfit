@@ -443,6 +443,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    flexShrink: 1,
   },
   statusDot: {
     width: 7,
@@ -465,6 +466,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Palette.textMuted,
     fontWeight: '500',
+    flexShrink: 1,
   },
   statusTextOpen: {
     color: '#A7F3D0',

@@ -10,6 +10,7 @@ import {
   Text,
   TextInput,
   Pressable,
+  ScrollView,
   StyleSheet,
   ActivityIndicator,
   Animated,
@@ -111,7 +112,10 @@ export const WelcomeDomainStep: React.FC = () => {
 
   return (
     <View style={styles.screenContainer}>
-      {/* Top Header & Progress Stepper */}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Top Header & Progress Stepper */}
       <View style={styles.topBar}>
         <View style={styles.brandRow}>
           <View style={styles.brandBadge}>
@@ -272,7 +276,8 @@ export const WelcomeDomainStep: React.FC = () => {
             </View>
           )}
         </Pressable>
-      </View>
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -281,10 +286,13 @@ const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
     backgroundColor: '#071521',
-    justifyContent: 'space-between',
     paddingHorizontal: Spacing.four,
     paddingTop: Platform.OS === 'ios' ? 44 : 24,
     paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
   },
   topBar: {
     flexDirection: 'row',

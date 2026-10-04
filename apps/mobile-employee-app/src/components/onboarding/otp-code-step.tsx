@@ -10,6 +10,7 @@ import {
   Text,
   TextInput,
   Pressable,
+  ScrollView,
   StyleSheet,
   ActivityIndicator,
   Platform,
@@ -88,7 +89,10 @@ export const OtpCodeStep: React.FC = () => {
 
   return (
     <View style={styles.screenContainer}>
-      {/* Top Header & Progress Stepper */}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Top Header & Progress Stepper */}
       <View style={styles.topBar}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]}
@@ -210,7 +214,8 @@ export const OtpCodeStep: React.FC = () => {
             </View>
           )}
         </Pressable>
-      </View>
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -283,16 +288,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
+  },
   otpRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
     marginBottom: Spacing.four,
   },
   otpBox: {
-    width: 46,
-    height: 56,
-    minWidth: 0,
+    flex: 1,
+    maxWidth: 46,
+    minWidth: 32,
+    height: 52,
     backgroundColor: '#0D2235',
     borderRadius: Radius.md,
     borderWidth: 1.5,
