@@ -112,7 +112,9 @@ export const WelcomeDomainStep: React.FC = () => {
 
   return (
     <View style={styles.screenContainer}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Top Header & Progress Stepper */}
       <View style={styles.topBar}>
         <View style={styles.brandRow}>
