@@ -83,3 +83,43 @@ export interface BenefitActivationResult {
 }
 
 export type OnboardingStep = 'welcome' | 'otp' | 'subsidy' | 'permissions' | 'completed';
+
+export interface VerifiedVisitReceipt {
+  id: string;
+  providerName: string;
+  locationName: string;
+  address: string;
+  category: 'gym' | 'pool' | 'studio' | 'clinic' | 'wellness_center' | 'sports';
+  checkInAt: string;
+  verificationMethod: 'totp_qr' | 'plaque_scan' | 'manual_pin';
+  status: 'verified' | 'completed';
+  totpTokenHash?: string | null;
+  facilityCity?: string;
+}
+
+export interface BenefitUsageTelemetry {
+  tier: string;
+  name: string;
+  usedVisits: number;
+  maxMonthlyVisits: number | null;
+  remainingVisits: number | 'unlimited';
+  quotaPercentage: number;
+  resetDate: string;
+  daysRemainingInCycle: number;
+  isUnlimited: boolean;
+  subsidyPercentage: number;
+  coPayPercentage: number;
+  isFullySponsored: boolean;
+  allowedCategories: string[];
+}
+
+export interface EmployeeNotificationSettings {
+  checkInAlerts: boolean;
+  quotaLowAlerts: boolean;
+  networkAdditionsAlerts: boolean;
+}
+
+export interface BenefitPolicyFaq {
+  question: string;
+  answer: string;
+}

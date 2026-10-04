@@ -11,6 +11,9 @@ import {
   EmployeeProfile,
   AuthSession,
   OnboardingStep,
+  VerifiedVisitReceipt,
+  BenefitUsageTelemetry,
+  EmployeeNotificationSettings,
 } from '@/types/auth';
 import {
   verifyDomain,
@@ -18,6 +21,8 @@ import {
   requestAccess,
   verifyAccess,
   activateBenefit,
+  fetchEmployeeMe,
+  fetchEmployeeVisits,
 } from '@/services/api';
 
 // Safe SecureStore accessor with web fallback
@@ -74,6 +79,15 @@ const STORAGE_KEY_PROFILE = 'polyfit_employee_profile';
 const STORAGE_KEY_BENEFIT = 'polyfit_benefit_package';
 const STORAGE_KEY_ORG = 'polyfit_organization';
 const STORAGE_KEY_ACTIVATED = 'polyfit_benefit_activated';
+const STORAGE_KEY_TELEMETRY = 'polyfit_benefit_telemetry';
+const STORAGE_KEY_VISITS = 'polyfit_recent_visits';
+const STORAGE_KEY_NOTIFICATIONS = 'polyfit_notification_settings';
+
+const DEFAULT_NOTIFICATIONS: EmployeeNotificationSettings = {
+  checkInAlerts: true,
+  quotaLowAlerts: true,
+  networkAdditionsAlerts: false,
+};
 
 interface AuthState {
   step: OnboardingStep;
@@ -92,6 +106,12 @@ interface AuthState {
   error: string | null;
   demoOtp: string | null;
 
+  // PF-102 Profile & Benefit Telemetry
+  benefitTelemetry: BenefitUsageTelemetry | null;
+  recentVisits: VerifiedVisitReceipt[];
+  notificationSettings: EmployeeNotificationSettings;
+  isRefreshingProfile: boolean;
+
   // Actions
   setStep: (step: OnboardingStep) => void;
   setEmail: (email: string) => void;
@@ -106,6 +126,10 @@ interface AuthState {
   submitActivateBenefit: () => Promise<boolean>;
   setBiometrics: (enabled: boolean) => void;
   setLocationPermission: (granted: boolean) => void;
+
+  // Profile actions (PF-102)
+  refreshProfileAndVisits: () => Promise<void>;
+  updateNotificationSettings: (settings: Partial<EmployeeNotificationSettings>) => Promise<void>;
 
   loadDemoAccount: (orgType: 'bk' | 'techcorp') => Promise<void>;
   initializeSession: () => Promise<boolean>;
@@ -128,6 +152,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: false,
   error: null,
   demoOtp: null,
+
+  // PF-102 State
+  benefitTelemetry: null,
+  recentVisits: [],
+  notificationSettings: DEFAULT_NOTIFICATIONS,
+  isRefreshingProfile: false,
 
   setStep: (step) => set({ step, error: null }),
   setEmail: (email) => set({ email, error: null }),
@@ -288,8 +318,51 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ locationGranted: granted });
   },
 
+  refreshProfileAndVisits: async () => {
+    const { session, employee } = get();
+    set({ isRefreshingProfile: true });
+    try {
+      const [profileRes, visitsRes] = await Promise.all([
+        fetchEmployeeMe(session?.access_token, employee?.id),
+        fetchEmployeeVisits(session?.access_token, employee?.id),
+      ]);
+
+      if (profileRes?.telemetry) {
+        set({
+          benefitTelemetry: profileRes.telemetry,
+          employee: profileRes.employee || employee,
+          organization: profileRes.organization || get().organization,
+          benefit: profileRes.benefit || get().benefit,
+        });
+        await saveSecureItem(STORAGE_KEY_TELEMETRY, JSON.stringify(profileRes.telemetry));
+        if (profileRes.employee) {
+          await saveSecureItem(STORAGE_KEY_PROFILE, JSON.stringify(profileRes.employee));
+        }
+      }
+
+      if (visitsRes && Array.isArray(visitsRes)) {
+        set({ recentVisits: visitsRes });
+        await saveSecureItem(STORAGE_KEY_VISITS, JSON.stringify(visitsRes));
+      }
+    } catch (err) {
+      console.warn('[refreshProfileAndVisits] Offline or fetch failed:', err);
+    } finally {
+      set({ isRefreshingProfile: false });
+    }
+  },
+
+  updateNotificationSettings: async (settings: Partial<EmployeeNotificationSettings>) => {
+    const updated = { ...get().notificationSettings, ...settings };
+    set({ notificationSettings: updated });
+    await saveSecureItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(updated));
+  },
+
   loadDemoAccount: async (orgType: 'bk' | 'techcorp') => {
     set({ isLoading: true, error: null });
+
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const daysRem = Math.max(1, Math.ceil((nextMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 
     if (orgType === 'bk') {
       const bkOrg: CorporateOrganization = {
@@ -318,12 +391,68 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         tier: 'standard',
         status: 'active',
       };
+      const bkTelemetry: BenefitUsageTelemetry = {
+        tier: 'standard',
+        name: 'Bank of Kigali Standard Corporate Tier',
+        usedVisits: 8,
+        maxMonthlyVisits: 12,
+        remainingVisits: 4,
+        quotaPercentage: 67,
+        resetDate: nextMonth.toISOString(),
+        daysRemainingInCycle: daysRem,
+        isUnlimited: false,
+        subsidyPercentage: 100,
+        coPayPercentage: 0,
+        isFullySponsored: true,
+        allowedCategories: ['gym', 'pool', 'studio', 'clinic', 'wellness_center'],
+      };
+
+      const bkVisits: VerifiedVisitReceipt[] = [
+        {
+          id: 'vis_bk_1',
+          providerName: 'Waka Fitness',
+          locationName: 'Waka Fitness Kimihurura',
+          address: 'KG 7 Ave, Kigali Heights 3rd Floor',
+          category: 'gym',
+          checkInAt: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
+          verificationMethod: 'totp_qr',
+          status: 'verified',
+          totpTokenHash: '8f2a1b9c3e...44d',
+          facilityCity: 'Kimihurura, Kigali',
+        },
+        {
+          id: 'vis_bk_2',
+          providerName: 'Cercle Sportif de Kigali',
+          locationName: 'Olympic Swimming Facility',
+          address: 'KN 3 Ave, Kiyovu',
+          category: 'pool',
+          checkInAt: new Date(Date.now() - 1000 * 60 * 60 * 64).toISOString(),
+          verificationMethod: 'plaque_scan',
+          status: 'verified',
+          totpTokenHash: 'a1b2c3d4e5...88a',
+          facilityCity: 'Kiyovu, Kigali',
+        },
+        {
+          id: 'vis_bk_3',
+          providerName: 'Cali Fitness',
+          locationName: 'Cali Club Nyarutarama',
+          address: 'KG 9 Ave, Nyarutarama Tennis Club',
+          category: 'gym',
+          checkInAt: new Date(Date.now() - 1000 * 60 * 60 * 140).toISOString(),
+          verificationMethod: 'totp_qr',
+          status: 'verified',
+          totpTokenHash: '3d9e1f2a4b...55c',
+          facilityCity: 'Nyarutarama, Kigali',
+        },
+      ];
 
       set({
         email: 'jean.mugisha@bk.rw',
         organization: bkOrg,
         benefit: bkBenefit,
         employee: bkEmployee,
+        benefitTelemetry: bkTelemetry,
+        recentVisits: bkVisits,
         session: { access_token: 'demo_bk_token', token_type: 'bearer', expires_in: 86400 },
         demoOtp: '123456',
         step: 'otp',
@@ -356,12 +485,56 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         tier: 'standard',
         status: 'active',
       };
+      const tcTelemetry: BenefitUsageTelemetry = {
+        tier: 'standard',
+        name: 'TechCorp Standard Wellness Plan',
+        usedVisits: 5,
+        maxMonthlyVisits: 8,
+        remainingVisits: 3,
+        quotaPercentage: 63,
+        resetDate: nextMonth.toISOString(),
+        daysRemainingInCycle: daysRem,
+        isUnlimited: false,
+        subsidyPercentage: 85,
+        coPayPercentage: 15,
+        isFullySponsored: false,
+        allowedCategories: ['gym', 'pool', 'studio'],
+      };
+
+      const tcVisits: VerifiedVisitReceipt[] = [
+        {
+          id: 'vis_tc_1',
+          providerName: 'Waka Fitness',
+          locationName: 'Waka Fitness Kimihurura',
+          address: 'KG 7 Ave, Kigali Heights 3rd Floor',
+          category: 'gym',
+          checkInAt: new Date(Date.now() - 1000 * 60 * 60 * 22).toISOString(),
+          verificationMethod: 'totp_qr',
+          status: 'verified',
+          totpTokenHash: '2c4e6a8b...12a',
+          facilityCity: 'Kimihurura, Kigali',
+        },
+        {
+          id: 'vis_tc_2',
+          providerName: 'Zenith Yoga Studio',
+          locationName: 'Zenith Wellness Sanctuary',
+          address: 'KG 549 St, Gacuriro',
+          category: 'studio',
+          checkInAt: new Date(Date.now() - 1000 * 60 * 60 * 96).toISOString(),
+          verificationMethod: 'plaque_scan',
+          status: 'verified',
+          totpTokenHash: '6f8a9b1c...99d',
+          facilityCity: 'Gacuriro, Kigali',
+        },
+      ];
 
       set({
         email: 'jean.mugabo@techcorp.rw',
         organization: tcOrg,
         benefit: tcBenefit,
         employee: tcEmployee,
+        benefitTelemetry: tcTelemetry,
+        recentVisits: tcVisits,
         session: { access_token: 'demo_tc_token', token_type: 'bearer', expires_in: 86400 },
         demoOtp: '123456',
         step: 'otp',
@@ -378,6 +551,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const rawProfile = await getSecureItem(STORAGE_KEY_PROFILE);
       const rawBenefit = await getSecureItem(STORAGE_KEY_BENEFIT);
       const rawOrg = await getSecureItem(STORAGE_KEY_ORG);
+      const rawTelemetry = await getSecureItem(STORAGE_KEY_TELEMETRY);
+      const rawVisits = await getSecureItem(STORAGE_KEY_VISITS);
+      const rawNotifs = await getSecureItem(STORAGE_KEY_NOTIFICATIONS);
 
       if (token && isActivated === 'true' && rawProfile) {
         set({
@@ -387,8 +563,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           organization: rawOrg ? JSON.parse(rawOrg) : null,
           offlineTokenSeed: seed,
           isBenefitActivated: true,
+          benefitTelemetry: rawTelemetry ? JSON.parse(rawTelemetry) : null,
+          recentVisits: rawVisits ? JSON.parse(rawVisits) : [],
+          notificationSettings: rawNotifs ? JSON.parse(rawNotifs) : DEFAULT_NOTIFICATIONS,
           step: 'completed',
         });
+
+        // Background non-blocking sync with backend API
+        get().refreshProfileAndVisits().catch(() => {});
         return true;
       }
       return false;
@@ -405,6 +587,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await deleteSecureItem(STORAGE_KEY_BENEFIT);
     await deleteSecureItem(STORAGE_KEY_ORG);
     await deleteSecureItem(STORAGE_KEY_ACTIVATED);
+    await deleteSecureItem(STORAGE_KEY_TELEMETRY);
+    await deleteSecureItem(STORAGE_KEY_VISITS);
+    await deleteSecureItem(STORAGE_KEY_NOTIFICATIONS);
 
     set({
       step: 'welcome',
@@ -416,6 +601,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       session: null,
       offlineTokenSeed: null,
       isBenefitActivated: false,
+      benefitTelemetry: null,
+      recentVisits: [],
+      notificationSettings: DEFAULT_NOTIFICATIONS,
       demoOtp: null,
       error: null,
     });

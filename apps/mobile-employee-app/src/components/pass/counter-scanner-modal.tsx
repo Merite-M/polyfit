@@ -103,7 +103,8 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
+      <View style={styles.modalBackdrop}>
+        <View style={styles.container}>
         {/* Top Header */}
         <View style={styles.header}>
           <Pressable style={styles.closeBtn} onPress={onClose}>
@@ -188,13 +189,22 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
           </View>
         </ScrollView>
       </View>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: '#050D15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   container: {
     flex: 1,
+    width: '100%',
+    maxWidth: 400,
     backgroundColor: '#071521',
   },
   scrollContent: {
