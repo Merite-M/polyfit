@@ -1,5 +1,3 @@
-
-
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -15,12 +13,12 @@ export default function OnboardingScreen() {
 
   useEffect(() => {
     if (isBenefitActivated && step === 'completed') {
-      router.replace('/');
+      router.replace('/index');
     }
   }, [isBenefitActivated, step, router]);
 
   const handleFinishOnboarding = () => {
-    router.replace('/');
+    router.replace('/index');
   };
 
   return (
@@ -39,4 +37,3 @@ const styles = StyleSheet.create({
     backgroundColor: '#071521',
   },
 });
-

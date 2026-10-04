@@ -250,7 +250,18 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
     maxHeight: '85%',
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
-    boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.6)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.6)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -8 },
+        shadowOpacity: 0.5,
+        shadowRadius: 16,
+        elevation: 16,
+      },
+    }),
   },
   handleBar: {
     width: 38,

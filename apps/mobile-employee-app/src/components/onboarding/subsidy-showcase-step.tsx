@@ -284,7 +284,18 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(40, 209, 124, 0.35)',
     padding: Spacing.four,
     marginBottom: Spacing.three,
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(40, 209, 124, 0.12)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(40, 209, 124, 0.12)',
+      },
+      default: {
+        shadowColor: Palette.green,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+        elevation: 8,
+      },
+    }),
   },
   cardHeader: {
     flexDirection: 'row',
@@ -515,11 +526,30 @@ const styles = StyleSheet.create({
     borderRadius: Radius.btn,
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 4px 14px rgba(40, 209, 124, 0.35)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 4px 14px rgba(40, 209, 124, 0.35)',
+      },
+      default: {
+        shadowColor: Palette.green,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 7,
+        elevation: 6,
+      },
+    }),
   },
   continueButtonDisabled: {
     opacity: 0.45,
-    boxShadow: 'none',
+    ...Platform.select({
+      web: {
+        boxShadow: 'none',
+      },
+      default: {
+        elevation: 0,
+        shadowOpacity: 0,
+      },
+    }),
   },
   continueButtonContent: {
     flexDirection: 'row',

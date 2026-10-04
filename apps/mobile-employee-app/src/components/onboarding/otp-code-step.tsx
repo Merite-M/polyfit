@@ -321,7 +321,18 @@ const styles = StyleSheet.create({
   },
   otpBoxFocused: {
     borderColor: Palette.green,
-    boxShadow: '0 0 12px rgba(40, 209, 124, 0.25)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 0 12px rgba(40, 209, 124, 0.25)',
+      },
+      default: {
+        shadowColor: Palette.green,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 6,
+        elevation: 3,
+      },
+    }),
   },
 
   demoChip: {
@@ -389,11 +400,30 @@ const styles = StyleSheet.create({
     borderRadius: Radius.btn,
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 4px 14px rgba(40, 209, 124, 0.35)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 4px 14px rgba(40, 209, 124, 0.35)',
+      },
+      default: {
+        shadowColor: Palette.green,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 7,
+        elevation: 6,
+      },
+    }),
   },
   continueButtonDisabled: {
     opacity: 0.45,
-    boxShadow: 'none',
+    ...Platform.select({
+      web: {
+        boxShadow: 'none',
+      },
+      default: {
+        elevation: 0,
+        shadowOpacity: 0,
+      },
+    }),
   },
   continueButtonContent: {
     flexDirection: 'row',

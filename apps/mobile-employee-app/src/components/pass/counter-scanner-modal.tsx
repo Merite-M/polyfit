@@ -271,7 +271,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(11, 31, 51, 0.65)',
     borderWidth: 1,
     borderColor: 'rgba(40, 209, 124, 0.25)',
-    boxShadow: '0 0 40px rgba(0, 0, 0, 0.6)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 0 40px rgba(0, 0, 0, 0.6)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 20,
+        elevation: 8,
+      },
+    }),
   },
   corner: {
     position: 'absolute',
@@ -315,7 +326,18 @@ const styles = StyleSheet.create({
     width: '90%',
     height: 2,
     backgroundColor: Palette.green,
-    boxShadow: '0 0 12px #28D17C',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 0 12px #28D17C',
+      },
+      default: {
+        shadowColor: Palette.green,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.8,
+        shadowRadius: 6,
+        elevation: 4,
+      },
+    }),
     top: '50%',
   },
   instructionText: {

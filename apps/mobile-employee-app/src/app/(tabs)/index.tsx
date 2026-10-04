@@ -5,7 +5,7 @@
  * Compliant with Stitch Design Center, Apple HIG, Reanimated physics, and aggregator standards.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,11 +14,15 @@ import {
   Platform,
   Alert,
   Pressable,
+  RefreshControl,
 } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { MapPin, X } from 'lucide-react-native';
 import { Palette, Spacing, Radius } from '@/constants/theme';
 import { useAuthStore } from '@/stores/auth-store';
 import { useTabStore } from '@/stores/tab-store';
+import { ScreenContainer } from '@/components/common/screen-container';
 import { DynamicQrPass } from '@/components/pass/dynamic-qr-pass';
 import { PassVerificationStatus } from '@/components/pass/pass-verification-status';
 import { CounterScannerModal, ScannedPlaqueData } from '@/components/pass/counter-scanner-modal';
@@ -31,15 +35,21 @@ export default function AccessPassScreen() {
     employee,
     organization,
     benefit,
+    benefitTelemetry,
     offlineTokenSeed,
     session,
+    initializeSession,
+    refreshProfileAndVisits,
+    recordSuccessfulCheckIn,
   } = useAuthStore();
 
   const { preselectedFacility, clearPreselectedFacility } = useTabStore();
+  const params = useLocalSearchParams<{ facilityId?: string; facilityName?: string }>();
 
   // Modal States
   const [scannerVisible, setScannerVisible] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [confirmedVisit, setConfirmedVisit] = useState<{
     facilityName: string;
     neighborhood: string;
@@ -55,20 +65,10 @@ export default function AccessPassScreen() {
   const [isQuotaExhausted, setIsQuotaExhausted] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
 
-  // Remaining visits calculation
+  // Centralized visits from store (Fix A1)
   const monthlyVisits = benefit?.max_monthly_visits || 12;
-  const [remainingVisits, setRemainingVisits] = useState<number | string>(
-    isQuotaExhausted ? 0 : 8
-  );
-
-  // Sync remaining visits with quota toggle
-  useEffect(() => {
-    if (isQuotaExhausted) {
-      setRemainingVisits(0);
-    } else {
-      setRemainingVisits(8);
-    }
-  }, [isQuotaExhausted]);
+  const storeRemaining = benefitTelemetry?.remainingVisits ?? 8;
+  const remainingVisits = isQuotaExhausted ? 0 : storeRemaining;
 
   // Live cooldown countdown timer
   useEffect(() => {
@@ -98,12 +98,31 @@ export default function AccessPassScreen() {
     }
   }, [offlineTokenSeed, employee?.id, organization?.id]);
 
+  // Pull-to-refresh on Pass screen (Fix H2)
+  const onRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      }
+      await Promise.all([
+        initializeSession().catch(() => {}),
+        refreshProfileAndVisits().catch(() => {}),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [initializeSession, refreshProfileAndVisits]);
+
   // Handle Modality B Scan Success (from Camera or Plaque Simulator)
   const handlePlaqueScanned = async (plaque: ScannedPlaqueData) => {
     setScannerVisible(false);
 
     // 1. Geofence rejection check
     if (isOutOfGeofence) {
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      }
       const msg = `Geofence check failed: You are 450m away from ${plaque.facilityName}. Maximum allowed access radius is 200m.`;
       if (Platform.OS === 'web') {
         alert(msg);
@@ -115,6 +134,9 @@ export default function AccessPassScreen() {
 
     // 2. Cooldown rejection check
     if (inCooldown) {
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      }
       const msg = `Anti-passback cooldown active: Previous visit verified. Re-entry allowed in ${Math.ceil(cooldownRemainingSeconds / 60)} minutes.`;
       if (Platform.OS === 'web') {
         alert(msg);
@@ -126,6 +148,9 @@ export default function AccessPassScreen() {
 
     // 3. Quota exhausted rejection check
     if (isQuotaExhausted || remainingVisits === 0) {
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      }
       const msg = `Monthly allowance reached: You have utilized all ${monthlyVisits}/${monthlyVisits} visits for this cycle. Refreshes on Nov 1.`;
       if (Platform.OS === 'web') {
         alert(msg);
@@ -135,9 +160,29 @@ export default function AccessPassScreen() {
       return;
     }
 
-    // 4. Handle Offline Check-in Stash vs. Online API Post
+    // 4. Calculate new remaining and create receipt
     const newRemaining = typeof remainingVisits === 'number' ? Math.max(0, remainingVisits - 1) : remainingVisits;
-    setRemainingVisits(newRemaining);
+    const nowIso = new Date().toISOString();
+
+    const visitReceipt = {
+      id: `vis_${Date.now()}`,
+      providerName: plaque.facilityName,
+      locationName: plaque.facilityName,
+      address: `${plaque.neighborhood}, Kigali`,
+      category: 'gym' as const,
+      checkInAt: nowIso,
+      verificationMethod: 'plaque_scan' as const,
+      status: 'verified' as const,
+      totpTokenHash: 'verified_sig_' + Math.random().toString(36).substring(2, 9),
+      facilityCity: `${plaque.neighborhood}, Kigali`,
+    };
+
+    // Central store sync (Fix A1)
+    recordSuccessfulCheckIn(visitReceipt);
+
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    }
 
     if (isOffline) {
       // Stash in encrypted offline vault
@@ -145,7 +190,7 @@ export default function AccessPassScreen() {
         employeeId: employee?.id || 'demo-emp-id',
         providerLocationId: plaque.providerLocationId,
         providerLocationName: plaque.facilityName,
-        scannedAt: new Date().toISOString(),
+        scannedAt: nowIso,
         totpToken: '782914',
         lat: plaque.lat,
         lng: plaque.lng,
@@ -155,7 +200,7 @@ export default function AccessPassScreen() {
         facilityName: plaque.facilityName,
         neighborhood: plaque.neighborhood,
         remainingVisits: newRemaining,
-        verifiedAt: new Date().toISOString(),
+        verifiedAt: nowIso,
         isOfflineSync: true,
       });
       setSuccessModalVisible(true);
@@ -194,7 +239,7 @@ export default function AccessPassScreen() {
       facilityName: plaque.facilityName,
       neighborhood: plaque.neighborhood,
       remainingVisits: newRemaining,
-      verifiedAt: new Date().toISOString(),
+      verifiedAt: nowIso,
       isOfflineSync: false,
     });
     setSuccessModalVisible(true);
@@ -207,8 +252,15 @@ export default function AccessPassScreen() {
   const tierName = benefit?.name || 'Standard Corporate Tier';
   const isFullySponsored = benefit?.is_fully_sponsored ?? true;
 
+  const targetFacility = preselectedFacility || (params.facilityName ? {
+    id: params.facilityId || 'target-facility',
+    location_name: params.facilityName,
+    neighborhood: 'Kigali',
+    distance_meters: 250,
+  } as any : null);
+
   return (
-    <View style={styles.container}>
+    <ScreenContainer edges={['top', 'left', 'right']}>
       {/* Top Brand Header */}
       <View style={styles.topHeader}>
         <View style={styles.brandRow}>
@@ -223,7 +275,7 @@ export default function AccessPassScreen() {
           </View>
         </View>
 
-        <View style={styles.statusBadge}>
+        <View style={styles.statusBadge} accessibilityRole="text" accessibilityLabel="Active Pass status">
           <View style={styles.statusPulse} />
           <Text style={styles.statusBadgeText}>ACTIVE PASS</Text>
         </View>
@@ -233,25 +285,37 @@ export default function AccessPassScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={Palette.green}
+            colors={[Palette.green]}
+          />
+        }
       >
         {/* Preselected Facility Target Banner (From Tab 2 Check In Here CTA) */}
-        {preselectedFacility && (
+        {targetFacility && (
           <View style={styles.selectedFacilityBanner}>
             <View style={styles.selectedFacilityIcon}>
               <MapPin size={15} color={Palette.green} />
             </View>
             <View style={styles.selectedFacilityInfo}>
               <Text style={styles.selectedFacilityTitle} numberOfLines={1}>
-                Targeting: {preselectedFacility.location_name}
+                Targeting: {targetFacility.location_name}
               </Text>
               <Text style={styles.selectedFacilitySub}>
-                {preselectedFacility.neighborhood} • Present dynamic QR to receptionist
+                {targetFacility.neighborhood} • Present dynamic QR to receptionist
               </Text>
             </View>
             <Pressable
               style={styles.selectedFacilityDismiss}
-              onPress={clearPreselectedFacility}
+              onPress={() => {
+                clearPreselectedFacility();
+              }}
               hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss targeted facility banner"
             >
               <X size={15} color={Palette.textMuted} />
             </Pressable>
@@ -261,8 +325,8 @@ export default function AccessPassScreen() {
         {/* Pre-Check Verification Engine Status Banners */}
         <PassVerificationStatus
           isOutOfGeofence={isOutOfGeofence}
-          distanceMeters={preselectedFacility?.distance_meters || 450}
-          targetFacilityName={preselectedFacility?.location_name || 'Cercle Sportif Olympic Pool'}
+          distanceMeters={targetFacility?.distance_meters || 450}
+          targetFacilityName={targetFacility?.location_name || 'Cercle Sportif Olympic Pool'}
           inCooldown={inCooldown}
           cooldownRemainingSeconds={cooldownRemainingSeconds}
           isQuotaExhausted={isQuotaExhausted}
@@ -285,7 +349,12 @@ export default function AccessPassScreen() {
           isFullySponsored={isFullySponsored}
           offlineSeed={offlineTokenSeed}
           isOffline={isOffline}
-          onOpenScanner={() => setScannerVisible(true)}
+          onOpenScanner={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+            }
+            setScannerVisible(true);
+          }}
         />
 
         {/* Developer & Co-founder Simulator Toolbar */}
@@ -325,17 +394,11 @@ export default function AccessPassScreen() {
           isOfflineSync={confirmedVisit.isOfflineSync}
         />
       )}
-    </View>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#071521',
-    paddingHorizontal: Spacing.four,
-    paddingTop: Platform.OS === 'ios' ? 44 : (Platform.OS === 'web' ? 6 : 20),
-  },
   scrollView: {
     flex: 1,
   },
@@ -361,7 +424,7 @@ const styles = StyleSheet.create({
   brandBadgeText: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#0B1F33', // Midnight Navy on Electric Green (contrast rule)
+    color: '#0B1F33',
   },
   brandTitle: {
     fontSize: 16,
@@ -400,7 +463,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: Spacing.eight,
   },
-
   selectedFacilityBanner: {
     flexDirection: 'row',
     alignItems: 'center',

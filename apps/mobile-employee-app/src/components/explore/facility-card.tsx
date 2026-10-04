@@ -9,6 +9,7 @@ import {
   Text,
   StyleSheet,
   Pressable,
+  Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
 import {
@@ -258,7 +259,18 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.08)',
     overflow: 'hidden',
     marginBottom: Spacing.three,
-    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 4,
+      },
+    }),
   },
   cardPressed: {
     opacity: 0.95,
@@ -453,11 +465,33 @@ const styles = StyleSheet.create({
   },
   statusDotOpen: {
     backgroundColor: Palette.green,
-    boxShadow: '0 0 6px rgba(40, 209, 124, 0.6)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 0 6px rgba(40, 209, 124, 0.6)',
+      },
+      default: {
+        shadowColor: Palette.green,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 3,
+        elevation: 2,
+      },
+    }),
   },
   statusDotClosing: {
     backgroundColor: '#F59E0B',
-    boxShadow: '0 0 6px rgba(245, 158, 11, 0.6)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 0 6px rgba(245, 158, 11, 0.6)',
+      },
+      default: {
+        shadowColor: '#F59E0B',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 3,
+        elevation: 2,
+      },
+    }),
   },
   statusDotClosed: {
     backgroundColor: '#EF4444',

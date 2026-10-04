@@ -377,7 +377,18 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
     overflow: 'hidden',
     position: 'relative',
-    boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.7)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.7)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -10 },
+        shadowOpacity: 0.5,
+        shadowRadius: 20,
+        elevation: 16,
+      },
+    }),
   },
   floatingCloseBtn: {
     position: 'absolute',
@@ -392,7 +403,18 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.4,
+        shadowRadius: 4,
+        elevation: 3,
+      },
+    }),
   },
 
   scrollContent: {
@@ -693,7 +715,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     alignItems: 'center',
-    boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.5)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.5)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 10,
+        elevation: 8,
+      },
+    }),
   },
   directionsBtn: {
     flex: 1,
@@ -721,7 +754,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    boxShadow: '0 4px 14px rgba(40, 209, 124, 0.35)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 4px 14px rgba(40, 209, 124, 0.35)',
+      },
+      default: {
+        shadowColor: Palette.green,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 8,
+        elevation: 6,
+      },
+    }),
   },
   checkInCtaText: {
     fontSize: 14,

@@ -315,7 +315,18 @@ const styles = StyleSheet.create({
     borderRadius: Radius.btn,
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 4px 14px rgba(40, 209, 124, 0.35)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 4px 14px rgba(40, 209, 124, 0.35)',
+      },
+      default: {
+        shadowColor: Palette.green,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 7,
+        elevation: 6,
+      },
+    }),
   },
   continueButtonContent: {
     flexDirection: 'row',

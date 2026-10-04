@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { AppModal } from '@/components/common/app-modal';
 import {
   ShieldCheck,
@@ -168,7 +168,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(40, 209, 124, 0.3)',
     gap: Spacing.three,
-    boxShadow: '0 20px 25px -5px rgba(11, 31, 51, 0.4)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 20px 25px -5px rgba(11, 31, 51, 0.4)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.4,
+        shadowRadius: 15,
+        elevation: 8,
+      },
+    }),
   },
   header: {
     flexDirection: 'row',

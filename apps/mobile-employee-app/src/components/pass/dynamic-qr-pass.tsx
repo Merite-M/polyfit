@@ -285,7 +285,18 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.35,
+        shadowRadius: 15,
+        elevation: 8,
+      },
+    }),
   },
 
   cardHeader: {
@@ -505,7 +516,18 @@ const styles = StyleSheet.create({
     borderRadius: Radius.btn,
     padding: Spacing.three,
     gap: 12,
-    boxShadow: '0 4px 16px rgba(40, 209, 124, 0.3)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 4px 16px rgba(40, 209, 124, 0.3)',
+      },
+      default: {
+        shadowColor: Palette.green,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
+      },
+    }),
   },
   scanBtnIconCircle: {
     width: 38,

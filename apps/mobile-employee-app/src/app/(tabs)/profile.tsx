@@ -14,13 +14,16 @@ import {
   Platform,
   Pressable,
 } from 'react-native';
+import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { RefreshCw } from 'lucide-react-native';
-import { Palette, Spacing, Radius } from '@/constants/theme';
+import { Palette, Spacing } from '@/constants/theme';
 import { useAuthStore } from '@/stores/auth-store';
 import { useTabStore } from '@/stores/tab-store';
 import { useDiscoveryStore } from '@/stores/discovery-store';
 import { ProviderCategory } from '@/types/discovery';
 import { VerifiedVisitReceipt } from '@/types/auth';
+import { ScreenContainer } from '@/components/common/screen-container';
 
 // Subcomponents
 import { BeneficiaryHeader } from '@/components/profile/beneficiary-header';
@@ -31,6 +34,7 @@ import { SupportModal } from '@/components/profile/support-modal';
 import { SettingsSection } from '@/components/profile/settings-section';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const {
     employee,
     organization,
@@ -59,17 +63,28 @@ export default function ProfileScreen() {
 
   // Handle category chip click -> deep-link to Tab 2 (Explore)
   const handleSelectCategory = (category: string) => {
+    if (Platform.OS !== 'web') {
+      Haptics.selectionAsync().catch(() => {});
+    }
     setSelectedCategory(category as ProviderCategory);
     setActiveTab('explore');
+    router.push('/(tabs)/explore' as any);
   };
 
   // Handle open pass click from empty state -> deep-link to Tab 1 (Pass)
   const handleOpenPass = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.selectionAsync().catch(() => {});
+    }
     setActiveTab('pass');
+    router.push('/(tabs)' as any);
   };
 
   // Handle visit selection -> open verified receipt modal
   const handleSelectVisit = (visit: VerifiedVisitReceipt) => {
+    if (Platform.OS !== 'web') {
+      Haptics.selectionAsync().catch(() => {});
+    }
     setSelectedVisit(visit);
     setIsReceiptModalVisible(true);
   };
@@ -79,7 +94,7 @@ export default function ProfileScreen() {
   const employeeName = employee?.full_name || 'Jean Mugisha';
 
   return (
-    <View style={styles.container}>
+    <ScreenContainer edges={['top', 'left', 'right']}>
       {/* Top Navigation Bar Header */}
       <View style={styles.topHeader}>
         <View style={styles.headerTitleColumn}>
@@ -92,9 +107,16 @@ export default function ProfileScreen() {
             styles.refreshBtn,
             pressed && { opacity: 0.7, transform: [{ rotate: '45deg' }] },
           ]}
-          onPress={() => refreshProfileAndVisits()}
+          onPress={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            }
+            refreshProfileAndVisits();
+          }}
           disabled={isRefreshingProfile}
           hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Refresh profile and visit telemetry"
         >
           <RefreshCw
             size={16}
@@ -138,9 +160,19 @@ export default function ProfileScreen() {
           settings={notificationSettings}
           currentOrgDomain={orgDomain}
           onUpdateSettings={updateNotificationSettings}
-          onOpenSupport={() => setIsSupportModalVisible(true)}
+          onOpenSupport={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            }
+            setIsSupportModalVisible(true);
+          }}
           onSwitchTenant={loadDemoAccount}
-          onLogout={logout}
+          onLogout={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+            }
+            logout();
+          }}
         />
       </ScrollView>
 
@@ -162,17 +194,11 @@ export default function ProfileScreen() {
         organizationName={orgName}
         onClose={() => setIsSupportModalVisible(false)}
       />
-    </View>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#071521',
-    paddingHorizontal: Spacing.four,
-    paddingTop: Platform.OS === 'ios' ? 50 : 24,
-  },
   topHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -183,14 +209,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
     color: '#FFFFFF',
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
   },
   headerSub: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: Palette.textSecondary,
     marginTop: 2,
   },
   refreshBtn: {
@@ -204,7 +230,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   scrollContent: {
+    paddingBottom: Spacing.eight,
     gap: Spacing.three,
-    paddingBottom: Platform.OS === 'ios' ? 90 : 80,
   },
 });

@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Linking, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Linking, ScrollView, Platform } from 'react-native';
 import { AppModal } from '@/components/common/app-modal';
 import {
   MessageSquare,
@@ -210,7 +210,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderBottomWidth: 0,
     borderColor: 'rgba(255, 255, 255, 0.1)',
-    boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.6)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.6)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -8 },
+        shadowOpacity: 0.6,
+        shadowRadius: 32,
+        elevation: 16,
+      },
+    }),
   },
   header: {
     flexDirection: 'row',

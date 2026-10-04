@@ -111,7 +111,18 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     backgroundColor: '#1E293B',
     padding: 10,
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 25 },
+        shadowOpacity: 0.7,
+        shadowRadius: 25,
+        elevation: 20,
+      },
+    }),
   },
   deviceBezel: {
     flex: 1,

@@ -475,7 +475,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 0 10px rgba(40, 209, 124, 0.8)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 0 10px rgba(40, 209, 124, 0.8)',
+      },
+      default: {
+        shadowColor: Palette.green,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.8,
+        shadowRadius: 5,
+        elevation: 4,
+      },
+    }),
   },
   radarCenterDot: {
     width: 10,
@@ -513,7 +524,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.4)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 4px 10px rgba(0, 0, 0, 0.4)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 5,
+        elevation: 5,
+      },
+    }),
   },
   pinPointer: {
     width: 0,
@@ -566,7 +588,18 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 3,
+      },
+    }),
   },
   controlBtnActive: {
     borderColor: 'rgba(40, 209, 124, 0.4)',
@@ -590,7 +623,18 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(40, 209, 124, 0.3)',
     padding: 10,
     gap: 10,
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.5,
+        shadowRadius: 12,
+        elevation: 10,
+      },
+    }),
   },
   previewImage: {
     width: 60,

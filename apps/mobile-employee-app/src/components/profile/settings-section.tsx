@@ -124,67 +124,69 @@ export function SettingsSection({
         </View>
       </Pressable>
 
-      {/* 3. Multi-Tenant Demo Switcher (Collapsible for Testing) */}
-      <View style={styles.card}>
-        <Pressable
-          style={styles.collapsibleHeader}
-          onPress={() => setShowTenantSwitcher(!showTenantSwitcher)}
-        >
-          <View style={styles.cardHeader}>
-            <Layers size={15} color={Palette.teal} />
-            <Text style={styles.cardTitle}>Multi-Tenant Testing Switcher</Text>
-          </View>
-          {showTenantSwitcher ? (
-            <ChevronUp size={16} color={Palette.textMuted} />
-          ) : (
-            <ChevronDown size={16} color={Palette.textMuted} />
-          )}
-        </Pressable>
-
-        {showTenantSwitcher && (
-          <View style={styles.switcherContent}>
-            <Text style={styles.switcherSub}>
-              Switch between enrolled corporate accounts to test different subsidy models:
-            </Text>
-
-            <View style={styles.demoList}>
-              <Pressable
-                style={[
-                  styles.demoItem,
-                  currentOrgDomain === 'bk.rw' && styles.demoItemActive,
-                ]}
-                onPress={() => onSwitchTenant('bk')}
-              >
-                <Building2
-                  size={16}
-                  color={currentOrgDomain === 'bk.rw' ? Palette.green : Palette.textMuted}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.demoTitle}>Bank of Kigali</Text>
-                  <Text style={styles.demoDesc}>100% Fully Sponsored • 12 Visits/mo</Text>
-                </View>
-              </Pressable>
-
-              <Pressable
-                style={[
-                  styles.demoItem,
-                  currentOrgDomain === 'techcorp.rw' && styles.demoItemActive,
-                ]}
-                onPress={() => onSwitchTenant('techcorp')}
-              >
-                <Building2
-                  size={16}
-                  color={currentOrgDomain === 'techcorp.rw' ? Palette.green : Palette.textMuted}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.demoTitle}>TechCorp Rwanda</Text>
-                  <Text style={styles.demoDesc}>85% Corporate Subsidy • 8 Visits/mo</Text>
-                </View>
-              </Pressable>
+      {/* 3. Multi-Tenant Demo Switcher (Collapsible for Testing - Dev Only) */}
+      {(__DEV__ || process.env.NODE_ENV !== 'production') && (
+        <View style={styles.card}>
+          <Pressable
+            style={styles.collapsibleHeader}
+            onPress={() => setShowTenantSwitcher(!showTenantSwitcher)}
+          >
+            <View style={styles.cardHeader}>
+              <Layers size={15} color={Palette.teal} />
+              <Text style={styles.cardTitle}>Multi-Tenant Testing Switcher</Text>
             </View>
-          </View>
-        )}
-      </View>
+            {showTenantSwitcher ? (
+              <ChevronUp size={16} color={Palette.textMuted} />
+            ) : (
+              <ChevronDown size={16} color={Palette.textMuted} />
+            )}
+          </Pressable>
+
+          {showTenantSwitcher && (
+            <View style={styles.switcherContent}>
+              <Text style={styles.switcherSub}>
+                Switch between enrolled corporate accounts to test different subsidy models:
+              </Text>
+
+              <View style={styles.demoList}>
+                <Pressable
+                  style={[
+                    styles.demoItem,
+                    currentOrgDomain === 'bk.rw' && styles.demoItemActive,
+                  ]}
+                  onPress={() => onSwitchTenant('bk')}
+                >
+                  <Building2
+                    size={16}
+                    color={currentOrgDomain === 'bk.rw' ? Palette.green : Palette.textMuted}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.demoTitle}>Bank of Kigali</Text>
+                    <Text style={styles.demoDesc}>100% Fully Sponsored • 12 Visits/mo</Text>
+                  </View>
+                </Pressable>
+
+                <Pressable
+                  style={[
+                    styles.demoItem,
+                    currentOrgDomain === 'techcorp.rw' && styles.demoItemActive,
+                  ]}
+                  onPress={() => onSwitchTenant('techcorp')}
+                >
+                  <Building2
+                    size={16}
+                    color={currentOrgDomain === 'techcorp.rw' ? Palette.green : Palette.textMuted}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.demoTitle}>TechCorp Rwanda</Text>
+                    <Text style={styles.demoDesc}>85% Corporate Subsidy • 8 Visits/mo</Text>
+                  </View>
+                </Pressable>
+              </View>
+            </View>
+          )}
+        </View>
+      )}
 
       {/* 4. Secure Sign Out CTA */}
       <Pressable

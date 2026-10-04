@@ -40,6 +40,11 @@ export const DemoSimulationBar: React.FC<DemoSimulationBarProps> = ({
 }) => {
   const [expanded, setExpanded] = useState(false);
 
+  // Strictly guard in production builds unless __DEV__ flag is active
+  if (process.env.NODE_ENV === 'production' && !__DEV__) {
+    return null;
+  }
+
   return (
     <View style={styles.container}>
       <Pressable

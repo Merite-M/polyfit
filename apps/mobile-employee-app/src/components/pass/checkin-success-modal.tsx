@@ -201,7 +201,18 @@ const styles = StyleSheet.create({
     backgroundColor: Palette.green,
     justifyContent: 'center',
     alignItems: 'center',
-    boxShadow: '0 0 30px rgba(40, 209, 124, 0.5)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 0 30px rgba(40, 209, 124, 0.5)',
+      },
+      default: {
+        shadowColor: Palette.green,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 15,
+        elevation: 8,
+      },
+    }),
   },
 
   headline: {
@@ -226,7 +237,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     padding: Spacing.four,
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
+        elevation: 8,
+      },
+    }),
     marginBottom: Spacing.four,
   },
   beneficiaryHeader: {
@@ -322,7 +344,18 @@ const styles = StyleSheet.create({
     borderRadius: Radius.btn,
     justifyContent: 'center',
     alignItems: 'center',
-    boxShadow: '0 4px 16px rgba(40, 209, 124, 0.35)',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 4px 16px rgba(40, 209, 124, 0.35)',
+      },
+      default: {
+        shadowColor: Palette.green,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 8,
+        elevation: 6,
+      },
+    }),
   },
   doneBtnText: {
     fontSize: 15,
