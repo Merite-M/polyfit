@@ -63,7 +63,7 @@ export function getCategoryColor(category: ProviderCategory): string {
 export function getCategoryLabel(category: ProviderCategory): string {
   switch (category) {
     case 'gym':
-      return 'Gym & Weights';
+      return 'Strength Training';
     case 'pool':
       return 'Swimming Pool';
     case 'studio':

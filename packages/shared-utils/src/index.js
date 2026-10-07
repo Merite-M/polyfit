@@ -1,133 +1,9 @@
-const crypto = require('crypto');
-
 /**
- * Calculates live occupancy for a given provider location within the auto-checkout window.
- * @param {Object} supabaseClient - Configured Supabase client
- * @param {string} providerLocationId - Provider location UUID
- * @param {number} [autoCheckoutMinutes=120] - Time window in minutes
- * @returns {Promise<number>} - Active occupancy count
+ * PolyFit Shared Utilities
+ * 
+ * This package contains utility functions shared across the monorepo.
+ * Only include functions that are actively used by multiple packages.
  */
-async function getLiveOccupancy(supabaseClient, providerLocationId, autoCheckoutMinutes = 120) {
-  if (!supabaseClient || !providerLocationId) return 0;
-  try {
-    const windowStart = new Date(Date.now() - autoCheckoutMinutes * 60 * 1000).toISOString();
-    const { count, error } = await supabaseClient
-      .from('visits')
-      .select('id', { count: 'exact', head: true })
-      .eq('provider_location_id', providerLocationId)
-      .in('status', ['approved', 'warning'])
-      .is('checkout_at', null)
-      .gte('created_at', windowStart);
-
-    if (error) {
-      console.error('[getLiveOccupancy] error:', error);
-      return 0;
-    }
-    return count || 0;
-  } catch (err) {
-    console.error('[getLiveOccupancy] exception:', err);
-    return 0;
-  }
-}
-
-/**
- * Validates whether a user belongs to an organization and optionally possesses allowed roles.
- * @param {Object} supabaseClient - Configured Supabase client
- * @param {string} userId - User profile UUID (req.user.id)
- * @param {string} organizationId - Target organization UUID
- * @param {string[]} [allowedRoles] - Optional list of allowed roles (e.g. ['admin', 'manager', 'staff'])
- * @returns {Promise<{authorized: boolean, profile?: Object, error?: string, status?: number}>}
- */
-async function validateOrganizationAccess(supabaseClient, userId, organizationId, allowedRoles = null) {
-  if (!supabaseClient) {
-    return { authorized: false, error: 'Supabase client not configured', status: 500 };
-  }
-  if (!userId) {
-    return { authorized: false, error: 'Unauthenticated user', status: 401 };
-  }
-  if (!organizationId) {
-    return { authorized: false, error: 'Missing organization_id parameter', status: 400 };
-  }
-
-  try {
-    const { data: profile, error } = await supabaseClient
-      .from('profiles')
-      .select('id, organization_id, role, first_name, last_name')
-      .eq('id', userId)
-      .single();
-
-    if (error || !profile) {
-      return { authorized: false, error: 'User profile not found', status: 404 };
-    }
-
-    if (profile.organization_id !== organizationId && profile.role !== 'admin' && profile.role !== 'super_admin') {
-      return { authorized: false, error: 'Unauthorized access to organization', status: 403 };
-    }
-
-    if (allowedRoles && Array.isArray(allowedRoles) && allowedRoles.length > 0) {
-      if (!allowedRoles.includes(profile.role) && profile.role !== 'admin' && profile.role !== 'super_admin') {
-        return {
-          authorized: false,
-          error: `Forbidden: requires one of roles [${allowedRoles.join(', ')}]`,
-          status: 403
-        };
-      }
-    }
-
-    return { authorized: true, profile, role: profile.role };
-  } catch (err) {
-    console.error('[validateOrganizationAccess] error:', err);
-    return { authorized: false, error: 'Internal organization authorization error', status: 500 };
-  }
-}
-
-/**
- * Verifies cryptographic HMAC signature for incoming webhooks.
- * @param {string|Object} body - Request body (string or parsed object)
- * @param {string} secret - Shared webhook secret
- * @param {string} signatureHeader - Received signature header
- * @param {string} [algorithm='sha256'] - Hash algorithm
- * @returns {boolean} - True if signature matches
- */
-function verifyHmacSignature(body, secret, signatureHeader, algorithm = 'sha256') {
-  if (!signatureHeader || !secret) return false;
-  try {
-    const payload = typeof body === 'string' ? body : JSON.stringify(body);
-    const expectedSignature = crypto
-      .createHmac(algorithm, secret)
-      .update(payload)
-      .digest('hex');
-
-    const cleanHeader = String(signatureHeader).replace(/^sha256=/, '').trim();
-
-    const sigBuf = Buffer.from(cleanHeader, 'utf8');
-    const expBuf = Buffer.from(expectedSignature, 'utf8');
-
-    if (sigBuf.length !== expBuf.length) {
-      return false;
-    }
-
-    return crypto.timingSafeEqual(sigBuf, expBuf);
-  } catch (err) {
-    console.error('[verifyHmacSignature] error:', err);
-    return false;
-  }
-}
-
-/**
- * Formats amount in Rwandan Francs (RWF).
- * @param {number|string} amount
- * @returns {string}
- */
-function formatRWF(amount) {
-  const numeric = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
-  return new Intl.NumberFormat('rw-RW', {
-    style: 'currency',
-    currency: 'RWF',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(numeric);
-}
 
 /**
  * Calculates distance in meters between two GPS coordinates using Haversine formula.
@@ -152,9 +28,16 @@ function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
 }
 
 module.exports = {
-  getLiveOccupancy,
-  validateOrganizationAccess,
-  verifyHmacSignature,
-  formatRWF,
   getDistanceFromLatLonInM,
 };
+
+/**
+ * Removed Functions (dead code):
+ * - getLiveOccupancy: Not used anywhere in codebase
+ * - validateOrganizationAccess: Not used anywhere, references non-existent 'profiles' table
+ * - verifyHmacSignature: Not used anywhere
+ * - formatRWF: Duplicate implementation exists in apps/web/src/lib/invoice-pdf.ts (used 100+ times)
+ * 
+ * Note: formatRWF is kept in web/src/lib/invoice-pdf.ts because it's specific to PDF generation
+ * and the web app uses a simpler format than the shared version would provide.
+ */

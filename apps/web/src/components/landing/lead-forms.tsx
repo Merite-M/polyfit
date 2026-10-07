@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { X, Building2, Dumbbell, Mail, CheckCircle, AlertCircle } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@polyfit/supabase-client";
 import { useLeadModal, LeadFormType } from "@/lib/lead-modal";
 
 interface LeadFormsProps {

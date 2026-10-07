@@ -115,11 +115,6 @@ export default function Footer({ onOpenLeadForm }: FooterProps = {}) {
                 </Link>
               </li>
               <li>
-                <Link href="/members" className="hover:text-emerald-400 transition-colors">
-                  Operations Console
-                </Link>
-              </li>
-              <li>
                 <Link href="/admin/corporate" className="hover:text-emerald-400 transition-colors">
                   Corporate Portal
                 </Link>

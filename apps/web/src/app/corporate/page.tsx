@@ -44,7 +44,11 @@ export default function CorporateDashboardPage() {
   const [copiedLink, setCopiedLink] = useState(false);
 
   // Live state initialized from canonical production-grade TechCorp Rwanda dataset
-  const [funnelData, setFunnelData] = useState(TECHCORP_CANONICAL_DATA.funnel);
+  const [funnelData, setFunnelData] = useState({
+    ...TECHCORP_CANONICAL_DATA.funnel,
+    registeredEmployees: TECHCORP_CANONICAL_DATA.funnel.registeredMembers,
+    newEmployees30d: TECHCORP_CANONICAL_DATA.funnel.newMembers30d,
+  });
   const [economicsData, setEconomicsData] = useState(TECHCORP_CANONICAL_DATA.economics);
 
   const activeOrgId = organizationId || TECHCORP_CANONICAL_DATA.organization.id;
@@ -79,7 +83,7 @@ export default function CorporateDashboardPage() {
         setFunnelData((prev) => ({
           ...prev,
           totalEligible: utilRes.summary.total_eligible ?? prev.totalEligible,
-          registeredMembers: utilRes.summary.registered_members ?? prev.registeredMembers,
+          registeredEmployees: utilRes.summary.registered_employees ?? prev.registeredEmployees,
           activeBeneficiaries: utilRes.summary.active_beneficiaries ?? prev.activeBeneficiaries,
           totalVisits: utilRes.summary.total_visits ?? prev.totalVisits,
         }));
@@ -215,8 +219,8 @@ export default function CorporateDashboardPage() {
   };
 
   const activePercent =
-    funnelData.registeredMembers > 0
-      ? Math.round((funnelData.activeBeneficiaries / funnelData.registeredMembers) * 100)
+    funnelData.registeredEmployees > 0
+      ? Math.round((funnelData.activeBeneficiaries / funnelData.registeredEmployees) * 100)
       : 52;
 
   const handleTabChange = (tab: "overview" | "analytics") => {
@@ -358,7 +362,7 @@ export default function CorporateDashboardPage() {
                   </span>
                 </div>
                 <p className="text-xs text-[#8491A3] mt-1">
-                  Out of {funnelData.registeredMembers} enrolled team members across all departments.
+                  Out of {funnelData.registeredEmployees} enrolled team members across all departments.
                 </p>
               </div>
 

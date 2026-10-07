@@ -141,10 +141,10 @@ export const TECHCORP_CANONICAL_DATA = {
   },
   funnel: {
     totalEligible: 150,
-    registeredMembers: 118,
+    registeredEmployees: 118,
     activeBeneficiaries: 85,
     totalVisits: 385,
-    newMembers30d: 14,
+    newEmployees30d: 14,
     newBeneficiaries30d: 8,
     avgVisitsPerActive: 4.5,
   },

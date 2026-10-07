@@ -1,20 +1,14 @@
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+/**
+ * Legacy service wrapper - DEPRECATED
+ * 
+ * This file is deprecated. All services should import supabase directly from @polyfit/supabase-client.
+ * This file remains for backward compatibility during migration.
+ * 
+ * Usage:
+ * OLD: const { supabase } = require('../services/supabaseService');
+ * NEW: const { supabase } = require('@polyfit/supabase-client');
+ */
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.warn('[supabaseService] Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY. DB operations will fail.');
-}
-
-const supabase = supabaseUrl && supabaseServiceKey
-  ? createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    })
-  : null;
+const { supabase } = require('@polyfit/supabase-client');
 
 module.exports = { supabase };

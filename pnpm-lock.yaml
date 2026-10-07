@@ -17,6 +17,9 @@ importers:
       '@polyfit/shared-utils':
         specifier: workspace:*
         version: link:../../packages/shared-utils
+      '@polyfit/supabase-client':
+        specifier: workspace:*
+        version: link:../../packages/supabase-client
       '@supabase/supabase-js':
         specifier: ^2.112.3
         version: 2.112.4
@@ -45,6 +48,9 @@ importers:
       '@expo/ui':
         specifier: ~57.0.21
         version: 57.0.21(@babel/core@7.29.7(supports-color@8.1.1))(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(expo@57.0.26)(react-dom@19.2.3(react@19.2.3))(react-native-worklets@0.10.1(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
+      '@polyfit/ui-theme':
+        specifier: workspace:*
+        version: link:../../packages/ui-theme
       expo:
         specifier: ~57.0.26
         version: 57.0.26(@babel/core@7.29.7(supports-color@8.1.1))(@expo/dom-webview@57.0.1)(@expo/metro-runtime@57.0.16)(expo-router@57.0.24)(react-dom@19.2.3(react@19.2.3))(react-native-web@0.21.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-native-worklets@0.10.1(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)(typescript@6.0.3)
@@ -142,6 +148,12 @@ importers:
       '@base-ui/react':
         specifier: ^1.7.0
         version: 1.7.0(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@polyfit/supabase-client':
+        specifier: workspace:*
+        version: link:../../packages/supabase-client
+      '@polyfit/ui-theme':
+        specifier: workspace:*
+        version: link:../../packages/ui-theme
       '@supabase/supabase-js':
         specifier: ^2.112.3
         version: 2.112.4
@@ -221,6 +233,8 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.3
+
+  packages/shared-types: {}
 
   packages/shared-utils: {}
 

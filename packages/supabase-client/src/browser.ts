@@ -1,6 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
 
+/**
+ * Canonical Supabase client for browser/web applications
+ * All web apps should import this instead of creating their own client
+ */
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54321";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "dummy";
 

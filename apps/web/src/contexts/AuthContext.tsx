@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@polyfit/supabase-client';
 
 interface AuthContextType {
   user: any | null;

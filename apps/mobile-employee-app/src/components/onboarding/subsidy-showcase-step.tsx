@@ -153,7 +153,7 @@ export const SubsidyShowcaseStep: React.FC = () => {
           <View style={styles.perksRow}>
             <View style={styles.perkChip}>
               <Dumbbell size={16} color={Palette.teal} />
-              <Text style={styles.perkChipText}>Gyms & Fitness</Text>
+              <Text style={styles.perkChipText}>Fitness Clubs</Text>
             </View>
             <View style={styles.perkChip}>
               <Waves size={16} color={Palette.teal} />

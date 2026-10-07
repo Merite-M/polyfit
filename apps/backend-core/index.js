@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { rateLimit } = require('express-rate-limit');
-const { createClient } = require('@supabase/supabase-js');
+const { supabase } = require('@polyfit/supabase-client');
 require('dotenv').config();
 
 const app = express();
@@ -27,15 +27,10 @@ const apiLimiter = rateLimit({
 
 app.use('/api/', apiLimiter);
 
-// ─── Supabase Client ─────────────────────────────────────────────────────────
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-let supabase;
-
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey);
-} else {
-  console.warn("Supabase credentials not found, endpoints using supabase will fail.");
+// ─── Supabase Client (from shared package) ─────────────────────────────────
+// Using @polyfit/supabase-client as single source of truth
+if (!supabase) {
+  console.warn("Supabase client not initialized. Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.");
 }
 
 // ─── Health Check Endpoint ───────────────────────────────────────────────────

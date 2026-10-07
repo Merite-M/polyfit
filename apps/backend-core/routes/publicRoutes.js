@@ -1,16 +1,8 @@
 const express = require('express');
-const { createClient } = require('@supabase/supabase-js');
+const { supabase } = require('@polyfit/supabase-client');
 const { rateLimit } = require('express-rate-limit');
 
 const router = express.Router();
-
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-let supabase;
-
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey);
-}
 
 // Strict anti-spam rate limiter for public lead forms (10 submissions per IP per hour)
 const leadFormLimiter = rateLimit({

@@ -86,7 +86,7 @@ export function CategoryDistribution({
             Workforce activity across network provider categories
           </p>
         </div>
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#E0F9F5] text-[#00584B]">
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#E0F9F5] text-[#0B1F33]">
           4 Categories
         </span>
       </div>

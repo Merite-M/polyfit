@@ -17,10 +17,10 @@ import { cn } from "@/lib/utils";
 
 export interface AdoptionFunnelData {
   totalEligible: number;
-  registeredMembers: number;
+  registeredEmployees: number;
   activeBeneficiaries: number;
   totalVisits: number;
-  newMembers30d?: number;
+  newEmployees30d?: number;
   newBeneficiaries30d?: number;
   avgVisitsPerActive?: number;
 }
@@ -38,20 +38,20 @@ export function AdoptionFunnelRow({
 }: AdoptionFunnelRowProps) {
   const {
     totalEligible = 1200,
-    registeredMembers = 789,
+    registeredEmployees = 789,
     activeBeneficiaries = 412,
     totalVisits = 1480,
-    newMembers30d = 54,
+    newEmployees30d = 54,
     newBeneficiaries30d = 28,
     avgVisitsPerActive = 3.6,
   } = data;
 
-  const memberAdoptionRate = totalEligible > 0
-    ? Math.round((registeredMembers / totalEligible) * 100)
+  const employeeAdoptionRate = totalEligible > 0
+    ? Math.round((registeredEmployees / totalEligible) * 100)
     : 0;
 
-  const activeConversionRate = registeredMembers > 0
-    ? Math.round((activeBeneficiaries / registeredMembers) * 100)
+  const activeConversionRate = registeredEmployees > 0
+    ? Math.round((activeBeneficiaries / registeredEmployees) * 100)
     : 0;
 
   const overallParticipationRate = totalEligible > 0
@@ -91,8 +91,8 @@ export function AdoptionFunnelRow({
         />
         <div
           className="h-full bg-[#00D2B4] transition-all duration-700 ease-out"
-          style={{ width: `${memberAdoptionRate}%` }}
-          title={`${memberAdoptionRate}% Registered Members`}
+          style={{ width: `${employeeAdoptionRate}%` }}
+          title={`${employeeAdoptionRate}% Registered Employees`}
         />
         <div
           className="h-full bg-[#28D17C] transition-all duration-700 ease-out"
@@ -135,29 +135,29 @@ export function AdoptionFunnelRow({
           </div>
         </div>
 
-        {/* Stage 2: Registered Members */}
+        {/* Stage 2: Registered Employees */}
         <div className="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-[#E0F9F5] flex items-center justify-center text-[#00D2B4] group-hover:scale-105 transition-transform">
                 <UserCheck className="w-4 h-4" />
               </div>
-              <span className="text-xs font-semibold text-[#526173]">Members</span>
+              <span className="text-xs font-semibold text-[#526173]">Employees</span>
             </div>
             <div className="flex items-center gap-1 text-[11px] font-semibold text-[#00D2B4] bg-[#E0F9F5] px-2 py-0.5 rounded-full">
-              <span>{memberAdoptionRate}%</span>
-              <span className="text-[10px] text-[#00584B]">adopted</span>
+              <span>{employeeAdoptionRate}%</span>
+              <span className="text-[10px] text-[#0B1F33]">adopted</span>
             </div>
           </div>
 
           <div className="flex items-baseline justify-between mt-1">
             <div className="text-2xl font-bold tracking-tight text-[#0B1F33]">
-              {registeredMembers.toLocaleString()}
+              {registeredEmployees.toLocaleString()}
             </div>
-            {newMembers30d > 0 && (
+            {newEmployees30d > 0 && (
               <div className="flex items-center gap-0.5 text-xs font-semibold text-[#28D17C]">
                 <TrendingUp className="w-3 h-3" />
-                <span>+{newMembers30d}</span>
+                <span>+{newEmployees30d}</span>
               </div>
             )}
           </div>
@@ -181,7 +181,7 @@ export function AdoptionFunnelRow({
             </div>
             <div className="flex items-center gap-1 text-[11px] font-bold text-[#28D17C] bg-[#E9FAF2] px-2 py-0.5 rounded-full border border-[#28D17C]/20">
               <span>{activeConversionRate}%</span>
-              <span className="text-[9px] uppercase font-semibold">of members</span>
+              <span className="text-[9px] uppercase font-semibold">of employees</span>
             </div>
           </div>
 

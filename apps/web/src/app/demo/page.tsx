@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import PublicNavigation from "@/components/public-navigation";
 import Footer from "@/components/landing/footer";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@polyfit/supabase-client";
 
 export default function DemoPage() {
   const [formData, setFormData] = useState({
