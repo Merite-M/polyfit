@@ -18,7 +18,10 @@ router.post('/', requireAuth, requireRole('super_admin'), async (req, res) => {
       billing_email,
       tax_id,
       country = 'Rwanda',
-      status = 'active'
+      status = 'active',
+      contracted_seats = 100,
+      headcount_tier = '51-250',
+      allowed_domains = []
     } = req.body;
 
     if (!name || typeof name !== 'string' || !name.trim()) {
@@ -28,9 +31,10 @@ router.post('/', requireAuth, requireRole('super_admin'), async (req, res) => {
       });
     }
 
-    if (!['active', 'inactive', 'suspended'].includes(status)) {
+    const validStatuses = ['pipeline', 'active', 'suspended', 'churned', 'inactive'];
+    if (!validStatuses.includes(status)) {
       return res.status(400).json({
-        error: "Status must be 'active', 'inactive', or 'suspended'",
+        error: `Status must be one of: ${validStatuses.join(', ')}`,
         code: 'ORG_INVALID_STATUS'
       });
     }
@@ -42,6 +46,10 @@ router.post('/', requireAuth, requireRole('super_admin'), async (req, res) => {
       });
     }
 
+    const sanitizedDomains = Array.isArray(allowed_domains)
+      ? Array.from(new Set(allowed_domains.map((d) => String(d).replace(/^@/, '').trim().toLowerCase()).filter(Boolean)))
+      : [];
+
     const { data: organization, error: insertError } = await supabase
       .from('organizations')
       .insert({
@@ -52,6 +60,9 @@ router.post('/', requireAuth, requireRole('super_admin'), async (req, res) => {
         billing_email: billing_email ? String(billing_email).toLowerCase().trim() : null,
         tax_id: tax_id ? String(tax_id).trim() : null,
         country: country ? String(country).trim() : 'Rwanda',
+        contracted_seats: parseInt(contracted_seats, 10) || 100,
+        headcount_tier: String(headcount_tier),
+        allowed_domains: sanitizedDomains,
         status
       })
       .select()
@@ -197,7 +208,7 @@ router.get('/:id', requireAuth, requireOrgAccess((req) => req.params.id), async 
 router.patch('/:id', requireAuth, requireOrgAccess((req) => req.params.id), requireRole('super_admin', 'polyfit_ops', 'org_admin'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, industry, logo_url, contact_email, billing_email, tax_id, country, status } = req.body;
+    const { name, industry, logo_url, contact_email, billing_email, tax_id, country, status, contracted_seats, headcount_tier, allowed_domains } = req.body;
 
     if (!supabase) {
       return res.status(503).json({
@@ -221,6 +232,14 @@ router.patch('/:id', requireAuth, requireOrgAccess((req) => req.params.id), requ
     if (billing_email !== undefined) updatePayload.billing_email = billing_email ? String(billing_email).toLowerCase().trim() : null;
     if (tax_id !== undefined) updatePayload.tax_id = tax_id ? String(tax_id).trim() : null;
     if (country !== undefined) updatePayload.country = country ? String(country).trim() : null;
+    if (contracted_seats !== undefined) updatePayload.contracted_seats = parseInt(contracted_seats, 10);
+    if (headcount_tier !== undefined) updatePayload.headcount_tier = String(headcount_tier);
+
+    if (allowed_domains !== undefined) {
+      updatePayload.allowed_domains = Array.isArray(allowed_domains)
+        ? Array.from(new Set(allowed_domains.map((d) => String(d).replace(/^@/, '').trim().toLowerCase()).filter(Boolean)))
+        : [];
+    }
 
     if (status !== undefined) {
       if (!isPlatformAdmin && status === 'suspended') {
@@ -229,8 +248,9 @@ router.patch('/:id', requireAuth, requireOrgAccess((req) => req.params.id), requ
           code: 'AUTH_FORBIDDEN_ACTION'
         });
       }
-      if (!['active', 'inactive', 'suspended'].includes(status)) {
-        return res.status(400).json({ error: 'Invalid organization status', code: 'ORG_INVALID_STATUS' });
+      const validStatuses = ['pipeline', 'active', 'suspended', 'churned', 'inactive'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ error: `Invalid organization status. Must be one of: ${validStatuses.join(', ')}`, code: 'ORG_INVALID_STATUS' });
       }
       updatePayload.status = status;
     }

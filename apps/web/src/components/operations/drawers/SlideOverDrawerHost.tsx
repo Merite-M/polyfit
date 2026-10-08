@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import { useOperationsDrawer } from "@/contexts/OperationsDrawerContext";
+import { EmployerContractDrawer } from "./EmployerContractDrawer";
 import { 
   X, 
   Building2, 
@@ -20,6 +21,18 @@ import { formatCurrencyDisplay } from "@/lib/utils";
 export function SlideOverDrawerHost() {
   const { drawerState, closeDrawer } = useOperationsDrawer();
   const dialogRef = useRef<HTMLDialogElement>(null);
+
+  // If organization type, delegate directly to the dedicated EmployerContractDrawer (PF-118)
+  if (drawerState.isOpen && drawerState.type === "organization" && drawerState.id) {
+    return (
+      <EmployerContractDrawer
+        isOpen={drawerState.isOpen}
+        onClose={closeDrawer}
+        clientId={drawerState.id}
+        initialData={drawerState.data}
+      />
+    );
+  }
 
   useEffect(() => {
     const dialog = dialogRef.current;

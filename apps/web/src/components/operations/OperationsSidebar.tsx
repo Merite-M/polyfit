@@ -33,8 +33,8 @@ const NAVIGATION_ITEMS = [
     name: "Corporate Clients",
     href: "/operations/clients",
     icon: Building2,
-    badge: "PF-118",
-    badgeVariant: "slate" as const,
+    badge: "LIVE",
+    badgeVariant: "emerald" as const,
   },
   {
     name: "Provider Network",

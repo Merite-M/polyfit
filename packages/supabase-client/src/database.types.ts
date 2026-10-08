@@ -398,40 +398,52 @@ export type Database = {
       }
       organizations: {
         Row: {
+          allowed_domains: string[] | null
           billing_email: string | null
           contact_email: string | null
+          contracted_seats: number | null
           country: string | null
           created_at: string | null
+          headcount_tier: string | null
           id: string
           industry: string | null
           logo_url: string | null
           name: string
+          slug: string | null
           status: string | null
           tax_id: string | null
           updated_at: string | null
         }
         Insert: {
+          allowed_domains?: string[] | null
           billing_email?: string | null
           contact_email?: string | null
+          contracted_seats?: number | null
           country?: string | null
           created_at?: string | null
+          headcount_tier?: string | null
           id?: string
           industry?: string | null
           logo_url?: string | null
           name: string
+          slug?: string | null
           status?: string | null
           tax_id?: string | null
           updated_at?: string | null
         }
         Update: {
+          allowed_domains?: string[] | null
           billing_email?: string | null
           contact_email?: string | null
+          contracted_seats?: number | null
           country?: string | null
           created_at?: string | null
+          headcount_tier?: string | null
           id?: string
           industry?: string | null
           logo_url?: string | null
           name?: string
+          slug?: string | null
           status?: string | null
           tax_id?: string | null
           updated_at?: string | null

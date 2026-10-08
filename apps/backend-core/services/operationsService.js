@@ -497,8 +497,446 @@ async function getOperationsLocations() {
   }));
 }
 
+/**
+ * Returns list of corporate clients with live seat capacity & subsidy metrics.
+ * PF-118 / EPIC-05
+ */
+async function getOperationsClients() {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const [
+    { data: orgs, error: orgsErr },
+    { data: employees, error: empErr },
+    { data: benefits, error: benErr }
+  ] = await Promise.all([
+    supabase
+      .from('organizations')
+      .select('*')
+      .order('name', { ascending: true }),
+    supabase
+      .from('employees')
+      .select('id, org_id, status, tier, created_at'),
+    supabase
+      .from('benefits')
+      .select('id, org_id, name, tier, max_monthly_visits, co_pay_percentage, budget_cap_per_employee, allowed_provider_categories, status')
+  ]);
+
+  if (orgsErr) throw new Error(`Failed to fetch clients: ${orgsErr.message}`);
+
+  const orgList = orgs || [];
+  const empList = employees || [];
+  const benList = benefits || [];
+
+  return orgList.map((org) => {
+    const orgEmployees = empList.filter((e) => e.org_id === org.id);
+    const activeEmployees = orgEmployees.filter((e) => e.status === 'active');
+    const orgBenefits = benList.filter((b) => b.org_id === org.id && b.status === 'active');
+
+    const contractedSeats = org.contracted_seats || 100;
+    const activeCount = activeEmployees.length;
+    const totalCount = orgEmployees.length;
+    const utilizationPct = contractedSeats > 0 ? Math.round((activeCount / contractedSeats) * 100) : 0;
+    const isNearCapacity = utilizationPct >= 90;
+
+    // Estimate monthly subsidy burn based on average tier pricing (RWF 45,000 standard benchmark)
+    const avgCopayPct = orgBenefits.length > 0 
+      ? orgBenefits.reduce((acc, b) => acc + Number(b.co_pay_percentage || 0), 0) / orgBenefits.length 
+      : 30;
+    const employerSubsidyPct = Math.max(0, 100 - avgCopayPct);
+    const estimatedMonthlyBurnRwf = Math.round(activeCount * 45000 * (employerSubsidyPct / 100));
+
+    return {
+      id: org.id,
+      name: org.name,
+      slug: org.slug,
+      industry: org.industry || 'General Corporate',
+      country: org.country || 'Rwanda',
+      status: org.status || 'active',
+      logoUrl: org.logo_url,
+      taxId: org.tax_id,
+      contactEmail: org.contact_email,
+      billingEmail: org.billing_email,
+      headcountTier: org.headcount_tier || '51-250',
+      contractedSeats,
+      allowedDomains: org.allowed_domains || [],
+      activeEmployeesCount: activeCount,
+      totalEmployeesCount: totalCount,
+      utilizationPct,
+      isNearCapacity,
+      estimatedMonthlyBurnRwf,
+      benefits: orgBenefits.map((b) => ({
+        id: b.id,
+        name: b.name,
+        tier: b.tier || 'standard',
+        maxMonthlyVisits: b.max_monthly_visits || 12,
+        copayPercentage: Number(b.co_pay_percentage || 0),
+        budgetCap: b.budget_cap_per_employee !== null ? Number(b.budget_cap_per_employee) : null,
+        categories: b.allowed_provider_categories || []
+      })),
+      createdAt: org.created_at,
+      updatedAt: org.updated_at
+    };
+  });
+}
+
+/**
+ * Returns complete 360-degree client cockpit detail.
+ * PF-118 / EPIC-05
+ */
+async function getOperationsClientDetail(clientId) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const [
+    { data: org, error: orgErr },
+    { data: employees, error: empErr },
+    { data: benefits, error: benErr },
+    { data: invoices, error: invErr },
+    { data: visits, error: visErr }
+  ] = await Promise.all([
+    supabase
+      .from('organizations')
+      .select('*')
+      .eq('id', clientId)
+      .single(),
+    supabase
+      .from('employees')
+      .select('id, full_name, email, employee_id_external, department, tier, status, created_at')
+      .eq('org_id', clientId)
+      .order('full_name', { ascending: true }),
+    supabase
+      .from('benefits')
+      .select('*')
+      .eq('org_id', clientId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('invoices')
+      .select('id, invoice_number, total_amount, status, billing_period_start, billing_period_end, created_at')
+      .eq('org_id', clientId)
+      .order('created_at', { ascending: false })
+      .limit(5),
+    supabase
+      .from('visits')
+      .select(`
+        id,
+        check_in_at,
+        status,
+        verification_method,
+        employees!inner ( id, full_name, org_id ),
+        provider_locations ( name, city )
+      `)
+      .eq('employees.org_id', clientId)
+      .order('check_in_at', { ascending: false })
+      .limit(10)
+  ]);
+
+  if (orgErr || !org) {
+    throw new Error(`Organization ${clientId} not found: ${orgErr?.message}`);
+  }
+
+  const empList = employees || [];
+  const activeEmployees = empList.filter((e) => e.status === 'active');
+  const contractedSeats = org.contracted_seats || 100;
+  const activeCount = activeEmployees.length;
+  const utilizationPct = contractedSeats > 0 ? Math.round((activeCount / contractedSeats) * 100) : 0;
+  const isNearCapacity = utilizationPct >= 90;
+
+  return {
+    organization: {
+      id: org.id,
+      name: org.name,
+      slug: org.slug,
+      industry: org.industry,
+      country: org.country || 'Rwanda',
+      status: org.status || 'active',
+      logoUrl: org.logo_url,
+      taxId: org.tax_id,
+      contactEmail: org.contact_email,
+      billingEmail: org.billing_email,
+      headcountTier: org.headcount_tier || '51-250',
+      contractedSeats,
+      allowedDomains: org.allowed_domains || [],
+      createdAt: org.created_at,
+      updatedAt: org.updated_at
+    },
+    metrics: {
+      activeEmployeesCount: activeCount,
+      totalEmployeesCount: empList.length,
+      contractedSeats,
+      utilizationPct,
+      isNearCapacity,
+      totalVisitsCount: visits?.length || 0,
+      activePlansCount: (benefits || []).filter((b) => b.status === 'active').length
+    },
+    benefitPlans: benefits || [],
+    employees: empList,
+    recentInvoices: invoices || [],
+    recentVisits: visits || []
+  };
+}
+
+/**
+ * 3-Step Streamlined Employer Account Provisioning.
+ * PF-118 / EPIC-05
+ */
+async function createOperationsClient(payload) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const {
+    name,
+    industry,
+    country = 'Rwanda',
+    tax_id,
+    contact_email,
+    billing_email,
+    headcount_tier = '51-250',
+    contracted_seats = 100,
+    status = 'active',
+    allowed_domains = [],
+    // Step 2: Commercial Terms & Subsidy Rules
+    subsidy_model = 'percentage',
+    co_pay_percentage = 30,
+    budget_cap_per_employee = null,
+    max_monthly_visits = 12,
+    plan_tier = 'standard',
+    // Step 3: Admin invite
+    admin_name,
+    admin_email
+  } = payload;
+
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    throw new Error('Organization legal name is required');
+  }
+
+  const baseSlug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const slug = `${baseSlug}-${Math.random().toString(36).substring(2, 6)}`;
+
+  // Sanitize allowed_domains
+  const sanitizedDomains = Array.isArray(allowed_domains)
+    ? Array.from(new Set(allowed_domains.map((d) => String(d).replace(/^@/, '').trim().toLowerCase()).filter(Boolean)))
+    : [];
+
+  // 1. Insert organization
+  const { data: newOrg, error: orgErr } = await supabase
+    .from('organizations')
+    .insert({
+      name: name.trim(),
+      slug,
+      industry: industry ? String(industry).trim() : 'Corporate',
+      country: country ? String(country).trim() : 'Rwanda',
+      tax_id: tax_id ? String(tax_id).trim() : null,
+      contact_email: contact_email ? String(contact_email).toLowerCase().trim() : null,
+      billing_email: billing_email ? String(billing_email).toLowerCase().trim() : null,
+      headcount_tier: String(headcount_tier),
+      contracted_seats: parseInt(contracted_seats, 10) || 100,
+      allowed_domains: sanitizedDomains,
+      status: status || 'active'
+    })
+    .select()
+    .single();
+
+  if (orgErr) {
+    throw new Error(`Failed to create organization: ${orgErr.message}`);
+  }
+
+  // 2. Provision initial benefit plan & subsidy matrix
+  const effectiveCopay = subsidy_model === '100_percent' 
+    ? 0 
+    : (subsidy_model === 'percentage' ? Number(co_pay_percentage || 30) : 0);
+
+  const { data: newBenefit, error: benErr } = await supabase
+    .from('benefits')
+    .insert({
+      org_id: newOrg.id,
+      name: `${plan_tier.charAt(0).toUpperCase() + plan_tier.slice(1)} Wellness Plan`,
+      tier: plan_tier,
+      max_monthly_visits: parseInt(max_monthly_visits, 10) || 12,
+      co_pay_percentage: effectiveCopay,
+      budget_cap_per_employee: subsidy_model === 'fixed_allowance' && budget_cap_per_employee ? Number(budget_cap_per_employee) : null,
+      allowed_provider_categories: ['gym', 'pool', 'studio', 'clinic', 'wellness_center'],
+      status: 'active'
+    })
+    .select()
+    .single();
+
+  if (benErr) {
+    console.warn('[operationsService] Benefit creation warning:', benErr.message);
+  }
+
+  // 3. Dispatch HR admin invite if provided
+  let invitation = null;
+  if (admin_email) {
+    const inviteToken = `inv_${Math.random().toString(36).substring(2)}${Date.now()}`;
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: inviteData, error: inviteErr } = await supabase
+      .from('invitations')
+      .insert({
+        email: admin_email.toLowerCase().trim(),
+        role: 'org_admin',
+        org_id: newOrg.id,
+        token: inviteToken,
+        status: 'pending',
+        expires_at: expiresAt
+      })
+      .select()
+      .single();
+
+    if (!inviteErr) {
+      invitation = inviteData;
+    }
+  }
+
+  return {
+    organization: newOrg,
+    benefit: newBenefit,
+    invitation
+  };
+}
+
+/**
+ * Updates an existing corporate client's details and contract parameters.
+ * PF-118 / EPIC-05
+ */
+async function updateOperationsClient(clientId, payload) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const updateFields = {
+    updated_at: new Date().toISOString()
+  };
+
+  if (payload.name !== undefined) updateFields.name = String(payload.name).trim();
+  if (payload.industry !== undefined) updateFields.industry = payload.industry ? String(payload.industry).trim() : null;
+  if (payload.country !== undefined) updateFields.country = payload.country ? String(payload.country).trim() : 'Rwanda';
+  if (payload.tax_id !== undefined) updateFields.tax_id = payload.tax_id ? String(payload.tax_id).trim() : null;
+  if (payload.contact_email !== undefined) updateFields.contact_email = payload.contact_email ? String(payload.contact_email).toLowerCase().trim() : null;
+  if (payload.billing_email !== undefined) updateFields.billing_email = payload.billing_email ? String(payload.billing_email).toLowerCase().trim() : null;
+  if (payload.headcount_tier !== undefined) updateFields.headcount_tier = String(payload.headcount_tier);
+  if (payload.contracted_seats !== undefined) updateFields.contracted_seats = parseInt(payload.contracted_seats, 10);
+  if (payload.status !== undefined) updateFields.status = String(payload.status).toLowerCase();
+
+  if (payload.allowed_domains !== undefined) {
+    updateFields.allowed_domains = Array.isArray(payload.allowed_domains)
+      ? Array.from(new Set(payload.allowed_domains.map((d) => String(d).replace(/^@/, '').trim().toLowerCase()).filter(Boolean)))
+      : [];
+  }
+
+  const { data: updatedOrg, error: orgErr } = await supabase
+    .from('organizations')
+    .update(updateFields)
+    .eq('id', clientId)
+    .select()
+    .single();
+
+  if (orgErr) {
+    throw new Error(`Failed to update organization: ${orgErr.message}`);
+  }
+
+  return updatedOrg;
+}
+
+/**
+ * Super Admin 1-Click Census Roster Status Toggle or Tier Override.
+ * PF-118 / EPIC-05
+ */
+async function updateClientRosterEmployee(clientId, employeeId, { status, tier, department }) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const updatePayload = {
+    updated_at: new Date().toISOString()
+  };
+
+  if (status !== undefined) {
+    if (!['active', 'frozen', 'terminated'].includes(status)) {
+      throw new Error(`Invalid status '${status}'. Must be active, frozen, or terminated.`);
+    }
+    updatePayload.status = status;
+  }
+
+  if (tier !== undefined) {
+    updatePayload.tier = String(tier).toLowerCase();
+  }
+
+  if (department !== undefined) {
+    updatePayload.department = department ? String(department).trim() : null;
+  }
+
+  const { data: employee, error } = await supabase
+    .from('employees')
+    .update(updatePayload)
+    .eq('id', employeeId)
+    .eq('org_id', clientId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update employee: ${error.message}`);
+  }
+
+  // If status changed to terminated or frozen, also synchronize eligibility
+  if (status === 'terminated' || status === 'frozen') {
+    await supabase
+      .from('eligibility')
+      .update({ status: status === 'terminated' ? 'expired' : 'suspended' })
+      .eq('employee_id', employeeId);
+  } else if (status === 'active') {
+    await supabase
+      .from('eligibility')
+      .update({ status: 'active' })
+      .eq('employee_id', employeeId);
+  }
+
+  return employee;
+}
+
+/**
+ * Super Admin Whitelisted Domains Instant Sync.
+ * PF-118 / EPIC-05
+ */
+async function syncClientDomains(clientId, allowedDomains) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const sanitized = Array.isArray(allowedDomains)
+    ? Array.from(new Set(allowedDomains.map((d) => String(d).replace(/^@/, '').trim().toLowerCase()).filter(Boolean)))
+    : [];
+
+  const { data: org, error } = await supabase
+    .from('organizations')
+    .update({
+      allowed_domains: sanitized,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', clientId)
+    .select('id, name, allowed_domains')
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update domains: ${error.message}`);
+  }
+
+  return org;
+}
+
 module.exports = {
   getOperationsOverview,
   searchOperationsUniversal,
-  getOperationsLocations
+  getOperationsLocations,
+  getOperationsClients,
+  getOperationsClientDetail,
+  createOperationsClient,
+  updateOperationsClient,
+  updateClientRosterEmployee,
+  syncClientDomains
 };
+

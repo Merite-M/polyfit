@@ -114,4 +114,91 @@ describe('Super Admin Operations API Test Suite (PF-117)', () => {
     });
   });
 
+  describe('Corporate Clients Management (PF-118)', () => {
+    let testClientId = null;
+
+    test('GET /api/operations/clients returns list of clients with seat utilization metrics', async () => {
+      const res = await request(app)
+        .get('/api/operations/clients')
+        .expect(200);
+
+      assert.strictEqual(res.body.success, true);
+      assert.strictEqual(typeof res.body.count, 'number');
+      assert.strictEqual(Array.isArray(res.body.clients), true);
+      assert.ok(res.body.clients.length > 0);
+
+      const firstClient = res.body.clients[0];
+      assert.ok(firstClient.id);
+      assert.ok(firstClient.name);
+      assert.strictEqual(typeof firstClient.contractedSeats, 'number');
+      assert.strictEqual(typeof firstClient.activeEmployeesCount, 'number');
+      assert.strictEqual(typeof firstClient.utilizationPct, 'number');
+      assert.strictEqual(typeof firstClient.isNearCapacity, 'boolean');
+      assert.strictEqual(Array.isArray(firstClient.allowedDomains), true);
+    });
+
+    test('POST /api/operations/clients provisions new employer in 3-step format', async () => {
+      const testName = `Acme East Africa ${Date.now()}`;
+      const res = await request(app)
+        .post('/api/operations/clients')
+        .send({
+          name: testName,
+          industry: 'Financial Services',
+          country: 'Rwanda',
+          tax_id: '109988776',
+          contact_email: 'hr@acme-ea.rw',
+          billing_email: 'finance@acme-ea.rw',
+          headcount_tier: '51-250',
+          contracted_seats: 120,
+          allowed_domains: ['@acme-ea.rw', 'acme.co.rw'],
+          subsidy_model: 'percentage',
+          co_pay_percentage: 30,
+          max_monthly_visits: 12,
+          plan_tier: 'standard',
+          admin_name: 'HR Director',
+          admin_email: 'hr.director@acme-ea.rw'
+        })
+        .expect(201);
+
+      assert.strictEqual(res.body.success, true);
+      assert.ok(res.body.organization);
+      assert.strictEqual(res.body.organization.name, testName);
+      assert.strictEqual(res.body.organization.contracted_seats, 120);
+      assert.deepStrictEqual(res.body.organization.allowed_domains, ['acme-ea.rw', 'acme.co.rw']);
+      assert.ok(res.body.benefit);
+      assert.strictEqual(res.body.benefit.tier, 'standard');
+
+      testClientId = res.body.organization.id;
+    });
+
+    test('GET /api/operations/clients/:id returns 360 cockpit data', async () => {
+      assert.ok(testClientId, 'testClientId must be set');
+      const res = await request(app)
+        .get(`/api/operations/clients/${testClientId}`)
+        .expect(200);
+
+      assert.strictEqual(res.body.success, true);
+      assert.ok(res.body.organization);
+      assert.strictEqual(res.body.organization.id, testClientId);
+      assert.ok(res.body.metrics);
+      assert.strictEqual(res.body.metrics.contractedSeats, 120);
+      assert.strictEqual(Array.isArray(res.body.benefitPlans), true);
+      assert.strictEqual(Array.isArray(res.body.employees), true);
+    });
+
+    test('PATCH /api/operations/clients/:id/domains updates whitelisted domains', async () => {
+      assert.ok(testClientId, 'testClientId must be set');
+      const res = await request(app)
+        .patch(`/api/operations/clients/${testClientId}/domains`)
+        .send({
+          allowed_domains: ['@acme.rw', 'acme.africa']
+        })
+        .expect(200);
+
+      assert.strictEqual(res.body.success, true);
+      assert.deepStrictEqual(res.body.organization.allowed_domains, ['acme.rw', 'acme.africa']);
+    });
+  });
+
 });
+
