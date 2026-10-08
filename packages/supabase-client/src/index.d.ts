@@ -3,6 +3,8 @@ import type { Database } from './database.types';
 
 export * from './database.types';
 
+export declare const supabase: SupabaseClient<Database>;
+
 export declare function createNodeClient(
   supabaseUrl?: string,
   supabaseKey?: string

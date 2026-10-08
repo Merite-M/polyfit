@@ -2,7 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const { rateLimit } = require('express-rate-limit');
 const { supabase } = require('@polyfit/supabase-client');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -111,6 +112,10 @@ app.use('/api/public', publicRoutes);
 // PF-109 / EPIC-06: Dedicated Mobile Employee Portal API (High-performance telemetry aggregator & offline pass seed)
 const employeePortalRoutes = require('./routes/employeePortalRoutes');
 app.use('/api/employee', employeePortalRoutes);
+
+// PF-117 / EPIC-05: Super Admin Console, Command Center Analytics & Universal Omnibar
+const operationsRoutes = require('./routes/operationsRoutes');
+app.use('/api/operations', operationsRoutes);
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Server Start ─────────────────────────────────────────────────────────────

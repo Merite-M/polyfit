@@ -92,6 +92,54 @@ export type Database = {
           },
         ]
       }
+      demo_requests: {
+        Row: {
+          id: string
+          company_name: string
+          contact_name: string
+          work_email: string
+          phone: string
+          country: string
+          company_size: string
+          message: string | null
+          interest_tier: string | null
+          source: string | null
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          company_name: string
+          contact_name: string
+          work_email: string
+          phone: string
+          country: string
+          company_size: string
+          message?: string | null
+          interest_tier?: string | null
+          source?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          company_name?: string
+          contact_name?: string
+          work_email?: string
+          phone?: string
+          country?: string
+          company_size?: string
+          message?: string | null
+          interest_tier?: string | null
+          source?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       eligibility: {
         Row: {
           activated_at: string | null

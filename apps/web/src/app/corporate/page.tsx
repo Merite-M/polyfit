@@ -44,11 +44,7 @@ export default function CorporateDashboardPage() {
   const [copiedLink, setCopiedLink] = useState(false);
 
   // Live state initialized from canonical production-grade TechCorp Rwanda dataset
-  const [funnelData, setFunnelData] = useState({
-    ...TECHCORP_CANONICAL_DATA.funnel,
-    registeredEmployees: TECHCORP_CANONICAL_DATA.funnel.registeredMembers,
-    newEmployees30d: TECHCORP_CANONICAL_DATA.funnel.newMembers30d,
-  });
+  const [funnelData, setFunnelData] = useState(TECHCORP_CANONICAL_DATA.funnel);
   const [economicsData, setEconomicsData] = useState(TECHCORP_CANONICAL_DATA.economics);
 
   const activeOrgId = organizationId || TECHCORP_CANONICAL_DATA.organization.id;
