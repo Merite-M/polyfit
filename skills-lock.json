@@ -19,6 +19,24 @@
       "skillPath": "plugins/expo/skills/expo-router/SKILL.md",
       "computedHash": "feef393db7b7b59c8180c917e3edc2f3db9e3dbfe4b6dcfeb2cfe2e4c47f8e7c"
     },
+    "figma-design-to-code": {
+      "source": "figma/mcp-server-guide",
+      "sourceType": "github",
+      "skillPath": "skills/figma-design-to-code/SKILL.md",
+      "computedHash": "67cd02cda36813f140e625d7abb24115df84423ddeeb1eb2afe0906a8f6a15f1"
+    },
+    "figma-use": {
+      "source": "figma/mcp-server-guide",
+      "sourceType": "github",
+      "skillPath": "skills/figma-use/SKILL.md",
+      "computedHash": "1f83618521b3f4292cf6ca50369600205ef3596f2a5c5c8bd77c1e4ae47029ab"
+    },
+    "figma-use-slides": {
+      "source": "figma/mcp-server-guide",
+      "sourceType": "github",
+      "skillPath": "skills/figma-use-slides/SKILL.md",
+      "computedHash": "2b48addb38dbf9a279d5d3260b89a96e1307df6ace11b97098083dcdffbfcc3c"
+    },
     "vercel-react-native-skills": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
