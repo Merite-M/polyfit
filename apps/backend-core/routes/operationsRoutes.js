@@ -16,7 +16,11 @@ const {
   addOperationsProviderLocation,
   updateOperationsProviderLocation,
   updateOperationsProviderKyc,
-  updateOperationsProviderPayoutMatrix
+  updateOperationsProviderPayoutMatrix,
+  getOperationsVisits,
+  getOperationsDisputes,
+  executeTurnstileEmergencyBypass,
+  adjudicateVisitDispute
 } = require('../services/operationsService');
 
 const router = express.Router();
@@ -398,5 +402,86 @@ router.patch('/providers/:id/payout-matrix', async (req, res) => {
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// PF-120: REAL-TIME VISIT TELEMETRY, ANOMALY ENGINE & DISPUTE CLEARINGHOUSE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/operations/visits
+ * Real-time visit telemetry stream with anti-passback, velocity, and geofence anomaly evaluation.
+ * SLA: < 150ms
+ */
+router.get('/visits', async (req, res) => {
+  try {
+    const result = await getOperationsVisits(req.query);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Visits telemetry stream error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_VISITS_STREAM_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/operations/visits/disputes
+ * Central dispute clearinghouse queue for ops leads.
+ */
+router.get('/visits/disputes', async (req, res) => {
+  try {
+    const result = await getOperationsDisputes(req.query);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Visits disputes queue error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_DISPUTES_QUEUE_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/operations/visits/emergency-bypass
+ * 1-Click Turnstile Emergency Bypass Tool for Front-Desk Escalations.
+ * Generates verified visit & single-use EP-XXXXXX emergency code in < 5 seconds.
+ */
+router.post('/visits/emergency-bypass', async (req, res) => {
+  try {
+    const adminUserId = req.user?.id || null;
+    const result = await executeTurnstileEmergencyBypass(req.body, adminUserId);
+    return res.status(201).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Emergency bypass error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_EMERGENCY_BYPASS_FAILED'
+    });
+  }
+});
+
+/**
+ * PATCH /api/operations/visits/:id/dispute/adjudicate
+ * Dispute Adjudication Clearinghouse Action:
+ * - force_validate: honors provider payout, marks visit verified
+ * - void: refunds employee allowance, marks visit rejected
+ * - split_resolution: goodwill override (PolyFit absorbs per-visit liability)
+ */
+router.patch('/visits/:id/dispute/adjudicate', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminUserId = req.user?.id || null;
+    const result = await adjudicateVisitDispute(id, req.body, adminUserId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Dispute adjudication error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_DISPUTE_ADJUDICATION_FAILED'
+    });
+  }
+});
+
 module.exports = router;
+
 

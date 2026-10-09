@@ -47,8 +47,8 @@ const NAVIGATION_ITEMS = [
     name: "Live Visit Monitor",
     href: "/operations/visits",
     icon: Activity,
-    badge: "PF-120",
-    badgeVariant: "slate" as const,
+    badge: "LIVE",
+    badgeVariant: "emerald" as const,
   },
   {
     name: "Marketplace Finance",

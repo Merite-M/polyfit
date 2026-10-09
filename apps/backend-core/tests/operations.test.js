@@ -386,5 +386,154 @@ describe('Super Admin Operations API Test Suite (PF-117)', () => {
     });
   });
 
+  describe('Real-Time Visit Monitor, Turnstile Emergency Bypass & Dispute Clearinghouse (PF-120)', () => {
+    let testBypassVisitId = null;
+    let testDisputeVisitId = null;
+    let testEmployeeId = null;
+    let testLocationIdForBypass = null;
+
+    test('GET /api/operations/visits returns 200, telemetry stats, and enriched visits with anomaly evaluation', async () => {
+      const res = await request(app)
+        .get('/api/operations/visits')
+        .expect('Content-Type', /json/)
+        .expect(200);
+
+      assert.strictEqual(res.body.success, true);
+      assert.ok(Array.isArray(res.body.visits));
+      assert.ok(res.body.telemetry);
+      assert.strictEqual(typeof res.body.telemetry.todayVisits, 'number');
+      assert.strictEqual(typeof res.body.telemetry.todayVerified, 'number');
+      assert.strictEqual(typeof res.body.telemetry.verifiedRate, 'number');
+      assert.strictEqual(typeof res.body.telemetry.activeDisputesCount, 'number');
+      assert.strictEqual(typeof res.body.telemetry.turnstilesOnlineCount, 'number');
+      assert.strictEqual(res.body.telemetry.status, 'nominal');
+
+      if (res.body.visits.length > 0) {
+        const first = res.body.visits[0];
+        assert.ok(first.id);
+        assert.ok(first.check_in_at);
+        assert.ok(first.verification_method);
+        assert.ok(first.status);
+        assert.ok(Array.isArray(first.anomalies));
+        testDisputeVisitId = first.id;
+        testEmployeeId = first.employee_id || first.employees?.id;
+        testLocationIdForBypass = first.provider_location_id || first.provider_locations?.id;
+      }
+    });
+
+    test('GET /api/operations/visits supports search and method filters', async () => {
+      const res = await request(app)
+        .get('/api/operations/visits?method=totp_qr&limit=10')
+        .expect(200);
+
+      assert.strictEqual(res.body.success, true);
+      assert.ok(Array.isArray(res.body.visits));
+      res.body.visits.forEach(v => {
+        assert.strictEqual(v.verification_method, 'totp_qr');
+      });
+    });
+
+    test('GET /api/operations/visits/disputes returns 200 and open dispute records', async () => {
+      const res = await request(app)
+        .get('/api/operations/visits/disputes')
+        .expect(200);
+
+      assert.strictEqual(res.body.success, true);
+      assert.ok(Array.isArray(res.body.disputes));
+      assert.strictEqual(typeof res.body.openCount, 'number');
+      assert.strictEqual(typeof res.body.resolvedCount, 'number');
+    });
+
+    test('POST /api/operations/visits/emergency-bypass rejects missing required fields', async () => {
+      const res = await request(app)
+        .post('/api/operations/visits/emergency-bypass')
+        .send({})
+        .expect(400);
+
+      assert.strictEqual(res.body.code, 'OPERATIONS_EMERGENCY_BYPASS_FAILED');
+    });
+
+    test('POST /api/operations/visits/emergency-bypass executes 1-click turnstile pass under 5000ms', async () => {
+      let empId = testEmployeeId;
+      let locId = testLocationIdForBypass;
+
+      if (!locId) {
+        const overviewRes = await request(app).get('/api/operations/locations').expect(200);
+        locId = overviewRes.body.locations?.[0]?.id;
+      }
+
+      if (!empId) {
+        const clientsRes = await request(app).get('/api/operations/clients').expect(200);
+        for (const client of (clientsRes.body.clients || [])) {
+          const detailRes = await request(app).get(`/api/operations/clients/${client.id}`).expect(200);
+          if (detailRes.body.employees && detailRes.body.employees.length > 0) {
+            empId = detailRes.body.employees[0].id;
+            break;
+          }
+        }
+      }
+
+      assert.ok(locId, 'Location must exist for bypass test');
+      assert.ok(empId, 'Employee must exist for bypass test');
+
+      const start = Date.now();
+      const res = await request(app)
+        .post('/api/operations/visits/emergency-bypass')
+        .send({
+          employee_id: empId,
+          provider_location_id: locId,
+          reason: 'Front-Desk Offline / Wi-Fi Outage',
+          notes: 'Automated test suite bypass execution'
+        })
+        .expect(201);
+
+      const duration = Date.now() - start;
+      assert.ok(duration < 5000, `Bypass took ${duration}ms, must be under 5000ms`);
+      assert.strictEqual(res.body.success, true);
+      assert.ok(res.body.bypassCode);
+      assert.match(res.body.bypassCode, /^EP-\d{6}$/);
+      assert.strictEqual(res.body.visit.verification_method, 'turnstile');
+      assert.strictEqual(res.body.visit.status, 'verified');
+      assert.strictEqual(res.body.visit.metadata.is_emergency_bypass, true);
+
+      testBypassVisitId = res.body.visit.id;
+    });
+
+    test('PATCH /api/operations/visits/:id/dispute/adjudicate executes split_resolution goodwill override', async () => {
+      const targetId = testBypassVisitId || testDisputeVisitId;
+      assert.ok(targetId, 'Target visit ID must exist for adjudication test');
+
+      const res = await request(app)
+        .patch(`/api/operations/visits/${targetId}/dispute/adjudicate`)
+        .send({
+          action: 'split_resolution',
+          notes: 'Tested split resolution: provider paid, employee allowance exempt'
+        })
+        .expect(200);
+
+      assert.strictEqual(res.body.success, true);
+      assert.strictEqual(res.body.action, 'split_resolution');
+      assert.strictEqual(res.body.visit.status, 'verified');
+      assert.strictEqual(res.body.visit.metadata.resolution_type, 'split_goodwill');
+      assert.strictEqual(res.body.visit.metadata.provider_payable, true);
+      assert.strictEqual(res.body.visit.metadata.employee_chargeable, false);
+      assert.strictEqual(res.body.dispute.status, 'resolved_approved');
+    });
+
+    test('PATCH /api/operations/visits/:id/dispute/adjudicate rejects invalid action', async () => {
+      const targetId = testBypassVisitId || testDisputeVisitId;
+      assert.ok(targetId, 'Target visit ID must exist for adjudication test');
+
+      const res = await request(app)
+        .patch(`/api/operations/visits/${targetId}/dispute/adjudicate`)
+        .send({
+          action: 'invalid_action_name'
+        })
+        .expect(400);
+
+      assert.strictEqual(res.body.code, 'OPERATIONS_DISPUTE_ADJUDICATION_FAILED');
+    });
+  });
+
 });
 

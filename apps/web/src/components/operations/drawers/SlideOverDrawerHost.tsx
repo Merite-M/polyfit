@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from "react";
 import { useOperationsDrawer } from "@/contexts/OperationsDrawerContext";
 import { EmployerContractDrawer } from "./EmployerContractDrawer";
 import { ProviderDossierDrawer } from "./ProviderDossierDrawer";
+import { VisitDetailDrawer } from "./VisitDetailDrawer";
 import { 
   X, 
   Building2, 
@@ -48,6 +49,18 @@ export function SlideOverDrawerHost() {
         isOpen={drawerState.isOpen}
         onClose={closeDrawer}
         providerId={targetProviderId}
+        initialData={drawerState.data}
+      />
+    );
+  }
+
+  // If visit type, delegate directly to the dedicated VisitDetailDrawer (PF-120)
+  if (drawerState.isOpen && drawerState.type === "visit" && drawerState.id) {
+    return (
+      <VisitDetailDrawer
+        isOpen={drawerState.isOpen}
+        onClose={closeDrawer}
+        visitId={drawerState.id}
         initialData={drawerState.data}
       />
     );
