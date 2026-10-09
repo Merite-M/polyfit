@@ -4,8 +4,10 @@ const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
 const app = require('../index');
+const { evaluateEmployeeEligibility } = require('../services/eligibilityService');
 
 describe('Super Admin Operations API Test Suite (PF-117)', () => {
+  let testClientId = null;
 
   describe('Executive Overview Endpoint (GET /api/operations/overview)', () => {
     test('returns 200 and complete aggregator health KPIs', async () => {
@@ -115,7 +117,6 @@ describe('Super Admin Operations API Test Suite (PF-117)', () => {
   });
 
   describe('Corporate Clients Management (PF-118)', () => {
-    let testClientId = null;
 
     test('GET /api/operations/clients returns list of clients with seat utilization metrics', async () => {
       const res = await request(app)
@@ -197,6 +198,191 @@ describe('Super Admin Operations API Test Suite (PF-117)', () => {
 
       assert.strictEqual(res.body.success, true);
       assert.deepStrictEqual(res.body.organization.allowed_domains, ['acme.rw', 'acme.africa']);
+    });
+  });
+
+  describe('Provider Network Operations & Negotiated Payout Matrix (PF-119)', () => {
+    let testProviderId = null;
+    let testLocationId = null;
+    const testProvName = `Olympus Wellness Test ${Date.now()}`;
+
+    test('GET /api/operations/providers returns 200 and fleet telemetry KPIs', async () => {
+      const res = await request(app)
+        .get('/api/operations/providers')
+        .expect(200);
+
+      assert.strictEqual(res.body.success, true);
+      assert.ok(Array.isArray(res.body.providers));
+      assert.ok(res.body.telemetry);
+      assert.strictEqual(typeof res.body.telemetry.totalProviders, 'number');
+      assert.strictEqual(typeof res.body.telemetry.totalLocations, 'number');
+      assert.strictEqual(typeof res.body.telemetry.todayNetworkVisits, 'number');
+      assert.strictEqual(typeof res.body.telemetry.networkGrossPayoutMtdRwf, 'number');
+    });
+
+    test('POST /api/operations/providers provisions new provider with primary location', async () => {
+      const res = await request(app)
+        .post('/api/operations/providers')
+        .send({
+          name: testProvName,
+          category: 'studio',
+          contact_email: 'contact@olympus-test.rw',
+          settlement_email: 'finance@olympus-test.rw',
+          tax_id: 'TIN-987654321',
+          location_name: `${testProvName} - Downtown Studio`,
+          address: 'KG 7 Ave, Kigali',
+          city: 'Kigali',
+          lat: -1.9500,
+          lng: 30.0900,
+          geofence_radius_meters: 150,
+          per_visit_payout_rate: 4500,
+          currency: 'RWF',
+          min_benefit_tier: 'standard',
+          amenities: ['lockers', 'showers', 'yoga_mats'],
+          status: 'pending_review'
+        })
+        .expect(201);
+
+      assert.strictEqual(res.body.success, true);
+      assert.ok(res.body.provider);
+      assert.strictEqual(res.body.provider.name, testProvName);
+      assert.strictEqual(res.body.provider.category, 'studio');
+      assert.strictEqual(res.body.provider.tax_id, 'TIN-987654321');
+      assert.ok(res.body.location);
+      assert.strictEqual(res.body.location.name, `${testProvName} - Downtown Studio`);
+      assert.strictEqual(res.body.location.metadata.geofence_radius_meters, 150);
+      assert.strictEqual(res.body.location.metadata.per_visit_payout_rate, 4500);
+
+      testProviderId = res.body.provider.id;
+      testLocationId = res.body.location.id;
+    });
+
+    test('GET /api/operations/providers/:id returns 360-degree cockpit dossier', async () => {
+      assert.ok(testProviderId, 'testProviderId must be set');
+      const res = await request(app)
+        .get(`/api/operations/providers/${testProviderId}`)
+        .expect(200);
+
+      assert.strictEqual(res.body.success, true);
+      assert.ok(res.body.provider);
+      assert.strictEqual(res.body.provider.id, testProviderId);
+      assert.ok(Array.isArray(res.body.locations));
+      assert.ok(res.body.locations.length >= 1);
+      assert.ok(res.body.complianceDossier);
+      assert.ok(res.body.bankDetails);
+      assert.ok(res.body.metrics);
+      assert.strictEqual(typeof res.body.metrics.todayVisitsCount, 'number');
+    });
+
+    test('POST /api/operations/providers/:id/locations adds second branch unit', async () => {
+      assert.ok(testProviderId, 'testProviderId must be set');
+      const res = await request(app)
+        .post(`/api/operations/providers/${testProviderId}/locations`)
+        .send({
+          name: `${testProvName} - Nyarutarama Annex`,
+          address: 'KG 11 Ave',
+          city: 'Kigali',
+          lat: -1.9420,
+          lng: 30.1050,
+          geofence_radius_meters: 200,
+          per_visit_payout_rate: 5000,
+          currency: 'RWF',
+          min_benefit_tier: 'premium',
+          amenities: ['swimming_pool', 'sauna']
+        })
+        .expect(201);
+
+      assert.strictEqual(res.body.success, true);
+      assert.ok(res.body.location);
+      assert.strictEqual(res.body.location.name, `${testProvName} - Nyarutarama Annex`);
+      assert.strictEqual(res.body.location.metadata.geofence_radius_meters, 200);
+      assert.strictEqual(res.body.location.metadata.per_visit_payout_rate, 5000);
+      assert.strictEqual(res.body.location.metadata.min_benefit_tier, 'premium');
+    });
+
+    test('PATCH /api/operations/providers/:id/locations/:locId updates geofence slider and maintenance mode', async () => {
+      assert.ok(testProviderId, 'testProviderId must be set');
+      assert.ok(testLocationId, 'testLocationId must be set');
+      const res = await request(app)
+        .patch(`/api/operations/providers/${testProviderId}/locations/${testLocationId}`)
+        .send({
+          geofence_radius_meters: 250,
+          is_maintenance_mode: true
+        })
+        .expect(200);
+
+      assert.strictEqual(res.body.success, true);
+      assert.ok(res.body.location);
+      assert.strictEqual(res.body.location.metadata.geofence_radius_meters, 250);
+      assert.strictEqual(res.body.location.status, 'maintenance');
+    });
+
+    test('PATCH /api/operations/providers/:id/payout-matrix updates rates and MoMo details', async () => {
+      assert.ok(testProviderId, 'testProviderId must be set');
+      const res = await request(app)
+        .patch(`/api/operations/providers/${testProviderId}/payout-matrix`)
+        .send({
+          bank_details: {
+            bank_name: 'Bank of Kigali',
+            account_name: testProvName,
+            account_number: '00040-069420-11',
+            swift_code: 'BKIGRWRW',
+            momo_provider: 'MTN Mobile Money Rwanda',
+            momo_code: 'MOMO-778899',
+            momo_phone: '+250788112233'
+          },
+          location_rates: [
+            {
+              location_id: testLocationId,
+              per_visit_payout_rate: 4200,
+              currency: 'RWF',
+              min_benefit_tier: 'standard'
+            }
+          ]
+        })
+        .expect(200);
+
+      assert.strictEqual(res.body.success, true);
+      assert.ok(Array.isArray(res.body.updatedLocations));
+    });
+
+    test('PATCH /api/operations/providers/:id/kyc approves application and issues contract', async () => {
+      assert.ok(testProviderId, 'testProviderId must be set');
+      const res = await request(app)
+        .patch(`/api/operations/providers/${testProviderId}/kyc`)
+        .send({
+          action: 'approve'
+        })
+        .expect(200);
+
+      assert.strictEqual(res.body.success, true);
+      assert.strictEqual(res.body.provider.status, 'active');
+      assert.strictEqual(res.body.provider.onboarding_details.kyc_documents.rdb_certificate, 'verified');
+    });
+
+    test('evaluateEmployeeEligibility rejects visit when facility is in maintenance mode', async () => {
+      assert.ok(testLocationId, 'testLocationId must be set');
+      assert.ok(testClientId, 'testClientId must be set');
+
+      // Mock employee associated with the active test client org
+      const mockEmployee = {
+        id: 'emp-001',
+        org_id: testClientId,
+        status: 'active',
+        tier: 'standard',
+        organizations: { id: testClientId, status: 'active' }
+      };
+
+      const result = await evaluateEmployeeEligibility({
+        employeeId: 'emp-001',
+        orgId: testClientId,
+        providerLocationId: testLocationId,
+        preloadedEmployee: mockEmployee
+      });
+
+      // The check should return ineligible with code LOCATION_MAINTENANCE
+      assert.strictEqual(result.eligible, false);
+      assert.strictEqual(result.code, 'LOCATION_MAINTENANCE');
     });
   });
 

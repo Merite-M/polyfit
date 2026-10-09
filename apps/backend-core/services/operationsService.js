@@ -928,6 +928,896 @@ async function syncClientDomains(clientId, allowedDomains) {
   return org;
 }
 
+/**
+ * Super Admin: Provider Network Directory & Fleet Telemetry.
+ * PF-119 / EPIC-05
+ * Returns full provider list with locations, visit velocity, KYC badges, and top-strip KPIs.
+ */
+async function getOperationsProviders(options = {}) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const { status, category, search } = options;
+
+  // 1. Fetch providers with locations and contracts
+  let query = supabase
+    .from('providers')
+    .select(`
+      *,
+      provider_locations (
+        id,
+        name,
+        address,
+        city,
+        country,
+        lat,
+        lng,
+        capacity,
+        status,
+        operating_hours,
+        amenities,
+        metadata,
+        created_at
+      ),
+      provider_contracts (
+        id,
+        org_id,
+        per_visit_rate,
+        monthly_cap,
+        status,
+        effective_from
+      )
+    `)
+    .order('created_at', { ascending: false });
+
+  if (status && status !== 'all') {
+    query = query.eq('status', status);
+  }
+
+  if (category && category !== 'all') {
+    query = query.eq('category', category);
+  }
+
+  const { data: rawProviders, error: pError } = await query;
+  if (pError) {
+    throw new Error(`Failed to fetch providers: ${pError.message}`);
+  }
+
+  const allProviders = rawProviders || [];
+
+  // 2. Fetch today's verified visits across network for velocity calculations
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+  const [todayVisitsRes, mtdVisitsRes] = await Promise.all([
+    supabase
+      .from('visits')
+      .select('id, provider_location_id, check_in_at')
+      .eq('status', 'verified')
+      .gte('check_in_at', startOfToday.toISOString()),
+    supabase
+      .from('visits')
+      .select('id, provider_location_id, check_in_at')
+      .eq('status', 'verified')
+      .gte('check_in_at', startOfMonth.toISOString())
+  ]);
+
+  const todayVisits = todayVisitsRes.data || [];
+  const mtdVisits = mtdVisitsRes.data || [];
+
+  // Map visits by provider_location_id
+  const todayVisitsByLoc = new Map();
+  todayVisits.forEach((v) => {
+    if (v.provider_location_id) {
+      todayVisitsByLoc.set(v.provider_location_id, (todayVisitsByLoc.get(v.provider_location_id) || 0) + 1);
+    }
+  });
+
+  const mtdVisitsByLoc = new Map();
+  mtdVisits.forEach((v) => {
+    if (v.provider_location_id) {
+      mtdVisitsByLoc.set(v.provider_location_id, (mtdVisitsByLoc.get(v.provider_location_id) || 0) + 1);
+    }
+  });
+
+  // 3. Process each provider
+  let totalCertifiedLocations = 0;
+  let activeLocationsCount = 0;
+  let maintenanceLocationsCount = 0;
+  let networkGrossPayoutMtdRwf = 0;
+
+  const processedProviders = allProviders.map((p) => {
+    const locations = p.provider_locations || [];
+    const contracts = p.provider_contracts || [];
+    const activeContract = contracts.find((c) => c.status === 'active') || contracts[0] || null;
+
+    let todayVisitsForProvider = 0;
+    let mtdVisitsForProvider = 0;
+
+    locations.forEach((loc) => {
+      totalCertifiedLocations += 1;
+      if (loc.status === 'active') activeLocationsCount += 1;
+      if (loc.status === 'maintenance' || loc.metadata?.is_maintenance_mode) maintenanceLocationsCount += 1;
+
+      const locToday = todayVisitsByLoc.get(loc.id) || 0;
+      const locMtd = mtdVisitsByLoc.get(loc.id) || 0;
+      todayVisitsForProvider += locToday;
+      mtdVisitsForProvider += locMtd;
+    });
+
+    // Determine primary negotiated rate
+    const primaryRate = activeContract
+      ? parseFloat(activeContract.per_visit_rate)
+      : (locations[0]?.metadata?.per_visit_payout_rate || 3500);
+
+    const currency = locations[0]?.metadata?.currency || 'RWF';
+    networkGrossPayoutMtdRwf += mtdVisitsForProvider * primaryRate;
+
+    // KYC document completeness calculation
+    const onboarding = p.onboarding_details || {};
+    const kycDocs = onboarding.kyc_documents || {};
+    const hasRdb = Boolean(p.tax_id || kycDocs.rdb_certificate);
+    const hasPhotos = Boolean(locations.some((l) => l.photos && l.photos.length > 0) || kycDocs.facility_photos);
+    const hasHygiene = Boolean(kycDocs.hygiene_checklist);
+    const hasBanking = Boolean(p.bank_details && (p.bank_details.account_number || p.bank_details.momo_code));
+
+    let kycStatus = 'pending_review';
+    if (p.status === 'active') {
+      kycStatus = 'approved';
+    } else if (p.status === 'rejected') {
+      kycStatus = 'rejected';
+    } else if (p.status === 'in_review') {
+      kycStatus = 'in_review';
+    } else if (hasRdb && hasBanking) {
+      kycStatus = 'contract_pending';
+    }
+
+    return {
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      status: p.status || 'pending_review',
+      rating: parseFloat(p.rating || 4.8),
+      contactEmail: p.contact_email,
+      settlementEmail: p.settlement_email,
+      taxId: p.tax_id,
+      locationsCount: locations.length,
+      primaryLocation: locations[0]?.name || 'Pending Location Setup',
+      primaryCity: locations[0]?.city || 'Kigali',
+      primaryAddress: locations[0]?.address || 'In Registration',
+      hasActiveMaintenance: locations.some((l) => l.status === 'maintenance' || l.metadata?.is_maintenance_mode),
+      primaryPayoutRate: primaryRate,
+      currency,
+      minBenefitTier: locations[0]?.metadata?.min_benefit_tier || locations[0]?.metadata?.min_tier || 'standard',
+      todayVisitsCount: todayVisitsForProvider,
+      mtdVisitsCount: mtdVisitsForProvider,
+      estimatedMtdGrossRwf: mtdVisitsForProvider * primaryRate,
+      kycCompliance: {
+        status: kycStatus,
+        hasRdb,
+        hasPhotos,
+        hasHygiene,
+        hasBanking
+      },
+      bankDetails: p.bank_details || null,
+      createdAt: p.created_at,
+      updatedAt: p.updated_at
+    };
+  });
+
+  // Filter by search query if provided
+  let filtered = processedProviders;
+  if (search && typeof search === 'string' && search.trim()) {
+    const q = search.toLowerCase().trim();
+    filtered = filtered.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.contactEmail && p.contactEmail.toLowerCase().includes(q)) ||
+        (p.taxId && p.taxId.toLowerCase().includes(q)) ||
+        p.primaryLocation.toLowerCase().includes(q) ||
+        p.primaryCity.toLowerCase().includes(q)
+    );
+  }
+
+  // 4. Calculate Fleet Telemetry KPIs
+  const telemetry = {
+    totalProviders: allProviders.length,
+    activeProviders: allProviders.filter((p) => p.status === 'active').length,
+    inReviewProviders: allProviders.filter(
+      (p) => p.status === 'pending_review' || p.status === 'in_review' || p.status === 'contract_pending'
+    ).length,
+    suspendedProviders: allProviders.filter((p) => p.status === 'suspended').length,
+    totalLocations: totalCertifiedLocations,
+    activeLocations: activeLocationsCount,
+    maintenanceLocations: maintenanceLocationsCount,
+    todayNetworkVisits: todayVisits.length,
+    networkGrossPayoutMtdRwf: Math.round(networkGrossPayoutMtdRwf)
+  };
+
+  return {
+    providers: filtered,
+    telemetry,
+    count: filtered.length
+  };
+}
+
+/**
+ * Complete 360-degree Provider Dossier Cockpit.
+ * Consumed by ProviderDossierDrawer across Omnibar, Live Stream, and Finance tabs.
+ * PF-119 / EPIC-05
+ */
+async function getOperationsProviderDetail(providerId) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  // 1. Fetch provider with locations and contracts
+  const { data: provider, error: pError } = await supabase
+    .from('providers')
+    .select(`
+      *,
+      provider_locations (
+        id,
+        name,
+        address,
+        city,
+        country,
+        lat,
+        lng,
+        capacity,
+        status,
+        operating_hours,
+        amenities,
+        photos,
+        metadata,
+        created_at,
+        updated_at
+      ),
+      provider_contracts (
+        id,
+        org_id,
+        per_visit_rate,
+        monthly_cap,
+        status,
+        effective_from,
+        effective_to,
+        organizations (
+          id,
+          name,
+          industry
+        )
+      )
+    `)
+    .eq('id', providerId)
+    .single();
+
+  if (pError || !provider) {
+    throw new Error(`Provider not found: ${pError ? pError.message : 'Invalid ID'}`);
+  }
+
+  const locations = provider.provider_locations || [];
+  const contracts = provider.provider_contracts || [];
+
+  // 2. Fetch visit metrics (today and MTD)
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+  const locIds = locations.map((l) => l.id);
+
+  let todayVisits = [];
+  let mtdVisits = [];
+
+  if (locIds.length > 0) {
+    const [tRes, mRes] = await Promise.all([
+      supabase
+        .from('visits')
+        .select('id, provider_location_id, check_in_at, org_id')
+        .in('provider_location_id', locIds)
+        .eq('status', 'verified')
+        .gte('check_in_at', startOfToday.toISOString()),
+      supabase
+        .from('visits')
+        .select('id, provider_location_id, check_in_at, org_id')
+        .in('provider_location_id', locIds)
+        .eq('status', 'verified')
+        .gte('check_in_at', startOfMonth.toISOString())
+    ]);
+
+    todayVisits = tRes.data || [];
+    mtdVisits = mRes.data || [];
+  }
+
+  // 24h Hourly Distribution for Peak Hours Heatmap
+  const hourlyDistribution = new Array(24).fill(0);
+  todayVisits.forEach((v) => {
+    const hour = new Date(v.check_in_at).getHours();
+    hourlyDistribution[hour] = (hourlyDistribution[hour] || 0) + 1;
+  });
+
+  // Calculate default per-visit rate
+  const activeContract = contracts.find((c) => c.status === 'active') || contracts[0] || null;
+  const defaultRate = activeContract
+    ? parseFloat(activeContract.per_visit_rate)
+    : (locations[0]?.metadata?.per_visit_payout_rate || 3500);
+
+  // Normalize locations with geofence and payout metadata
+  const normalizedLocations = locations.map((l) => {
+    const meta = l.metadata || {};
+    return {
+      id: l.id,
+      name: l.name,
+      address: l.address,
+      city: l.city || 'Kigali',
+      country: l.country || 'Rwanda',
+      lat: l.lat !== null ? parseFloat(l.lat) : null,
+      lng: l.lng !== null ? parseFloat(l.lng) : null,
+      capacity: l.capacity || 100,
+      status: l.status || 'active',
+      isMaintenanceMode: l.status === 'maintenance' || Boolean(meta.is_maintenance_mode),
+      operatingHours: l.operating_hours || {
+        monday: { open: '06:00', close: '22:00' },
+        tuesday: { open: '06:00', close: '22:00' },
+        wednesday: { open: '06:00', close: '22:00' },
+        thursday: { open: '06:00', close: '22:00' },
+        friday: { open: '06:00', close: '22:00' },
+        saturday: { open: '08:00', close: '20:00' },
+        sunday: { open: '08:00', close: '20:00' }
+      },
+      amenities: Array.isArray(l.amenities) ? l.amenities : ['showers', 'lockers', 'parking'],
+      photos: Array.isArray(l.photos) ? l.photos : [],
+      geofenceRadiusMeters: meta.geofence_radius_meters || 150,
+      perVisitPayoutRate: meta.per_visit_payout_rate || defaultRate,
+      currency: meta.currency || 'RWF',
+      minBenefitTier: meta.min_benefit_tier || meta.min_tier || 'standard',
+      metadata: meta
+    };
+  });
+
+  // Normalized KYC document status
+  const onboarding = provider.onboarding_details || {};
+  const kycDocs = onboarding.kyc_documents || {};
+
+  const complianceDossier = {
+    rdbCertificate: {
+      status: kycDocs.rdb_certificate ? 'verified' : (provider.tax_id ? 'verified' : 'pending'),
+      reference: provider.tax_id || kycDocs.rdb_certificate || 'TIN-PENDING',
+      fileUrl: kycDocs.rdb_file_url || null,
+      uploadedAt: kycDocs.rdb_uploaded_at || provider.created_at
+    },
+    rraTinCertificate: {
+      status: provider.tax_id ? 'verified' : 'pending',
+      reference: provider.tax_id || 'RRA-TIN-PENDING',
+      fileUrl: kycDocs.tin_file_url || null,
+      uploadedAt: provider.created_at
+    },
+    facilityPhotos: {
+      status: normalizedLocations.some((l) => l.photos.length > 0) || kycDocs.facility_photos ? 'verified' : 'pending',
+      count: normalizedLocations.reduce((acc, l) => acc + l.photos.length, 0),
+      photos: normalizedLocations.flatMap((l) => l.photos)
+    },
+    hygieneChecklist: {
+      status: kycDocs.hygiene_checklist ? 'verified' : 'pending',
+      inspectedBy: kycDocs.inspected_by || 'PolyFit Operations Compliance',
+      inspectionDate: kycDocs.inspection_date || null
+    }
+  };
+
+  return {
+    provider: {
+      id: provider.id,
+      name: provider.name,
+      category: provider.category,
+      status: provider.status || 'pending_review',
+      rating: parseFloat(provider.rating || 4.8),
+      contactEmail: provider.contact_email,
+      settlementEmail: provider.settlement_email,
+      taxId: provider.tax_id,
+      rejectionReason: provider.rejection_reason || null,
+      pricingExpectations: provider.pricing_expectations || null,
+      onboardingDetails: onboarding,
+      createdAt: provider.created_at,
+      updatedAt: provider.updated_at
+    },
+    locations: normalizedLocations,
+    contracts: contracts.map((c) => ({
+      id: c.id,
+      orgId: c.org_id,
+      orgName: c.organizations?.name || 'All Aggregator Employers',
+      perVisitRate: parseFloat(c.per_visit_rate),
+      monthlyCap: c.monthly_cap,
+      status: c.status,
+      effectiveFrom: c.effective_from,
+      effectiveTo: c.effective_to
+    })),
+    bankDetails: {
+      bankName: provider.bank_details?.bank_name || 'Bank of Kigali (BK)',
+      accountName: provider.bank_details?.account_name || provider.name,
+      accountNumber: provider.bank_details?.account_number || '',
+      swiftCode: provider.bank_details?.swift_code || 'BKIGRWRW',
+      momoProvider: provider.bank_details?.momo_provider || 'MTN Mobile Money Rwanda',
+      momoCode: provider.bank_details?.momo_code || '',
+      momoPhone: provider.bank_details?.momo_phone || ''
+    },
+    complianceDossier,
+    metrics: {
+      todayVisitsCount: todayVisits.length,
+      mtdVisitsCount: mtdVisits.length,
+      defaultPayoutRate: defaultRate,
+      estimatedMtdGrossRwf: mtdVisits.length * defaultRate,
+      hourlyDistribution
+    }
+  };
+}
+
+/**
+ * Direct Onboarding of a Wellness Provider with Primary Location & Commercial Terms.
+ * PF-119 / EPIC-05
+ */
+async function createOperationsProvider(payload) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const {
+    name,
+    category = 'gym',
+    contact_email,
+    settlement_email,
+    tax_id,
+    bank_details,
+    // Primary Location (Step 2)
+    location_name,
+    address,
+    city = 'Kigali',
+    country = 'Rwanda',
+    lat,
+    lng,
+    geofence_radius_meters = 150,
+    amenities = ['showers', 'lockers', 'parking'],
+    // Commercial Terms (Step 3)
+    per_visit_payout_rate = 3500,
+    currency = 'RWF',
+    min_benefit_tier = 'standard',
+    status = 'active'
+  } = payload;
+
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    throw new Error('Provider legal business name is required');
+  }
+
+  const validCategories = ['gym', 'pool', 'studio', 'clinic', 'wellness_center'];
+  if (!validCategories.includes(category)) {
+    throw new Error(`Category must be one of: [${validCategories.join(', ')}]`);
+  }
+
+  // 1. Create provider record
+  const { data: newProvider, error: pErr } = await supabase
+    .from('providers')
+    .insert({
+      name: name.trim(),
+      category,
+      contact_email: contact_email ? String(contact_email).toLowerCase().trim() : null,
+      settlement_email: settlement_email ? String(settlement_email).toLowerCase().trim() : null,
+      tax_id: tax_id ? String(tax_id).trim() : null,
+      bank_details: bank_details || {
+        bank_name: 'Bank of Kigali (BK)',
+        account_name: name.trim(),
+        account_number: '',
+        momo_provider: 'MTN Mobile Money Rwanda',
+        momo_code: ''
+      },
+      onboarding_details: {
+        created_via: 'super_admin_operations',
+        kyc_documents: {
+          rdb_certificate: tax_id ? 'verified' : 'pending',
+          hygiene_checklist: 'verified'
+        }
+      },
+      status: status || 'active'
+    })
+    .select()
+    .single();
+
+  if (pErr) {
+    throw new Error(`Failed to create provider: ${pErr.message}`);
+  }
+
+  // 2. Create primary location
+  const locPayload = {
+    provider_id: newProvider.id,
+    name: location_name ? String(location_name).trim() : `${name.trim()} - Main Facility`,
+    address: address ? String(address).trim() : 'Central District',
+    city: String(city).trim(),
+    country: String(country).trim(),
+    lat: lat !== undefined && lat !== null && lat !== '' ? parseFloat(lat) : -1.9536,
+    lng: lng !== undefined && lng !== null && lng !== '' ? parseFloat(lng) : 30.0924,
+    status: 'active',
+    amenities: Array.isArray(amenities) ? amenities : ['showers', 'lockers', 'parking'],
+    operating_hours: {
+      monday: { open: '06:00', close: '22:00' },
+      tuesday: { open: '06:00', close: '22:00' },
+      wednesday: { open: '06:00', close: '22:00' },
+      thursday: { open: '06:00', close: '22:00' },
+      friday: { open: '06:00', close: '22:00' },
+      saturday: { open: '08:00', close: '20:00' },
+      sunday: { open: '08:00', close: '20:00' }
+    },
+    metadata: {
+      geofence_radius_meters: parseInt(geofence_radius_meters, 10) || 150,
+      per_visit_payout_rate: parseFloat(per_visit_payout_rate) || 3500,
+      currency: currency || 'RWF',
+      min_benefit_tier: min_benefit_tier || 'standard',
+      is_maintenance_mode: false
+    }
+  };
+
+  const { data: newLocation, error: locErr } = await supabase
+    .from('provider_locations')
+    .insert(locPayload)
+    .select()
+    .single();
+
+  if (locErr) {
+    console.warn(`[createOperationsProvider] Primary location insert warning: ${locErr.message}`);
+  }
+
+  return {
+    provider: newProvider,
+    location: newLocation
+  };
+}
+
+/**
+ * Super Admin: Update Provider Profile & Status.
+ * PF-119 / EPIC-05
+ */
+async function updateOperationsProvider(providerId, payload) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const allowedFields = [
+    'name',
+    'category',
+    'contact_email',
+    'settlement_email',
+    'tax_id',
+    'bank_details',
+    'status',
+    'rejection_reason',
+    'rating',
+    'onboarding_details'
+  ];
+
+  const updateData = {
+    updated_at: new Date().toISOString()
+  };
+
+  for (const field of allowedFields) {
+    if (payload[field] !== undefined) {
+      updateData[field] = payload[field];
+    }
+  }
+
+  const { data: updated, error } = await supabase
+    .from('providers')
+    .update(updateData)
+    .eq('id', providerId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update provider: ${error.message}`);
+  }
+
+  return updated;
+}
+
+/**
+ * Super Admin: Add New Facility Location to Provider.
+ * PF-119 / EPIC-05
+ */
+async function addOperationsProviderLocation(providerId, payload) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const {
+    name,
+    address,
+    city = 'Kigali',
+    country = 'Rwanda',
+    lat,
+    lng,
+    capacity = 100,
+    amenities = ['showers', 'lockers', 'parking'],
+    operating_hours,
+    geofence_radius_meters = 150,
+    per_visit_payout_rate = 3500,
+    currency = 'RWF',
+    min_benefit_tier = 'standard'
+  } = payload;
+
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    throw new Error('Location name is required');
+  }
+
+  const locationData = {
+    provider_id: providerId,
+    name: name.trim(),
+    address: address ? String(address).trim() : null,
+    city: String(city).trim(),
+    country: String(country).trim(),
+    lat: lat !== undefined && lat !== null && lat !== '' ? parseFloat(lat) : null,
+    lng: lng !== undefined && lng !== null && lng !== '' ? parseFloat(lng) : null,
+    capacity: parseInt(capacity, 10) || 100,
+    status: 'active',
+    amenities: Array.isArray(amenities) ? amenities : ['showers', 'lockers', 'parking'],
+    operating_hours: operating_hours || {
+      monday: { open: '06:00', close: '22:00' },
+      tuesday: { open: '06:00', close: '22:00' },
+      wednesday: { open: '06:00', close: '22:00' },
+      thursday: { open: '06:00', close: '22:00' },
+      friday: { open: '06:00', close: '22:00' },
+      saturday: { open: '08:00', close: '20:00' },
+      sunday: { open: '08:00', close: '20:00' }
+    },
+    metadata: {
+      geofence_radius_meters: parseInt(geofence_radius_meters, 10) || 150,
+      per_visit_payout_rate: parseFloat(per_visit_payout_rate) || 3500,
+      currency: currency || 'RWF',
+      min_benefit_tier: min_benefit_tier || 'standard',
+      is_maintenance_mode: false
+    }
+  };
+
+  const { data: location, error } = await supabase
+    .from('provider_locations')
+    .insert(locationData)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to add location: ${error.message}`);
+  }
+
+  return location;
+}
+
+/**
+ * Super Admin: Update Facility Location (Geofence Slider, Maintenance Toggle, Amenities, Operating Hours).
+ * PF-119 / EPIC-05
+ */
+async function updateOperationsProviderLocation(providerId, locationId, payload) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  // 1. Fetch current location to merge metadata
+  const { data: existing, error: fetchErr } = await supabase
+    .from('provider_locations')
+    .select('*')
+    .eq('id', locationId)
+    .eq('provider_id', providerId)
+    .single();
+
+  if (fetchErr || !existing) {
+    throw new Error(`Location not found: ${fetchErr ? fetchErr.message : 'Invalid ID'}`);
+  }
+
+  const existingMeta = existing.metadata || {};
+  const newMeta = {
+    ...existingMeta,
+    ...(payload.metadata || {})
+  };
+
+  if (payload.geofence_radius_meters !== undefined) {
+    newMeta.geofence_radius_meters = Math.min(500, Math.max(50, parseInt(payload.geofence_radius_meters, 10) || 150));
+  }
+
+  if (payload.per_visit_payout_rate !== undefined) {
+    newMeta.per_visit_payout_rate = Math.max(0, parseFloat(payload.per_visit_payout_rate) || 0);
+  }
+
+  if (payload.currency !== undefined) {
+    newMeta.currency = String(payload.currency).toUpperCase();
+  }
+
+  if (payload.min_benefit_tier !== undefined) {
+    newMeta.min_benefit_tier = String(payload.min_benefit_tier).toLowerCase();
+    newMeta.min_tier = newMeta.min_benefit_tier;
+  }
+
+  if (payload.is_maintenance_mode !== undefined) {
+    newMeta.is_maintenance_mode = Boolean(payload.is_maintenance_mode);
+  }
+
+  const updateFields = {
+    updated_at: new Date().toISOString(),
+    metadata: newMeta
+  };
+
+  if (payload.name !== undefined) updateFields.name = String(payload.name).trim();
+  if (payload.address !== undefined) updateFields.address = String(payload.address).trim();
+  if (payload.city !== undefined) updateFields.city = String(payload.city).trim();
+  if (payload.lat !== undefined) updateFields.lat = payload.lat !== null && payload.lat !== '' ? parseFloat(payload.lat) : null;
+  if (payload.lng !== undefined) updateFields.lng = payload.lng !== null && payload.lng !== '' ? parseFloat(payload.lng) : null;
+  if (payload.capacity !== undefined) updateFields.capacity = parseInt(payload.capacity, 10) || 100;
+  if (payload.amenities !== undefined) updateFields.amenities = Array.isArray(payload.amenities) ? payload.amenities : [];
+  if (payload.operating_hours !== undefined) updateFields.operating_hours = payload.operating_hours;
+
+  if (payload.status !== undefined) {
+    updateFields.status = payload.status;
+  } else if (payload.is_maintenance_mode !== undefined) {
+    updateFields.status = payload.is_maintenance_mode ? 'maintenance' : 'active';
+  }
+
+  const { data: updated, error: updateErr } = await supabase
+    .from('provider_locations')
+    .update(updateFields)
+    .eq('id', locationId)
+    .eq('provider_id', providerId)
+    .select()
+    .single();
+
+  if (updateErr) {
+    throw new Error(`Failed to update location: ${updateErr.message}`);
+  }
+
+  return updated;
+}
+
+/**
+ * Super Admin: KYC Review & Status Transition (Approve & Issue Contract, Request Revision, Reject).
+ * PF-119 / EPIC-05
+ */
+async function updateOperationsProviderKyc(providerId, payload) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const { action, notes, rejection_reason } = payload;
+  // action: 'approve' | 'request_revision' | 'reject'
+
+  const { data: provider, error: pErr } = await supabase
+    .from('providers')
+    .select('*')
+    .eq('id', providerId)
+    .single();
+
+  if (pErr || !provider) {
+    throw new Error(`Provider not found: ${pErr ? pErr.message : 'Invalid ID'}`);
+  }
+
+  const onboarding = provider.onboarding_details || {};
+  const kycDocs = onboarding.kyc_documents || {};
+
+  let targetStatus = provider.status;
+  const updateData = {
+    updated_at: new Date().toISOString()
+  };
+
+  if (action === 'approve') {
+    targetStatus = 'active';
+    kycDocs.rdb_certificate = 'verified';
+    kycDocs.hygiene_checklist = 'verified';
+    kycDocs.facility_photos = 'verified';
+    kycDocs.approved_at = new Date().toISOString();
+    updateData.rejection_reason = null;
+  } else if (action === 'request_revision') {
+    targetStatus = 'in_review';
+    kycDocs.revision_requested_at = new Date().toISOString();
+    kycDocs.revision_notes = notes || 'Additional compliance documents requested by PolyFit Operations.';
+  } else if (action === 'reject') {
+    targetStatus = 'rejected';
+    updateData.rejection_reason = rejection_reason || notes || 'KYC requirements not met.';
+    kycDocs.rejected_at = new Date().toISOString();
+  } else if (payload.status) {
+    targetStatus = payload.status;
+  }
+
+  updateData.status = targetStatus;
+  updateData.onboarding_details = {
+    ...onboarding,
+    kyc_documents: kycDocs
+  };
+
+  const { data: updated, error } = await supabase
+    .from('providers')
+    .update(updateData)
+    .eq('id', providerId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update KYC status: ${error.message}`);
+  }
+
+  return updated;
+}
+
+/**
+ * Super Admin: Update Negotiated Payout Matrix & Banking Rails.
+ * PF-119 / EPIC-05
+ */
+async function updateOperationsProviderPayoutMatrix(providerId, payload) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const {
+    bank_details,
+    default_rate,
+    currency = 'RWF',
+    location_rates = []
+  } = payload;
+
+  // 1. Update bank details if provided
+  if (bank_details) {
+    const { error: bErr } = await supabase
+      .from('providers')
+      .update({
+        bank_details,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', providerId);
+
+    if (bErr) {
+      throw new Error(`Failed to update bank details: ${bErr.message}`);
+    }
+  }
+
+  // 2. Update location rates & minimum tiers
+  const updatedLocations = [];
+  if (Array.isArray(location_rates) && location_rates.length > 0) {
+    for (const item of location_rates) {
+      if (!item.location_id) continue;
+
+      const { data: loc } = await supabase
+        .from('provider_locations')
+        .select('metadata')
+        .eq('id', item.location_id)
+        .eq('provider_id', providerId)
+        .single();
+
+      if (loc) {
+        const meta = loc.metadata || {};
+        if (item.per_visit_payout_rate !== undefined) {
+          meta.per_visit_payout_rate = Math.max(0, parseFloat(item.per_visit_payout_rate) || 0);
+        }
+        if (item.currency !== undefined) {
+          meta.currency = String(item.currency).toUpperCase();
+        }
+        if (item.min_benefit_tier !== undefined) {
+          meta.min_benefit_tier = String(item.min_benefit_tier).toLowerCase();
+          meta.min_tier = meta.min_benefit_tier;
+        }
+
+        const { data: updatedLoc } = await supabase
+          .from('provider_locations')
+          .update({
+            metadata: meta,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', item.location_id)
+          .select()
+          .single();
+
+        if (updatedLoc) updatedLocations.push(updatedLoc);
+      }
+    }
+  }
+
+  return {
+    success: true,
+    message: 'Negotiated payout matrix updated successfully',
+    updatedLocations
+  };
+}
+
 module.exports = {
   getOperationsOverview,
   searchOperationsUniversal,
@@ -937,6 +1827,14 @@ module.exports = {
   createOperationsClient,
   updateOperationsClient,
   updateClientRosterEmployee,
-  syncClientDomains
+  syncClientDomains,
+  getOperationsProviders,
+  getOperationsProviderDetail,
+  createOperationsProvider,
+  updateOperationsProvider,
+  addOperationsProviderLocation,
+  updateOperationsProviderLocation,
+  updateOperationsProviderKyc,
+  updateOperationsProviderPayoutMatrix
 };
 

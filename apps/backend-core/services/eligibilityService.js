@@ -1,5 +1,13 @@
 const { supabase } = require('./supabaseService');
 
+const TIER_RANKS = {
+  starter: 1,
+  basic: 1,
+  standard: 2,
+  premium: 3,
+  executive: 4
+};
+
 /**
  * Real-time Eligibility Verification Engine (PF-82 & PF-79)
  * Evaluates whether an employee is eligible to access a provider location under their benefit plan.
@@ -128,9 +136,9 @@ async function evaluateEmployeeEligibility(arg1, arg2, arg3, arg4, arg5) {
         address,
         lat,
         lng,
-        geo,
         status,
         provider_id,
+        metadata,
         providers (
           id,
           name,
@@ -204,6 +212,14 @@ async function evaluateEmployeeEligibility(arg1, arg2, arg3, arg4, arg5) {
     };
   }
 
+  if (location.status === 'maintenance' || location.metadata?.is_maintenance_mode) {
+    return {
+      eligible: false,
+      reason: 'Facility is currently in maintenance mode. Check-ins are temporarily suspended',
+      code: 'LOCATION_MAINTENANCE'
+    };
+  }
+
   if (location.status !== 'active') {
     return {
       eligible: false,
@@ -244,6 +260,25 @@ async function evaluateEmployeeEligibility(arg1, arg2, arg3, arg4, arg5) {
         code: 'LOCATION_NOT_ALLOWED',
         allowedLocations: benefit.allowed_locations,
         requestedLocationId: location.id
+      };
+    }
+  }
+
+  // 5b. Minimum Benefit Plan Tier Check (PF-119)
+  const locationMinTier = location.metadata?.min_benefit_tier || location.metadata?.min_tier;
+  if (locationMinTier) {
+    const employeeTier = (employee.tier || benefit.tier || 'standard').toLowerCase();
+    const requiredTier = String(locationMinTier).toLowerCase();
+    const employeeRank = TIER_RANKS[employeeTier] || 1;
+    const requiredRank = TIER_RANKS[requiredTier] || 1;
+
+    if (employeeRank < requiredRank) {
+      return {
+        eligible: false,
+        reason: `Access restricted. This facility requires a minimum '${requiredTier}' corporate tier. Current employee tier is '${employeeTier}'`,
+        code: 'TIER_RESTRICTED',
+        requiredTier,
+        employeeTier
       };
     }
   }

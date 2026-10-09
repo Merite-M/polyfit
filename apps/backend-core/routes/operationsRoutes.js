@@ -8,7 +8,15 @@ const {
   createOperationsClient,
   updateOperationsClient,
   updateClientRosterEmployee,
-  syncClientDomains
+  syncClientDomains,
+  getOperationsProviders,
+  getOperationsProviderDetail,
+  createOperationsProvider,
+  updateOperationsProvider,
+  addOperationsProviderLocation,
+  updateOperationsProviderLocation,
+  updateOperationsProviderKyc,
+  updateOperationsProviderPayoutMatrix
 } = require('../services/operationsService');
 
 const router = express.Router();
@@ -207,6 +215,185 @@ router.patch('/clients/:id/domains', async (req, res) => {
     return res.status(400).json({
       error: error.message,
       code: 'OPERATIONS_DOMAINS_SYNC_FAILED'
+    });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PF-119: SUPER ADMIN PROVIDER NETWORK OPERATIONS & PAYOUT MATRIX
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/operations/providers
+ * Provider network directory with real-time location metrics,
+ * today's check-in velocity, KYC badges, and fleet telemetry.
+ * SLA: < 150ms
+ */
+router.get('/providers', async (req, res) => {
+  try {
+    const { status, category, search } = req.query;
+    const result = await getOperationsProviders({ status, category, search });
+    return res.status(200).json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Providers list error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_PROVIDERS_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/operations/providers/:id
+ * Complete 360-degree provider cockpit detail for ProviderDossierDrawer.
+ */
+router.get('/providers/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const providerDetail = await getOperationsProviderDetail(id);
+    return res.status(200).json({
+      success: true,
+      ...providerDetail
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Provider detail error:', error.message);
+    const status = error.message.includes('not found') ? 404 : 500;
+    return res.status(status).json({
+      error: error.message,
+      code: 'OPERATIONS_PROVIDER_DETAIL_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/operations/providers
+ * 3-Step Streamlined Provider Account & Facility Provisioning.
+ */
+router.post('/providers', async (req, res) => {
+  try {
+    const created = await createOperationsProvider(req.body);
+    return res.status(201).json({
+      success: true,
+      message: 'Wellness provider provisioned successfully into network',
+      ...created
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Provider create error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_PROVIDER_CREATE_FAILED'
+    });
+  }
+});
+
+/**
+ * PATCH /api/operations/providers/:id
+ * Update provider profile identity, tax TIN, contact info, or operational status.
+ */
+router.patch('/providers/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await updateOperationsProvider(id, req.body);
+    return res.status(200).json({
+      success: true,
+      message: 'Provider profile updated successfully',
+      provider: updated
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Provider update error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_PROVIDER_UPDATE_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/operations/providers/:id/locations
+ * Add a new branch/facility location to provider with GPS and amenities.
+ */
+router.post('/providers/:id/locations', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const location = await addOperationsProviderLocation(id, req.body);
+    return res.status(201).json({
+      success: true,
+      message: 'Facility location added successfully to provider network',
+      location
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Location create error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_LOCATION_CREATE_FAILED'
+    });
+  }
+});
+
+/**
+ * PATCH /api/operations/providers/:id/locations/:locId
+ * Update facility location (geofence radius slider 50m-500m, maintenance mode, operating hours, amenities).
+ */
+router.patch('/providers/:id/locations/:locId', async (req, res) => {
+  try {
+    const { id, locId } = req.params;
+    const location = await updateOperationsProviderLocation(id, locId, req.body);
+    return res.status(200).json({
+      success: true,
+      message: 'Facility location updated successfully',
+      location
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Location update error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_LOCATION_UPDATE_FAILED'
+    });
+  }
+});
+
+/**
+ * PATCH /api/operations/providers/:id/kyc
+ * Super Admin 1-Click KYC Compliance Transition (Approve & Issue Contract, Request Revision, Reject).
+ */
+router.patch('/providers/:id/kyc', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const provider = await updateOperationsProviderKyc(id, req.body);
+    return res.status(200).json({
+      success: true,
+      message: 'Provider KYC compliance status updated successfully',
+      provider
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] KYC update error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_KYC_UPDATE_FAILED'
+    });
+  }
+});
+
+/**
+ * PATCH /api/operations/providers/:id/payout-matrix
+ * Super Admin: Negotiated Per-Visit Payout Matrix & Banking/MoMo Rails.
+ */
+router.patch('/providers/:id/payout-matrix', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await updateOperationsProviderPayoutMatrix(id, req.body);
+    return res.status(200).json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Payout matrix update error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_PAYOUT_MATRIX_UPDATE_FAILED'
     });
   }
 });

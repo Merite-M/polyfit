@@ -40,8 +40,8 @@ const NAVIGATION_ITEMS = [
     name: "Provider Network",
     href: "/operations/providers",
     icon: Network,
-    badge: "PF-119",
-    badgeVariant: "slate" as const,
+    badge: "LIVE",
+    badgeVariant: "emerald" as const,
   },
   {
     name: "Live Visit Monitor",

@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import { useOperationsDrawer } from "@/contexts/OperationsDrawerContext";
 import { EmployerContractDrawer } from "./EmployerContractDrawer";
+import { ProviderDossierDrawer } from "./ProviderDossierDrawer";
 import { 
   X, 
   Building2, 
@@ -29,6 +30,24 @@ export function SlideOverDrawerHost() {
         isOpen={drawerState.isOpen}
         onClose={closeDrawer}
         clientId={drawerState.id}
+        initialData={drawerState.data}
+      />
+    );
+  }
+
+  // If provider or location type, delegate directly to the dedicated ProviderDossierDrawer (PF-119)
+  const targetProviderId = drawerState.type === "provider" 
+    ? drawerState.id 
+    : drawerState.type === "location" 
+      ? (drawerState.data?.providerId || drawerState.id) 
+      : null;
+
+  if (drawerState.isOpen && (drawerState.type === "provider" || drawerState.type === "location") && targetProviderId) {
+    return (
+      <ProviderDossierDrawer
+        isOpen={drawerState.isOpen}
+        onClose={closeDrawer}
+        providerId={targetProviderId}
         initialData={drawerState.data}
       />
     );
