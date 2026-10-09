@@ -261,13 +261,13 @@ export default function MarketplaceFinancePage() {
       </div>
 
       {/* Tabs & Search Filter Navigation Bar */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-xs flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div className="rounded-2xl border border-slate-200 bg-white p-2.5 shadow-xs flex flex-wrap items-center justify-between gap-3">
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <button
             type="button"
             onClick={() => setActiveTab("invoices")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition ${
               activeTab === "invoices"
                 ? "bg-slate-900 text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -285,7 +285,7 @@ export default function MarketplaceFinancePage() {
           <button
             type="button"
             onClick={() => setActiveTab("settlements")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition ${
               activeTab === "settlements"
                 ? "bg-slate-900 text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -303,7 +303,7 @@ export default function MarketplaceFinancePage() {
           <button
             type="button"
             onClick={() => setActiveTab("ledger")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition ${
               activeTab === "ledger"
                 ? "bg-slate-900 text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -314,48 +314,50 @@ export default function MarketplaceFinancePage() {
           </button>
         </div>
 
-        {/* Global Search and Tab-Specific Filters */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 md:w-64">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder={activeTab === "invoices" ? "Search client, invoice #..." : "Search provider, settlement #..."}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-slate-400"
-            />
+        {/* Global Search and Tab-Specific Filters (Only for Invoices and Settlements) */}
+        {activeTab !== "ledger" && (
+          <div className="flex items-center gap-2 flex-1 sm:flex-none justify-end">
+            <div className="relative w-full sm:w-56 lg:w-64">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder={activeTab === "invoices" ? "Search client, invoice #..." : "Search provider, settlement #..."}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-slate-400"
+              />
+            </div>
+
+            {activeTab === "invoices" && (
+              <select
+                value={invoiceStatusFilter}
+                onChange={(e) => setInvoiceStatusFilter(e.target.value)}
+                className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-700 focus:outline-none focus:border-slate-400"
+              >
+                <option value="all">All Invoices</option>
+                <option value="draft">Draft</option>
+                <option value="issued">Issued</option>
+                <option value="paid">Paid</option>
+                <option value="overdue">Overdue</option>
+                <option value="void">Void</option>
+              </select>
+            )}
+
+            {activeTab === "settlements" && (
+              <select
+                value={settlementStatusFilter}
+                onChange={(e) => setSettlementStatusFilter(e.target.value)}
+                className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-700 focus:outline-none focus:border-slate-400"
+              >
+                <option value="all">All Settlements</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="disbursed">Disbursed</option>
+                <option value="flagged">Flagged / Escrow</option>
+              </select>
+            )}
           </div>
-
-          {activeTab === "invoices" && (
-            <select
-              value={invoiceStatusFilter}
-              onChange={(e) => setInvoiceStatusFilter(e.target.value)}
-              className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-700 focus:outline-none focus:border-slate-400"
-            >
-              <option value="all">All Invoices</option>
-              <option value="draft">Draft</option>
-              <option value="issued">Issued</option>
-              <option value="paid">Paid</option>
-              <option value="overdue">Overdue</option>
-              <option value="void">Void</option>
-            </select>
-          )}
-
-          {activeTab === "settlements" && (
-            <select
-              value={settlementStatusFilter}
-              onChange={(e) => setSettlementStatusFilter(e.target.value)}
-              className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-700 focus:outline-none focus:border-slate-400"
-            >
-              <option value="all">All Settlements</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="disbursed">Disbursed</option>
-              <option value="flagged">Flagged / Escrow</option>
-            </select>
-          )}
-        </div>
+        )}
       </div>
 
       {/* TAB 1: CORPORATE INVOICES TABLE */}
