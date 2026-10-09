@@ -5,6 +5,7 @@ import { useOperationsDrawer } from "@/contexts/OperationsDrawerContext";
 import { EmployerContractDrawer } from "./EmployerContractDrawer";
 import { ProviderDossierDrawer } from "./ProviderDossierDrawer";
 import { VisitDetailDrawer } from "./VisitDetailDrawer";
+import { InvoiceSettlementDrawer } from "./InvoiceSettlementDrawer";
 import { 
   X, 
   Building2, 
@@ -61,6 +62,19 @@ export function SlideOverDrawerHost() {
         isOpen={drawerState.isOpen}
         onClose={closeDrawer}
         visitId={drawerState.id}
+        initialData={drawerState.data}
+      />
+    );
+  }
+
+  // If invoice or settlement type, delegate directly to InvoiceSettlementDrawer (PF-121)
+  if (drawerState.isOpen && (drawerState.type === "invoice" || drawerState.type === "settlement") && drawerState.id) {
+    return (
+      <InvoiceSettlementDrawer
+        isOpen={drawerState.isOpen}
+        onClose={closeDrawer}
+        entityType={drawerState.type}
+        entityId={drawerState.id}
         initialData={drawerState.data}
       />
     );

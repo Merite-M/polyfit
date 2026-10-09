@@ -8,7 +8,8 @@ export type EntityType =
   | "location" 
   | "employee" 
   | "visit" 
-  | "invoice";
+  | "invoice"
+  | "settlement";
 
 export interface DrawerState {
   isOpen: boolean;

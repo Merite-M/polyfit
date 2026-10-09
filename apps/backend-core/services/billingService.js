@@ -742,6 +742,91 @@ async function exportInvoiceAuditCsv(invoiceId) {
   return [headers.map(escapeCell).join(','), ...rows].join('\r\n');
 }
 
+// ─── Create Invoice Adjustment / Credit Note ──────────────────────────────────
+/**
+ * Issues a credit note or manual financial adjustment on an invoice.
+ * Recalculates total_amount and 18% VAT (tax_amount) accordingly.
+ *
+ * @param {string} invoiceId
+ * @param {object} payload
+ * @param {'credit'|'debit'} payload.type - 'credit' (reduces invoice) or 'debit' (increases invoice)
+ * @param {number} payload.amount - Pre-VAT adjustment amount in RWF
+ * @param {string} payload.reason - Category or reason code
+ * @param {string} [payload.notes] - Detailed explanation
+ * @param {string} [adminUserId]
+ * @returns {object} Updated invoice record
+ */
+async function createInvoiceAdjustment(invoiceId, { type = 'credit', amount, reason, notes } = {}, adminUserId = null) {
+  if (!supabase) throw new Error('Database connection unavailable');
+
+  const adjAmount = parseFloat(amount);
+  if (isNaN(adjAmount) || adjAmount <= 0) {
+    throw new Error('Adjustment amount must be a positive number');
+  }
+
+  if (!reason || !reason.trim()) {
+    throw new Error('Adjustment reason is required');
+  }
+
+  const { data: invoice, error: fetchErr } = await supabase
+    .from('invoices')
+    .select('*')
+    .eq('id', invoiceId)
+    .single();
+
+  if (fetchErr || !invoice) {
+    throw new Error('Invoice not found');
+  }
+
+  const currentTotal = parseFloat(invoice.total_amount) || 0;
+  const currentTax = parseFloat(invoice.tax_amount) || 0;
+  const currentSubtotal = Math.max(0, currentTotal - currentTax);
+
+  let newSubtotal = currentSubtotal;
+  if (type === 'credit') {
+    newSubtotal = Math.max(0, currentSubtotal - adjAmount);
+  } else {
+    newSubtotal = currentSubtotal + adjAmount;
+  }
+
+  const newTaxAmount = parseFloat((newSubtotal * VAT_RATE).toFixed(2));
+  const newTotalAmount = parseFloat((newSubtotal + newTaxAmount).toFixed(2));
+
+  const noteEntry = `[${new Date().toISOString()}] ${type.toUpperCase()} ADJUSTMENT: RWF ${adjAmount.toLocaleString()} - Reason: ${reason}${notes ? ` - Notes: ${notes}` : ''}`;
+  const updatedNotes = invoice.dispute_notes 
+    ? `${invoice.dispute_notes}\n${noteEntry}`
+    : noteEntry;
+
+  const { data: updated, error: updateErr } = await supabase
+    .from('invoices')
+    .update({
+      total_amount: newTotalAmount,
+      tax_amount: newTaxAmount,
+      dispute_notes: updatedNotes,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', invoiceId)
+    .select()
+    .single();
+
+  if (updateErr) {
+    throw new Error(`Failed to update invoice adjustment: ${updateErr.message}`);
+  }
+
+  return {
+    ...updated,
+    adjustment_applied: {
+      type,
+      amount: adjAmount,
+      reason,
+      notes,
+      previous_total: currentTotal,
+      new_total: newTotalAmount,
+      vat_delta: newTaxAmount - currentTax
+    }
+  };
+}
+
 module.exports = {
   generateInvoice,
   listInvoices,
@@ -753,6 +838,7 @@ module.exports = {
   updateInvoiceStatus,
   markOverdueInvoices,
   generateAllInvoices,
+  createInvoiceAdjustment,
   VAT_RATE,
   INVOICE_STATUS_TRANSITIONS
 };

@@ -20,7 +20,18 @@ const {
   getOperationsVisits,
   getOperationsDisputes,
   executeTurnstileEmergencyBypass,
-  adjudicateVisitDispute
+  adjudicateVisitDispute,
+  getOperationsFinanceOverview,
+  getOperationsFinanceInvoices,
+  getOperationsFinanceSettlements,
+  getOperationsFinanceLedger,
+  runOperationsMonthlyBilling,
+  runOperationsProviderReconciliation,
+  approveOperationsSettlement,
+  disburseOperationsSettlement,
+  adjustOperationsInvoice,
+  updateOperationsInvoiceStatus,
+  exportOperationsDisbursementCsv
 } = require('../services/operationsService');
 
 const router = express.Router();
@@ -478,6 +489,216 @@ router.patch('/visits/:id/dispute/adjudicate', async (req, res) => {
     return res.status(400).json({
       error: error.message,
       code: 'OPERATIONS_DISPUTE_ADJUDICATION_FAILED'
+    });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PF-121: MARKETPLACE FINANCIAL CLEARINGHOUSE, INVOICING & MARGIN LEDGER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/operations/finance/overview
+ * Executive financial margin ticker, GMV, COGS liability, and closing schedule.
+ * SLA: < 150ms
+ */
+router.get('/finance/overview', async (req, res) => {
+  try {
+    const overview = await getOperationsFinanceOverview();
+    return res.status(200).json(overview);
+  } catch (error) {
+    console.error('[operationsRoutes] Finance overview error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_FINANCE_OVERVIEW_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/operations/finance/invoices
+ * Paginated corporate invoices with search and RRA tax breakdown.
+ */
+router.get('/finance/invoices', async (req, res) => {
+  try {
+    const result = await getOperationsFinanceInvoices(req.query);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Finance invoices error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_FINANCE_INVOICES_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/operations/finance/settlements
+ * Paginated provider settlements with dispute escrow hold indicators.
+ */
+router.get('/finance/settlements', async (req, res) => {
+  try {
+    const result = await getOperationsFinanceSettlements(req.query);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Finance settlements error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_FINANCE_SETTLEMENTS_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/operations/finance/ledger
+ * Real-time Gross Margin Ledger sliced by Employer and Provider Category.
+ */
+router.get('/finance/ledger', async (req, res) => {
+  try {
+    const result = await getOperationsFinanceLedger(req.query);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Finance ledger error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_FINANCE_LEDGER_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/operations/finance/disbursements
+ * Formatted CSV file export for MTN MoMo Bulk or Commercial Bank Batch EFT/RTGS.
+ */
+router.get('/finance/disbursements', async (req, res) => {
+  try {
+    const { type = 'momo', format = 'download' } = req.query;
+    const result = await exportOperationsDisbursementCsv(type, req.query);
+
+    if (format === 'json') {
+      return res.status(200).json(result);
+    }
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    return res.status(200).send(result.content);
+  } catch (error) {
+    console.error('[operationsRoutes] Finance disbursement export error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_DISBURSEMENT_EXPORT_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/operations/finance/billing-run
+ * 1-Click Monthly Billing Run for all active corporate employers.
+ */
+router.post('/finance/billing-run', async (req, res) => {
+  try {
+    const adminUserId = req.user?.id || null;
+    const result = await runOperationsMonthlyBilling(req.body, adminUserId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Monthly billing run error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_BILLING_RUN_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/operations/finance/settlement-run
+ * 1-Click Monthly Provider Settlement Reconciliation with Dispute Escrow Holds.
+ */
+router.post('/finance/settlement-run', async (req, res) => {
+  try {
+    const adminUserId = req.user?.id || null;
+    const result = await runOperationsProviderReconciliation(req.body, adminUserId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Settlement reconciliation run error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_SETTLEMENT_RUN_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/operations/finance/settlements/:id/approve
+ * Approves a settlement for payout.
+ */
+router.post('/finance/settlements/:id/approve', async (req, res) => {
+  try {
+    const adminUserId = req.user?.id || null;
+    const result = await approveOperationsSettlement(req.params.id, adminUserId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Approve settlement error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_SETTLEMENT_APPROVE_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/operations/finance/settlements/:id/disburse
+ * Disburses settlement with payment reference.
+ */
+router.post('/finance/settlements/:id/disburse', async (req, res) => {
+  try {
+    const adminUserId = req.user?.id || null;
+    const result = await disburseOperationsSettlement(req.params.id, req.body, adminUserId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Disburse settlement error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_SETTLEMENT_DISBURSE_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/operations/finance/invoices/:id/adjustment
+ * Issues credit note or debit adjustment on an invoice.
+ */
+router.post('/finance/invoices/:id/adjustment', async (req, res) => {
+  try {
+    const adminUserId = req.user?.id || null;
+    const result = await adjustOperationsInvoice(req.params.id, req.body, adminUserId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Adjust invoice error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_INVOICE_ADJUSTMENT_FAILED'
+    });
+  }
+});
+
+/**
+ * PATCH /api/operations/finance/invoices/:id/status
+ * Updates invoice status (e.g. issued, paid, void).
+ */
+router.patch('/finance/invoices/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!status) {
+      return res.status(400).json({ error: 'Status is required' });
+    }
+    const adminUserId = req.user?.id || null;
+    const result = await updateOperationsInvoiceStatus(req.params.id, status, adminUserId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Update invoice status error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_INVOICE_STATUS_UPDATE_FAILED'
     });
   }
 });

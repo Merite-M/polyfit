@@ -424,3 +424,5 @@ export function generateRraEbmInvoicePdf(
 
   return doc;
 }
+
+export const generateInvoicePdf = generateRraEbmInvoicePdf;

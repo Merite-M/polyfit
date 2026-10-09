@@ -1,3 +1,5 @@
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const { describe, it, beforeEach, mock } = require('node:test');
 const assert = require('node:assert/strict');
 
@@ -200,5 +202,80 @@ describe('Health Check', () => {
     assert.ok([200, 503].includes(res.status));
     assert.ok(res.body.status);
     assert.ok(res.body.timestamp);
+  });
+});
+
+// ─── PF-121 Operations Finance Integration Tests ──────────────────────────────
+
+describe('PF-121: Operations Marketplace Finance Endpoints', () => {
+  const request = require('supertest');
+  const app = require('../index');
+
+  it('GET /api/operations/finance/overview should return financial ticker metrics', async () => {
+    const res = await request(app).get('/api/operations/finance/overview');
+    assert.strictEqual(res.status, 200);
+    assert.ok(res.body.success);
+    assert.strictEqual(res.body.currency, 'RWF');
+    assert.ok(res.body.ticker);
+    assert.ok(res.body.ticker.grossInvoicedGmv >= 0);
+    assert.ok(res.body.ticker.providerPayoutLiabilities >= 0);
+    assert.ok(typeof res.body.ticker.netGrossMarginSpread === 'number');
+    assert.ok(typeof res.body.ticker.netGrossMarginPercentage === 'number');
+  });
+
+  it('GET /api/operations/finance/invoices should return paginated invoices list', async () => {
+    const res = await request(app).get('/api/operations/finance/invoices?page=1&limit=10');
+    assert.strictEqual(res.status, 200);
+    assert.ok(res.body.success);
+    assert.ok(Array.isArray(res.body.invoices));
+    assert.ok(typeof res.body.total === 'number');
+  });
+
+  it('GET /api/operations/finance/settlements should return settlements list', async () => {
+    const res = await request(app).get('/api/operations/finance/settlements?page=1&limit=10');
+    assert.strictEqual(res.status, 200);
+    assert.ok(res.body.success);
+    assert.ok(Array.isArray(res.body.settlements));
+    assert.ok(typeof res.body.total === 'number');
+  });
+
+  it('GET /api/operations/finance/ledger should return margin ledger by employer and category', async () => {
+    const res = await request(app).get('/api/operations/finance/ledger');
+    assert.strictEqual(res.status, 200);
+    assert.ok(res.body.success);
+    assert.ok(Array.isArray(res.body.employerLedger));
+    assert.ok(Array.isArray(res.body.categoryLedger));
+  });
+
+  it('GET /api/operations/finance/disbursements?type=momo should return valid CSV', async () => {
+    const res = await request(app).get('/api/operations/finance/disbursements?type=momo');
+    assert.strictEqual(res.status, 200);
+    assert.ok(res.headers['content-type'].includes('text/csv'));
+    assert.ok(res.text.includes('Phone Number'));
+    assert.ok(res.text.includes('Amount (RWF)'));
+  });
+
+  it('GET /api/operations/finance/disbursements?type=bank should return valid CSV', async () => {
+    const res = await request(app).get('/api/operations/finance/disbursements?type=bank');
+    assert.strictEqual(res.status, 200);
+    assert.ok(res.headers['content-type'].includes('text/csv'));
+    assert.ok(res.text.includes('Beneficiary Account Number'));
+    assert.ok(res.text.includes('SWIFT / BIC Code'));
+  });
+
+  it('POST /api/operations/finance/billing-run should require date period', async () => {
+    const res = await request(app)
+      .post('/api/operations/finance/billing-run')
+      .send({});
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(res.body.code, 'OPERATIONS_BILLING_RUN_FAILED');
+  });
+
+  it('POST /api/operations/finance/settlement-run should require date period', async () => {
+    const res = await request(app)
+      .post('/api/operations/finance/settlement-run')
+      .send({});
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(res.body.code, 'OPERATIONS_SETTLEMENT_RUN_FAILED');
   });
 });

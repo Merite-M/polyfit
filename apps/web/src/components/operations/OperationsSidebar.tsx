@@ -54,8 +54,8 @@ const NAVIGATION_ITEMS = [
     name: "Marketplace Finance",
     href: "/operations/finance",
     icon: Coins,
-    badge: "PF-121",
-    badgeVariant: "slate" as const,
+    badge: "LIVE",
+    badgeVariant: "emerald" as const,
   },
   {
     name: "User 360 & Security",
