@@ -61,8 +61,8 @@ const NAVIGATION_ITEMS = [
     name: "User 360 & Security",
     href: "/operations/support",
     icon: ShieldCheck,
-    badge: "PF-122",
-    badgeVariant: "slate" as const,
+    badge: "LIVE",
+    badgeVariant: "emerald" as const,
   },
 ];
 

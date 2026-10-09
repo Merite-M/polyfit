@@ -20,12 +20,20 @@ async function logAuthEvent({ userId = null, eventType, metadata = {}, req = nul
       userAgent = req.headers['user-agent'] || null;
     }
 
+    let validatedUserId = null;
+    const metaPayload = { ...metadata };
+    if (userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId))) {
+      validatedUserId = userId;
+    } else if (userId) {
+      metaPayload.operator_identifier = String(userId);
+    }
+
     const { error } = await supabase
       .from('auth_audit_logs')
       .insert({
-        user_id: userId,
+        user_id: validatedUserId,
         event_type: eventType,
-        metadata,
+        metadata: metaPayload,
         ip_address: ipAddress ? String(ipAddress).slice(0, 45) : null,
         user_agent: userAgent ? String(userAgent).slice(0, 255) : null,
       });

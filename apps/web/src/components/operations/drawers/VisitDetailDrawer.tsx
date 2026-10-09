@@ -271,11 +271,24 @@ export function VisitDetailDrawer({
 
                 <div>
                   <h4 className="font-bold text-white text-sm">{organization?.name || "Corporate Employer"}</h4>
-                  <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-2">
-                    <span>Beneficiary: <strong className="text-slate-200">{employee?.full_name || "N/A"}</strong></span>
-                    <span className="font-mono px-1.5 py-0.2 rounded bg-slate-800 text-[#28D17C] font-semibold text-[10px]">
-                      {employee?.tier || "STANDARD"}
-                    </span>
+                  <div className="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span>Beneficiary: <strong className="text-slate-200">{employee?.full_name || "N/A"}</strong></span>
+                      <span className="font-mono px-1.5 py-0.2 rounded bg-slate-800 text-[#28D17C] font-semibold text-[10px]">
+                        {employee?.tier || "STANDARD"}
+                      </span>
+                    </div>
+                    {employee?.id && (
+                      <button
+                        type="button"
+                        onClick={() => openDrawer("employee", employee.id, employee, employee.full_name)}
+                        className="text-[10px] text-[#28D17C] hover:underline flex items-center gap-1 font-semibold"
+                        title="Open User 360 Support Drawer"
+                      >
+                        <span>User 360</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </button>
+                    )}
                   </div>
                   <div className="font-mono text-[11px] text-slate-400 mt-0.5 truncate">
                     {employee?.email}

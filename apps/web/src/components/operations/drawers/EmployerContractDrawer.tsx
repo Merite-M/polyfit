@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 import { BulkUploadModal } from "@/components/corporate/BulkUploadModal";
+import { useOperationsDrawer } from "@/contexts/OperationsDrawerContext";
 
 export interface EmployerContractDrawerProps {
   isOpen: boolean;
@@ -48,6 +49,7 @@ export function EmployerContractDrawer({
   onClientUpdated
 }: EmployerContractDrawerProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const { openDrawer } = useOperationsDrawer();
   const [activeTab, setActiveTab] = useState<"commercial" | "subsidy" | "domains" | "roster">("commercial");
 
   const [loading, setLoading] = useState(false);
@@ -756,6 +758,16 @@ export function EmployerContractDrawer({
                                 ) : (
                                   "Frozen"
                                 )}
+                              </button>
+
+                              {/* User 360 Diagnostics Deep Link */}
+                              <button
+                                type="button"
+                                onClick={() => openDrawer("employee", emp.id, emp, emp.full_name)}
+                                className="p-1 rounded-md text-slate-400 hover:text-[#28D17C] hover:bg-slate-100 transition-colors"
+                                title="Inspect User 360 Support & Device Diagnostics"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>

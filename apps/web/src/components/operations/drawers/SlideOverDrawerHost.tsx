@@ -6,6 +6,7 @@ import { EmployerContractDrawer } from "./EmployerContractDrawer";
 import { ProviderDossierDrawer } from "./ProviderDossierDrawer";
 import { VisitDetailDrawer } from "./VisitDetailDrawer";
 import { InvoiceSettlementDrawer } from "./InvoiceSettlementDrawer";
+import { User360Drawer } from "./User360Drawer";
 import { 
   X, 
   Building2, 
@@ -75,6 +76,18 @@ export function SlideOverDrawerHost() {
         onClose={closeDrawer}
         entityType={drawerState.type}
         entityId={drawerState.id}
+        initialData={drawerState.data}
+      />
+    );
+  }
+
+  // If employee type, delegate directly to dedicated User360Drawer (PF-122)
+  if (drawerState.isOpen && drawerState.type === "employee" && drawerState.id) {
+    return (
+      <User360Drawer
+        isOpen={drawerState.isOpen}
+        onClose={closeDrawer}
+        employeeId={drawerState.id}
         initialData={drawerState.data}
       />
     );

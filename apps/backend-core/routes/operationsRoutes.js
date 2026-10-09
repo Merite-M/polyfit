@@ -31,7 +31,18 @@ const {
   disburseOperationsSettlement,
   adjustOperationsInvoice,
   updateOperationsInvoiceStatus,
-  exportOperationsDisbursementCsv
+  exportOperationsDisbursementCsv,
+  // PF-122 User 360 Support, Device Lock Reset, RBAC & Audit Trail Methods
+  getOperationsSupportBeneficiaries,
+  getOperationsSupportBeneficiaryDetail,
+  resetOperationsDeviceLock,
+  updateOperationsBeneficiaryStatus,
+  updateOperationsBeneficiaryTier,
+  getOperationsAuditLogs,
+  getOperationsPlatformSettings,
+  updateOperationsPlatformSetting,
+  getOperationsTeamDirectory,
+  assignOperationsTeamRole
 } = require('../services/operationsService');
 
 const router = express.Router();
@@ -699,6 +710,213 @@ router.patch('/finance/invoices/:id/status', async (req, res) => {
     return res.status(400).json({
       error: error.message,
       code: 'OPERATIONS_INVOICE_STATUS_UPDATE_FAILED'
+    });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PF-122: Super Admin: User 360 Support, Device Lock Reset, RBAC & Audit Trail
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * GET /api/operations/support/beneficiaries
+ * Master Beneficiary Directory with sub-200ms query resolution.
+ */
+router.get('/support/beneficiaries', async (req, res) => {
+  try {
+    const { q, status, tier, orgId, page, limit } = req.query;
+    const result = await getOperationsSupportBeneficiaries({ q, status, tier, orgId, page, limit });
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Beneficiaries directory error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_BENEFICIARIES_FETCH_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/operations/support/beneficiaries/:id
+ * Full User 360 Support Cockpit Detail: Quota, Device Binding, Live TOTP & Diagnostics.
+ */
+router.get('/support/beneficiaries/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await getOperationsSupportBeneficiaryDetail(id);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Beneficiary 360 error:', error.message);
+    const status = error.message.includes('not found') ? 404 : 500;
+    return res.status(status).json({
+      error: error.message,
+      code: 'OPERATIONS_BENEFICIARY_DETAIL_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/operations/support/beneficiaries/:id/device-reset
+ * 1-Click Hardware Unbinding with 30-day rate-limiting guardrail & manager override.
+ */
+router.post('/support/beneficiaries/:id/device-reset', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason, isManagerOverride } = req.body || {};
+    const adminUser = req.user || { id: null, role: 'super_admin', name: 'Ops Super Admin' };
+    const result = await resetOperationsDeviceLock(id, { reason, isManagerOverride }, adminUser);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Device reset error:', error.message);
+    const statusCode = error.statusCode || (error.code === 'DEVICE_RESET_LIMIT_EXCEEDED' ? 400 : 500);
+    return res.status(statusCode).json({
+      error: error.message,
+      code: error.code || 'OPERATIONS_DEVICE_RESET_FAILED'
+    });
+  }
+});
+
+/**
+ * PATCH /api/operations/support/beneficiaries/:id/status
+ * 1-Click Employee Status Override with immutable audit logging.
+ */
+router.patch('/support/beneficiaries/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, reason } = req.body || {};
+    if (!status) {
+      return res.status(400).json({ error: 'Status is required', code: 'STATUS_REQUIRED' });
+    }
+    const adminUser = req.user || { id: null, role: 'super_admin', name: 'Ops Super Admin' };
+    const result = await updateOperationsBeneficiaryStatus(id, { status, reason }, adminUser);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Beneficiary status update error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_BENEFICIARY_STATUS_FAILED'
+    });
+  }
+});
+
+/**
+ * PATCH /api/operations/support/beneficiaries/:id/tier
+ * 1-Click Employee Benefit Tier Override with immutable audit logging.
+ */
+router.patch('/support/beneficiaries/:id/tier', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tier, reason } = req.body || {};
+    if (!tier) {
+      return res.status(400).json({ error: 'Tier is required', code: 'TIER_REQUIRED' });
+    }
+    const adminUser = req.user || { id: null, role: 'super_admin', name: 'Ops Super Admin' };
+    const result = await updateOperationsBeneficiaryTier(id, { tier, reason }, adminUser);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Beneficiary tier update error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_BENEFICIARY_TIER_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/operations/audit-logs
+ * Immutable system audit trail search & filter.
+ */
+router.get('/audit-logs', async (req, res) => {
+  try {
+    const { eventType, search, limit, page } = req.query;
+    const result = await getOperationsAuditLogs({ eventType, search, limit, page });
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Audit logs error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_AUDIT_LOGS_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/operations/settings
+ * Retrieves active dynamic platform settings knobs.
+ */
+router.get('/settings', async (req, res) => {
+  try {
+    const result = await getOperationsPlatformSettings();
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Platform settings fetch error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_SETTINGS_FETCH_FAILED'
+    });
+  }
+});
+
+/**
+ * PATCH /api/operations/settings
+ * Updates a dynamic platform knob in real time with validation & audit logging.
+ */
+router.patch('/settings', async (req, res) => {
+  try {
+    const { key, value } = req.body || {};
+    if (!key || value === undefined) {
+      return res.status(400).json({
+        error: 'Key and numeric value are required',
+        code: 'SETTING_PARAMS_REQUIRED'
+      });
+    }
+    const adminUser = req.user || { id: null, role: 'super_admin', name: 'Ops Super Admin' };
+    const result = await updateOperationsPlatformSetting(key, value, adminUser);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Platform setting update error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_SETTING_UPDATE_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/operations/team
+ * Internal PolyFit team directory and RBAC permissions matrix.
+ */
+router.get('/team', async (req, res) => {
+  try {
+    const result = await getOperationsTeamDirectory();
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Team directory error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_TEAM_FETCH_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/operations/team/roles
+ * Assigns or updates internal operator role with audit record.
+ */
+router.post('/team/roles', async (req, res) => {
+  try {
+    const { userId, email, role, operatorName } = req.body || {};
+    if (!role) {
+      return res.status(400).json({ error: 'Role is required', code: 'ROLE_REQUIRED' });
+    }
+    const adminUser = req.user || { id: null, role: 'super_admin', name: 'Ops Super Admin' };
+    const result = await assignOperationsTeamRole({ userId, email, role, operatorName }, adminUser);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Team role assign error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_ROLE_ASSIGN_FAILED'
     });
   }
 });
