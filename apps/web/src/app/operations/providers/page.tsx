@@ -49,21 +49,35 @@ interface OperationsProvider {
   id: string;
   name: string;
   category: string;
-  contact_email: string | null;
-  settlement_email: string | null;
-  tax_id: string | null;
+  contactEmail?: string | null;
+  contact_email?: string | null;
+  settlementEmail?: string | null;
+  settlement_email?: string | null;
+  taxId?: string | null;
+  tax_id?: string | null;
   status: string;
-  created_at: string;
-  location_count: number;
-  active_location_count: number;
-  maintenance_location_count: number;
-  primary_city: string;
-  locations: ProviderLocationItem[];
-  kyc_status: string;
-  per_visit_rate: number;
-  today_visits: number;
-  mtd_visits: number;
-  mtd_payout_rwf: number;
+  created_at?: string;
+  createdAt?: string;
+  location_count?: number;
+  locationsCount?: number;
+  active_location_count?: number;
+  maintenance_location_count?: number;
+  hasActiveMaintenance?: boolean;
+  primary_city?: string;
+  primaryCity?: string;
+  primaryLocation?: string;
+  primaryAddress?: string;
+  locations?: ProviderLocationItem[];
+  kyc_status?: string;
+  kycCompliance?: { status?: string };
+  per_visit_rate?: number;
+  primaryPayoutRate?: number;
+  today_visits?: number;
+  todayVisitsCount?: number;
+  mtd_visits?: number;
+  mtdVisitsCount?: number;
+  mtd_payout_rwf?: number;
+  estimatedMtdGrossRwf?: number;
 }
 
 interface FleetTelemetry {
@@ -146,18 +160,21 @@ function ProviderNetworkContent() {
 
   // Filtered Providers computation
   const filteredProviders = useMemo(() => {
-    return providers.filter((prov) => {
+    return (providers || []).filter((prov) => {
+      const provLocations = prov.locations || [];
       // 1. Text search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchesName = prov.name.toLowerCase().includes(q);
-        const matchesCategory = prov.category.toLowerCase().includes(q);
-        const matchesTax = prov.tax_id?.toLowerCase().includes(q);
-        const matchesEmail = prov.contact_email?.toLowerCase().includes(q) || prov.settlement_email?.toLowerCase().includes(q);
-        const matchesLocation = prov.locations.some(
-          (l) => l.name.toLowerCase().includes(q) || l.city.toLowerCase().includes(q) || l.address?.toLowerCase().includes(q)
+        const matchesName = prov.name?.toLowerCase().includes(q);
+        const matchesCategory = prov.category?.toLowerCase().includes(q);
+        const matchesTax = (prov.tax_id || prov.taxId)?.toLowerCase().includes(q);
+        const matchesEmail = (prov.contact_email || prov.contactEmail)?.toLowerCase().includes(q) || 
+                             (prov.settlement_email || prov.settlementEmail)?.toLowerCase().includes(q);
+        const matchesCity = (prov.primary_city || prov.primaryCity)?.toLowerCase().includes(q);
+        const matchesLocation = provLocations.some(
+          (l) => l.name?.toLowerCase().includes(q) || l.city?.toLowerCase().includes(q) || l.address?.toLowerCase().includes(q)
         );
-        if (!matchesName && !matchesCategory && !matchesTax && !matchesEmail && !matchesLocation) {
+        if (!matchesName && !matchesCategory && !matchesTax && !matchesEmail && !matchesCity && !matchesLocation) {
           return false;
         }
       }
@@ -174,10 +191,11 @@ function ProviderNetworkContent() {
 
       // 4. City filter
       if (cityFilter !== "all") {
-        const hasCity = prov.locations.some(
-          (l) => l.city.toLowerCase() === cityFilter.toLowerCase()
+        const primaryCityMatch = (prov.primary_city || prov.primaryCity || "").toLowerCase() === cityFilter.toLowerCase();
+        const hasCity = provLocations.some(
+          (l) => l.city && l.city.toLowerCase() === cityFilter.toLowerCase()
         );
-        if (!hasCity) return false;
+        if (!primaryCityMatch && !hasCity) return false;
       }
 
       return true;
@@ -187,22 +205,24 @@ function ProviderNetworkContent() {
   // Unique cities list for filter dropdown
   const uniqueCities = useMemo(() => {
     const set = new Set<string>();
-    providers.forEach((p) => {
-      p.locations.forEach((l) => {
-        if (l.city) set.add(l.city);
+    (providers || []).forEach((p) => {
+      if (p.primary_city) set.add(p.primary_city);
+      if (p.primaryCity) set.add(p.primaryCity);
+      (p.locations || []).forEach((l) => {
+        if (l?.city) set.add(l.city);
       });
     });
-    return Array.from(set).sort();
+    return Array.from(set).filter(Boolean).sort();
   }, [providers]);
 
   // Derived Telemetry fallbacks
-  const totalProviders = telemetry?.totalProviders ?? providers.length;
-  const activeProviders = telemetry?.activeProviders ?? providers.filter((p) => p.status === "active").length;
-  const inReviewProviders = telemetry?.inReviewProviders ?? providers.filter((p) => p.status === "pending_review" || p.status === "in_review").length;
-  const totalLocations = telemetry?.totalLocations ?? providers.reduce((acc, p) => acc + (p.location_count || 0), 0);
-  const maintenanceLocations = telemetry?.maintenanceLocations ?? providers.reduce((acc, p) => acc + (p.maintenance_location_count || 0), 0);
-  const todayVisits = telemetry?.todayNetworkVisits ?? providers.reduce((acc, p) => acc + (p.today_visits || 0), 0);
-  const mtdSettlementRwf = telemetry?.networkGrossPayoutMtdRwf ?? providers.reduce((acc, p) => acc + (p.mtd_payout_rwf || 0), 0);
+  const totalProviders = telemetry?.totalProviders ?? (providers || []).length;
+  const activeProviders = telemetry?.activeProviders ?? (providers || []).filter((p) => p.status === "active").length;
+  const inReviewProviders = telemetry?.inReviewProviders ?? (providers || []).filter((p) => p.status === "pending_review" || p.status === "in_review").length;
+  const totalLocations = telemetry?.totalLocations ?? (providers || []).reduce((acc, p) => acc + (p.location_count ?? p.locationsCount ?? (p.locations?.length || 1)), 0);
+  const maintenanceLocations = telemetry?.maintenanceLocations ?? (providers || []).reduce((acc, p) => acc + (p.maintenance_location_count ?? (p.hasActiveMaintenance ? 1 : 0)), 0);
+  const todayVisits = telemetry?.todayNetworkVisits ?? (providers || []).reduce((acc, p) => acc + (p.today_visits ?? p.todayVisitsCount ?? 0), 0);
+  const mtdSettlementRwf = telemetry?.networkGrossPayoutMtdRwf ?? (providers || []).reduce((acc, p) => acc + (p.mtd_payout_rwf ?? p.estimatedMtdGrossRwf ?? 0), 0);
 
   const getCategoryBadge = (category: string) => {
     switch (category) {
@@ -506,7 +526,7 @@ function ProviderNetworkContent() {
               <tbody className="divide-y divide-slate-100">
                 {filteredProviders.map((provider) => {
                   const catBadge = getCategoryBadge(provider.category);
-                  const isMaintenance = provider.maintenance_location_count > 0;
+                  const isMaintenance = (provider.maintenance_location_count || 0) > 0 || Boolean(provider.hasActiveMaintenance);
 
                   return (
                     <tr
@@ -528,9 +548,9 @@ function ProviderNetworkContent() {
                               <span className={`px-1.5 py-0.2 rounded text-[9px] font-semibold border ${catBadge.color}`}>
                                 {catBadge.label}
                               </span>
-                              {provider.tax_id && (
+                              {(provider.tax_id || provider.taxId) && (
                                 <span className="font-mono text-[10px] text-slate-400">
-                                  TIN: {provider.tax_id}
+                                  TIN: {provider.tax_id || provider.taxId}
                                 </span>
                               )}
                             </div>
@@ -544,18 +564,21 @@ function ProviderNetworkContent() {
                           <div className="font-semibold text-slate-800 flex items-center gap-1.5">
                             <MapPin className="w-3.5 h-3.5 text-slate-400" />
                             <span>
-                              {provider.location_count} {provider.location_count === 1 ? "Location" : "Locations"}
+                              {provider.location_count ?? provider.locationsCount ?? (provider.locations?.length || 1)}{" "}
+                              {(provider.location_count ?? provider.locationsCount ?? 1) === 1 ? "Location" : "Locations"}
                             </span>
-                            <span className="text-[10px] text-slate-400">({provider.primary_city})</span>
+                            <span className="text-[10px] text-slate-400">
+                              ({provider.primary_city || provider.primaryCity || "Kigali"})
+                            </span>
                           </div>
                           {isMaintenance ? (
                             <div className="text-[10px] text-amber-700 font-semibold flex items-center gap-1 mt-0.5">
                               <AlertTriangle className="w-3 h-3 text-amber-500" />
-                              <span>{provider.maintenance_location_count} in maintenance mode</span>
+                              <span>{provider.maintenance_location_count ?? 1} in maintenance mode</span>
                             </div>
                           ) : (
                             <div className="text-[10px] text-emerald-600 font-medium mt-0.5">
-                              All {provider.location_count} active &amp; geofenced
+                              All {provider.location_count ?? provider.locationsCount ?? 1} active &amp; geofenced
                             </div>
                           )}
                         </div>
@@ -566,9 +589,9 @@ function ProviderNetworkContent() {
                         <div className="space-y-1">
                           {getStatusBadge(provider.status)}
                           <div className="text-[10px] text-slate-400">
-                            {provider.kyc_status === "approved"
+                            {(provider.kyc_status || provider.kycCompliance?.status) === "approved"
                               ? "RDB & Tax Verified"
-                              : provider.kyc_status === "revision_requested"
+                              : (provider.kyc_status || provider.kycCompliance?.status) === "revision_requested"
                               ? "Action Required"
                               : "Docs in Review"}
                           </div>
@@ -579,7 +602,7 @@ function ProviderNetworkContent() {
                       <td className="py-3.5 px-4">
                         <div>
                           <div className="font-mono font-bold text-slate-900">
-                            {formatCurrencyDisplay(provider.per_visit_rate || 0)}
+                            {formatCurrencyDisplay(provider.per_visit_rate ?? provider.primaryPayoutRate ?? 0)}
                           </div>
                           <div className="text-[10px] text-slate-400">
                             Per verified visit
@@ -591,10 +614,10 @@ function ProviderNetworkContent() {
                       <td className="py-3.5 px-4">
                         <div className="font-mono">
                           <div className="text-slate-900 font-bold flex items-center gap-1">
-                            <span>{provider.today_visits} today</span>
+                            <span>{provider.today_visits ?? provider.todayVisitsCount ?? 0} today</span>
                           </div>
                           <div className="text-[10px] text-slate-400">
-                            {provider.mtd_visits} MTD visits
+                            {provider.mtd_visits ?? provider.mtdVisitsCount ?? 0} MTD visits
                           </div>
                         </div>
                       </td>
@@ -603,7 +626,7 @@ function ProviderNetworkContent() {
                       <td className="py-3.5 px-4">
                         <div className="font-mono">
                           <div className="text-emerald-700 font-bold">
-                            {formatCurrencyDisplay(provider.mtd_payout_rwf || 0)}
+                            {formatCurrencyDisplay(provider.mtd_payout_rwf ?? provider.estimatedMtdGrossRwf ?? 0)}
                           </div>
                           <div className="text-[10px] text-slate-400">
                             Settlement queue
