@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`marketing-theme ${inter.variable} antialiased`}>
+    <html lang="en" className={`marketing-theme ${inter.variable} antialiased`} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://meszhexftehllnsyhbha.supabase.co" />
         <link rel="dns-prefetch" href="https://meszhexftehllnsyhbha.supabase.co" />
@@ -57,7 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className="min-h-screen bg-background text-foreground">
+      <body className="min-h-screen bg-background text-foreground" suppressHydrationWarning>
         <ErrorBoundary>
           <AuthProvider>
               <a href="#main-content" className="skip-to-main">
