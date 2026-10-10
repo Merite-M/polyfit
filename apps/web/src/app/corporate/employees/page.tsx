@@ -26,8 +26,9 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
 import { apiFetch } from "@/lib/api-client";
+import { CorporateHeader } from "@/components/corporate/CorporateHeader";
+import { useCorporate } from "@/contexts/CorporateContext";
 import {
   EmployeeDetailDrawer,
   CorporateEmployee,
@@ -35,20 +36,28 @@ import {
 import { BulkUploadModal } from "@/components/corporate/BulkUploadModal";
 import { AddEmployeeModal } from "@/components/corporate/AddEmployeeModal";
 import { BatchActionBar } from "@/components/corporate/BatchActionBar";
-import { TECHCORP_CANONICAL_DATA } from "@/lib/constants";
 
 export default function EmployeesPage() {
-  const { organizationId } = useAuth();
-  const activeOrgId = organizationId || TECHCORP_CANONICAL_DATA.organization.id;
-  const orgSlug = TECHCORP_CANONICAL_DATA.organization.slug;
-  const corporateDomain = TECHCORP_CANONICAL_DATA.organization.allowed_domains[0] || "techcorp.rw";
+  const {
+    organization,
+    employees,
+    addEmployee,
+    bulkAddEmployees,
+    updateEmployeeStatus,
+    updateEmployeeTier,
+    refreshEmployees,
+    refreshFunnelData,
+    isLoadingEmployees,
+    plans,
+    showToast,
+    downloadCensusCsv,
+    inviteUrl,
+    copyInviteLink,
+  } = useCorporate();
 
-  // Data State initialized with canonical verified TechCorp Rwanda dataset
-  const [employees, setEmployees] = useState<CorporateEmployee[]>(
-    TECHCORP_CANONICAL_DATA.employees as CorporateEmployee[]
-  );
-  const [isLoading, setIsLoading] = useState(true);
-  const [apiError, setApiError] = useState<string | null>(null);
+  const activeOrgId = organization.id;
+  const orgSlug = organization.slug;
+  const corporateDomain = organization.domain;
 
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState("");
@@ -65,60 +74,13 @@ export default function EmployeesPage() {
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBatchLoading, setIsBatchLoading] = useState(false);
-
-  // Notifications
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
-
-  const [origin, setOrigin] = useState("https://polyfit.onrender.com");
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setOrigin(window.location.origin);
-    }
-  }, []);
-
-  const inviteUrl = `${origin}/join/${orgSlug}`;
-
   const handleCopyInviteLink = () => {
-    if (navigator?.clipboard) {
-      navigator.clipboard.writeText(inviteUrl);
-      setCopiedLink(true);
-      showToast("Join link copied to clipboard");
-      setTimeout(() => setCopiedLink(false), 2500);
-    }
+    copyInviteLink();
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
   };
-
-  // Fetch employees from backend
-  const fetchEmployees = useCallback(async () => {
-    setIsLoading(true);
-    setApiError(null);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://polyfit-backend.onrender.com";
-
-    try {
-      const data = await apiFetch<{ employees: CorporateEmployee[] }>(
-        `${apiUrl}/api/organizations/${activeOrgId}/employees?limit=100`,
-        { method: "GET" }
-      );
-
-      if (data && Array.isArray(data.employees) && data.employees.length > 0) {
-        setEmployees(data.employees);
-      }
-    } catch {
-      // Keep demo employees if offline or unauthenticated
-      console.warn("Using local resilient census records");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [activeOrgId]);
-
-  useEffect(() => {
-    fetchEmployees();
-  }, [fetchEmployees]);
 
   // Open employee detail drawer
   const handleSelectEmployee = async (emp: CorporateEmployee) => {
@@ -140,62 +102,25 @@ export default function EmployeesPage() {
     }
   };
 
-  // Single Status Change Handler
-  const handleStatusChange = async (id: string, newStatus: "active" | "frozen" | "terminated") => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://polyfit-backend.onrender.com";
-
-    // Optimistic UI update
-    setEmployees((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, status: newStatus } : e))
-    );
-    if (selectedEmployee?.id === id) {
+  // Status Change in Drawer (e.g. Freeze / Activate)
+  const handleStatusChange = async (
+    id: string,
+    newStatus: "active" | "frozen" | "terminated"
+  ) => {
+    await updateEmployeeStatus(id, newStatus);
+    if (selectedEmployee && selectedEmployee.id === id) {
       setSelectedEmployee((prev) => (prev ? { ...prev, status: newStatus } : null));
-    }
-
-    try {
-      const endpoint =
-        newStatus === "frozen"
-          ? `${apiUrl}/api/organizations/${activeOrgId}/employees/${id}/freeze`
-          : newStatus === "active"
-          ? `${apiUrl}/api/organizations/${activeOrgId}/employees/${id}/activate`
-          : `${apiUrl}/api/organizations/${activeOrgId}/employees/${id}`;
-
-      await apiFetch(endpoint, {
-        method: newStatus === "terminated" ? "DELETE" : "POST",
-      });
-
-      showToast(`Employee marked as ${newStatus}`);
-    } catch {
-      fetchEmployees();
-      throw new Error("Status update failed");
     }
   };
 
-  // Single Tier Change Handler
+  // Tier Change in Drawer
   const handleTierChange = async (
     id: string,
     newTier: "basic" | "standard" | "premium" | "executive"
   ) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://polyfit-backend.onrender.com";
-
-    // Optimistic update
-    setEmployees((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, tier: newTier } : e))
-    );
-    if (selectedEmployee?.id === id) {
+    await updateEmployeeTier(id, newTier);
+    if (selectedEmployee && selectedEmployee.id === id) {
       setSelectedEmployee((prev) => (prev ? { ...prev, tier: newTier } : null));
-    }
-
-    try {
-      await apiFetch(`${apiUrl}/api/organizations/${activeOrgId}/employees/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier: newTier }),
-      });
-      showToast(`Tier upgraded to ${newTier.toUpperCase()}`);
-    } catch {
-      fetchEmployees();
-      throw new Error("Tier change failed");
     }
   };
 
@@ -204,27 +129,12 @@ export default function EmployeesPage() {
     if (selectedIds.size === 0) return;
     setIsBatchLoading(true);
     const ids = Array.from(selectedIds);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://polyfit-backend.onrender.com";
-
-    // Optimistic
-    setEmployees((prev) =>
-      prev.map((e) => (selectedIds.has(e.id) ? { ...e, status: "frozen" } : e))
-    );
-
-    try {
-      await apiFetch(`${apiUrl}/api/organizations/${activeOrgId}/employees/batch`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "freeze", employee_ids: ids }),
-      });
-      showToast(`Suspended passes for ${ids.length} employees`);
-      setSelectedIds(new Set());
-    } catch {
-      fetchEmployees();
-      showToast("Batch action failed");
-    } finally {
-      setIsBatchLoading(false);
+    for (const id of ids) {
+      await updateEmployeeStatus(id, "frozen");
     }
+    showToast(`Froze passes for ${ids.length} employees`);
+    setSelectedIds(new Set());
+    setIsBatchLoading(false);
   };
 
   // Batch Activate
@@ -232,27 +142,12 @@ export default function EmployeesPage() {
     if (selectedIds.size === 0) return;
     setIsBatchLoading(true);
     const ids = Array.from(selectedIds);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://polyfit-backend.onrender.com";
-
-    // Optimistic
-    setEmployees((prev) =>
-      prev.map((e) => (selectedIds.has(e.id) ? { ...e, status: "active" } : e))
-    );
-
-    try {
-      await apiFetch(`${apiUrl}/api/organizations/${activeOrgId}/employees/batch`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "activate", employee_ids: ids }),
-      });
-      showToast(`Reactivated passes for ${ids.length} employees`);
-      setSelectedIds(new Set());
-    } catch {
-      fetchEmployees();
-      showToast("Batch action failed");
-    } finally {
-      setIsBatchLoading(false);
+    for (const id of ids) {
+      await updateEmployeeStatus(id, "active");
     }
+    showToast(`Reactivated passes for ${ids.length} employees`);
+    setSelectedIds(new Set());
+    setIsBatchLoading(false);
   };
 
   // Batch Change Tier
@@ -262,27 +157,12 @@ export default function EmployeesPage() {
     if (selectedIds.size === 0) return;
     setIsBatchLoading(true);
     const ids = Array.from(selectedIds);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://polyfit-backend.onrender.com";
-
-    // Optimistic
-    setEmployees((prev) =>
-      prev.map((e) => (selectedIds.has(e.id) ? { ...e, tier: newTier } : e))
-    );
-
-    try {
-      await apiFetch(`${apiUrl}/api/organizations/${activeOrgId}/employees/batch`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "change_tier", employee_ids: ids, tier: newTier }),
-      });
-      showToast(`Updated tier to ${newTier} for ${ids.length} employees`);
-      setSelectedIds(new Set());
-    } catch {
-      fetchEmployees();
-      showToast("Batch tier update failed");
-    } finally {
-      setIsBatchLoading(false);
+    for (const id of ids) {
+      await updateEmployeeTier(id, newTier);
     }
+    showToast(`Updated tier to ${newTier} for ${ids.length} employees`);
+    setSelectedIds(new Set());
+    setIsBatchLoading(false);
   };
 
   // 1-Click "Download Census" Handler (RFC 4180 CSV Export)
@@ -398,198 +278,160 @@ export default function EmployeesPage() {
   const totalVisitsMonth = employees.reduce((acc, curr) => acc + (curr.visits_this_month || 0), 0);
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 flex items-center gap-2 bg-[#0B1F33] text-white px-4 py-2.5 rounded-xl border border-[#1E3A5F] shadow-xl text-xs font-semibold animate-in slide-in-from-top-3">
-          <CheckCircle2 className="w-4 h-4 text-[#28D17C]" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+    <div className="min-h-full">
+      {/* Sticky Corporate Navigation Header with contextual actions */}
+      <CorporateHeader
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsBulkModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card text-xs font-semibold text-foreground hover:bg-muted transition-colors shadow-2xs cursor-pointer"
+            >
+              <Upload className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="hidden sm:inline">Bulk Upload CSV</span>
+              <span className="sm:hidden">Bulk</span>
+            </button>
 
-      {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-xs text-[#8491A3] mb-4">
-        <Link href="/corporate" className="hover:text-[#0B1F33] flex items-center gap-1 transition-colors">
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Overview</span>
-        </Link>
-        <span>/</span>
-        <span className="text-[#0B1F33] font-semibold">Employees & Roster</span>
-      </div>
-
-      {/* Page Title & Top Actions */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-[#E2E8F0]">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-[#0B1F33]">
-              Employee Roster Management
-            </h1>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#E9FAF2] text-[#006D3C] border border-[#28D17C]/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#28D17C]" />
-              Live Sync
-            </span>
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-all shadow-xs cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Add Employee</span>
+            </button>
           </div>
-          <p className="text-xs text-[#526173] mt-1">
-            Manage corporate wellness benefits, freeze or activate eligibility passes, and bulk upload census rosters.
-          </p>
+        }
+      />
+
+      <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+
+        {/* KPI Metric Strip */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+          <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+            <div className="flex items-center justify-between text-muted-foreground mb-1">
+              <span className="text-xs font-semibold uppercase tracking-wider">
+                Total Census
+              </span>
+              <Users className="w-4 h-4 text-primary" />
+            </div>
+            <p className="text-2xl font-bold text-foreground">{totalCount}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Registered corporate employees
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+            <div className="flex items-center justify-between text-muted-foreground mb-1">
+              <span className="text-xs font-semibold uppercase tracking-wider">
+                Active Coverage
+              </span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            </div>
+            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{coverageRate}%</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              {activeCount} employees with live passes
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+            <div className="flex items-center justify-between text-muted-foreground mb-1">
+              <span className="text-xs font-semibold uppercase tracking-wider">
+                Frozen Passes
+              </span>
+              <PauseCircle className="w-4 h-4 text-amber-500" />
+            </div>
+            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{frozenCount}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Temporary leave / paused access
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+            <div className="flex items-center justify-between text-muted-foreground mb-1">
+              <span className="text-xs font-semibold uppercase tracking-wider">
+                Monthly Visits
+              </span>
+              <Activity className="w-4 h-4 text-emerald-500" />
+            </div>
+            <p className="text-2xl font-bold text-foreground">{totalVisitsMonth}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Verified check-ins this billing cycle
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        {/* Compact Join Link Badge (Replaces redundant 120px banner) */}
+        <div className="mt-4 flex items-center justify-between px-4 py-2.5 rounded-xl bg-card border border-border shadow-2xs">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">Workforce Join Link:</span>
+            <span className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/20">
+              {inviteUrl}
+            </span>
+            <span className="hidden sm:inline text-muted-foreground">(@{corporateDomain})</span>
+          </div>
           <button
-            type="button"
-            onClick={() => handleDownloadCensus()}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#E2E8F0] bg-white text-xs font-semibold text-[#0B1F33] hover:bg-[#F7F9FC] transition-colors shadow-2xs cursor-pointer"
-            title="Export full company census to CSV"
+            onClick={handleCopyInviteLink}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg border border-border bg-muted/40 hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer"
           >
-            <Download className="w-4 h-4 text-[#00D2B4]" />
-            <span>Download Census</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsBulkModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#E2E8F0] bg-white text-xs font-semibold text-[#0B1F33] hover:bg-[#F7F9FC] transition-colors shadow-2xs cursor-pointer"
-          >
-            <Upload className="w-4 h-4 text-[#28D17C]" />
-            <span>Bulk Upload CSV</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0B1F33] text-white text-xs font-semibold hover:bg-[#1E3A5F] transition-all shadow-sm cursor-pointer"
-          >
-            <Plus className="w-4 h-4 text-[#28D17C]" />
-            <span>Add Employee</span>
-          </button>
-        </div>
-      </div>
-
-      {/* KPI Metric Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-        <div className="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-2xs">
-          <div className="flex items-center justify-between text-[#8491A3] mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider">
-              Total Census
-            </span>
-            <Users className="w-4 h-4 text-[#00D2B4]" />
-          </div>
-          <p className="text-2xl font-bold text-[#0B1F33]">{totalCount}</p>
-          <p className="text-[11px] text-[#526173] mt-0.5">
-            Registered corporate employees
-          </p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-2xs">
-          <div className="flex items-center justify-between text-[#8491A3] mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider">
-              Active Coverage
-            </span>
-            <CheckCircle2 className="w-4 h-4 text-[#28D17C]" />
-          </div>
-          <p className="text-2xl font-bold text-[#006D3C]">{coverageRate}%</p>
-          <p className="text-[11px] text-[#526173] mt-0.5">
-            {activeCount} employees with live passes
-          </p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-2xs">
-          <div className="flex items-center justify-between text-[#8491A3] mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider">
-              Frozen Passes
-            </span>
-            <PauseCircle className="w-4 h-4 text-[#F59E0B]" />
-          </div>
-          <p className="text-2xl font-bold text-[#B45309]">{frozenCount}</p>
-          <p className="text-[11px] text-[#526173] mt-0.5">
-            Temporary leave / paused access
-          </p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-2xs">
-          <div className="flex items-center justify-between text-[#8491A3] mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider">
-              Monthly Visits
-            </span>
-            <Activity className="w-4 h-4 text-[#28D17C]" />
-          </div>
-          <p className="text-2xl font-bold text-[#0B1F33]">{totalVisitsMonth}</p>
-          <p className="text-[11px] text-[#526173] mt-0.5">
-            Verified check-ins this billing cycle
-          </p>
-        </div>
-      </div>
-
-      {/* Compact Join Link Badge (Replaces redundant 120px banner) */}
-      <div className="mt-4 flex items-center justify-between px-4 py-2.5 rounded-xl bg-white border border-[#E2E8F0] shadow-2xs">
-        <div className="flex items-center gap-2 text-xs text-[#526173]">
-          <span className="font-semibold text-[#0B1F33]">Workforce Join Link:</span>
-          <span className="font-mono text-[11px] text-[#28D17C] bg-[#E9FAF2] px-2 py-0.5 rounded-md border border-[#28D17C]/20">
-            {inviteUrl}
-          </span>
-          <span className="hidden sm:inline text-[#8491A3]">(@{corporateDomain})</span>
-        </div>
-        <button
-          onClick={handleCopyInviteLink}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-lg border border-[#E2E8F0] bg-[#F7F9FC] hover:bg-white text-xs font-semibold text-[#0B1F33] transition-colors"
-        >
-          {copiedLink ? <Check className="w-3.5 h-3.5 text-[#28D17C]" /> : <Share2 className="w-3.5 h-3.5 text-[#526173]" />}
-          <span>{copiedLink ? "Copied" : "Copy Link"}</span>
-        </button>
-      </div>
-
-      {/* Search, Filter Pills & Controls Bar */}
-      <div className="mt-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs">
-        {/* Search */}
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8491A3]" />
-          <input
-            type="text"
-            placeholder="Search by employee name, email, or ID..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-xl border border-[#E2E8F0] bg-[#F7F9FC] text-xs text-[#0B1F33] placeholder:text-[#8491A3] focus:outline-none focus:border-[#28D17C] focus:bg-white transition-all"
-          />
-        </div>
-
-        {/* Filter Dropdowns & Refresh */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Department Filter */}
-          <select
-            value={departmentFilter}
-            onChange={(e) => setDepartmentFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-[#E2E8F0] bg-white text-xs font-medium text-[#0B1F33] focus:outline-none focus:border-[#28D17C]"
-          >
-            <option value="all">Department: All</option>
-            {departments.map((dept) => (
-              <option key={dept} value={dept}>
-                {dept}
-              </option>
-            ))}
-          </select>
-
-          {/* Tier Filter */}
-          <select
-            value={tierFilter}
-            onChange={(e) => setTierFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-[#E2E8F0] bg-white text-xs font-medium text-[#0B1F33] focus:outline-none focus:border-[#28D17C]"
-          >
-            <option value="all">Tier: All</option>
-            <option value="basic">Basic</option>
-            <option value="standard">Standard</option>
-            <option value="premium">Premium</option>
-            <option value="executive">Executive</option>
-          </select>
-
-          <button
-            onClick={fetchEmployees}
-            className="p-2 rounded-xl border border-[#E2E8F0] bg-white text-[#526173] hover:text-[#0B1F33] hover:bg-[#F7F9FC] transition-colors cursor-pointer"
-            title="Refresh roster from server"
-          >
-            <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin text-[#28D17C]")} />
+            {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5 text-muted-foreground" />}
+            <span>{copiedLink ? "Copied" : "Copy Link"}</span>
           </button>
         </div>
-      </div>
+
+        {/* Search, Filter Pills & Controls Bar */}
+        <div className="mt-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-card p-4 rounded-2xl border border-border shadow-2xs">
+          {/* Search */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search by employee name, email, or ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-xl border border-border bg-muted/30 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:bg-background transition-all"
+            />
+          </div>
+
+          {/* Filter Dropdowns & Refresh */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Department Filter */}
+            <select
+              value={departmentFilter}
+              onChange={(e) => setDepartmentFilter(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-border bg-card text-xs font-medium text-foreground focus:outline-none focus:border-primary"
+            >
+              <option value="all">Department: All</option>
+              {departments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+
+            {/* Tier Filter */}
+            <select
+              value={tierFilter}
+              onChange={(e) => setTierFilter(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-border bg-card text-xs font-medium text-foreground focus:outline-none focus:border-primary"
+            >
+              <option value="all">Tier: All</option>
+              <option value="basic">Basic</option>
+              <option value="standard">Standard</option>
+              <option value="premium">Premium</option>
+              <option value="executive">Executive</option>
+            </select>
+
+            <button
+              onClick={refreshEmployees}
+              className="p-2 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+              title="Refresh roster from server"
+            >
+              <RefreshCw className={cn("w-4 h-4", isLoadingEmployees && "animate-spin text-emerald-500")} />
+            </button>
+          </div>
+        </div>
 
       {/* Status Filter Tabs */}
       <div className="mt-4 flex items-center gap-2 border-b border-[#E2E8F0] pb-2 text-xs font-semibold">
@@ -869,7 +711,7 @@ export default function EmployeesPage() {
         onClose={() => setIsDrawerOpen(false)}
         onStatusChange={handleStatusChange}
         onTierChange={handleTierChange}
-        organizationName="TechCorp Rwanda"
+        organizationName={organization.name}
       />
 
       {/* Bulk Upload CSV Modal */}
@@ -878,7 +720,7 @@ export default function EmployeesPage() {
         onClose={() => setIsBulkModalOpen(false)}
         orgId={activeOrgId}
         onImportSuccess={() => {
-          fetchEmployees();
+          refreshEmployees();
           showToast("Roster updated from CSV");
         }}
         corporateDomain={corporateDomain}
@@ -890,11 +732,12 @@ export default function EmployeesPage() {
         onClose={() => setIsAddModalOpen(false)}
         orgId={activeOrgId}
         onEmployeeAdded={() => {
-          fetchEmployees();
+          refreshEmployees();
           showToast("New employee added to benefits roster");
         }}
         corporateDomain={corporateDomain}
       />
+      </div>
     </div>
   );
 }
