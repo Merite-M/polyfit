@@ -43,7 +43,7 @@ import { generateSettlementPdf } from "@/lib/settlement-pdf";
 type FinanceTab = "invoices" | "settlements" | "ledger";
 
 export default function MarketplaceFinancePage() {
-  const { openDrawer } = useOperationsDrawer();
+  const { openDrawer, refreshKey } = useOperationsDrawer();
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<FinanceTab>("invoices");
@@ -91,7 +91,7 @@ export default function MarketplaceFinancePage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [invoiceStatusFilter, settlementStatusFilter, searchQuery]);
+  }, [invoiceStatusFilter, settlementStatusFilter, searchQuery, refreshKey]);
 
   useEffect(() => {
     loadFinanceData();
@@ -424,10 +424,19 @@ export default function MarketplaceFinancePage() {
                           {inv.invoice_number || `INV-${inv.id.slice(0, 8)}`}
                         </td>
                         <td className="py-3.5 px-4">
-                          <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (inv.organization_id || org.id) {
+                                openDrawer("organization", inv.organization_id || org.id, org, org.name);
+                              }
+                            }}
+                            className="font-semibold text-slate-800 hover:text-indigo-600 flex items-center gap-1.5 text-left transition-colors"
+                          >
                             <Building2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                             <span>{org.name || "Corporate Employer"}</span>
-                          </div>
+                          </button>
                           {org.tax_id && (
                             <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
                               TIN: {org.tax_id}
@@ -572,10 +581,19 @@ export default function MarketplaceFinancePage() {
                           {`SETTLE-${st.id.slice(0, 8)}`}
                         </td>
                         <td className="py-3.5 px-4">
-                          <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (st.provider_id || prov.id) {
+                                openDrawer("provider", st.provider_id || prov.id, prov, prov.name);
+                              }
+                            }}
+                            className="font-semibold text-slate-800 hover:text-emerald-600 flex items-center gap-1.5 text-left transition-colors"
+                          >
                             <Network className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                             <span>{prov.name || "Wellness Provider"}</span>
-                          </div>
+                          </button>
                           <span className="text-[10px] text-slate-400 block mt-0.5 uppercase">
                             {prov.category || "Facility"}
                           </span>

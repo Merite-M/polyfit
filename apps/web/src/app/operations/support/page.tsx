@@ -130,7 +130,7 @@ const RBAC_ROLE_CONFIG = {
 };
 
 export default function SupportOperationsPage() {
-  const { openDrawer } = useOperationsDrawer();
+  const { openDrawer, refreshKey } = useOperationsDrawer();
 
   // Active Simulated Operator Role
   const [activeRole, setActiveRole] = useState<keyof typeof RBAC_ROLE_CONFIG>("super_admin");
@@ -242,7 +242,7 @@ export default function SupportOperationsPage() {
 
   useEffect(() => {
     fetchBeneficiaries();
-  }, [statusFilter, tierFilter]);
+  }, [statusFilter, tierFilter, refreshKey]);
 
   useEffect(() => {
     if (activeTab === "settings") fetchSettings();
@@ -627,12 +627,21 @@ export default function SupportOperationsPage() {
                           </td>
 
                           <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-1.5 text-slate-300">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (b.organizations?.id) {
+                                  openDrawer("organization", b.organizations.id, b.organizations, b.organizations.name);
+                                }
+                              }}
+                              className="flex items-center gap-1.5 text-slate-300 hover:text-[#28D17C] text-left transition-colors"
+                            >
                               <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                               <span className="font-medium truncate max-w-[140px]">
                                 {b.organizations?.name || "Corporate Client"}
                               </span>
-                            </div>
+                            </button>
                             {b.department && (
                               <div className="text-[10px] text-slate-500 font-mono mt-0.5">
                                 {b.department}

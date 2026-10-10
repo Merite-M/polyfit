@@ -74,7 +74,7 @@ export function OperationsSidebar({ onCloseMobile }: OperationsSidebarProps) {
       {/* Brand Header */}
       <div className="p-4 border-b border-[#21405A] flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <PolyFitLogo className="h-8 w-auto text-[#28D17C]" />
+          <PolyFitLogo variant="icon" iconSize={32} />
           <div>
             <div className="font-bold text-sm tracking-wide text-white flex items-center gap-1.5">
               <span>PolyFit</span>

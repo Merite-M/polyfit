@@ -7,6 +7,7 @@ import { ProviderDossierDrawer } from "./ProviderDossierDrawer";
 import { VisitDetailDrawer } from "./VisitDetailDrawer";
 import { InvoiceSettlementDrawer } from "./InvoiceSettlementDrawer";
 import { User360Drawer } from "./User360Drawer";
+import { EmergencyBypassModal } from "./EmergencyBypassModal";
 import { 
   X, 
   Building2, 
@@ -23,7 +24,13 @@ import {
 import { formatCurrencyDisplay } from "@/lib/utils";
 
 export function SlideOverDrawerHost() {
-  const { drawerState, closeDrawer } = useOperationsDrawer();
+  const { 
+    drawerState, 
+    closeDrawer, 
+    bypassModalState, 
+    closeBypassModal, 
+    triggerRefresh 
+  } = useOperationsDrawer();
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   const isDedicatedType = ["organization", "provider", "location", "visit", "invoice", "settlement", "employee"].includes(
@@ -45,72 +52,11 @@ export function SlideOverDrawerHost() {
     }
   }, [drawerState.isOpen, isDedicatedType]);
 
-  // If organization type, delegate directly to the dedicated EmployerContractDrawer (PF-118)
-  if (drawerState.isOpen && drawerState.type === "organization" && drawerState.id) {
-    return (
-      <EmployerContractDrawer
-        isOpen={drawerState.isOpen}
-        onClose={closeDrawer}
-        clientId={drawerState.id}
-        initialData={drawerState.data}
-      />
-    );
-  }
-
-  // If provider or location type, delegate directly to the dedicated ProviderDossierDrawer (PF-119)
   const targetProviderId = drawerState.type === "provider" 
     ? drawerState.id 
     : drawerState.type === "location" 
       ? (drawerState.data?.providerId || drawerState.id) 
       : null;
-
-  if (drawerState.isOpen && (drawerState.type === "provider" || drawerState.type === "location") && targetProviderId) {
-    return (
-      <ProviderDossierDrawer
-        isOpen={drawerState.isOpen}
-        onClose={closeDrawer}
-        providerId={targetProviderId}
-        initialData={drawerState.data}
-      />
-    );
-  }
-
-  // If visit type, delegate directly to the dedicated VisitDetailDrawer (PF-120)
-  if (drawerState.isOpen && drawerState.type === "visit" && drawerState.id) {
-    return (
-      <VisitDetailDrawer
-        isOpen={drawerState.isOpen}
-        onClose={closeDrawer}
-        visitId={drawerState.id}
-        initialData={drawerState.data}
-      />
-    );
-  }
-
-  // If invoice or settlement type, delegate directly to InvoiceSettlementDrawer (PF-121)
-  if (drawerState.isOpen && (drawerState.type === "invoice" || drawerState.type === "settlement") && drawerState.id) {
-    return (
-      <InvoiceSettlementDrawer
-        isOpen={drawerState.isOpen}
-        onClose={closeDrawer}
-        entityType={drawerState.type}
-        entityId={drawerState.id}
-        initialData={drawerState.data}
-      />
-    );
-  }
-
-  // If employee type, delegate directly to dedicated User360Drawer (PF-122)
-  if (drawerState.isOpen && drawerState.type === "employee" && drawerState.id) {
-    return (
-      <User360Drawer
-        isOpen={drawerState.isOpen}
-        onClose={closeDrawer}
-        employeeId={drawerState.id}
-        initialData={drawerState.data}
-      />
-    );
-  }
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
     if (e.target === dialogRef.current) {
@@ -133,7 +79,72 @@ export function SlideOverDrawerHost() {
   };
 
   return (
-    <dialog
+    <>
+      {/* 1. Dedicated Employer Contract Drawer (PF-118) */}
+      {drawerState.isOpen && drawerState.type === "organization" && drawerState.id && (
+        <EmployerContractDrawer
+          isOpen={drawerState.isOpen}
+          onClose={closeDrawer}
+          clientId={drawerState.id}
+          initialData={drawerState.data}
+          onClientUpdated={triggerRefresh}
+        />
+      )}
+
+      {/* 2. Dedicated Provider Dossier Drawer (PF-119) */}
+      {drawerState.isOpen && (drawerState.type === "provider" || drawerState.type === "location") && targetProviderId && (
+        <ProviderDossierDrawer
+          isOpen={drawerState.isOpen}
+          onClose={closeDrawer}
+          providerId={targetProviderId}
+          initialData={drawerState.data}
+          onProviderUpdated={triggerRefresh}
+        />
+      )}
+
+      {/* 3. Dedicated Visit Detail Drawer (PF-120) */}
+      {drawerState.isOpen && drawerState.type === "visit" && drawerState.id && (
+        <VisitDetailDrawer
+          isOpen={drawerState.isOpen}
+          onClose={closeDrawer}
+          visitId={drawerState.id}
+          initialData={drawerState.data}
+          onVisitUpdated={triggerRefresh}
+        />
+      )}
+
+      {/* 4. Dedicated Invoice & Settlement Drawer (PF-121) */}
+      {drawerState.isOpen && (drawerState.type === "invoice" || drawerState.type === "settlement") && drawerState.id && (
+        <InvoiceSettlementDrawer
+          isOpen={drawerState.isOpen}
+          onClose={closeDrawer}
+          entityType={drawerState.type}
+          entityId={drawerState.id}
+          initialData={drawerState.data}
+        />
+      )}
+
+      {/* 5. Dedicated User 360 Diagnostic Drawer (PF-122) */}
+      {drawerState.isOpen && drawerState.type === "employee" && drawerState.id && (
+        <User360Drawer
+          isOpen={drawerState.isOpen}
+          onClose={closeDrawer}
+          employeeId={drawerState.id}
+          initialData={drawerState.data}
+        />
+      )}
+
+      {/* 6. Universal Emergency Turnstile Bypass Modal */}
+      <EmergencyBypassModal
+        isOpen={bypassModalState.isOpen}
+        onClose={closeBypassModal}
+        preselectedEmployeeId={bypassModalState.employeeId}
+        preselectedLocationId={bypassModalState.locationId}
+        onBypassIssued={triggerRefresh}
+      />
+
+      {/* 7. Generic Fallback Entity Drawer */}
+      <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
       onCancel={(e) => {
@@ -393,5 +404,6 @@ export function SlideOverDrawerHost() {
         </div>
       </div>
     </dialog>
+    </>
   );
 }

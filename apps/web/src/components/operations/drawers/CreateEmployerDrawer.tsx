@@ -225,9 +225,10 @@ export function CreateEmployerDrawer({
         e.preventDefault();
         onClose();
       }}
-      className="fixed inset-0 m-0 p-0 w-full h-full max-w-none max-h-none bg-transparent backdrop:bg-black/60 backdrop:backdrop-blur-xs z-50 flex justify-end"
+      className="backdrop:bg-black/60 backdrop:backdrop-blur-xs bg-transparent p-0 m-0 w-full h-full max-w-none max-h-none border-none outline-none overflow-hidden"
     >
-      <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200">
+      <div className="w-full h-full flex justify-end">
+        <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200">
         {/* Header */}
         <div className="p-6 bg-[#0B1F33] text-white flex items-center justify-between border-b border-[#21405A]">
           <div>
@@ -774,6 +775,7 @@ export function CreateEmployerDrawer({
             )}
           </div>
         </form>
+      </div>
       </div>
     </dialog>
   );

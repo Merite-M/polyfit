@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { Search, Menu, Clock, Shield, Bell, CheckCircle2 } from "lucide-react";
+import { Search, Menu, Clock, Shield, Bell, CheckCircle2, Zap } from "lucide-react";
+import { useOperationsDrawer } from "@/contexts/OperationsDrawerContext";
 
 interface OperationsHeaderProps {
   onOpenMobileMenu?: () => void;
@@ -12,6 +13,7 @@ interface OperationsHeaderProps {
 export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: OperationsHeaderProps) {
   const pathname = usePathname();
   const [currentTime, setCurrentTime] = useState<string>("");
+  const { openBypassModal } = useOperationsDrawer();
 
   const getSectionName = () => {
     if (pathname?.includes("/operations/support")) return "User 360 & Security";
@@ -42,9 +44,9 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
   }, []);
 
   return (
-    <header className="h-16 bg-white border-b border-[#E2E8F0] px-4 lg:px-6 flex items-center justify-between z-20 sticky top-0 shadow-xs">
+    <header className="h-16 bg-white border-b border-[#E2E8F0] px-3 sm:px-4 lg:px-6 flex items-center justify-between z-20 sticky top-0 shadow-xs">
       {/* Left: Mobile Menu Trigger & Breadcrumbs */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         <button
           onClick={onOpenMobileMenu}
           className="lg:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
@@ -53,12 +55,12 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2 text-xs">
-          <span className="font-semibold text-slate-500">PolyFit Aggregator</span>
-          <span className="text-slate-300">/</span>
-          <span className="font-semibold text-[#0B1F33]">Operations Console</span>
-          <span className="text-slate-300">/</span>
-          <span className="font-medium text-[#28D17C] bg-[#E9FAF2] px-2 py-0.5 rounded-full border border-[#B7F1D2]">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-xs">
+          <span className="hidden sm:inline font-semibold text-slate-500">PolyFit</span>
+          <span className="hidden sm:inline text-slate-300">/</span>
+          <span className="hidden md:inline font-semibold text-[#0B1F33]">Operations</span>
+          <span className="hidden md:inline text-slate-300">/</span>
+          <span className="font-semibold text-[#008A4B] bg-[#E9FAF2] px-2.5 py-0.5 rounded-full border border-[#B7F1D2] text-[11px] truncate max-w-[140px] sm:max-w-none">
             {getSectionName()}
           </span>
         </div>
@@ -83,8 +85,18 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
         </button>
       </div>
 
-      {/* Right: Live Telemetry Clock & Admin User */}
-      <div className="flex items-center gap-3">
+      {/* Right: Emergency Bypass, Live Clock & Admin User */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Global Emergency Bypass Action */}
+        <button
+          onClick={() => openBypassModal()}
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#008A4B] hover:bg-[#00703C] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+          title="Emergency Turnstile Bypass Pass"
+        >
+          <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+          <span className="hidden sm:inline">Emergency Pass</span>
+        </button>
+
         {/* Mobile Search Button */}
         <button
           onClick={onOpenOmnibar}

@@ -40,8 +40,6 @@ import {
 import { apiFetch } from "@/lib/api-client";
 import { supabase } from "@/lib/supabase";
 import { useOperationsDrawer } from "@/contexts/OperationsDrawerContext";
-import { EmergencyBypassModal } from "@/components/operations/drawers/EmergencyBypassModal";
-import { VisitDetailDrawer } from "@/components/operations/drawers/VisitDetailDrawer";
 
 interface AnomalyTag {
   type: string;
@@ -125,7 +123,7 @@ interface TelemetryMetrics {
 function LiveVisitMonitorContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { openDrawer } = useOperationsDrawer();
+  const { openDrawer, openBypassModal, refreshKey } = useOperationsDrawer();
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<"stream" | "clearinghouse" | "intelligence">("stream");
@@ -157,11 +155,6 @@ function LiveVisitMonitorContent() {
   const [methodFilter, setMethodFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [anomalyOnly, setAnomalyOnly] = useState(false);
-
-  // Modals & Drawers
-  const [isBypassModalOpen, setIsBypassModalOpen] = useState(false);
-  const [selectedVisitId, setSelectedVisitId] = useState<string | null>(null);
-  const [preselectedEmpId, setPreselectedEmpId] = useState<string | null>(null);
 
   // Web Audio Synthesized Chime for Anomalies
   const playAnomalyChime = () => {
@@ -221,7 +214,7 @@ function LiveVisitMonitorContent() {
     }, 12000);
 
     return () => clearInterval(interval);
-  }, [isPaused, methodFilter, statusFilter, anomalyOnly, searchQuery]);
+  }, [isPaused, methodFilter, statusFilter, anomalyOnly, searchQuery, refreshKey]);
 
   // Supabase Realtime channel subscription for instant check-in events
   useEffect(() => {
@@ -380,19 +373,19 @@ function LiveVisitMonitorContent() {
   return (
     <div className="space-y-6">
       {/* ─── 1. Command Header & Real-Time Controls ─── */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-2 border-b border-[#21405A]">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0B1F33] flex items-center gap-2">
               <Activity className="w-6 h-6 text-[#28D17C]" />
               <span>Real-Time Visit Monitor & Access Control</span>
             </h1>
-            <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-[#28D17C]/20 text-[#28D17C] font-semibold border border-[#28D17C]/30 flex items-center gap-1.5">
+            <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-[#E9FAF2] text-[#008A4B] font-semibold border border-[#B7F1D2] flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[#28D17C] animate-pulse" />
               <span>LIVE</span>
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-600 mt-1">
             Real-time telemetry stream, automated anti-fraud anomaly engine & dispute clearinghouse across Kigali, Musanze & Nairobi.
           </p>
         </div>
@@ -438,10 +431,7 @@ function LiveVisitMonitorContent() {
 
           {/* 1-Click Turnstile Emergency Bypass CTA */}
           <button
-            onClick={() => {
-              setPreselectedEmpId(null);
-              setIsBypassModalOpen(true);
-            }}
+            onClick={() => openBypassModal()}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] font-bold text-xs transition-colors shadow-sm"
           >
             <Zap className="w-4 h-4 fill-current" />
@@ -623,9 +613,128 @@ function LiveVisitMonitorContent() {
             </div>
           </div>
 
-          {/* Visits Table */}
+          {/* Visits Table & Mobile Feed */}
           <div className="rounded-2xl bg-[#0B1F33] border border-[#21405A] overflow-hidden shadow-xl">
-            <div className="overflow-x-auto">
+            {/* Mobile Card Feed (sm:hidden) */}
+            <div className="sm:hidden divide-y divide-[#21405A]">
+              {loading && visits.length === 0 ? (
+                <div className="p-8 text-center text-slate-400">
+                  <Activity className="w-6 h-6 animate-spin text-[#28D17C] mx-auto mb-2" />
+                  <span className="text-xs">Initializing live telemetry stream from Kigali Gateway...</span>
+                </div>
+              ) : filteredVisits.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 space-y-1">
+                  <ShieldCheck className="w-8 h-8 text-slate-500 mx-auto mb-1" />
+                  <span className="block font-semibold text-slate-300 text-xs">No visits match filters.</span>
+                  <span className="text-[10px] text-slate-500">Adjust search criteria or status.</span>
+                </div>
+              ) : (
+                filteredVisits.map((v) => {
+                  const emp = v.employees;
+                  const org = v.organizations;
+                  const loc = v.provider_locations;
+                  const prov = loc?.providers;
+
+                  return (
+                    <div
+                      key={v.id}
+                      onClick={() => openDrawer("visit", v.id, v, "Visit Inspection")}
+                      className="p-4 active:bg-[#122A42] transition-colors space-y-2.5 cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-[#142C44] border border-[#21405A] flex items-center justify-center font-bold text-xs text-[#28D17C] shrink-0">
+                            {emp?.full_name?.charAt(0) || "U"}
+                          </div>
+                          <div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (emp?.id) openDrawer("employee", emp.id, emp, emp.full_name);
+                              }}
+                              className="font-bold text-white text-xs hover:text-[#28D17C] text-left block"
+                            >
+                              {emp?.full_name || "Beneficiary"}
+                            </button>
+                            <div className="text-[10px] text-slate-400 truncate max-w-[160px]">
+                              {emp?.email}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <div className="font-mono text-white text-[10px] font-semibold">
+                            {formatRelativeTime(v.check_in_at)}
+                          </div>
+                          <div className="text-[9px] text-slate-400 font-mono">
+                            {new Date(v.check_in_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-[11px] bg-[#0E263E] p-2.5 rounded-xl border border-[#21405A]">
+                        <div>
+                          <div className="text-[9px] text-slate-400 uppercase font-semibold">Employer</div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (org?.id) openDrawer("organization", org.id, org, org.name);
+                            }}
+                            className="font-semibold text-slate-200 hover:text-[#28D17C] flex items-center gap-1 mt-0.5 text-left truncate max-w-[130px]"
+                          >
+                            <Building2 className="w-3 h-3 text-indigo-400 shrink-0" />
+                            <span className="truncate">{org?.name || "Corporate"}</span>
+                          </button>
+                        </div>
+
+                        <div>
+                          <div className="text-[9px] text-slate-400 uppercase font-semibold">Venue</div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (prov?.id) openDrawer("provider", prov.id, prov, prov.name);
+                            }}
+                            className="font-semibold text-slate-200 hover:text-[#28D17C] flex items-center gap-1 mt-0.5 text-left truncate max-w-[130px]"
+                          >
+                            <Network className="w-3 h-3 text-teal-400 shrink-0" />
+                            <span className="truncate">{loc?.name || "Facility"}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {renderMethodBadge(v.verification_method)}
+                          {renderStatusBadge(v.status)}
+                          {v.anomalies?.map((ano, idx) => (
+                            <span
+                              key={idx}
+                              className={`inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold font-mono border ${
+                                ano.severity === "critical"
+                                  ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+                                  : "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                              }`}
+                            >
+                              {ano.label}
+                            </span>
+                          ))}
+                        </div>
+
+                        <span className="text-[10px] text-[#28D17C] font-semibold inline-flex items-center gap-0.5">
+                          Inspect <ChevronRight className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Desktop Table View (hidden sm:block) */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="bg-[#0E263E] border-b border-[#21405A] text-slate-400 uppercase tracking-wider text-[10px] font-semibold">
@@ -665,7 +774,7 @@ function LiveVisitMonitorContent() {
                         <tr
                           key={v.id}
                           className="hover:bg-[#122A42] transition-colors group cursor-pointer"
-                          onClick={() => setSelectedVisitId(v.id)}
+                          onClick={() => openDrawer("visit", v.id, v, "Visit Inspection")}
                         >
                           {/* Timestamp */}
                           <td className="py-3.5 px-4 whitespace-nowrap">
@@ -684,12 +793,19 @@ function LiveVisitMonitorContent() {
                                 {emp?.full_name?.charAt(0) || "U"}
                               </div>
                               <div className="min-w-0">
-                                <div className="font-bold text-white truncate group-hover:text-[#28D17C] transition-colors flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (emp?.id) openDrawer("employee", emp.id, emp, emp.full_name);
+                                  }}
+                                  className="font-bold text-white truncate group-hover:text-[#28D17C] transition-colors flex items-center gap-1.5 text-left"
+                                >
                                   <span>{emp?.full_name || "Employee"}</span>
                                   <span className="font-mono text-[9px] px-1 py-0.2 rounded bg-slate-800 text-slate-300 font-normal">
                                     {emp?.tier || "STANDARD"}
                                   </span>
-                                </div>
+                                </button>
                                 <div className="text-[10px] text-slate-400 truncate max-w-[140px]">
                                   {emp?.email}
                                 </div>
@@ -779,7 +895,7 @@ function LiveVisitMonitorContent() {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setSelectedVisitId(v.id);
+                                openDrawer("visit", v.id, v, "Visit Inspection");
                               }}
                               className="px-2.5 py-1.5 rounded-lg bg-[#142C44] hover:bg-slate-700 text-slate-200 hover:text-white font-semibold text-[11px] transition-colors inline-flex items-center gap-1"
                             >
@@ -871,7 +987,7 @@ function LiveVisitMonitorContent() {
 
                     <div className="pt-1 flex items-center justify-end gap-2">
                       <button
-                        onClick={() => setSelectedVisitId(v.id)}
+                        onClick={() => openDrawer("visit", v.id, v, "Visit Adjudication")}
                         className="px-4 py-2 rounded-xl bg-[#142C44] hover:bg-slate-700 text-white font-semibold text-xs transition-colors"
                       >
                         Open Full Adjudication Workspace
@@ -951,25 +1067,6 @@ function LiveVisitMonitorContent() {
           </div>
         </div>
       )}
-
-      {/* ─── 4. Modals & Drawers ─── */}
-      <EmergencyBypassModal
-        isOpen={isBypassModalOpen}
-        onClose={() => setIsBypassModalOpen(false)}
-        preselectedEmployeeId={preselectedEmpId}
-        onBypassIssued={() => {
-          fetchVisits();
-        }}
-      />
-
-      <VisitDetailDrawer
-        isOpen={Boolean(selectedVisitId)}
-        onClose={() => setSelectedVisitId(null)}
-        visitId={selectedVisitId}
-        onVisitUpdated={() => {
-          fetchVisits();
-        }}
-      />
     </div>
   );
 }

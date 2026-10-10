@@ -26,8 +26,8 @@ import {
 } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 import { formatCurrencyDisplay } from "@/lib/utils";
+import { useOperationsDrawer } from "@/contexts/OperationsDrawerContext";
 import { CreateProviderDrawer } from "@/components/operations/drawers/CreateProviderDrawer";
-import { ProviderDossierDrawer } from "@/components/operations/drawers/ProviderDossierDrawer";
 
 interface ProviderLocationItem {
   id: string;
@@ -108,9 +108,9 @@ function ProviderNetworkContent() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
 
-  // Drawers
+  // Drawers & Operations Context
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
+  const { openDrawer, refreshKey } = useOperationsDrawer();
 
   const fetchProviders = async () => {
     setLoading(true);
@@ -133,29 +133,18 @@ function ProviderNetworkContent() {
 
   useEffect(() => {
     fetchProviders();
-  }, []);
+  }, [refreshKey]);
 
   // Deep-linking: sync URL query param `?id=...`
   useEffect(() => {
     const idParam = searchParams.get("id");
     if (idParam) {
-      setSelectedProviderId(idParam);
+      openDrawer("provider", idParam);
     }
-  }, [searchParams]);
+  }, [searchParams, openDrawer]);
 
   const handleOpenDossier = (providerId: string) => {
-    setSelectedProviderId(providerId);
-    const params = new URLSearchParams(window.location.search);
-    params.set("id", providerId);
-    router.replace(`/operations/providers?${params.toString()}`);
-  };
-
-  const handleCloseDossier = () => {
-    setSelectedProviderId(null);
-    const params = new URLSearchParams(window.location.search);
-    params.delete("id");
-    const newQuery = params.toString();
-    router.replace(`/operations/providers${newQuery ? `?${newQuery}` : ""}`);
+    openDrawer("provider", providerId);
   };
 
   // Filtered Providers computation
@@ -510,149 +499,246 @@ function ProviderNetworkContent() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-600 font-semibold uppercase tracking-wider text-[10px]">
-                  <th className="py-3 px-4">Provider Trade Entity</th>
-                  <th className="py-3 px-4">Facility Branches</th>
-                  <th className="py-3 px-4">KYC Compliance</th>
-                  <th className="py-3 px-4">Negotiated Rate</th>
-                  <th className="py-3 px-4">Visits Velocity</th>
-                  <th className="py-3 px-4">MTD Accrued Payout</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredProviders.map((provider) => {
-                  const catBadge = getCategoryBadge(provider.category);
-                  const isMaintenance = (provider.maintenance_location_count || 0) > 0 || Boolean(provider.hasActiveMaintenance);
+          <>
+            {/* Mobile Card View (sm:hidden) */}
+            <div className="sm:hidden divide-y divide-slate-100">
+              {filteredProviders.map((provider) => {
+                const catBadge = getCategoryBadge(provider.category);
+                const isMaintenance = (provider.maintenance_location_count || 0) > 0 || Boolean(provider.hasActiveMaintenance);
 
-                  return (
-                    <tr
-                      key={provider.id}
-                      onClick={() => handleOpenDossier(provider.id)}
-                      className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
-                    >
-                      {/* Column 1: Trade Entity */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm shrink-0 border border-slate-200 group-hover:border-emerald-300 transition-colors">
-                            {catBadge.icon}
+                return (
+                  <div
+                    key={provider.id}
+                    onClick={() => handleOpenDossier(provider.id)}
+                    className="p-4 active:bg-slate-50 transition-colors space-y-3 cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-base shrink-0 border border-slate-200">
+                          {catBadge.icon}
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-900 text-sm">
+                            {provider.name}
                           </div>
-                          <div>
-                            <div className="font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">
-                              {provider.name}
-                            </div>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className={`px-1.5 py-0.2 rounded text-[9px] font-semibold border ${catBadge.color}`}>
-                                {catBadge.label}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold border ${catBadge.color}`}>
+                              {catBadge.label}
+                            </span>
+                            {(provider.tax_id || provider.taxId) && (
+                              <span className="font-mono text-[10px] text-slate-400">
+                                TIN: {provider.tax_id || provider.taxId}
                               </span>
-                              {(provider.tax_id || provider.taxId) && (
-                                <span className="font-mono text-[10px] text-slate-400">
-                                  TIN: {provider.tax_id || provider.taxId}
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="shrink-0">
+                        {getStatusBadge(provider.status)}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-medium">Locations</div>
+                        <div className="font-semibold text-slate-800 flex items-center gap-1 mt-0.5">
+                          <MapPin className="w-3 h-3 text-slate-400" />
+                          <span>
+                            {provider.location_count ?? provider.locationsCount ?? (provider.locations?.length || 1)}{" "}
+                            ({provider.primary_city || provider.primaryCity || "Kigali"})
+                          </span>
+                        </div>
+                        {isMaintenance && (
+                          <div className="text-[10px] text-amber-700 font-semibold flex items-center gap-1 mt-0.5">
+                            <AlertTriangle className="w-3 h-3 text-amber-500" />
+                            <span>Maintenance</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-medium">Payout Rate</div>
+                        <div className="font-mono font-bold text-slate-900 mt-0.5">
+                          {formatCurrencyDisplay(provider.per_visit_rate ?? provider.primaryPayoutRate ?? 0)}
+                        </div>
+                        <div className="text-[9px] text-slate-400">per verified visit</div>
+                      </div>
+
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-medium">Visits Today / MTD</div>
+                        <div className="font-mono font-semibold text-slate-900 mt-0.5">
+                          {provider.today_visits ?? provider.todayVisitsCount ?? 0} / {provider.mtd_visits ?? provider.mtdVisitsCount ?? 0}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-medium">MTD Accrued</div>
+                        <div className="font-mono font-bold text-emerald-700 mt-0.5">
+                          {formatCurrencyDisplay(provider.mtd_payout_rwf ?? provider.estimatedMtdGrossRwf ?? 0)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[11px] text-slate-400">Tap to inspect Dossier &amp; Payout Matrix</span>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 font-semibold text-xs shadow-2xs"
+                      >
+                        <span>Dossier</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table View (hidden sm:block) */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-600 font-semibold uppercase tracking-wider text-[10px]">
+                    <th className="py-3 px-4">Provider Trade Entity</th>
+                    <th className="py-3 px-4">Facility Branches</th>
+                    <th className="py-3 px-4">KYC Compliance</th>
+                    <th className="py-3 px-4">Negotiated Rate</th>
+                    <th className="py-3 px-4">Visits Velocity</th>
+                    <th className="py-3 px-4">MTD Accrued Payout</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredProviders.map((provider) => {
+                    const catBadge = getCategoryBadge(provider.category);
+                    const isMaintenance = (provider.maintenance_location_count || 0) > 0 || Boolean(provider.hasActiveMaintenance);
+
+                    return (
+                      <tr
+                        key={provider.id}
+                        onClick={() => handleOpenDossier(provider.id)}
+                        className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                      >
+                        {/* Column 1: Trade Entity */}
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm shrink-0 border border-slate-200 group-hover:border-emerald-300 transition-colors">
+                              {catBadge.icon}
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">
+                                {provider.name}
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className={`px-1.5 py-0.2 rounded text-[9px] font-semibold border ${catBadge.color}`}>
+                                  {catBadge.label}
                                 </span>
-                              )}
+                                {(provider.tax_id || provider.taxId) && (
+                                  <span className="font-mono text-[10px] text-slate-400">
+                                    TIN: {provider.tax_id || provider.taxId}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Column 2: Branches */}
-                      <td className="py-3.5 px-4">
-                        <div>
-                          <div className="font-semibold text-slate-800 flex items-center gap-1.5">
-                            <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                            <span>
-                              {provider.location_count ?? provider.locationsCount ?? (provider.locations?.length || 1)}{" "}
-                              {(provider.location_count ?? provider.locationsCount ?? 1) === 1 ? "Location" : "Locations"}
-                            </span>
-                            <span className="text-[10px] text-slate-400">
-                              ({provider.primary_city || provider.primaryCity || "Kigali"})
-                            </span>
-                          </div>
-                          {isMaintenance ? (
-                            <div className="text-[10px] text-amber-700 font-semibold flex items-center gap-1 mt-0.5">
-                              <AlertTriangle className="w-3 h-3 text-amber-500" />
-                              <span>{provider.maintenance_location_count ?? 1} in maintenance mode</span>
+                        {/* Column 2: Branches */}
+                        <td className="py-3.5 px-4">
+                          <div>
+                            <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+                              <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                              <span>
+                                {provider.location_count ?? provider.locationsCount ?? (provider.locations?.length || 1)}{" "}
+                                {(provider.location_count ?? provider.locationsCount ?? 1) === 1 ? "Location" : "Locations"}
+                              </span>
+                              <span className="text-[10px] text-slate-400">
+                                ({provider.primary_city || provider.primaryCity || "Kigali"})
+                              </span>
                             </div>
-                          ) : (
-                            <div className="text-[10px] text-emerald-600 font-medium mt-0.5">
-                              All {provider.location_count ?? provider.locationsCount ?? 1} active &amp; geofenced
+                            {isMaintenance ? (
+                              <div className="text-[10px] text-amber-700 font-semibold flex items-center gap-1 mt-0.5">
+                                <AlertTriangle className="w-3 h-3 text-amber-500" />
+                                <span>{provider.maintenance_location_count ?? 1} in maintenance mode</span>
+                              </div>
+                            ) : (
+                              <div className="text-[10px] text-emerald-600 font-medium mt-0.5">
+                                All {provider.location_count ?? provider.locationsCount ?? 1} active &amp; geofenced
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Column 3: KYC Status */}
+                        <td className="py-3.5 px-4">
+                          <div className="space-y-1">
+                            {getStatusBadge(provider.status)}
+                            <div className="text-[10px] text-slate-400">
+                              {(provider.kyc_status || provider.kycCompliance?.status) === "approved"
+                                ? "RDB & Tax Verified"
+                                : (provider.kyc_status || provider.kycCompliance?.status) === "revision_requested"
+                                ? "Action Required"
+                                : "Docs in Review"}
                             </div>
-                          )}
-                        </div>
-                      </td>
+                          </div>
+                        </td>
 
-                      {/* Column 3: KYC Status */}
-                      <td className="py-3.5 px-4">
-                        <div className="space-y-1">
-                          {getStatusBadge(provider.status)}
-                          <div className="text-[10px] text-slate-400">
-                            {(provider.kyc_status || provider.kycCompliance?.status) === "approved"
-                              ? "RDB & Tax Verified"
-                              : (provider.kyc_status || provider.kycCompliance?.status) === "revision_requested"
-                              ? "Action Required"
-                              : "Docs in Review"}
+                        {/* Column 4: Negotiated Rate */}
+                        <td className="py-3.5 px-4">
+                          <div>
+                            <div className="font-mono font-bold text-slate-900">
+                              {formatCurrencyDisplay(provider.per_visit_rate ?? provider.primaryPayoutRate ?? 0)}
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              Per verified visit
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Column 4: Negotiated Rate */}
-                      <td className="py-3.5 px-4">
-                        <div>
-                          <div className="font-mono font-bold text-slate-900">
-                            {formatCurrencyDisplay(provider.per_visit_rate ?? provider.primaryPayoutRate ?? 0)}
+                        {/* Column 5: Visits Velocity */}
+                        <td className="py-3.5 px-4">
+                          <div className="font-mono">
+                            <div className="text-slate-900 font-bold flex items-center gap-1">
+                              <span>{provider.today_visits ?? provider.todayVisitsCount ?? 0} today</span>
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              {provider.mtd_visits ?? provider.mtdVisitsCount ?? 0} MTD visits
+                            </div>
                           </div>
-                          <div className="text-[10px] text-slate-400">
-                            Per verified visit
-                          </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Column 5: Visits Velocity */}
-                      <td className="py-3.5 px-4">
-                        <div className="font-mono">
-                          <div className="text-slate-900 font-bold flex items-center gap-1">
-                            <span>{provider.today_visits ?? provider.todayVisitsCount ?? 0} today</span>
+                        {/* Column 6: MTD Accrued Payout */}
+                        <td className="py-3.5 px-4">
+                          <div className="font-mono">
+                            <div className="text-emerald-700 font-bold">
+                              {formatCurrencyDisplay(provider.mtd_payout_rwf ?? provider.estimatedMtdGrossRwf ?? 0)}
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              Settlement queue
+                            </div>
                           </div>
-                          <div className="text-[10px] text-slate-400">
-                            {provider.mtd_visits ?? provider.mtdVisitsCount ?? 0} MTD visits
-                          </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Column 6: MTD Accrued Payout */}
-                      <td className="py-3.5 px-4">
-                        <div className="font-mono">
-                          <div className="text-emerald-700 font-bold">
-                            {formatCurrencyDisplay(provider.mtd_payout_rwf ?? provider.estimatedMtdGrossRwf ?? 0)}
-                          </div>
-                          <div className="text-[10px] text-slate-400">
-                            Settlement queue
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Column 7: Actions */}
-                      <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenDossier(provider.id);
-                          }}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors shadow-2xs"
-                        >
-                          <span>Dossier</span>
-                          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        {/* Column 7: Actions */}
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDossier(provider.id);
+                            }}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors shadow-2xs"
+                          >
+                            <span>Dossier</span>
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
@@ -667,16 +753,6 @@ function ProviderNetworkContent() {
           }
         }}
       />
-
-      {/* 360-degree Dossier & Payout Matrix Drawer */}
-      {selectedProviderId && (
-        <ProviderDossierDrawer
-          isOpen={!!selectedProviderId}
-          onClose={handleCloseDossier}
-          providerId={selectedProviderId}
-          onProviderUpdated={fetchProviders}
-        />
-      )}
     </div>
   );
 }
