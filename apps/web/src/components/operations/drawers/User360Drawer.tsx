@@ -230,6 +230,14 @@ export function User360Drawer({
   };
 
   const b = data?.beneficiary || initialData || {};
+  const fullName = b.fullName || b.full_name || "Corporate Beneficiary";
+  const email = b.email || "N/A";
+  const orgName = b.organization?.name || b.organizations?.name || "Corporate Partner";
+  const orgId = b.organization?.id || b.organizations?.id;
+  const tier = b.tier || "standard";
+  const status = b.status || "active";
+  const externalId = b.externalId || b.employee_id_external || "EMP-RW-2026";
+
   const device = data?.device || {};
   const quota = data?.quota || {};
   const benefit = data?.benefit || {};
@@ -256,7 +264,7 @@ export function User360Drawer({
           <div className="p-4 bg-[#0B1F33] text-white flex items-center justify-between border-b border-[#21405A]">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#28D17C] to-[#00D2B4] flex items-center justify-center font-bold text-white shadow-md text-sm">
-                {b.fullName ? b.fullName.charAt(0) : "U"}
+                {fullName.charAt(0).toUpperCase()}
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -268,7 +276,7 @@ export function User360Drawer({
                   </span>
                 </div>
                 <h3 className="text-base font-bold text-white truncate max-w-md mt-0.5">
-                  {b.fullName || "Corporate Beneficiary"}
+                  {fullName}
                 </h3>
               </div>
             </div>
@@ -306,21 +314,21 @@ export function User360Drawer({
                   <span className="text-[10px] text-slate-400 uppercase font-semibold block">Corporate Employer</span>
                   <button
                     onClick={() => {
-                      if (b.organization?.id) {
-                        openDrawer("organization", b.organization.id, b.organization, b.organization.name);
+                      if (orgId) {
+                        openDrawer("organization", orgId, b.organization || b.organizations, orgName);
                       }
                     }}
                     className="font-bold text-[#0B1F33] hover:text-[#28D17C] transition-colors truncate block max-w-[140px] text-left underline decoration-slate-300"
-                    title={b.organization?.name}
+                    title={orgName}
                   >
-                    {b.organization?.name || "Corporate Partner"}
+                    {orgName}
                   </button>
                 </div>
 
                 <div>
                   <span className="text-[10px] text-slate-400 uppercase font-semibold block">Corporate Email</span>
-                  <span className="font-mono text-slate-700 truncate block max-w-[140px]" title={b.email}>
-                    {b.email || "N/A"}
+                  <span className="font-mono text-slate-700 truncate block max-w-[140px]" title={email}>
+                    {email}
                   </span>
                 </div>
 
@@ -328,7 +336,7 @@ export function User360Drawer({
                   <span className="text-[10px] text-slate-400 uppercase font-semibold block">Benefit Tier</span>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <select
-                      value={b.tier || "standard"}
+                      value={tier}
                       disabled={updatingTier}
                       onChange={(e) => handleTierChange(e.target.value)}
                       className="px-2 py-0.5 rounded bg-slate-100 border border-slate-300 text-[11px] font-mono font-bold text-[#0B1F33] focus:outline-none focus:ring-1 focus:ring-[#28D17C] cursor-pointer"
@@ -345,13 +353,13 @@ export function User360Drawer({
                   <span className="text-[10px] text-slate-400 uppercase font-semibold block">Account Status</span>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <select
-                      value={b.status || "active"}
+                      value={status}
                       disabled={updatingStatus}
                       onChange={(e) => handleStatusChange(e.target.value)}
                       className={`px-2 py-0.5 rounded border text-[11px] font-bold focus:outline-none cursor-pointer ${
-                        b.status === "active"
+                        status === "active"
                           ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                          : b.status === "frozen"
+                          : status === "frozen"
                           ? "bg-amber-50 text-amber-800 border-amber-200"
                           : "bg-rose-50 text-rose-800 border-rose-200"
                       }`}
@@ -385,20 +393,20 @@ export function User360Drawer({
                 <div className="flex items-start justify-between">
                   <div>
                     <span className="text-[10px] font-mono tracking-widest text-[#28D17C] uppercase font-bold block">
-                      {b.organization?.name || "POLYFIT NETWORK"}
+                      {orgName}
                     </span>
                     <h5 className="text-lg font-extrabold text-white mt-0.5">
-                      {b.fullName || "Beneficiary Pass"}
+                      {fullName}
                     </h5>
                     <span className="text-[11px] text-slate-400 font-mono">
-                      External TIN: {b.externalId || "EMP-RW-2026"}
+                      External TIN: {externalId}
                     </span>
                   </div>
 
                   <div className="px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-right">
                     <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Tier</span>
                     <span className="text-xs font-mono font-bold text-[#28D17C] uppercase">
-                      {b.tier || "Standard"}
+                      {tier}
                     </span>
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Search, Menu, Clock, Shield, Bell, CheckCircle2 } from "lucide-react";
 
 interface OperationsHeaderProps {
@@ -9,7 +10,17 @@ interface OperationsHeaderProps {
 }
 
 export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: OperationsHeaderProps) {
+  const pathname = usePathname();
   const [currentTime, setCurrentTime] = useState<string>("");
+
+  const getSectionName = () => {
+    if (pathname?.includes("/operations/support")) return "User 360 & Security";
+    if (pathname?.includes("/operations/clients")) return "Corporate Clients";
+    if (pathname?.includes("/operations/providers")) return "Provider Network";
+    if (pathname?.includes("/operations/visits")) return "Live Visit Monitor";
+    if (pathname?.includes("/operations/finance")) return "Marketplace Finance";
+    return "Command Center";
+  };
 
   useEffect(() => {
     const updateClock = () => {
@@ -48,7 +59,7 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
           <span className="font-semibold text-[#0B1F33]">Operations Console</span>
           <span className="text-slate-300">/</span>
           <span className="font-medium text-[#28D17C] bg-[#E9FAF2] px-2 py-0.5 rounded-full border border-[#B7F1D2]">
-            Command Center
+            {getSectionName()}
           </span>
         </div>
       </div>

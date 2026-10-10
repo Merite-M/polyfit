@@ -26,6 +26,25 @@ export function SlideOverDrawerHost() {
   const { drawerState, closeDrawer } = useOperationsDrawer();
   const dialogRef = useRef<HTMLDialogElement>(null);
 
+  const isDedicatedType = ["organization", "provider", "location", "visit", "invoice", "settlement", "employee"].includes(
+    drawerState.type || ""
+  );
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (drawerState.isOpen && !isDedicatedType) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } else {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+  }, [drawerState.isOpen, isDedicatedType]);
+
   // If organization type, delegate directly to the dedicated EmployerContractDrawer (PF-118)
   if (drawerState.isOpen && drawerState.type === "organization" && drawerState.id) {
     return (
@@ -92,21 +111,6 @@ export function SlideOverDrawerHost() {
       />
     );
   }
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    if (drawerState.isOpen) {
-      if (!dialog.open) {
-        dialog.showModal();
-      }
-    } else {
-      if (dialog.open) {
-        dialog.close();
-      }
-    }
-  }, [drawerState.isOpen]);
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
     if (e.target === dialogRef.current) {
