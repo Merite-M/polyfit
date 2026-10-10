@@ -115,7 +115,7 @@ interface CorporateContextType {
 const CorporateContext = createContext<CorporateContextType | undefined>(undefined);
 
 export function CorporateProvider({ children }: { children: React.ReactNode }) {
-  const { organizationId } = useAuth();
+  const { organizationId, user, isDemoMode } = useAuth();
 
   // 1. Organization State
   const initialOrg = useMemo(() => {
@@ -229,6 +229,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
 
   // Data fetching functions
   const refreshFunnelData = useCallback(async () => {
+    if (!user || isDemoMode) return;
     try {
       const utilRes = await apiFetch<any>(
         `/api/reporting/employer/${organization.id}/utilization`
@@ -245,9 +246,10 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Keep resilient data
     }
-  }, [organization.id]);
+  }, [organization.id, user, isDemoMode]);
 
   const refreshEmployees = useCallback(async () => {
+    if (!user || isDemoMode) return;
     setIsLoadingEmployees(true);
     try {
       const res = await apiFetch<{ employees: CorporateEmployee[] }>(
@@ -261,9 +263,10 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoadingEmployees(false);
     }
-  }, [organization.id]);
+  }, [organization.id, user, isDemoMode]);
 
   const refreshPlans = useCallback(async () => {
+    if (!user || isDemoMode) return;
     setIsLoadingPlans(true);
     try {
       const res = await apiFetch<{ benefits: BenefitPlan[] }>(
@@ -277,9 +280,10 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoadingPlans(false);
     }
-  }, [organization.id]);
+  }, [organization.id, user, isDemoMode]);
 
   const refreshInvoices = useCallback(async () => {
+    if (!user || isDemoMode) return;
     setIsLoadingInvoices(true);
     try {
       const invRes = await apiFetch<{ invoices: InvoiceRecord[] }>(
@@ -305,7 +309,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoadingInvoices(false);
     }
-  }, [organization.id]);
+  }, [organization.id, user, isDemoMode]);
 
   // Reload everything when organization changes
   useEffect(() => {

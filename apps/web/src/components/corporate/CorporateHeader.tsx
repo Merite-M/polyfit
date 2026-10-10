@@ -129,8 +129,8 @@ export function CorporateHeader({
         {/* Custom Actions Slot (e.g. Add Employee, Create Plan) */}
         {actions && <div className="flex items-center gap-2">{actions}</div>}
 
-        {/* Date Range Selector Pill */}
-        <div className="relative">
+        {/* Date Range Selector Pill (hidden on xs mobile to prevent header overflow) */}
+        <div className="relative hidden sm:block">
           <button
             onClick={() => setIsRangeOpen(!isRangeOpen)}
             className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border border-border bg-background hover:bg-muted/50 text-xs font-semibold text-foreground transition-all shadow-2xs"
@@ -179,7 +179,7 @@ export function CorporateHeader({
         {/* 1-Click "Download Census" Button (RFC 4180 standard for HR) */}
         <button
           onClick={downloadCensusCsv}
-          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground transition-colors shadow-2xs group"
+          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground transition-colors shadow-2xs group"
           title="Export active employee roster and tier eligibility as RFC 4180 CSV"
         >
           <FileSpreadsheet className="w-3.5 h-3.5 text-teal-500 group-hover:scale-110 transition-transform" />
@@ -191,7 +191,7 @@ export function CorporateHeader({
         <button
           onClick={handleCopyLink}
           className={cn(
-            "flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-2xs",
+            "hidden sm:flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-2xs",
             copiedLink
               ? "bg-emerald-500 text-slate-900"
               : "bg-primary text-primary-foreground hover:bg-primary/90"

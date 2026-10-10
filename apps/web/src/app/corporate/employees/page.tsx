@@ -386,6 +386,8 @@ export default function EmployeesPage() {
           <div className="relative flex-1 max-w-md">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
+              id="employee-search"
+              name="employee-search"
               type="text"
               placeholder="Search by employee name, email, or ID..."
               value={searchQuery}
@@ -398,6 +400,8 @@ export default function EmployeesPage() {
           <div className="flex items-center gap-2.5 flex-wrap">
             {/* Department Filter */}
             <select
+              id="department-filter"
+              name="department-filter"
               value={departmentFilter}
               onChange={(e) => setDepartmentFilter(e.target.value)}
               className="px-3 py-2 rounded-xl border border-border bg-card text-xs font-medium text-foreground focus:outline-none focus:border-primary"
@@ -412,6 +416,8 @@ export default function EmployeesPage() {
 
             {/* Tier Filter */}
             <select
+              id="tier-filter"
+              name="tier-filter"
               value={tierFilter}
               onChange={(e) => setTierFilter(e.target.value)}
               className="px-3 py-2 rounded-xl border border-border bg-card text-xs font-medium text-foreground focus:outline-none focus:border-primary"
