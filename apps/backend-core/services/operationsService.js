@@ -3444,13 +3444,20 @@ async function getOperationsAuditLogs({ eventType, search, limit = 50, page = 1 
     throw new Error(`Failed to query audit logs: ${error.message}`);
   }
 
+  const formattedLogs = (logs || []).map((l) => ({
+    ...l,
+    action: l.event_type || l.action || 'system_audit',
+    event_type: l.event_type || l.action || 'system_audit',
+    entity_type: l.metadata?.entity_type || (l.event_type ? l.event_type.split('_')[0].toUpperCase() : 'SYSTEM'),
+  }));
+
   return {
     success: true,
     count: count || (logs || []).length,
     page: pageNum,
     limit: limitNum,
     totalPages: Math.ceil((count || (logs || []).length) / limitNum),
-    logs: logs || []
+    logs: formattedLogs
   };
 }
 

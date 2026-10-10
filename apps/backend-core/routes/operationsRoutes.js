@@ -828,8 +828,9 @@ router.patch('/support/beneficiaries/:id/tier', async (req, res) => {
  */
 router.get('/audit-logs', async (req, res) => {
   try {
-    const { eventType, search, limit, page } = req.query;
-    const result = await getOperationsAuditLogs({ eventType, search, limit, page });
+    const { eventType, action, search, limit, page } = req.query;
+    const filterEvent = eventType || action;
+    const result = await getOperationsAuditLogs({ eventType: filterEvent, search, limit, page });
     return res.status(200).json(result);
   } catch (error) {
     console.error('[operationsRoutes] Audit logs error:', error.message);

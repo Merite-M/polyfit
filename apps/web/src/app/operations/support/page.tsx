@@ -68,9 +68,10 @@ interface PlatformSettingItem {
 interface AuditLogItem {
   id: string;
   user_id: string | null;
-  entity_type: string;
-  entity_id: string | null;
-  action: string;
+  entity_type?: string;
+  entity_id?: string | null;
+  action?: string;
+  event_type?: string;
   ip_address: string | null;
   user_agent: string | null;
   metadata: Record<string, any>;
@@ -338,12 +339,15 @@ export default function SupportOperationsPage() {
   const filteredAuditLogs = useMemo(() => {
     if (!auditSearch.trim()) return auditLogs;
     const q = auditSearch.toLowerCase();
-    return auditLogs.filter(
-      (l) =>
-        l.action?.toLowerCase().includes(q) ||
-        l.entity_type?.toLowerCase().includes(q) ||
+    return auditLogs.filter((l) => {
+      const actionStr = (l.action || l.event_type || "").toLowerCase();
+      const entityStr = (l.entity_type || l.metadata?.entity_type || "").toLowerCase();
+      return (
+        actionStr.includes(q) ||
+        entityStr.includes(q) ||
         JSON.stringify(l.metadata || {}).toLowerCase().includes(q)
-    );
+      );
+    });
   }, [auditLogs, auditSearch]);
 
   return (
@@ -1027,6 +1031,9 @@ export default function SupportOperationsPage() {
                   ) : (
                     filteredAuditLogs.map((log) => {
                       const operator = log.metadata?.operator_identifier || log.metadata?.operator_email || log.user_id || "System";
+                      const action = log.action || log.event_type || "system_audit";
+                      const actionLower = action.toLowerCase();
+                      const entityType = log.entity_type || log.metadata?.entity_type || (log.event_type ? log.event_type.split("_")[0].toUpperCase() : "SYSTEM");
                       return (
                         <tr
                           key={log.id}
@@ -1039,20 +1046,20 @@ export default function SupportOperationsPage() {
 
                           <td className="py-3 px-4">
                             <span className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] ${
-                              log.action.includes("reset")
+                              actionLower.includes("reset")
                                 ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                                : log.action.includes("updated")
+                                : actionLower.includes("updated") || actionLower.includes("assigned")
                                 ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                                : log.action.includes("limited")
+                                : actionLower.includes("limited")
                                 ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
                                 : "bg-emerald-500/20 text-[#28D17C] border border-emerald-500/30"
                             }`}>
-                              {log.action}
+                              {action}
                             </span>
                           </td>
 
                           <td className="py-3 px-4 font-mono text-slate-400 text-[11px]">
-                            {log.entity_type}
+                            {entityType}
                           </td>
 
                           <td className="py-3 px-4 text-slate-200 font-mono text-[11px] truncate max-w-[160px]">
@@ -1250,7 +1257,7 @@ export default function SupportOperationsPage() {
             <div className="grid grid-cols-2 gap-3 text-slate-300">
               <div className="p-2.5 rounded-lg bg-[#0E263E] border border-[#21405A]">
                 <div className="text-[10px] text-slate-400 font-mono">ACTION</div>
-                <div className="font-bold text-white font-mono mt-0.5">{selectedAuditLog.action}</div>
+                <div className="font-bold text-white font-mono mt-0.5">{selectedAuditLog.action || selectedAuditLog.event_type || "system_audit"}</div>
               </div>
               <div className="p-2.5 rounded-lg bg-[#0E263E] border border-[#21405A]">
                 <div className="text-[10px] text-slate-400 font-mono">TIMESTAMP</div>
@@ -1260,7 +1267,7 @@ export default function SupportOperationsPage() {
               </div>
               <div className="p-2.5 rounded-lg bg-[#0E263E] border border-[#21405A]">
                 <div className="text-[10px] text-slate-400 font-mono">ENTITY TYPE</div>
-                <div className="font-mono text-white mt-0.5">{selectedAuditLog.entity_type}</div>
+                <div className="font-mono text-white mt-0.5">{selectedAuditLog.entity_type || (selectedAuditLog.event_type ? selectedAuditLog.event_type.split("_")[0].toUpperCase() : "SYSTEM")}</div>
               </div>
               <div className="p-2.5 rounded-lg bg-[#0E263E] border border-[#21405A]">
                 <div className="text-[10px] text-slate-400 font-mono">ENTITY ID</div>
