@@ -145,10 +145,13 @@ export function DepartmentAllocationBar({
               const isSent = item.status === "sent";
               const isPaid = item.status === "paid";
 
-              const d = new Date(item.month + "-01");
-              const monthLabel = isNaN(d.getTime())
-                ? item.month
-                : d.toLocaleDateString("en-US", { month: "short" });
+              const monthMap: Record<string, string> = {
+                "01": "Jan", "02": "Feb", "03": "Mar", "04": "Apr",
+                "05": "May", "06": "Jun", "07": "Jul", "08": "Aug",
+                "09": "Sep", "10": "Oct", "11": "Nov", "12": "Dec",
+              };
+              const m = item.month.split("-")[1];
+              const monthLabel = monthMap[m] || item.month;
 
               return (
                 <div
