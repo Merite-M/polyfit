@@ -18,6 +18,7 @@ import { AppModal } from '@/components/common/app-modal';
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import {
   X,
   MapPin,
@@ -65,6 +66,7 @@ export function FacilityDetailSheet({
   visible,
   onClose,
 }: FacilityDetailSheetProps) {
+  const router = useRouter();
   const { navigateToPassWithFacility } = useTabStore();
   const { width: windowWidth } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === 'web' && windowWidth > 600;
@@ -114,6 +116,15 @@ export function FacilityDetailSheet({
     // Pass selected facility to global tab store and switch active tab to 'pass'
     navigateToPassWithFacility(facility);
     onClose();
+
+    // Seamlessly navigate to Tab 1 (Pass) with target facility context
+    router.push({
+      pathname: '/(tabs)',
+      params: {
+        facilityId: facility.location_id,
+        facilityName: facility.location_name,
+      },
+    });
   };
 
   return (

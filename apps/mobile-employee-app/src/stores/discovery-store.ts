@@ -43,6 +43,7 @@ interface DiscoveryState {
   setOpenLateOnly: (val: boolean) => void;
   setIncludedInPlanOnly: (val: boolean) => void;
   resetFilters: () => void;
+  resetDiscoveryStore: () => void;
   activeFilterCount: () => number;
 
   selectFacility: (facility: DiscoveredFacility | null) => void;
@@ -108,6 +109,26 @@ export const useDiscoveryStore = create<DiscoveryState>((set, get) => ({
       openLateOnly: false,
       includedInPlanOnly: false,
       searchQuery: '',
+    }),
+
+  resetDiscoveryStore: () =>
+    set({
+      viewMode: 'list',
+      searchQuery: '',
+      selectedCategory: 'all',
+      selectedNeighborhood: 'all',
+      selectedAmenities: [],
+      openNowOnly: false,
+      openEarlyOnly: false,
+      openLateOnly: false,
+      includedInPlanOnly: false,
+      facilities: [],
+      isLoading: false,
+      isOffline: false,
+      error: null,
+      selectedFacility: null,
+      isDetailModalVisible: false,
+      isFilterSheetVisible: false,
     }),
 
   activeFilterCount: () => {

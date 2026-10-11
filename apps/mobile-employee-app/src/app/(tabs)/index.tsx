@@ -330,7 +330,11 @@ export default function AccessPassScreen() {
           inCooldown={inCooldown}
           cooldownRemainingSeconds={cooldownRemainingSeconds}
           isQuotaExhausted={isQuotaExhausted}
-          usedVisits={monthlyVisits}
+          usedVisits={
+            isQuotaExhausted
+              ? monthlyVisits
+              : (benefitTelemetry?.usedVisits ?? (typeof remainingVisits === 'number' ? Math.max(0, monthlyVisits - remainingVisits) : 0))
+          }
           maxVisits={monthlyVisits}
           resetDate="Nov 1"
           isOffline={isOffline}

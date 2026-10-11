@@ -25,6 +25,8 @@ import {
   fetchEmployeeVisits,
 } from '@/services/api';
 import { createDemoAccounts } from '@/constants/demo-data';
+import { useDiscoveryStore } from '@/stores/discovery-store';
+import { useTabStore } from '@/stores/tab-store';
 
 // Safe SecureStore accessor with web fallback
 async function saveSecureItem(key: string, value: string): Promise<void> {
@@ -456,6 +458,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await deleteSecureItem(STORAGE_KEY_TELEMETRY);
     await deleteSecureItem(STORAGE_KEY_VISITS);
     await deleteSecureItem(STORAGE_KEY_NOTIFICATIONS);
+
+    // Flush all cross-tab discovery filters and preselected targets
+    useDiscoveryStore.getState().resetDiscoveryStore();
+    useTabStore.getState().clearPreselectedFacility();
 
     set({
       step: 'welcome',
