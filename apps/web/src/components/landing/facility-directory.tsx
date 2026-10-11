@@ -21,6 +21,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { useLeadModal } from "@/lib/lead-modal";
+import { apiFetch } from "@/lib/api-client";
 
 interface Facility {
   id: string;
@@ -199,13 +200,10 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
   // Attempt to fetch real provider discovery data from backend on mount
   useEffect(() => {
     async function fetchDiscovery() {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       try {
         setIsLiveLoading(true);
-        const res = await fetch(`${backendUrl}/api/providers/discover?limit=50`);
-        if (res.ok) {
-          const data = await res.json();
-          const rawList = data.results || data.providers || [];
+        const data = await apiFetch<any>('/api/providers/discover?limit=50');
+        const rawList = data?.results || data?.providers || [];
           if (Array.isArray(rawList) && rawList.length > 0) {
             const mapped: Facility[] = rawList.map((p: any, idx: number) => {
               const providerObj = p.provider || {};
@@ -235,12 +233,11 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
             });
             setFacilities(mapped);
           }
+        } catch {
+          // Graceful fallback to default curated dataset
+        } finally {
+          setIsLiveLoading(false);
         }
-      } catch {
-        // Graceful fallback to default curated dataset
-      } finally {
-        setIsLiveLoading(false);
-      }
     }
     fetchDiscovery();
   }, []);

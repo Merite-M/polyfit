@@ -13,12 +13,12 @@ export default function OnboardingScreen() {
 
   useEffect(() => {
     if (isBenefitActivated && step === 'completed') {
-      router.replace('/index');
+      router.replace('/');
     }
   }, [isBenefitActivated, step, router]);
 
   const handleFinishOnboarding = () => {
-    router.replace('/index');
+    router.replace('/');
   };
 
   return (

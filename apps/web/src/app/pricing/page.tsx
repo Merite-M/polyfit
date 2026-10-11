@@ -5,6 +5,7 @@ import PricingTiers from "@/components/pricing/pricing-tiers";
 import PricingRoiBanner from "@/components/pricing/pricing-roi-banner";
 import FeatureComparison from "@/components/pricing/feature-comparison";
 import PricingFaq from "@/components/pricing/pricing-faq";
+import { CompanySponsorLookup } from "@/components/ui/CompanySponsorLookup";
 import Footer from "@/components/landing/footer";
 import LeadForms from "@/components/landing/lead-forms";
 
@@ -20,6 +21,7 @@ export default function PricingPage() {
 
       <main id="main-content">
         <PricingHero />
+        <CompanySponsorLookup />
         <PricingTiers />
         <PricingRoiBanner />
         <FeatureComparison />

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { X, Building2, Dumbbell, Mail, CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@polyfit/supabase-client";
 import { useLeadModal, LeadFormType } from "@/lib/lead-modal";
+import { apiFetch } from "@/lib/api-client";
 
 interface LeadFormsProps {
   isOpen?: boolean;
@@ -183,27 +184,19 @@ export default function LeadForms({ isOpen, onClose, defaultType }: LeadFormsPro
           message: providerForm.message.trim()
         };
 
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
     try {
       let submissionSuccess = false;
 
       // 1. Try submission to primary API backend
       try {
-        const response = await fetch(`${backendUrl}/api/public/lead`, {
+        await apiFetch('/api/public/lead', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(payload),
         });
-
-        if (response.ok) {
-          submissionSuccess = true;
-        } else {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.error || `Server responded with status ${response.status}`);
-        }
+        submissionSuccess = true;
       } catch (apiErr) {
         console.warn("[LeadForms] Primary API endpoint error, attempting Supabase fallback:", apiErr);
 

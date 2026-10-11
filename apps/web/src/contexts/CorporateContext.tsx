@@ -126,6 +126,43 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     return NETWORK_ORGANIZATIONS[0];
   }, [organizationId]);
 
+  const [availableOrganizations, setAvailableOrganizations] =
+    useState<CorporateOrganization[]>(NETWORK_ORGANIZATIONS);
+
+  // Sync live organizations from backend so any created in Super Admin console appear immediately
+  useEffect(() => {
+    async function loadLiveOrganizations() {
+      try {
+        const res = await apiFetch<any>('/api/organizations?limit=50');
+        const list = res?.organizations || res?.data || (Array.isArray(res) ? res : []);
+        if (Array.isArray(list) && list.length > 0) {
+          const mapped: CorporateOrganization[] = list.map((org: any) => ({
+            id: org.id,
+            name: org.name,
+            slug: org.slug || org.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            domain: Array.isArray(org.allowed_domains) && org.allowed_domains[0] ? org.allowed_domains[0] : (org.domain || 'polyfit.rw'),
+            allowed_domains: Array.isArray(org.allowed_domains) ? org.allowed_domains : [org.domain || 'polyfit.rw'],
+            tax_id: org.tax_id || '100000000',
+            contact_email: org.contact_email || `hr@${org.slug || 'polyfit'}.rw`,
+            billing_email: org.billing_email || `finance@${org.slug || 'polyfit'}.rw`,
+            industry: org.industry || 'Enterprise Client',
+          }));
+
+          const merged = [...NETWORK_ORGANIZATIONS];
+          for (const item of mapped) {
+            if (!merged.some((m) => m.id === item.id)) {
+              merged.push(item);
+            }
+          }
+          setAvailableOrganizations(merged);
+        }
+      } catch {
+        // Resilient fallback to static network orgs
+      }
+    }
+    loadLiveOrganizations();
+  }, []);
+
   const [organization, setOrganization] = useState<CorporateOrganization>(initialOrg);
 
   // 2. Global UI Controls
@@ -322,13 +359,13 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
   // Switch organization
   const switchOrganization = useCallback(
     (orgId: string) => {
-      const found = NETWORK_ORGANIZATIONS.find((o) => o.id === orgId);
+      const found = availableOrganizations.find((o) => o.id === orgId);
       if (found) {
         setOrganization(found);
         showToast(`Switched active organization to ${found.name}`);
       }
     },
-    [showToast]
+    [availableOrganizations, showToast]
   );
 
   // Update profile
@@ -624,7 +661,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(
     () => ({
       organization,
-      availableOrganizations: NETWORK_ORGANIZATIONS,
+      availableOrganizations,
       switchOrganization,
       updateOrganizationProfile,
       funnelData,
@@ -658,6 +695,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     }),
     [
       organization,
+      availableOrganizations,
       switchOrganization,
       updateOrganizationProfile,
       funnelData,

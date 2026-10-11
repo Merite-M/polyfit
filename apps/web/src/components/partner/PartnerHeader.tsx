@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { usePartner } from '@/contexts/PartnerContext';
 import { FacilityUnitsModal } from './FacilityUnitsModal';
+import { PlatformSuiteLauncher } from '@/components/ui/PlatformSuiteLauncher';
 
 interface PartnerHeaderProps {
   onOpenManualCheckin: () => void;
@@ -117,6 +118,9 @@ export function PartnerHeader({
           <span className="text-[11px] font-mono text-[#0B1F33]">Cloud Sync: Live</span>
           <RefreshCw className={`w-3 h-3 text-[#8491A3] ml-1 ${isRefreshing ? 'animate-spin' : ''}`} />
         </button>
+
+        {/* Unified Platform Suite Launcher */}
+        <PlatformSuiteLauncher variant="light" />
 
         {/* If on Check-ins page: Render fast Counter Manual Check-in with hotkey badge */}
         {isCheckinPage ? (

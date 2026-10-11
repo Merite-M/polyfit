@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, Sparkles, Building2, ShieldCheck, Zap, ArrowRight } from "lucide-react";
 import { useLeadModal } from "@/lib/lead-modal";
+import { apiFetch } from "@/lib/api-client";
 
 interface PricingTiersProps {
   onOpenLeadForm?: (type: 'employer' | 'provider') => void;
@@ -21,6 +22,47 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
     }
   };
 
+  const [pricingData, setPricingData] = useState<any>(null);
+
+  useEffect(() => {
+    async function loadConfig() {
+      try {
+        const config = await apiFetch<any>('/api/public/platform-config');
+        if (config?.pricing) {
+          setPricingData(config.pricing);
+        }
+      } catch {
+        // Resilient fallback to canonical values
+      }
+    }
+    loadConfig();
+  }, []);
+
+  const starterTier = Array.isArray(pricingData)
+    ? pricingData.find((t: any) => t.id === "starter")
+    : pricingData?.starter;
+  const profTier = Array.isArray(pricingData)
+    ? pricingData.find((t: any) => t.id === "professional")
+    : pricingData?.professional;
+
+  const starterRwfMonthly =
+    starterTier?.pricing?.RWF?.monthly || starterTier?.monthly_rwf || 16000;
+  const starterRwfAnnual =
+    starterTier?.pricing?.RWF?.annual || starterTier?.annual_rwf || Math.round(starterRwfMonthly * 0.85);
+  const starterUsdMonthly =
+    starterTier?.pricing?.USD?.monthly || starterTier?.monthly_usd || Math.round(starterRwfMonthly / 1350);
+  const starterUsdAnnual =
+    starterTier?.pricing?.USD?.annual || starterTier?.annual_usd || Math.round(starterRwfAnnual / 1350);
+
+  const profRwfMonthly =
+    profTier?.pricing?.RWF?.monthly || profTier?.monthly_rwf || 29000;
+  const profRwfAnnual =
+    profTier?.pricing?.RWF?.annual || profTier?.annual_rwf || Math.round(profRwfMonthly * 0.85);
+  const profUsdMonthly =
+    profTier?.pricing?.USD?.monthly || profTier?.monthly_usd || Math.round(profRwfMonthly / 1350);
+  const profUsdAnnual =
+    profTier?.pricing?.USD?.annual || profTier?.annual_usd || Math.round(profRwfAnnual / 1350);
+
   const tiers = [
     {
       id: "starter",
@@ -30,13 +72,13 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
       target: "Up to 50 employees",
       pricing: {
         RWF: {
-          monthly: 16000,
-          annual: 13600,
+          monthly: starterRwfMonthly,
+          annual: starterRwfAnnual,
           period: "/ employee / mo",
         },
         USD: {
-          monthly: 13,
-          annual: 11,
+          monthly: starterUsdMonthly,
+          annual: starterUsdAnnual,
           period: "/ employee / mo",
         },
       },
@@ -67,13 +109,13 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
       target: "50 to 500 employees",
       pricing: {
         RWF: {
-          monthly: 29000,
-          annual: 24650,
+          monthly: profRwfMonthly,
+          annual: profRwfAnnual,
           period: "/ employee / mo",
         },
         USD: {
-          monthly: 24,
-          annual: 20,
+          monthly: profUsdMonthly,
+          annual: profUsdAnnual,
           period: "/ employee / mo",
         },
       },

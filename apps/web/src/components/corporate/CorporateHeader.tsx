@@ -10,9 +10,12 @@ import {
   CheckCircle2,
   FileSpreadsheet,
   ChevronDown,
+  Smartphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCorporate } from "@/contexts/CorporateContext";
+import { PlatformSuiteLauncher } from "@/components/ui/PlatformSuiteLauncher";
+import { LivePassVirtualizationModal } from "@/components/ui/LivePassVirtualizationModal";
 
 interface CorporateHeaderProps {
   title?: string;
@@ -46,6 +49,7 @@ export function CorporateHeader({
   const [isRangeOpen, setIsRangeOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
+  const [isPassPreviewOpen, setIsPassPreviewOpen] = useState(false);
 
   // Dynamic route context when title/subtitle are not explicitly passed
   const routeMeta = React.useMemo(() => {
@@ -252,7 +256,28 @@ export function CorporateHeader({
             </div>
           )}
         </div>
+
+        {/* Employee Pass Live Virtualization Quick Button */}
+        <button
+          onClick={() => setIsPassPreviewOpen(true)}
+          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-xs font-semibold text-emerald-600 dark:text-emerald-400 transition-colors shadow-2xs group cursor-pointer"
+          title="Preview live mobile pass as corporate employee"
+        >
+          <Smartphone className="w-3.5 h-3.5 text-emerald-500 group-hover:scale-110 transition-transform" />
+          <span className="hidden xl:inline">Employee Pass</span>
+          <span className="xl:hidden">Pass</span>
+        </button>
+
+        {/* Unified Cross-Portal Suite Launcher */}
+        <PlatformSuiteLauncher onOpenMobilePreview={() => setIsPassPreviewOpen(true)} />
       </div>
+
+      {/* Live Pass Virtualization Modal */}
+      <LivePassVirtualizationModal
+        isOpen={isPassPreviewOpen}
+        onClose={() => setIsPassPreviewOpen(false)}
+        companyName={organization.name}
+      />
     </header>
   );
 }

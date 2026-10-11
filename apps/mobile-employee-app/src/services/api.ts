@@ -11,10 +11,7 @@ import {
 } from '@/types/auth';
 
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ||
-  (process.env.NODE_ENV === 'production'
-    ? 'https://polyfit-backend.onrender.com'
-    : 'http://localhost:3001');
+  process.env.EXPO_PUBLIC_API_URL || 'https://polyfit-backend.onrender.com';
 
 /**
  * 1. Verify Corporate Email Domain (< 500ms SLA)

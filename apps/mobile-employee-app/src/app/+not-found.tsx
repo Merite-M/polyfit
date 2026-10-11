@@ -14,7 +14,7 @@ export default function NotFoundScreen() {
         </View>
         <Text style={styles.title}>This screen doesn't exist.</Text>
         <Text style={styles.subtitle}>Let's get you back to your corporate wellness benefits.</Text>
-        <Link href="/index" asChild>
+        <Link href="/" asChild>
           <Pressable style={styles.button}>
             <Text style={styles.buttonText}>Go to Access Pass</Text>
           </Pressable>

@@ -167,4 +167,37 @@ describe('Public Lead & Demo Pipeline Test Suite (PF-88)', () => {
       }
     });
   });
+
+  describe('Platform Configuration & Company Sponsorship Discovery (Master Unification)', () => {
+    test('GET /api/public/platform-config returns live settings, network counts, and pricing tiers', async () => {
+      const res = await request(app).get('/api/public/platform-config');
+      assert.equal(res.status, 200);
+      assert.ok(res.body.settings);
+      assert.ok(res.body.network);
+      assert.ok(res.body.pricing);
+      assert.ok(Array.isArray(res.body.pricing));
+      const starter = res.body.pricing.find((t) => t.id === "starter");
+      const professional = res.body.pricing.find((t) => t.id === "professional");
+      assert.ok(starter);
+      assert.ok(professional);
+      assert.equal(starter.pricing.RWF.monthly, 16000);
+    });
+
+    test('GET /api/public/verify-company verifies enrolled employer domain (techcorp.rw)', async () => {
+      const res = await request(app).get('/api/public/verify-company?query=techcorp.rw');
+      assert.equal(res.status, 200);
+      assert.equal(res.body.enrolled, true);
+      assert.ok(res.body.organization);
+      assert.equal(res.body.organization.slug, 'techcorp-rwanda');
+      assert.ok(res.body.benefit);
+      assert.ok(res.body.benefit.max_monthly_visits);
+    });
+
+    test('GET /api/public/verify-company returns enrolled: false for unenrolled domain', async () => {
+      const res = await request(app).get('/api/public/verify-company?query=unknownstartup.xyz');
+      assert.equal(res.status, 200);
+      assert.equal(res.body.enrolled, false);
+      assert.match(res.body.message, /not yet enrolled/i);
+    });
+  });
 });

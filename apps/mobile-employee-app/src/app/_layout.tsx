@@ -13,19 +13,25 @@ import { Palette } from '@/constants/theme';
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootNavigation() {
-  const { isBenefitActivated } = useAuthStore();
+  const isBenefitActivated = useAuthStore((s) => s.isBenefitActivated);
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    const inAuthGroup = segments[0] === '(auth)';
+    const inAuthGroup = segments.length > 0 && segments[0] === '(auth)';
 
     if (!isBenefitActivated && !inAuthGroup) {
-      router.replace('/(auth)/index');
+      const timer = setTimeout(() => {
+        router.replace('/(auth)');
+      }, 0);
+      return () => clearTimeout(timer);
     } else if (isBenefitActivated && inAuthGroup) {
-      router.replace('/index');
+      const timer = setTimeout(() => {
+        router.replace('/');
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [isBenefitActivated, segments, router]);
+  }, [isBenefitActivated, segments[0], router]);
 
   return (
     <Stack
@@ -43,22 +49,28 @@ function RootNavigation() {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const { initializeSession } = useAuthStore();
+  const initializeSession = useAuthStore((s) => s.initializeSession);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
     async function init() {
       try {
         await initializeSession();
       } catch (err) {
         console.warn('[RootLayout] Initialization failed:', err);
       } finally {
-        setIsReady(true);
-        SplashScreen.hideAsync().catch(() => {});
+        if (mounted) {
+          setIsReady(true);
+          SplashScreen.hideAsync().catch(() => {});
+        }
       }
     }
     init();
-  }, [initializeSession]);
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   if (!isReady) {
     return (

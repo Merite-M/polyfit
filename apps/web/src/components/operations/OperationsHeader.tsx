@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Search, Menu, Clock, Shield, Bell, CheckCircle2, Zap } from "lucide-react";
 import { useOperationsDrawer } from "@/contexts/OperationsDrawerContext";
+import { PlatformSuiteLauncher } from "@/components/ui/PlatformSuiteLauncher";
 
 interface OperationsHeaderProps {
   onOpenMobileMenu?: () => void;
@@ -117,6 +118,9 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
           <CheckCircle2 className="w-3.5 h-3.5 text-[#008A4B]" />
           <span>Network Nominal</span>
         </div>
+
+        {/* Unified Cross-Portal Suite Launcher */}
+        <PlatformSuiteLauncher variant="light" />
 
         {/* Admin Avatar & Role */}
         <div className="flex items-center gap-2 pl-2 border-l border-slate-200">

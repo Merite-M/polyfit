@@ -21,6 +21,7 @@ import {
 import PublicNavigation from "@/components/public-navigation";
 import Footer from "@/components/landing/footer";
 import { supabase } from "@polyfit/supabase-client";
+import { apiFetch } from "@/lib/api-client";
 
 export default function DemoPage() {
   const [formData, setFormData] = useState({
@@ -114,16 +115,13 @@ export default function DemoPage() {
       }
 
       // 2. Mirror to Backend API if primary insert didn't confirm or for server email triggers
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
       try {
-        const res = await fetch(`${backendUrl}/api/public/demo`, {
+        await apiFetch('/api/public/demo', {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (res.ok) {
-          saved = true;
-        }
+        saved = true;
       } catch (apiErr) {
         console.warn("[DemoPage] Backend API call warning:", apiErr);
       }

@@ -11,6 +11,7 @@ import RoiCalculator from "@/components/landing/roi-calculator";
 import AboutSection from "@/components/landing/about-section";
 import FAQSection from "@/components/landing/faq-section";
 import EarlyAccessCTA from "@/components/landing/early-access-cta";
+import { CompanySponsorLookup } from "@/components/ui/CompanySponsorLookup";
 import Footer from "@/components/landing/footer";
 import LeadForms from "@/components/landing/lead-forms";
 
@@ -25,6 +26,7 @@ export default function Home() {
         <ProblemSection />
         <SolutionSection />
         <HowItWorks />
+        <CompanySponsorLookup />
         <RoiCalculator />
         <NetworkPreview />
         <ForCompanies />

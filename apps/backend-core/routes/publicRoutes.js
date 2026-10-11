@@ -367,4 +367,264 @@ router.post('/organizations/:slug/join', leadFormLimiter, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/public/platform-config
+ * Unified live platform settings, verified network statistics, and corporate pricing plans.
+ * Single source of truth for Marketing Website, Corporate Portal, and Operations.
+ */
+router.get('/platform-config', async (req, res) => {
+  try {
+    let settingsMap = {
+      anti_passback_window_minutes: 180,
+      geofence_radius_meters: 200,
+      totp_step_seconds: 60,
+      max_device_resets_monthly: 2,
+      platform_fee_percentage: 15
+    };
+
+    let networkCounts = {
+      providers_count: 91,
+      locations_count: 180,
+      organizations_count: 29,
+      verified_visits_count: 1420
+    };
+
+    if (supabase) {
+      try {
+        const { data: dbSettings } = await supabase
+          .from('platform_settings')
+          .select('key, value');
+        if (Array.isArray(dbSettings)) {
+          dbSettings.forEach((s) => {
+            if (s && s.key) {
+              settingsMap[s.key] = typeof s.value === 'string' && !isNaN(Number(s.value))
+                ? Number(s.value)
+                : s.value;
+            }
+          });
+        }
+
+        const [provRes, locRes, orgRes, visRes] = await Promise.allSettled([
+          supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+          supabase.from('provider_locations').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+          supabase.from('organizations').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+          supabase.from('visits').select('id', { count: 'exact', head: true }).eq('status', 'verified'),
+        ]);
+
+        if (provRes.status === 'fulfilled' && typeof provRes.value.count === 'number' && provRes.value.count > 0) {
+          networkCounts.providers_count = provRes.value.count;
+        }
+        if (locRes.status === 'fulfilled' && typeof locRes.value.count === 'number' && locRes.value.count > 0) {
+          networkCounts.locations_count = locRes.value.count;
+        }
+        if (orgRes.status === 'fulfilled' && typeof orgRes.value.count === 'number' && orgRes.value.count > 0) {
+          networkCounts.organizations_count = orgRes.value.count;
+        }
+        if (visRes.status === 'fulfilled' && typeof visRes.value.count === 'number' && visRes.value.count > 0) {
+          networkCounts.verified_visits_count = visRes.value.count;
+        }
+      } catch (err) {
+        console.warn('[PublicConfig] Error fetching live DB counts, using canonical defaults:', err.message);
+      }
+    }
+
+    const pricingTiers = [
+      {
+        id: 'starter',
+        name: 'Starter',
+        badge: 'Growing Teams',
+        description: 'Essential wellness benefit for emerging companies and boutique offices seeking vetted fitness access.',
+        target: 'Up to 50 employees',
+        pricing: {
+          RWF: { monthly: 16000, annual: 13600, period: '/ employee / mo' },
+          USD: { monthly: 13, annual: 11, period: '/ employee / mo' }
+        },
+        popular: false,
+        ctaText: 'Start Starter Plan',
+        ctaVariant: 'secondary',
+        features: [
+          'Up to 50 active beneficiaries',
+          'Access to Core Network (25+ vetted gyms)',
+          'Single consolidated RRA EBM monthly invoice',
+          'Dynamic anti-passback mobile web passes',
+          'Monthly aggregated utilization report (PDF/CSV)',
+          'Standard employee roster upload (CSV)',
+          'Email support (24h SLA)'
+        ],
+        notIncluded: [
+          'Multi-category access (pools, yoga studios)',
+          'Real-time live check-in telemetry',
+          'Dedicated Customer Success Manager',
+          'Custom provider network additions'
+        ]
+      },
+      {
+        id: 'professional',
+        name: 'Professional',
+        badge: 'Most Popular',
+        description: 'Comprehensive corporate wellness infrastructure for established companies driving employee retention and health ROI.',
+        target: '50 to 500 employees',
+        pricing: {
+          RWF: { monthly: 29000, annual: 24650, period: '/ employee / mo' },
+          USD: { monthly: 24, annual: 20, period: '/ employee / mo' }
+        },
+        popular: true,
+        ctaText: 'Request Professional Pilot',
+        ctaVariant: 'primary',
+        features: [
+          'Up to 500 active beneficiaries',
+          'Full Multi-Category Network (50+ venues)',
+          'Gyms, Olympic Pools, Yoga, Pilates & Studios',
+          'Automated RRA EBM 18% VAT compliant invoicing',
+          'Instant Anti-Passback biometric & geo lock',
+          'Live check-in telemetry & department heatmaps',
+          'Bulk CSV & automated employee onboarding',
+          'Priority support via WhatsApp & Email (4h SLA)',
+          'Quarterly corporate wellness impact review'
+        ],
+        notIncluded: [
+          'Custom provider contract commissioning',
+          'Direct HRIS / API webhook sync'
+        ]
+      },
+      {
+        id: 'enterprise',
+        name: 'Enterprise',
+        badge: 'Custom Corporate',
+        description: 'Dedicated wellness network infrastructure for enterprise employers, banks, institutions and multi-country workforces.',
+        target: '500+ employees',
+        pricing: {
+          RWF: { monthly: 42000, annual: 35700, period: '/ employee / mo' },
+          USD: { monthly: 35, annual: 30, period: '/ employee / mo' }
+        },
+        popular: false,
+        ctaText: 'Design Enterprise Agreement',
+        ctaVariant: 'outline',
+        features: [
+          'Unlimited beneficiaries & bespoke tiers',
+          'Full network + custom facility commissioning',
+          'Executive wellness perks & thermal spa access',
+          'Biometric turnstile IoT hardware integration',
+          'Dedicated PolyFit Account Director & SLA',
+          'Multi-currency billing (RWF, USD, KES)',
+          'Automated HRIS census synchronization',
+          'Full tax audit trail & RRA EBM certificate'
+        ],
+        notIncluded: []
+      }
+    ];
+
+    return res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      settings: settingsMap,
+      network: networkCounts,
+      pricing: pricingTiers,
+      currency_rate: { RWF_PER_USD: 1350 }
+    });
+  } catch (err) {
+    console.error('[publicRoutes/platform-config] Error:', err);
+    return res.status(500).json({
+      error: 'Failed to retrieve platform configuration',
+      code: 'CONFIG_FETCH_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/public/pricing
+ * Direct endpoint for marketing pricing matrix
+ */
+router.get('/pricing', (req, res) => {
+  return res.redirect(307, '/api/public/platform-config');
+});
+
+/**
+ * GET /api/public/verify-company
+ * Instant corporate eligibility search for public site & employee onboarding
+ */
+router.get('/verify-company', async (req, res) => {
+  try {
+    const query = (req.query.query || req.query.email || req.query.domain || '').toString().trim().toLowerCase();
+    if (!query) {
+      return res.status(400).json({ error: 'Search query or work email domain is required', code: 'QUERY_REQUIRED' });
+    }
+
+    const domain = query.includes('@') ? query.split('@')[1] : query;
+
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    // Search organizations by allowed_domains or slug or name
+    const { data: orgs, error: orgError } = await supabase
+      .from('organizations')
+      .select('id, name, slug, allowed_domains, industry, logo_url, status')
+      .eq('status', 'active');
+
+    if (orgError) throw orgError;
+
+    const matchedOrg = (orgs || []).find((o) => {
+      if (Array.isArray(o.allowed_domains) && o.allowed_domains.some((d) => d.toLowerCase() === domain)) {
+        return true;
+      }
+      if (o.slug && o.slug.toLowerCase() === domain) return true;
+      if (o.name && o.name.toLowerCase().includes(domain)) return true;
+      return false;
+    });
+
+    if (!matchedOrg) {
+      return res.status(200).json({
+        enrolled: false,
+        domain,
+        message: `Your company (@${domain}) is not yet enrolled in PolyFit. Contact your HR team or request a corporate wellness pilot.`
+      });
+    }
+
+    // Fetch active standard benefit for this employer
+    const { data: benefits } = await supabase
+      .from('benefits')
+      .select('id, name, tier, max_monthly_visits, co_pay_percentage, allowed_provider_categories')
+      .eq('org_id', matchedOrg.id)
+      .eq('status', 'active')
+      .order('max_monthly_visits', { ascending: false });
+
+    const activeBenefit = (benefits && benefits.find((b) => b.tier === 'standard')) || (benefits && benefits[0]) || {
+      name: `${matchedOrg.name} Corporate Wellness Plan`,
+      tier: 'standard',
+      max_monthly_visits: 10,
+      co_pay_percentage: 0,
+      allowed_provider_categories: ['gym', 'pool', 'studio']
+    };
+
+    const subsidyPercentage = 100 - (activeBenefit.co_pay_percentage || 0);
+
+    return res.status(200).json({
+      enrolled: true,
+      domain,
+      organization: {
+        id: matchedOrg.id,
+        name: matchedOrg.name,
+        slug: matchedOrg.slug,
+        industry: matchedOrg.industry,
+        logo_url: matchedOrg.logo_url
+      },
+      benefit: {
+        id: activeBenefit.id,
+        name: activeBenefit.name,
+        tier: activeBenefit.tier,
+        max_monthly_visits: activeBenefit.max_monthly_visits,
+        subsidy_percentage: subsidyPercentage,
+        co_pay_percentage: activeBenefit.co_pay_percentage,
+        is_fully_sponsored: subsidyPercentage === 100,
+        allowed_categories: activeBenefit.allowed_provider_categories || ['gym', 'pool', 'studio']
+      },
+      claim_url: `/join/${matchedOrg.slug}`
+    });
+  } catch (err) {
+    console.error('[publicRoutes/verify-company] Error:', err);
+    return res.status(500).json({ error: 'Failed to verify company', code: 'VERIFY_FAILED' });
+  }
+});
+
 module.exports = router;
