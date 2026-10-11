@@ -1,0 +1,19 @@
+<svg width="200" height="240" viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- PolyFit 3D Isometric Hexagonal 'P' Symbol -->
+  <g id="logo-icon-mark">
+    <!-- Top Isometric Hex Loop (Vibrant Emerald #28D17C) -->
+    <path d="M70 20 L130 20 L160 71.96 L130 123.92 L70 123.92 L40 71.96 Z" fill="#28D17C" />
+
+    <!-- Outer Right & Bottom Facets (Dark Emerald #10B981) -->
+    <path d="M130 20 L160 71.96 L130 123.92 L100 123.92 L130 71.96 L100 20 Z" fill="#10B981" />
+
+    <!-- Stem of the P (Deep Tech Navy #0B1F33) -->
+    <path d="M40 71.96 L70 123.92 L70 220 L40 168.04 Z" fill="#0B1F33" />
+
+    <!-- Outer Left Plane (Dark Navy Accent #06121E) -->
+    <path d="M40 71.96 L70 20 L70 123.92 L40 71.96 Z" fill="#06121E" />
+
+    <!-- Open Hexagonal Cutout / Counter in Center Loop -->
+    <polygon points="85,52.5 115,52.5 130,78.48 115,104.46 85,104.46 70,78.48" fill="none" />
+  </g>
+</svg>

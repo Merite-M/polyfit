@@ -17,6 +17,7 @@ import {
 import { ShieldCheck, Fingerprint, MapPin, ArrowRight, Lock } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth-store';
 import { Palette, Radius, Spacing, Fonts } from '@/constants/theme';
+import { PolyFitLogo } from '@/components/common/polyfit-logo';
 
 interface DeviceBindingStepProps {
   onFinish: () => void;
@@ -79,14 +80,7 @@ export const DeviceBindingStep: React.FC<DeviceBindingStepProps> = ({ onFinish }
       >
         {/* Top Header */}
       <View style={styles.topBar}>
-        <View style={styles.brandRow}>
-          <View style={styles.brandBadge}>
-            <Text style={styles.brandBadgeText}>P</Text>
-          </View>
-          <Text style={styles.brandTitle}>
-            POLY<Text style={{ color: Palette.green }}>FIT</Text>
-          </Text>
-        </View>
+        <PolyFitLogo size={32} showWordmark theme="dark" />
 
         <View style={styles.readyBadge}>
           <ShieldCheck size={14} color={Palette.green} />

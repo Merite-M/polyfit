@@ -23,6 +23,7 @@ import { Palette, Spacing, Radius } from '@/constants/theme';
 import { useAuthStore } from '@/stores/auth-store';
 import { useTabStore } from '@/stores/tab-store';
 import { ScreenContainer } from '@/components/common/screen-container';
+import { PolyFitLogo } from '@/components/common/polyfit-logo';
 import { DynamicQrPass } from '@/components/pass/dynamic-qr-pass';
 import { PassVerificationStatus } from '@/components/pass/pass-verification-status';
 import { CounterScannerModal, ScannedPlaqueData } from '@/components/pass/counter-scanner-modal';
@@ -263,17 +264,7 @@ export default function AccessPassScreen() {
     <ScreenContainer edges={['top', 'left', 'right']}>
       {/* Top Brand Header */}
       <View style={styles.topHeader}>
-        <View style={styles.brandRow}>
-          <View style={styles.brandBadge}>
-            <Text style={styles.brandBadgeText}>P</Text>
-          </View>
-          <View>
-            <Text style={styles.brandTitle}>
-              POLY<Text style={{ color: Palette.green }}>FIT</Text>
-            </Text>
-            <Text style={styles.brandSubtitle}>Corporate Wellness Network</Text>
-          </View>
-        </View>
+        <PolyFitLogo size={36} showWordmark showSubtitle theme="dark" />
 
         <View style={styles.statusBadge} accessibilityRole="text" accessibilityLabel="Active Pass status">
           <View style={styles.statusPulse} />

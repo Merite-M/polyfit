@@ -19,6 +19,7 @@ import {
 import { Mail, KeyRound, Building2, Check, Sparkles, ArrowRight } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth-store';
 import { Palette, Radius, Spacing, Fonts } from '@/constants/theme';
+import { PolyFitLogo } from '@/components/common/polyfit-logo';
 
 export const WelcomeDomainStep: React.FC = () => {
   const {
@@ -117,14 +118,7 @@ export const WelcomeDomainStep: React.FC = () => {
       >
         {/* Top Header & Progress Stepper */}
       <View style={styles.topBar}>
-        <View style={styles.brandRow}>
-          <View style={styles.brandBadge}>
-            <Text style={styles.brandBadgeText}>P</Text>
-          </View>
-          <Text style={styles.brandTitle}>
-            POLY<Text style={{ color: Palette.green }}>FIT</Text>
-          </Text>
-        </View>
+        <PolyFitLogo size={32} showWordmark theme="dark" />
 
         {/* Step Progress Pills */}
         <View style={styles.stepperContainer}>
