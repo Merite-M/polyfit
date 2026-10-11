@@ -1191,6 +1191,33 @@ const handleTurnstileVerification = async (req, res) => {
       pending_visit_id
     } = req.body;
 
+    // 1. If not a pending visit confirmation, validate credentials up-front
+    let resolvedEmployeeId = employee_id;
+    let resolvedLocationId = provider_location_id;
+    let resolvedToken = token;
+
+    if (qr_payload) {
+      const decoded = verifySignedPassPayload(qr_payload);
+      if (!decoded) {
+        return res.status(400).json({
+          error: 'Invalid QR signature',
+          code: 'QR_SIGNATURE_INVALID',
+          unlock: false
+        });
+      }
+      resolvedEmployeeId = decoded.employee_id;
+      resolvedLocationId = resolvedLocationId || decoded.provider_location_id;
+      resolvedToken = resolvedToken || decoded.token;
+    }
+
+    if (!pending_visit_id && (!resolvedEmployeeId || !resolvedLocationId || !resolvedToken)) {
+      return res.status(400).json({
+        error: 'Missing required credentials (token, employee_id, provider_location_id)',
+        code: 'TURNSTILE_MISSING_FIELDS',
+        unlock: false
+      });
+    }
+
     if (!supabase) {
       return res.status(503).json({
         error: 'Database service unavailable',
@@ -1199,7 +1226,7 @@ const handleTurnstileVerification = async (req, res) => {
       });
     }
 
-    // 1. If pending_visit_id is provided, validate existing pending check-in directly
+    // 2. If pending_visit_id is provided, validate existing pending check-in directly
     if (pending_visit_id) {
       const { data: visit, error: fetchErr } = await supabase
         .from('visits')
@@ -1238,33 +1265,6 @@ const handleTurnstileVerification = async (req, res) => {
         unlock: true,
         gate_relay_ms: 3000,
         visit: updatedVisit
-      });
-    }
-
-    // 2. Otherwise, verify pass token / QR payload directly at turnstile
-    let resolvedEmployeeId = employee_id;
-    let resolvedLocationId = provider_location_id;
-    let resolvedToken = token;
-
-    if (qr_payload) {
-      const decoded = verifySignedPassPayload(qr_payload);
-      if (!decoded) {
-        return res.status(400).json({
-          error: 'Invalid QR signature',
-          code: 'QR_SIGNATURE_INVALID',
-          unlock: false
-        });
-      }
-      resolvedEmployeeId = decoded.employee_id;
-      resolvedLocationId = resolvedLocationId || decoded.provider_location_id;
-      resolvedToken = resolvedToken || decoded.token;
-    }
-
-    if (!resolvedEmployeeId || !resolvedLocationId || !resolvedToken) {
-      return res.status(400).json({
-        error: 'Missing required credentials (token, employee_id, provider_location_id)',
-        code: 'TURNSTILE_MISSING_FIELDS',
-        unlock: false
       });
     }
 

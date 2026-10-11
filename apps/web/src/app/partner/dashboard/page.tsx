@@ -20,11 +20,9 @@ import { OperationalActionCards } from '@/components/partner/dashboard/Operation
 import { PeakHoursHeatmap } from '@/components/partner/dashboard/PeakHoursHeatmap';
 import { TopEmployersCard } from '@/components/partner/dashboard/TopEmployersCard';
 import { RecentActivityFeed } from '@/components/partner/dashboard/RecentActivityFeed';
-import { PayoutAccountModal } from '@/components/partner/settlements/PayoutAccountModal';
 
 export default function PartnerDashboardPage() {
-  const { provider, selectedLocation, selectedLocationId, refreshDashboard } = usePartner();
-  const [payoutModalOpen, setPayoutModalOpen] = useState(false);
+  const { provider, selectedLocation, selectedLocationId, refreshDashboard, openPayoutModal } = usePartner();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -91,13 +89,13 @@ export default function PartnerDashboardPage() {
       </div>
 
       {/* Security & Bank/MoMo Verification Banner */}
-      <SecurityAlertBanner onOpenPayoutModal={() => setPayoutModalOpen(true)} />
+      <SecurityAlertBanner onOpenPayoutModal={openPayoutModal} />
 
       {/* Real-time KPI Cards Grid */}
       <ProviderKpiGrid />
 
       {/* Primary Operational Modules Action Cards */}
-      <OperationalActionCards onOpenPayoutModal={() => setPayoutModalOpen(true)} />
+      <OperationalActionCards onOpenPayoutModal={openPayoutModal} />
 
       {/* Peak Hours Utilization Heatmap */}
       <PeakHoursHeatmap />
@@ -107,13 +105,6 @@ export default function PartnerDashboardPage() {
         <TopEmployersCard />
         <RecentActivityFeed />
       </div>
-
-      {/* Modals */}
-      <PayoutAccountModal
-        isOpen={payoutModalOpen}
-        onClose={() => setPayoutModalOpen(false)}
-        onSuccess={() => handleRefresh()}
-      />
     </div>
   );
 }

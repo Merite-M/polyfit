@@ -23,8 +23,6 @@ import { PendingCheckinQueue, PendingVisit } from '@/components/partner/PendingC
 import { TodayCheckinFeed, TodayVisit } from '@/components/partner/TodayCheckinFeed';
 import { HistoricalCheckinLog } from '@/components/partner/HistoricalCheckinLog';
 import { RetroactiveClaimsList } from '@/components/partner/RetroactiveClaimsList';
-import { ManualCheckinModal } from '@/components/partner/ManualCheckinModal';
-import { RetroactiveClaimModal } from '@/components/partner/RetroactiveClaimModal';
 import { MisuseDisputeModal } from '@/components/partner/MisuseDisputeModal';
 import { RejectReasonModal } from '@/components/partner/RejectReasonModal';
 
@@ -81,7 +79,17 @@ const DEFAULT_PENDING_QUEUE: PendingVisit[] = [
 ];
 
 export default function PartnerCheckinsPage() {
-  const { provider, selectedLocation, selectedLocationId, todaySummary, refreshSummary } = usePartner();
+  const {
+    provider,
+    selectedLocation,
+    selectedLocationId,
+    todaySummary,
+    refreshSummary,
+    openManualCheckin,
+    openRetroactiveClaim,
+    notifyCheckinAction,
+    globalUpdateTrigger
+  } = usePartner();
 
   // State
   const [activeTab, setActiveTab] = useState<'today' | 'history' | 'claims'>('today');
@@ -89,9 +97,7 @@ export default function PartnerCheckinsPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Modals state
-  const [manualCheckinOpen, setManualCheckinOpen] = useState(false);
-  const [retroactiveClaimOpen, setRetroactiveClaimOpen] = useState(false);
+  // Modals state (dispute & reject reason modals remain contextual to specific visit item)
   const [disputeTargetVisit, setDisputeTargetVisit] = useState<TodayVisit | null>(null);
   const [rejectTargetVisit, setRejectTargetVisit] = useState<PendingVisit | null>(null);
 
@@ -119,12 +125,12 @@ export default function PartnerCheckinsPage() {
     }
   }, [selectedLocationId]);
 
-  // Initial fetch and 10s auto-refresh for pending queue
+  // Initial fetch, 10s auto-refresh, and global reactive sync
   useEffect(() => {
     fetchPendingQueue();
     const interval = setInterval(fetchPendingQueue, 10000);
     return () => clearInterval(interval);
-  }, [fetchPendingQueue, refreshTrigger]);
+  }, [fetchPendingQueue, refreshTrigger, globalUpdateTrigger]);
 
   const handleManualRefreshAll = async () => {
     setIsRefreshing(true);
@@ -135,21 +141,21 @@ export default function PartnerCheckinsPage() {
 
   const handleApproveSuccess = (visitId: string) => {
     setPendingVisits((prev) => prev.filter((v) => v.id !== visitId));
-    refreshSummary();
+    notifyCheckinAction('approved');
     setRefreshTrigger((prev) => prev + 1);
     showToast('Check-in approved! Gate relay triggered and visit verified for settlement.');
   };
 
   const handleRejectSuccess = (visitId: string) => {
     setPendingVisits((prev) => prev.filter((v) => v.id !== visitId));
-    refreshSummary();
+    notifyCheckinAction('rejected');
     setRefreshTrigger((prev) => prev + 1);
     showToast('Check-in declined. Operational rejection reason recorded in audit log.', 'info');
   };
 
   const handleDisputeSuccess = (visitId: string) => {
+    notifyCheckinAction('disputed');
     setRefreshTrigger((prev) => prev + 1);
-    refreshSummary();
     showToast('Check-in flagged for PolyFit Ops dispute investigation.', 'info');
   };
 
@@ -196,7 +202,7 @@ export default function PartnerCheckinsPage() {
         {/* Quick Action Buttons */}
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
           <button
-            onClick={() => setManualCheckinOpen(true)}
+            onClick={openManualCheckin}
             className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] font-bold text-xs sm:text-sm transition-colors shadow-xs"
             title="Manual check-in backup by Beneficiary ID or 6-digit TOTP code"
           >
@@ -205,7 +211,7 @@ export default function PartnerCheckinsPage() {
           </button>
 
           <button
-            onClick={() => setRetroactiveClaimOpen(true)}
+            onClick={openRetroactiveClaim}
             className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-[#F1F4F8] text-[#0B1F33] font-semibold text-xs sm:text-sm border border-[#E2E8F0] transition-colors shadow-xs"
             title="Submit a missed check-in technical exception claim"
           >
@@ -352,31 +358,12 @@ export default function PartnerCheckinsPage() {
 
       {activeTab === 'claims' && (
         <RetroactiveClaimsList
-          onOpenNewClaim={() => setRetroactiveClaimOpen(true)}
+          onOpenNewClaim={openRetroactiveClaim}
           refreshTrigger={refreshTrigger}
         />
       )}
 
-      {/* Contextual Modals */}
-      <ManualCheckinModal
-        isOpen={manualCheckinOpen}
-        onClose={() => setManualCheckinOpen(false)}
-        onSuccess={() => {
-          refreshSummary();
-          setRefreshTrigger((prev) => prev + 1);
-          showToast('Counter manual check-in verified and gate opened!');
-        }}
-      />
-
-      <RetroactiveClaimModal
-        isOpen={retroactiveClaimOpen}
-        onClose={() => setRetroactiveClaimOpen(false)}
-        onSuccess={() => {
-          setRefreshTrigger((prev) => prev + 1);
-          showToast('Technical exception claim submitted for monthly reconciliation!');
-        }}
-      />
-
+      {/* Contextual Item Modals */}
       <MisuseDisputeModal
         visit={disputeTargetVisit}
         isOpen={!!disputeTargetVisit}

@@ -26,7 +26,6 @@ import { apiFetch } from '@/lib/api-client';
 import { formatRwf } from '@/lib/invoice-pdf';
 import { generateSettlementPdf, SettlementPdfData } from '@/lib/settlement-pdf';
 import { downloadCsv } from '@/lib/export-csv';
-import { PayoutAccountModal } from '@/components/partner/settlements/PayoutAccountModal';
 import { SettlementDetailDrawer } from '@/components/partner/settlements/SettlementDetailDrawer';
 
 // Resilient default settlement history for live evaluation & demo
@@ -112,12 +111,11 @@ const DEFAULT_STATEMENTS: SettlementPdfData[] = [
 ];
 
 export default function PartnerSettlementsPage() {
-  const { provider, todaySummary } = usePartner();
+  const { provider, todaySummary, openPayoutModal } = usePartner();
 
   const [statements, setStatements] = useState<SettlementPdfData[]>(DEFAULT_STATEMENTS);
   const [selectedStatement, setSelectedStatement] = useState<SettlementPdfData | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'processing' | 'pending'>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -207,7 +205,7 @@ export default function PartnerSettlementsPage() {
           </Link>
 
           <button
-            onClick={() => setIsAccountModalOpen(true)}
+            onClick={openPayoutModal}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] text-xs font-bold shadow-xs transition-all active:scale-98"
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-[#0B1F33]" />
@@ -264,7 +262,7 @@ export default function PartnerSettlementsPage() {
             <div className="flex items-center justify-between text-xs font-semibold text-[#8491A3]">
               <span>Payout Account</span>
               <button
-                onClick={() => setIsAccountModalOpen(true)}
+                onClick={openPayoutModal}
                 className="text-[11px] text-[#008A4B] font-bold hover:underline"
               >
                 Change ✎
@@ -460,13 +458,6 @@ export default function PartnerSettlementsPage() {
           </table>
         </div>
       </div>
-
-      {/* Payout Destination Account Modal */}
-      <PayoutAccountModal
-        isOpen={isAccountModalOpen}
-        onClose={() => setIsAccountModalOpen(false)}
-        onSuccess={fetchSettlements}
-      />
 
       {/* Itemized Settlement Line Items Drawer */}
       <SettlementDetailDrawer

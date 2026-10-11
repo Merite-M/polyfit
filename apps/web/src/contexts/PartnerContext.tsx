@@ -202,6 +202,21 @@ interface PartnerContextType {
   dashboardData: DashboardOverview | null;
   commercialConditions: CommercialConditions | null;
   loading: boolean;
+  manualCheckinOpen: boolean;
+  setManualCheckinOpen: (open: boolean) => void;
+  openManualCheckin: () => void;
+  closeManualCheckin: () => void;
+  retroactiveClaimOpen: boolean;
+  setRetroactiveClaimOpen: (open: boolean) => void;
+  openRetroactiveClaim: () => void;
+  closeRetroactiveClaim: () => void;
+  payoutModalOpen: boolean;
+  setPayoutModalOpen: (open: boolean) => void;
+  openPayoutModal: () => void;
+  closePayoutModal: () => void;
+  globalUpdateTrigger: number;
+  notifyCheckinAction: (action: 'approved' | 'rejected' | 'disputed', visit?: any) => void;
+  refreshAll: () => Promise<void>;
   refreshSummary: () => Promise<void>;
   refreshLocations: () => Promise<void>;
   refreshDashboard: () => Promise<void>;
@@ -460,6 +475,19 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
   const [dashboardData, setDashboardData] = useState<DashboardOverview | null>(DEFAULT_DASHBOARD_OVERVIEW);
   const [commercialConditions, setCommercialConditions] = useState<CommercialConditions | null>(DEFAULT_COMMERCIAL_CONDITIONS);
   const [loading, setLoading] = useState<boolean>(true);
+  const [manualCheckinOpen, setManualCheckinOpen] = useState<boolean>(false);
+  const [retroactiveClaimOpen, setRetroactiveClaimOpen] = useState<boolean>(false);
+  const [payoutModalOpen, setPayoutModalOpen] = useState<boolean>(false);
+  const [globalUpdateTrigger, setGlobalUpdateTrigger] = useState<number>(0);
+
+  const openManualCheckin = useCallback(() => setManualCheckinOpen(true), []);
+  const closeManualCheckin = useCallback(() => setManualCheckinOpen(false), []);
+
+  const openRetroactiveClaim = useCallback(() => setRetroactiveClaimOpen(true), []);
+  const closeRetroactiveClaim = useCallback(() => setRetroactiveClaimOpen(false), []);
+
+  const openPayoutModal = useCallback(() => setPayoutModalOpen(true), []);
+  const closePayoutModal = useCallback(() => setPayoutModalOpen(false), []);
 
   // Load saved location from localStorage on client mount
   useEffect(() => {
@@ -693,6 +721,67 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
     [provider?.id]
   );
 
+  const refreshAll = useCallback(async () => {
+    setGlobalUpdateTrigger((prev) => prev + 1);
+    await Promise.allSettled([
+      refreshLocations(),
+      refreshSummary(),
+      refreshDashboard(),
+      refreshCommercialConditions()
+    ]);
+  }, [refreshLocations, refreshSummary, refreshDashboard, refreshCommercialConditions]);
+
+  const notifyCheckinAction = useCallback(
+    (action: 'approved' | 'rejected' | 'disputed', visit?: any) => {
+      if (action === 'approved') {
+        setTodaySummary((prev) => {
+          if (!prev) return null;
+          const rate = prev.per_visit_rate || 5000;
+          return {
+            ...prev,
+            total_visits_today: prev.total_visits_today + 1,
+            settlement_earned_today: prev.settlement_earned_today + rate,
+            pending_queue_count: Math.max(0, prev.pending_queue_count - 1)
+          };
+        });
+        setDashboardData((prev) => {
+          if (!prev) return null;
+          const rate = prev.kpis.per_visit_rate || 5000;
+          return {
+            ...prev,
+            kpis: {
+              ...prev.kpis,
+              today_visits: prev.kpis.today_visits + 1,
+              mtd_total_visits: prev.kpis.mtd_total_visits + 1,
+              estimated_mtd_revenue_rwf: prev.kpis.estimated_mtd_revenue_rwf + rate,
+              estimated_net_payout_rwf: prev.kpis.estimated_net_payout_rwf + Math.round(rate * 0.9)
+            }
+          };
+        });
+      } else if (action === 'rejected') {
+        setTodaySummary((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            pending_queue_count: Math.max(0, prev.pending_queue_count - 1)
+          };
+        });
+      } else if (action === 'disputed') {
+        setTodaySummary((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            disputed_count: prev.disputed_count + 1
+          };
+        });
+      }
+      setGlobalUpdateTrigger((prev) => prev + 1);
+      refreshSummary();
+      refreshDashboard();
+    },
+    [refreshSummary, refreshDashboard]
+  );
+
   return (
     <PartnerContext.Provider
       value={{
@@ -705,6 +794,21 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
         dashboardData,
         commercialConditions,
         loading,
+        manualCheckinOpen,
+        setManualCheckinOpen,
+        openManualCheckin,
+        closeManualCheckin,
+        retroactiveClaimOpen,
+        setRetroactiveClaimOpen,
+        openRetroactiveClaim,
+        closeRetroactiveClaim,
+        payoutModalOpen,
+        setPayoutModalOpen,
+        openPayoutModal,
+        closePayoutModal,
+        globalUpdateTrigger,
+        notifyCheckinAction,
+        refreshAll,
         refreshSummary,
         refreshLocations,
         refreshDashboard,

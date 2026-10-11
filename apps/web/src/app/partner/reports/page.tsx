@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   BarChart3,
@@ -22,6 +22,7 @@ import {
   Filter
 } from 'lucide-react';
 import { usePartner } from '@/contexts/PartnerContext';
+import { apiFetch } from '@/lib/api-client';
 import { formatRwf } from '@/lib/invoice-pdf';
 import { downloadCsv } from '@/lib/export-csv';
 import { generateSettlementPdf } from '@/lib/settlement-pdf';
@@ -118,6 +119,24 @@ export default function PartnerReportsPage() {
   const [selectedMonth, setSelectedMonth] = useState('2026-09');
   const [oneMonthOnly, setOneMonthOnly] = useState(true);
   const [isAccordionOpen, setIsAccordionOpen] = useState(false);
+  const [liveReportData, setLiveReportData] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (!provider?.id) return;
+    const fetchLiveReports = async () => {
+      try {
+        const res = await apiFetch<any>(
+          `/api/reporting/provider/${provider.id}/visits?month=${selectedMonth}`
+        );
+        if (res) {
+          setLiveReportData(res);
+        }
+      } catch (err) {
+        // Graceful fallback to resilient defaults
+      }
+    };
+    fetchLiveReports();
+  }, [provider?.id, selectedMonth]);
 
   // Filtered records by location
   const filteredVisitorPayments = useMemo(() => {
