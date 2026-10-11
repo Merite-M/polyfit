@@ -128,7 +128,7 @@ router.post('/lead', leadFormLimiter, async (req, res) => {
           country: 'Rwanda',
           company_size: employees || '10-50',
           message: message || null,
-          source: 'landing_modal',
+          source: 'landing_modal_employer',
           status: 'pending'
         })
         .select('id')
@@ -138,10 +138,31 @@ router.post('/lead', leadFormLimiter, async (req, res) => {
       return res.status(201).json({ success: true, id: data.id });
     }
 
-    // For provider inquiries, record in provider applications if applicable
-    return res.status(200).json({
+    // Provider acquisition inquiry (PF-88 supply-side lead capture)
+    const providerLocationInfo = location ? ` [Location: ${location}]` : '';
+    const { data: provData, error: provError } = await supabase
+      .from('demo_requests')
+      .insert({
+        company_name: business || organization || name || 'Wellness Provider Facility',
+        contact_name: name,
+        work_email: (email || '').toLowerCase(),
+        phone: phone || '',
+        country: 'Rwanda',
+        company_size: req.body.locations ? `${req.body.locations} location(s)` : '1 location',
+        interest_tier: 'Provider Network Onboarding',
+        message: `${message || 'Provider partner inquiry'}${providerLocationInfo}`,
+        source: 'landing_modal_provider',
+        status: 'pending'
+      })
+      .select('id')
+      .single();
+
+    if (provError) throw provError;
+
+    return res.status(201).json({
       success: true,
-      message: "Provider inquiry received. Our network onboarding team will reach out."
+      id: provData.id,
+      message: "Provider inquiry received. Our network onboarding team will reach out within 24 hours."
     });
   } catch (error) {
     console.error('[PublicLead] Error submitting lead:', error);

@@ -141,7 +141,7 @@ export default function DemoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0B1F33] selection:bg-[#28D17C]/20 selection:text-[#0B1F33]">
+    <div className="min-h-screen bg-background text-foreground selection:bg-accent/20 selection:text-foreground">
       <PublicNavigation />
 
       <main id="main-content" className="pt-24 sm:pt-32 pb-16 sm:pb-24">
@@ -149,14 +149,14 @@ export default function DemoPage() {
           
           {/* Header */}
           <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E8FBF1] text-[#0E6245] text-xs font-bold uppercase tracking-wider mb-4">
-              <Sparkles className="w-3.5 h-3.5 text-[#28D17C]" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/15 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-4">
+              <Sparkles className="w-3.5 h-3.5 text-accent" />
               <span>Schedule Corporate Demo & ROI Briefing</span>
             </div>
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[#0B1F33]">
+            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground">
               Request an Itemized Wellness Proposal
             </h1>
-            <p className="mt-3 text-base sm:text-lg text-[#64748B]">
+            <p className="mt-3 text-base sm:text-lg text-muted-foreground">
               Connect with our enterprise team for a 15-minute briefing on employer pricing, RRA EBM invoicing, and network activation for your staff.
             </p>
           </div>
@@ -164,7 +164,7 @@ export default function DemoPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
             
             {/* Form Column (7 cols) */}
-            <div className="lg:col-span-7 bg-white border border-[#E2E8F0] rounded-[16px] p-6 sm:p-10 shadow-sm">
+            <div className="lg:col-span-7 bg-card border border-border rounded-[16px] p-6 sm:p-10 shadow-sm">
               {isSuccess ? (
                 <div className="text-center py-10 px-4">
                   <div className="w-16 h-16 rounded-full bg-[#E8FBF1] text-[#28D17C] flex items-center justify-center mx-auto mb-6">

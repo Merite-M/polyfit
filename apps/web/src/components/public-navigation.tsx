@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
+import { Menu, X, ChevronDown, Building2, Dumbbell, ShieldCheck, UserCheck } from "lucide-react";
 import { PolyFitLogo } from "@/components/ui/polyfit-logo";
 import { useLeadModal } from "@/lib/lead-modal";
 
@@ -11,6 +12,8 @@ interface PublicNavigationProps {
 
 export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isPortalsOpen, setIsPortalsOpen] = useState(false);
+  const portalsDropdownRef = useRef<HTMLDivElement>(null);
   const openLeadModal = useLeadModal((s) => s.open);
 
   const handleOpenLead = (type: 'employer' | 'provider' = 'employer') => {
@@ -21,14 +24,48 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
     }
   };
 
+  // Close portals dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (portalsDropdownRef.current && !portalsDropdownRef.current.contains(event.target as Node)) {
+        setIsPortalsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const navLinks = [
     { name: "Network", href: "/network" },
     { name: "Pricing", href: "/pricing" },
     { name: "How it Works", href: "/#how-it-works" },
     { name: "For Companies", href: "/#for-companies" },
     { name: "For Providers", href: "/#for-providers" },
-    { name: "Brand", href: "/brand" },
     { name: "About", href: "/#about" },
+  ];
+
+  const portalLinks = [
+    {
+      title: "Employer HR Portal",
+      desc: "Manage roster, benefits & view invoices",
+      href: "/corporate",
+      icon: Building2,
+      badge: "Corporate",
+    },
+    {
+      title: "Wellness Partner Portal",
+      desc: "Front-desk verify, locations & payouts",
+      href: "/partner",
+      icon: Dumbbell,
+      badge: "Partners",
+    },
+    {
+      title: "Operations Console",
+      desc: "Network clearinghouse & admin",
+      href: "/operations",
+      icon: ShieldCheck,
+      badge: "Staff",
+    },
   ];
 
   return (
@@ -37,34 +74,81 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
         <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
-            <a href="/" className="flex items-center space-x-2.5 sm:space-x-3 group">
+            <Link href="/" className="flex items-center space-x-2.5 sm:space-x-3 group">
               <PolyFitLogo theme="dark" iconSize={38} />
-            </a>
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
+          <div className="hidden md:flex items-center space-x-5 lg:space-x-7">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.name}
                 href={link.href}
                 className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
               >
                 {link.name}
-              </a>
+              </Link>
             ))}
 
+            {/* Portals Dropdown */}
+            <div className="relative" ref={portalsDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsPortalsOpen(!isPortalsOpen)}
+                className="flex items-center gap-1.5 text-sm font-medium text-gray-300 hover:text-white px-3 py-1.5 rounded-[8px] hover:bg-white/5 transition-colors cursor-pointer"
+                aria-expanded={isPortalsOpen}
+                aria-haspopup="true"
+              >
+                <span>Portal Sign In</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isPortalsOpen ? "rotate-180 text-accent" : "text-gray-400"}`} />
+              </button>
+
+              {isPortalsOpen && (
+                <div 
+                  className="absolute right-0 mt-2 w-72 rounded-xl bg-slate-900 border border-white/15 p-2 shadow-2xl backdrop-blur-lg animate-in fade-in zoom-in-95 duration-150 z-50"
+                  role="menu"
+                >
+                  <div className="px-3 py-2 border-b border-white/10 mb-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-accent">Access PolyFit Platform</p>
+                    <p className="text-xs text-gray-400">Select your organization portal to log in</p>
+                  </div>
+                  {portalLinks.map((portal) => (
+                    <Link
+                      key={portal.title}
+                      href={portal.href}
+                      onClick={() => setIsPortalsOpen(false)}
+                      className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/10 transition-colors group"
+                      role="menuitem"
+                    >
+                      <div className="p-2 rounded-md bg-white/5 text-accent group-hover:bg-accent group-hover:text-primary transition-colors flex-shrink-0 mt-0.5">
+                        <portal.icon className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-bold text-white group-hover:text-accent transition-colors truncate">{portal.title}</p>
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white/10 text-gray-300">{portal.badge}</span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 leading-tight mt-0.5">{portal.desc}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Talk to Us Lead CTA */}
             <button 
               onClick={() => handleOpenLead('employer')}
               aria-label="Talk to us - Request employer demo"
-              className="bg-accent hover:bg-accent-hover text-accent-foreground px-5 py-2.5 rounded-[10px] text-sm font-bold transition-all duration-150 shadow-xs hover:shadow-sm cursor-pointer"
+              className="bg-accent hover:bg-accent-hover text-accent-foreground px-5 py-2.5 rounded-[10px] text-sm font-bold transition-all duration-150 shadow-xs hover:shadow-sm cursor-pointer active:scale-95"
             >
               Talk to us
             </button>
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-2">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-[10px] text-gray-300 hover:text-white hover:bg-white/10 focus:outline-none min-h-[44px] min-w-[44px]"
@@ -79,21 +163,42 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
 
       {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-slate-900 border-t border-white/10 px-4 pt-3 pb-6 space-y-3 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-2xl">
+        <div className="md:hidden bg-slate-900 border-t border-white/10 px-4 pt-3 pb-6 space-y-4 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-2xl">
           <div className="space-y-1">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.name}
                 href={link.href}
-                className="block px-3 py-3 rounded-[10px] text-base font-medium text-gray-200 hover:text-white hover:bg-white/5 transition-colors active:bg-white/10"
+                className="block px-3 py-2.5 rounded-[10px] text-base font-medium text-gray-200 hover:text-white hover:bg-white/5 transition-colors active:bg-white/10"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {link.name}
-              </a>
+              </Link>
             ))}
           </div>
-          
+
+          {/* Mobile Portals Section */}
           <div className="pt-3 border-t border-white/10">
+            <p className="px-3 text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Portal Sign In</p>
+            <div className="space-y-1">
+              {portalLinks.map((portal) => (
+                <Link
+                  key={portal.title}
+                  href={portal.href}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center justify-between px-3 py-2.5 rounded-[8px] bg-white/5 text-sm font-medium text-gray-200 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <portal.icon className="w-4 h-4 text-accent" />
+                    <span>{portal.title}</span>
+                  </span>
+                  <span className="text-[10px] font-semibold text-gray-400 bg-white/10 px-2 py-0.5 rounded">{portal.badge}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+          
+          <div className="pt-2">
             <button 
               onClick={() => {
                 setIsMenuOpen(false);

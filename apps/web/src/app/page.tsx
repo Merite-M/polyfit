@@ -16,7 +16,7 @@ import LeadForms from "@/components/landing/lead-forms";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#F7F9FC] text-[#0B1F33] selection:bg-[#28D17C]/20 selection:text-[#0B1F33]">
+    <div className="min-h-screen bg-background text-foreground selection:bg-accent/20 selection:text-foreground">
       <PublicNavigation />
       
       <main id="main-content">

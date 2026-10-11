@@ -205,24 +205,34 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
         const res = await fetch(`${backendUrl}/api/providers/discover?limit=50`);
         if (res.ok) {
           const data = await res.json();
-          if (data.providers && data.providers.length > 0) {
-            const mapped: Facility[] = data.providers.map((p: any, idx: number) => ({
-              id: p.location_id || p.id || `live-${idx}`,
-              name: p.location_name || p.name || "PolyFit Partner Venue",
-              provider_name: p.name,
-              city: (p.city || "kigali").toLowerCase(),
-              cityLabel: `${p.city || "Kigali"}, ${p.address || "Rwanda"}`,
-              category: (p.category === "gym" ? "gym" : p.category === "pool" ? "pool" : p.category === "studio" ? "studio" : "spa"),
-              categoryLabel: p.category ? p.category.toUpperCase() : "Wellness Partner",
-              address: p.address || "Verified Facility Location",
-              lat: p.lat ? parseFloat(p.lat) : -1.9536 + (idx * 0.008),
-              lng: p.lng ? parseFloat(p.lng) : 30.0924 + (idx * 0.007),
-              rating: p.rating ? parseFloat(p.rating) : 4.8,
-              reviewsCount: 40 + (idx * 7),
-              image: (p.photos && p.photos[0]) || defaultFacilities[idx % defaultFacilities.length].image,
-              amenities: p.amenities || ["Cardio", "Strength", "Lockers", "Shower"],
-              featured: idx < 4,
-            }));
+          const rawList = data.results || data.providers || [];
+          if (Array.isArray(rawList) && rawList.length > 0) {
+            const mapped: Facility[] = rawList.map((p: any, idx: number) => {
+              const providerObj = p.provider || {};
+              const rawCat = (p.category || providerObj.category || "gym").toLowerCase();
+              const validCategory: 'gym' | 'pool' | 'studio' | 'spa' = 
+                rawCat.includes('pool') || rawCat.includes('aquatic') ? 'pool' :
+                rawCat.includes('studio') || rawCat.includes('yoga') || rawCat.includes('pilates') ? 'studio' :
+                rawCat.includes('spa') || rawCat.includes('recovery') ? 'spa' : 'gym';
+
+              return {
+                id: p.id || p.location_id || `live-${idx}`,
+                name: p.name || p.location_name || providerObj.name || "PolyFit Partner Venue",
+                provider_name: providerObj.name || p.provider_name || p.name,
+                city: (p.city || "kigali").toLowerCase(),
+                cityLabel: `${p.city || "Kigali"}, ${p.address || "Rwanda"}`,
+                category: validCategory,
+                categoryLabel: validCategory.toUpperCase(),
+                address: p.address || "Verified Facility Location",
+                lat: p.lat ? parseFloat(p.lat) : -1.9536 + (idx * 0.008),
+                lng: p.lng ? parseFloat(p.lng) : 30.0924 + (idx * 0.007),
+                rating: providerObj.rating ? parseFloat(providerObj.rating) : (p.rating ? parseFloat(p.rating) : 4.8),
+                reviewsCount: 40 + (idx * 7),
+                image: (p.photos && p.photos[0]) || defaultFacilities[idx % defaultFacilities.length].image,
+                amenities: Array.isArray(p.amenities) && p.amenities.length > 0 ? p.amenities : ["Cardio", "Strength", "Lockers", "Shower"],
+                featured: idx < 4,
+              };
+            });
             setFacilities(mapped);
           }
         }

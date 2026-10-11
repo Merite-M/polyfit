@@ -30,11 +30,11 @@ export default function Hero({ onOpenLeadForm }: HeroProps = {}) {
             
             {/* Pill Announcement */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-slate-200">
-              <span className="w-2 h-2 rounded-full bg-[#28D17C]" />
+              <span className="w-2 h-2 rounded-full bg-accent" />
               <span>B2B2C Corporate Wellness Infrastructure</span>
               <span className="text-slate-400">•</span>
-              <Link href="/brand" className="text-[#28D17C] hover:underline flex items-center gap-0.5">
-                Brand Tokens <ArrowRight className="w-3 h-3" />
+              <Link href="/network" className="text-accent hover:underline flex items-center gap-0.5">
+                Explore 15+ Venues <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
 

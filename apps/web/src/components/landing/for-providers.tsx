@@ -34,13 +34,13 @@ export default function ForProviders({ onOpenLeadForm }: ForProvidersProps = {})
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mb-10 sm:mb-16">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#28D17C] mb-2">
-            For Gyms & Fitness Providers
+            For Wellness Providers & Facilities
           </p>
           <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-[#0B1F33] mb-3 sm:mb-4">
             More corporate customers. Less friction.
           </h2>
           <p className="text-sm sm:text-lg text-gray-600 leading-relaxed">
-            PolyFit connects local fitness providers with employees whose organizations already invest in wellness.
+            PolyFit connects independent gyms, pools, yoga studios, and wellness clinics with corporate employees whose organizations sponsor their benefits.
           </p>
         </div>
 

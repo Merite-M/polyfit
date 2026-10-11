@@ -20,11 +20,11 @@ export default function Footer({ onOpenLeadForm }: FooterProps = {}) {
               <PolyFitLogo theme="dark" iconSize={36} />
             </div>
             <p className="text-xs sm:text-sm text-gray-400 max-w-sm mb-4 leading-relaxed">
-              Corporate fitness & wellness network connecting employers, employees, and participating fitness providers.
+              East Africa&apos;s B2B2C corporate wellness aggregator connecting employers, employees, and independent wellness providers through consolidated benefit infrastructure.
             </p>
             <div className="flex items-center gap-2 text-xs text-gray-400">
-              <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Kigali, Rwanda</span>
+              <MapPin className="w-3.5 h-3.5 text-accent" />
+              <span>Kigali, Rwanda • Nairobi, Kenya</span>
             </div>
           </div>
 
@@ -33,19 +33,19 @@ export default function Footer({ onOpenLeadForm }: FooterProps = {}) {
             <h3 className="text-xs font-bold uppercase tracking-wider text-gray-300 mb-3 sm:mb-4">Platform</h3>
             <ul className="space-y-2 sm:space-y-2.5 text-xs sm:text-sm text-gray-400">
               <li>
-                <a href="#how-it-works" className="hover:text-white transition-colors">
+                <Link href="/#how-it-works" className="hover:text-white transition-colors">
                   How it Works
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#for-companies" className="hover:text-white transition-colors">
+                <Link href="/#for-companies" className="hover:text-white transition-colors">
                   For Companies
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#for-providers" className="hover:text-white transition-colors">
-                  For Providers
-                </a>
+                <Link href="/#for-providers" className="hover:text-white transition-colors">
+                  For Wellness Providers
+                </Link>
               </li>
               <li>
                 <Link href="/network" className="hover:text-white transition-colors">
@@ -58,7 +58,7 @@ export default function Footer({ onOpenLeadForm }: FooterProps = {}) {
                 </Link>
               </li>
               <li>
-                <Link href="/brand" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
+                <Link href="/brand" className="text-accent hover:underline font-medium transition-colors">
                   Brand & Design System
                 </Link>
               </li>
@@ -86,21 +86,21 @@ export default function Footer({ onOpenLeadForm }: FooterProps = {}) {
               <li>
                 <LeadModalTrigger
                   type="provider"
-                  ariaLabel="Fitness Providers - Open provider registration modal"
+                  ariaLabel="Wellness Providers - Open provider registration modal"
                   className="hover:text-white transition-colors text-left cursor-pointer"
                 >
-                  Fitness Providers
+                  Provider Network Join
                 </LeadModalTrigger>
               </li>
               <li>
-                <a href="#about" className="hover:text-white transition-colors">
+                <Link href="/#about" className="hover:text-white transition-colors">
                   About Us
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#faq" className="hover:text-white transition-colors">
+                <Link href="/#faq-section" className="hover:text-white transition-colors">
                   FAQ
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -110,24 +110,41 @@ export default function Footer({ onOpenLeadForm }: FooterProps = {}) {
             <h3 className="text-xs font-bold uppercase tracking-wider text-gray-300 mb-3 sm:mb-4">Portal Access</h3>
             <ul className="space-y-2 sm:space-y-2.5 text-xs sm:text-sm text-gray-400">
               <li>
-                <Link href="/reception" className="hover:text-emerald-400 transition-colors">
-                  Reception Desk
+                <Link href="/corporate" className="hover:text-accent transition-colors font-medium">
+                  Employer HR Portal
                 </Link>
               </li>
               <li>
-                <Link href="/admin/corporate" className="hover:text-emerald-400 transition-colors">
-                  Corporate Portal
+                <Link href="/partner" className="hover:text-accent transition-colors font-medium">
+                  Wellness Partner Portal
+                </Link>
+              </li>
+              <li>
+                <Link href="/operations" className="hover:text-accent transition-colors font-medium">
+                  Operations Console
+                </Link>
+              </li>
+              <li>
+                <Link href="/join" className="hover:text-accent transition-colors text-xs text-gray-400">
+                  Beneficiary Pass Claim
                 </Link>
               </li>
             </ul>
           </div>
         </div>
 
-        {/* Bottom copyright */}
+        {/* Bottom copyright & legal compliance */}
         <div className="pt-6 sm:pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-gray-400">
-          <p>© {currentYear} PolyFit Ltd. All rights reserved.</p>
-          <div className="flex space-x-6">
-            <span className="text-gray-400">East Africa Corporate Wellness Network</span>
+          <p>© {currentYear} PolyFit Ltd. All rights reserved. East Africa Corporate Wellness Network.</p>
+          <div className="flex items-center space-x-6">
+            <Link href="/privacy" className="hover:text-white transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-white transition-colors">
+              Terms of Service
+            </Link>
+            <span className="text-gray-500">•</span>
+            <span className="text-accent font-medium">RRA EBM 18% VAT Compliant</span>
           </div>
         </div>
       </div>
