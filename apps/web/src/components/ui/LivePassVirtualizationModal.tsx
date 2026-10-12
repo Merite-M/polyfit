@@ -62,42 +62,71 @@ export function LivePassVirtualizationModal({
     return () => clearInterval(interval);
   }, [isOpen]);
 
+  // Handle Escape key to close slide-over drawer
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in-50 duration-200"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="pass-virtualization-title"
-    >
-      <div className="relative w-full max-w-lg bg-[#0B1F33] border border-[#21405A] rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
-        {/* Modal Top Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#21405A] bg-[#071521]">
-          <div className="flex items-center gap-2">
-            <Smartphone className="w-4 h-4 text-[#28D17C]" />
-            <span
-              id="pass-virtualization-title"
-              className="text-xs font-bold text-slate-200 tracking-wide uppercase font-mono"
-            >
-              Employee Mobile App Preview
-            </span>
+    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="pass-virtualization-title">
+      {/* Backdrop overlay */}
+      <div
+        className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity animate-in fade-in-50 duration-200"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Slide-over Drawer Panel */}
+      <div className="relative z-50 w-full max-w-md sm:max-w-lg bg-[#0B1F33] border-l border-[#21405A] shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-300 overflow-hidden">
+        {/* Drawer Header */}
+        <div className="h-16 px-6 border-b border-[#21405A] bg-[#071521] flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#28D17C]/15 border border-[#28D17C]/30 flex items-center justify-center text-[#28D17C]">
+              <Smartphone className="w-4 h-4" />
+            </div>
+            <div>
+              <span
+                id="pass-virtualization-title"
+                className="text-xs font-bold text-white tracking-wide uppercase font-mono block"
+              >
+                Mobile Pass Preview
+              </span>
+              <span className="text-[10px] text-slate-400">
+                Staff iOS & Android Experience
+              </span>
+            </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-            aria-label="Close pass preview"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#28D17C]/20 text-[#28D17C] font-semibold border border-[#28D17C]/30">
+              LIVE SIMULATION
+            </span>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              aria-label="Close pass preview drawer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Smartphone Chassis Container */}
-        <div className="p-4 sm:p-6 flex-1 flex justify-center items-center overflow-y-auto bg-slate-950/60">
-          {/* Photorealistic iPhone 16 Frame Chassis (matches LiveSmartphonePreview.tsx) */}
-          <div className="w-[280px] sm:w-[300px] h-[580px] bg-[#071521] rounded-[44px] border-[6px] border-[#132D43] shadow-2xl overflow-hidden relative flex flex-col ring-1 ring-white/10 select-none">
+        {/* Scrollable Drawer Body with Chassis */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col items-center justify-start bg-slate-950/50 space-y-4">
+          <div className="w-full max-w-[320px] text-center p-2.5 rounded-xl bg-white/5 border border-white/10 text-[11px] text-slate-300">
+            Interactive preview of what your employees see when accessing partner turnstiles and desks.
+          </div>
+
+          {/* Photorealistic iPhone 16 Frame Chassis */}
+          <div className="w-[280px] sm:w-[304px] h-[584px] bg-[#071521] rounded-[44px] border-[6px] border-[#132D43] shadow-2xl overflow-hidden relative flex flex-col ring-1 ring-white/10 select-none shrink-0 my-1">
             {/* Dynamic Island Notch */}
             <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 bg-black rounded-full z-40 flex items-center justify-between px-2">
               <div className="w-2.5 h-2.5 rounded-full bg-slate-900 border border-slate-800" />
@@ -329,23 +358,31 @@ export function LivePassVirtualizationModal({
               </div>
             </div>
           </div>
+
+          <div className="w-full max-w-[320px] p-3 rounded-xl bg-white/5 border border-[#21405A] text-[10px] text-slate-400 space-y-1.5">
+            <div className="flex items-center gap-1.5 text-slate-300 font-semibold">
+              <Sparkles className="w-3.5 h-3.5 text-[#28D17C]" />
+              <span>Offline Pass Vault & Instant TOTP</span>
+            </div>
+            <p className="leading-relaxed">
+              When employee phones lose cellular reception inside basements or sports clubs, the offline TOTP seed validates locally without turnstile failure.
+            </p>
+          </div>
         </div>
 
-        {/* Modal Bottom CTA */}
-        <div className="p-4 border-t border-[#21405A] bg-[#071521] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-          <div className="text-slate-400 flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-[#28D17C]" />
-            <span>Interactive simulation of what your staff sees in the PolyFit Mobile App</span>
+        {/* Drawer Footer CTA */}
+        <div className="p-4 border-t border-[#21405A] bg-[#071521] flex items-center justify-between shrink-0 gap-3 text-xs">
+          <div className="text-slate-400 flex items-center gap-1.5 text-[11px] truncate">
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#28D17C] shrink-0" />
+            <span className="truncate">Synced with live corporate census</span>
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-full sm:w-auto px-5 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] font-bold transition-all shadow-md cursor-pointer text-center"
-            >
-              Done Previewing
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] font-bold transition-all shadow-md cursor-pointer text-center text-xs whitespace-nowrap shrink-0"
+          >
+            Done Previewing
+          </button>
         </div>
       </div>
     </div>

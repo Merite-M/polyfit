@@ -9,6 +9,7 @@ import {
   Users,
   Building2,
   Edit2,
+  Percent,
   UserPlus,
   ChevronDown
 } from "lucide-react";
@@ -280,8 +281,8 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           onClick={() => onEdit(plan)}
           className="flex-1 py-2 px-3 rounded-xl bg-accent text-accent-foreground text-xs font-bold hover:bg-accent/90 transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
         >
-          <Edit2 className="w-3.5 h-3.5" />
-          <span>Edit Rules</span>
+          <Percent className="w-3.5 h-3.5" />
+          <span>Adjust Co-Pay</span>
         </button>
       </div>
     </div>

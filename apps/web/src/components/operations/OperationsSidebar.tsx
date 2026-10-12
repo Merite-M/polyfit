@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { 
   LayoutDashboard, 
   Building2, 
+  Layers,
   Network, 
   Activity, 
   Coins, 
@@ -34,6 +35,13 @@ const NAVIGATION_ITEMS = [
     href: "/operations/clients",
     icon: Building2,
     badge: "LIVE",
+    badgeVariant: "emerald" as const,
+  },
+  {
+    name: "Benefit Plans",
+    href: "/operations/plans",
+    icon: Layers,
+    badge: "MASTER",
     badgeVariant: "emerald" as const,
   },
   {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Check, X, Crown, Shield, Layers, UserPlus, Edit2, ChevronDown } from "lucide-react";
+import { Check, X, Crown, Shield, Layers, UserPlus, Edit2, Percent, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BenefitPlan } from "./PlanCard";
 
@@ -260,8 +260,8 @@ export const PlanComparisonMatrix: React.FC<PlanComparisonMatrixProps> = ({
                         onClick={() => onEdit(p)}
                         className="px-3 py-1.5 rounded-lg bg-accent text-accent-foreground text-xs font-bold hover:bg-accent/90 transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
                       >
-                        <Edit2 className="w-3 h-3" />
-                        <span>Edit</span>
+                        <Percent className="w-3 h-3" />
+                        <span>Adjust Co-Pay</span>
                       </button>
                     </div>
                   </td>

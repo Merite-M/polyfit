@@ -18,7 +18,7 @@ import { apiFetch } from "@/lib/api-client";
 import { PlanCard, BenefitPlan } from "@/components/corporate/PlanCard";
 import { PlanComparisonMatrix } from "@/components/corporate/PlanComparisonMatrix";
 import { BudgetForecasterCard } from "@/components/corporate/BudgetForecasterCard";
-import { PlanBuilderModal } from "@/components/corporate/PlanBuilderModal";
+import { CoPayAdjustmentModal } from "@/components/corporate/CoPayAdjustmentModal";
 import { AssignPlanModal } from "@/components/corporate/AssignPlanModal";
 
 export default function PlansPage() {
@@ -35,8 +35,8 @@ export default function PlansPage() {
   const [activeView, setActiveView] = useState<"grid" | "matrix" | "forecast">("grid");
 
   // Modals state
-  const [isBuilderOpen, setIsBuilderOpen] = useState(false);
-  const [editingPlan, setEditingPlan] = useState<BenefitPlan | null>(null);
+  const [isCoPayModalOpen, setIsCoPayModalOpen] = useState(false);
+  const [selectedPlanForCoPay, setSelectedPlanForCoPay] = useState<BenefitPlan | null>(null);
   const [assigningPlan, setAssigningPlan] = useState<BenefitPlan | null>(null);
 
   // Modern Web Guidance: View Transitions for intra-page filter & view changes
@@ -78,15 +78,19 @@ export default function PlansPage() {
     return plans.reduce((acc, p) => acc + (p.estimated_monthly_liability || 0), 0);
   }, [plans]);
 
-  // Save (Create or Update) Plan Handler
-  const handleSavePlan = async (planData: Partial<BenefitPlan>) => {
+  // Save Co-Pay & Subsidy Policy Handler
+  const handleSaveCoPay = async (payload: {
+    id: string;
+    co_pay_percentage: number;
+    effective_timing: "immediate" | "next_billing_cycle";
+  }) => {
     try {
-      const payload = editingPlan ? { ...planData, id: editingPlan.id } : planData;
       await savePlan(payload);
-      setIsBuilderOpen(false);
-      setEditingPlan(null);
+      showToast("Updated corporate co-pay and subsidy split successfully.");
+      setIsCoPayModalOpen(false);
+      setSelectedPlanForCoPay(null);
     } catch {
-      showToast("Unable to save plan. Please try again.");
+      showToast("Unable to update co-pay ratio. Please try again.");
     }
   };
 
@@ -304,8 +308,8 @@ export default function PlansPage() {
                   key={plan.id}
                   plan={plan}
                   onEdit={(p) => {
-                    setEditingPlan(p);
-                    setIsBuilderOpen(true);
+                    setSelectedPlanForCoPay(p);
+                    setIsCoPayModalOpen(true);
                   }}
                   onAssign={(p) => {
                     setAssigningPlan(p);
@@ -319,8 +323,8 @@ export default function PlansPage() {
             <PlanComparisonMatrix
               plans={filteredPlans}
               onEdit={(p) => {
-                setEditingPlan(p);
-                setIsBuilderOpen(true);
+                setSelectedPlanForCoPay(p);
+                setIsCoPayModalOpen(true);
               }}
               onAssign={(p) => {
                 setAssigningPlan(p);
@@ -338,14 +342,14 @@ export default function PlansPage() {
       </div>
 
       {/* Modals */}
-      <PlanBuilderModal
-        isOpen={isBuilderOpen}
+      <CoPayAdjustmentModal
+        isOpen={isCoPayModalOpen}
         onClose={() => {
-          setIsBuilderOpen(false);
-          setEditingPlan(null);
+          setIsCoPayModalOpen(false);
+          setSelectedPlanForCoPay(null);
         }}
-        initialPlan={editingPlan}
-        onSave={handleSavePlan}
+        plan={selectedPlanForCoPay}
+        onSave={handleSaveCoPay}
       />
 
       <AssignPlanModal

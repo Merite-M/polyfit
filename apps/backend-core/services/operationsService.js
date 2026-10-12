@@ -3731,6 +3731,186 @@ async function assignOperationsTeamRole({ userId, email, role, operatorName } = 
   };
 }
 
+/**
+ * Lists all master benefit plans across all client organizations with telemetry and enrollment metrics
+ */
+async function getOperationsPlans(filters = {}) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const [
+    { data: benefits, error: benErr },
+    { data: orgs, error: orgErr },
+    { data: enrollments, error: enrErr }
+  ] = await Promise.all([
+    supabase
+      .from('benefits')
+      .select('*')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('organizations')
+      .select('id, name, slug, industry, logo_url'),
+    supabase
+      .from('eligibility')
+      .select('benefit_id, status')
+      .eq('status', 'active')
+  ]);
+
+  if (benErr) throw new Error(`Failed to fetch benefit plans: ${benErr.message}`);
+
+  const orgMap = new Map();
+  (orgs || []).forEach((o) => orgMap.set(o.id, o));
+
+  const enrollmentMap = new Map();
+  (enrollments || []).forEach((e) => {
+    enrollmentMap.set(e.benefit_id, (enrollmentMap.get(e.benefit_id) || 0) + 1);
+  });
+
+  let planList = (benefits || []).map((b) => {
+    const org = orgMap.get(b.org_id) || { id: b.org_id, name: 'General Network Tier' };
+    const enrolled = enrollmentMap.get(b.id) || 0;
+    const visits = b.max_monthly_visits !== null && b.max_monthly_visits !== undefined ? b.max_monthly_visits : 8;
+    const copay = Number(b.co_pay_percentage || 0);
+
+    return {
+      ...b,
+      organization: org,
+      enrolled_count: enrolled,
+      estimated_monthly_liability: Math.round(enrolled * visits * 5000 * (1 - copay / 100))
+    };
+  });
+
+  // Apply filters
+  if (filters.orgId && filters.orgId !== 'all') {
+    planList = planList.filter((p) => p.org_id === filters.orgId);
+  }
+  if (filters.tier && filters.tier !== 'all') {
+    planList = planList.filter((p) => (p.tier || '').toLowerCase() === filters.tier.toLowerCase());
+  }
+  if (filters.status && filters.status !== 'all') {
+    planList = planList.filter((p) => (p.status || '').toLowerCase() === filters.status.toLowerCase());
+  }
+  if (filters.search) {
+    const q = filters.search.toLowerCase();
+    planList = planList.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.organization && p.organization.name.toLowerCase().includes(q))
+    );
+  }
+
+  const totalPlans = planList.length;
+  const activePlans = planList.filter((p) => p.status === 'active').length;
+  const totalEnrolled = planList.reduce((acc, p) => acc + (p.enrolled_count || 0), 0);
+  const avgVisits = totalPlans > 0
+    ? Math.round(planList.reduce((acc, p) => acc + (p.max_monthly_visits || 0), 0) / totalPlans)
+    : 8;
+
+  return {
+    plans: planList,
+    summary: {
+      totalPlans,
+      activePlans,
+      totalEnrolled,
+      avgVisits
+    }
+  };
+}
+
+/**
+ * Creates a new master benefit plan in Super Admin
+ */
+async function createOperationsPlan(payload) {
+  if (!supabase) throw new Error('Supabase client unavailable');
+
+  const {
+    org_id,
+    name,
+    tier = 'standard',
+    max_monthly_visits = 8,
+    co_pay_percentage = 0,
+    allowed_provider_categories = VALID_CATEGORIES,
+    budget_cap_per_employee = null,
+    is_family_eligible = false,
+    description = null,
+    status = 'active'
+  } = payload;
+
+  if (!org_id) {
+    throw new Error('Target organization (org_id) is required');
+  }
+  if (!name || !name.trim()) {
+    throw new Error('Benefit plan name is required');
+  }
+
+  const visits = parseInt(max_monthly_visits, 10);
+  if (isNaN(visits) || visits < 0) {
+    throw new Error('max_monthly_visits must be a non-negative integer');
+  }
+
+  const copay = parseFloat(co_pay_percentage);
+  if (isNaN(copay) || copay < 0 || copay > 100) {
+    throw new Error('co_pay_percentage must be between 0 and 100');
+  }
+
+  const { data: plan, error: insertError } = await supabase
+    .from('benefits')
+    .insert({
+      org_id,
+      name: name.trim(),
+      tier: tier ? String(tier).toLowerCase().trim() : 'standard',
+      max_monthly_visits: visits,
+      co_pay_percentage: copay,
+      allowed_provider_categories: Array.isArray(allowed_provider_categories) && allowed_provider_categories.length > 0
+        ? allowed_provider_categories
+        : VALID_CATEGORIES,
+      budget_cap_per_employee: budget_cap_per_employee ? parseFloat(budget_cap_per_employee) : null,
+      is_family_eligible: Boolean(is_family_eligible),
+      description: description ? String(description).trim() : null,
+      status: ['active', 'draft', 'inactive'].includes(status) ? status : 'active'
+    })
+    .select('*, organizations(id, name, slug)')
+    .single();
+
+  if (insertError) throw new Error(`Failed to create plan: ${insertError.message}`);
+  return plan;
+}
+
+/**
+ * Updates an existing master benefit plan in Super Admin
+ */
+async function updateOperationsPlan(planId, payload) {
+  if (!supabase) throw new Error('Supabase client unavailable');
+  if (!planId) throw new Error('Plan ID is required');
+
+  const updateFields = { updated_at: new Date().toISOString() };
+  if (payload.name !== undefined) updateFields.name = String(payload.name).trim();
+  if (payload.tier !== undefined) updateFields.tier = String(payload.tier).toLowerCase().trim();
+  if (payload.max_monthly_visits !== undefined) updateFields.max_monthly_visits = parseInt(payload.max_monthly_visits, 10);
+  if (payload.co_pay_percentage !== undefined) updateFields.co_pay_percentage = parseFloat(payload.co_pay_percentage);
+  if (payload.allowed_provider_categories !== undefined) updateFields.allowed_provider_categories = payload.allowed_provider_categories;
+  if (payload.budget_cap_per_employee !== undefined) {
+    updateFields.budget_cap_per_employee = payload.budget_cap_per_employee !== null && payload.budget_cap_per_employee !== ''
+      ? parseFloat(payload.budget_cap_per_employee)
+      : null;
+  }
+  if (payload.is_family_eligible !== undefined) updateFields.is_family_eligible = Boolean(payload.is_family_eligible);
+  if (payload.description !== undefined) updateFields.description = payload.description ? String(payload.description).trim() : null;
+  if (payload.status !== undefined) updateFields.status = payload.status;
+  if (payload.org_id !== undefined && payload.org_id) updateFields.org_id = payload.org_id;
+
+  const { data: updated, error: updateError } = await supabase
+    .from('benefits')
+    .update(updateFields)
+    .eq('id', planId)
+    .select('*, organizations(id, name, slug)')
+    .single();
+
+  if (updateError) throw new Error(`Failed to update plan: ${updateError.message}`);
+  return updated;
+}
+
 module.exports = {
   getOperationsOverview,
   searchOperationsUniversal,
@@ -3775,7 +3955,11 @@ module.exports = {
   getOperationsPlatformSettings,
   updateOperationsPlatformSetting,
   getOperationsTeamDirectory,
-  assignOperationsTeamRole
+  assignOperationsTeamRole,
+  // Master Benefit Plan Builder Methods
+  getOperationsPlans,
+  createOperationsPlan,
+  updateOperationsPlan
 };
 
 

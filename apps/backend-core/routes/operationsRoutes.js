@@ -42,7 +42,10 @@ const {
   getOperationsPlatformSettings,
   updateOperationsPlatformSetting,
   getOperationsTeamDirectory,
-  assignOperationsTeamRole
+  assignOperationsTeamRole,
+  getOperationsPlans,
+  createOperationsPlan,
+  updateOperationsPlan
 } = require('../services/operationsService');
 
 const router = express.Router();
@@ -918,6 +921,67 @@ router.post('/team/roles', async (req, res) => {
     return res.status(400).json({
       error: error.message,
       code: 'OPERATIONS_ROLE_ASSIGN_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/operations/plans
+ * List all master benefit plans across all client organizations
+ */
+router.get('/plans', async (req, res) => {
+  try {
+    const { orgId, tier, status, search } = req.query;
+    const result = await getOperationsPlans({ orgId, tier, status, search });
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] List plans error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_PLANS_LIST_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/operations/plans
+ * Create a new master benefit plan in Super Admin
+ */
+router.post('/plans', async (req, res) => {
+  try {
+    const plan = await createOperationsPlan(req.body);
+    return res.status(201).json({
+      success: true,
+      message: 'Master benefit plan created successfully',
+      plan
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Create plan error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_PLAN_CREATE_FAILED'
+    });
+  }
+});
+
+/**
+ * PUT /api/operations/plans/:id
+ * Update an existing master benefit plan in Super Admin
+ */
+router.put('/plans/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const plan = await updateOperationsPlan(id, req.body);
+    return res.status(200).json({
+      success: true,
+      message: 'Master benefit plan updated successfully',
+      plan
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Update plan error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_PLAN_UPDATE_FAILED'
     });
   }
 });
