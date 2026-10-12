@@ -2,10 +2,10 @@ import { ShieldCheck, Receipt, CalendarClock, Dumbbell } from "lucide-react";
 
 export default function PricingHero() {
   return (
-    <section className="pt-24 sm:pt-32 pb-8 sm:pb-12 bg-gradient-to-b from-slate-900 via-slate-900 to-background text-white">
+    <section className="pt-24 sm:pt-32 pb-12 sm:pb-16 bg-slate-900 text-white border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         {/* Category Pill */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 text-accent text-xs font-bold uppercase tracking-wider mb-6 backdrop-blur-xs">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-accent text-xs font-bold uppercase tracking-wider mb-6 shadow-xs">
           <span>Employer Benefits & Transparent Pricing</span>
         </div>
 
@@ -18,27 +18,27 @@ export default function PricingHero() {
         </h1>
 
         {/* Subtitle */}
-        <p className="mt-5 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
+        <p className="mt-5 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
           One transparent per-employee subscription. Zero gym contracts. One consolidated monthly RRA EBM invoice and full access to Rwanda's leading fitness facilities.
         </p>
 
-        {/* Trust Value Badges */}
-        <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-slate-300">
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3.5 py-2 rounded-full backdrop-blur-xs">
-            <Dumbbell className="w-4 h-4 text-accent" />
-            <span>50+ Vetted Venues</span>
+        {/* Trust Value Badges with High Contrast Solid Dark Styling */}
+        <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm">
+          <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 px-4 py-2 rounded-full shadow-xs hover:border-accent/60 hover:bg-slate-700 transition-colors">
+            <Dumbbell className="w-4 h-4 text-accent flex-shrink-0" />
+            <span className="font-semibold text-white">50+ Vetted Venues</span>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3.5 py-2 rounded-full backdrop-blur-xs">
-            <Receipt className="w-4 h-4 text-accent" />
-            <span>RRA EBM 18% VAT Invoicing</span>
+          <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 px-4 py-2 rounded-full shadow-xs hover:border-accent/60 hover:bg-slate-700 transition-colors">
+            <Receipt className="w-4 h-4 text-accent flex-shrink-0" />
+            <span className="font-semibold text-white">RRA EBM 18% VAT Invoicing</span>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3.5 py-2 rounded-full backdrop-blur-xs">
-            <CalendarClock className="w-4 h-4 text-accent" />
-            <span>90-Day Flexible Pilots</span>
+          <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 px-4 py-2 rounded-full shadow-xs hover:border-accent/60 hover:bg-slate-700 transition-colors">
+            <CalendarClock className="w-4 h-4 text-accent flex-shrink-0" />
+            <span className="font-semibold text-white">90-Day Flexible Pilots</span>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3.5 py-2 rounded-full backdrop-blur-xs">
-            <ShieldCheck className="w-4 h-4 text-accent" />
-            <span>Anti-Passback Fraud Lock</span>
+          <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 px-4 py-2 rounded-full shadow-xs hover:border-accent/60 hover:bg-slate-700 transition-colors">
+            <ShieldCheck className="w-4 h-4 text-accent flex-shrink-0" />
+            <span className="font-semibold text-white">Anti-Passback Fraud Lock</span>
           </div>
         </div>
       </div>

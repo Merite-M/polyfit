@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, ChevronDown, Building2, Dumbbell, ShieldCheck, UserCheck } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { PolyFitLogo } from "@/components/ui/polyfit-logo";
 import { useLeadModal } from "@/lib/lead-modal";
-import { PlatformSuiteLauncher } from "@/components/ui/PlatformSuiteLauncher";
-import { LivePassVirtualizationModal } from "@/components/ui/LivePassVirtualizationModal";
 
 interface PublicNavigationProps {
   onOpenLeadForm?: (type: 'employer' | 'provider') => void;
@@ -14,7 +12,6 @@ interface PublicNavigationProps {
 
 export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isPassPreviewOpen, setIsPassPreviewOpen] = useState(false);
   const openLeadModal = useLeadModal((s) => s.open);
 
   const handleOpenLead = (type: 'employer' | 'provider' = 'employer') => {
@@ -25,7 +22,6 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
     }
   };
 
-
   const navLinks = [
     { name: "Network", href: "/network" },
     { name: "Pricing", href: "/pricing" },
@@ -33,30 +29,6 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
     { name: "For Companies", href: "/#for-companies" },
     { name: "For Providers", href: "/#for-providers" },
     { name: "About", href: "/#about" },
-  ];
-
-  const portalLinks = [
-    {
-      title: "Employer HR Portal",
-      desc: "Manage roster, benefits & view invoices",
-      href: "/corporate",
-      icon: Building2,
-      badge: "Corporate",
-    },
-    {
-      title: "Wellness Partner Portal",
-      desc: "Front-desk verify, locations & payouts",
-      href: "/partner",
-      icon: Dumbbell,
-      badge: "Partners",
-    },
-    {
-      title: "Operations Console",
-      desc: "Network clearinghouse & admin",
-      href: "/operations",
-      icon: ShieldCheck,
-      badge: "Staff",
-    },
   ];
 
   return (
@@ -81,12 +53,6 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
                 {link.name}
               </Link>
             ))}
-
-            {/* Unified PolyFit Platform Suite Launcher */}
-            <PlatformSuiteLauncher
-              variant="dark"
-              onOpenMobilePreview={() => setIsPassPreviewOpen(true)}
-            />
 
             {/* Talk to Us Lead CTA */}
             <button 
@@ -128,27 +94,6 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
             ))}
           </div>
 
-          {/* Mobile Portals Section */}
-          <div className="pt-3 border-t border-white/10">
-            <p className="px-3 text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Portal Sign In</p>
-            <div className="space-y-1">
-              {portalLinks.map((portal) => (
-                <Link
-                  key={portal.title}
-                  href={portal.href}
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center justify-between px-3 py-2.5 rounded-[8px] bg-white/5 text-sm font-medium text-gray-200 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <portal.icon className="w-4 h-4 text-accent" />
-                    <span>{portal.title}</span>
-                  </span>
-                  <span className="text-[10px] font-semibold text-gray-400 bg-white/10 px-2 py-0.5 rounded">{portal.badge}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-          
           <div className="pt-2">
             <button 
               onClick={() => {
@@ -163,12 +108,6 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
           </div>
         </div>
       )}
-
-      {/* Interactive Mobile Pass Virtualization Modal */}
-      <LivePassVirtualizationModal
-        isOpen={isPassPreviewOpen}
-        onClose={() => setIsPassPreviewOpen(false)}
-      />
     </nav>
   );
 }
