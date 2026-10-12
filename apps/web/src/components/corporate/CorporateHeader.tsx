@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCorporate } from "@/contexts/CorporateContext";
-import { PlatformSuiteLauncher } from "@/components/ui/PlatformSuiteLauncher";
 import { LivePassVirtualizationModal } from "@/components/ui/LivePassVirtualizationModal";
 
 interface CorporateHeaderProps {
@@ -267,9 +266,6 @@ export function CorporateHeader({
           <span className="hidden xl:inline">Employee Pass</span>
           <span className="xl:hidden">Pass</span>
         </button>
-
-        {/* Unified Cross-Portal Suite Launcher */}
-        <PlatformSuiteLauncher onOpenMobilePreview={() => setIsPassPreviewOpen(true)} />
       </div>
 
       {/* Live Pass Virtualization Modal */}
