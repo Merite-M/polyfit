@@ -133,12 +133,12 @@ export const WelcomeDomainStep: React.FC = () => {
         {/* Title & Microcopy */}
         <View style={styles.headerBlock}>
           <Text style={styles.screenTitle}>
-            {isEmailMode ? "What's your work email?" : 'Enter your HR token'}
+            {isEmailMode ? "What's your work email?" : 'Enter Staff ID or Code'}
           </Text>
           <Text style={styles.screenSubtitle}>
             {isEmailMode
               ? "We'll instantly unlock your company's subsidized wellness benefit."
-              : 'Enter the 6-character code provided by your HR administrator.'}
+              : 'Enter the Staff ID from your employee badge (e.g. BK-8821) or web activation code.'}
           </Text>
         </View>
 
@@ -153,7 +153,7 @@ export const WelcomeDomainStep: React.FC = () => {
 
             <TextInput
               style={styles.textInput}
-              placeholder={isEmailMode ? 'e.g. jean.mugisha@bk.rw' : 'e.g. BK-8821'}
+              placeholder={isEmailMode ? 'e.g. jean.mugisha@bk.rw' : 'e.g. BK-8821 or 6-digit code'}
               placeholderTextColor={Palette.textMuted}
               value={isEmailMode ? inputEmail : inputCode}
               onChangeText={isEmailMode ? handleEmailChange : handleCodeChange}
@@ -218,8 +218,8 @@ export const WelcomeDomainStep: React.FC = () => {
         >
           <Text style={styles.switchPathwayText}>
             {isEmailMode
-              ? 'Have an HR invite code instead? →'
-              : 'Use company email domain instead →'}
+              ? 'Have a Staff ID or Activation Code instead? →'
+              : 'Use company email address instead →'}
           </Text>
         </Pressable>
       </View>

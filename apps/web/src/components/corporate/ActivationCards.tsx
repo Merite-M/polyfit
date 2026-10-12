@@ -53,11 +53,11 @@ export function ActivationCards({
     }
   };
 
-  const handleCopyTemplate = (channel: "slack" | "teams" | "email") => {
+  const handleCopyTemplate = (channel: "whatsapp" | "email" | "sms") => {
     const textTemplates = {
-      slack: `🎉 *Exciting News!* ${organizationName} is partnering with *PolyFit Corporate Wellness Network*.\n\nAll employees can now access top gyms, swimming pools, yoga studios, and wellness clinics across Kigali & Nairobi with your corporate benefit!\n\n👉 *Activate your mobile pass here:* ${inviteUrl}\n(Sign up using your @${organizationSlug.replace(/-.*/, '')}.rw work email)`,
-      teams: `**PolyFit Corporate Wellness Benefit is Live!**\n\n${organizationName} employees are now eligible for subsidized access to independent gyms, pools, and studios.\n\nRegister your access pass: ${inviteUrl}`,
-      email: `Subject: Welcome to PolyFit — Your New Corporate Wellness Benefit!\n\nHi Team,\n\nWe are excited to launch our partnership with PolyFit. You can now visit verified gyms, pools, and studios across the network.\n\nClaim your mobile pass here:\n${inviteUrl}\n\nBest,\nHR & People Team`,
+      whatsapp: `*PolyFit Corporate Wellness is Live!* 🏃‍♂️🏊‍♀️\n\nHi team, *${organizationName}* has partnered with PolyFit to provide employer-funded wellness access across Rwanda.\n\nAll staff can now access premier gyms, Olympic swimming pools, and yoga studios across Kigali paid by the company.\n\n👉 *Activate your pass on your mobile phone:* ${inviteUrl}\n\nDownload the PolyFit app or activate using your Staff ID / work email.`,
+      email: `Subject: Launch of ${organizationName} Corporate Wellness Pass (PolyFit)\n\nDear Staff,\n\nWe are pleased to introduce our new company wellness benefit in partnership with PolyFit Corporate Wellness Network.\n\nAs an employee of ${organizationName}, you are entitled to verified visits each month across participating facilities in Kigali.\n\nTo activate your benefit and link your mobile pass, click the link below using your company email or Staff ID:\n${inviteUrl}\n\nKind regards,\nPeople & Culture / HR Team`,
+      sms: `${organizationName} Wellness Benefit: Activate your corporate fitness pass for gyms and pools across Kigali. Register now: ${inviteUrl}`,
     };
 
     if (navigator?.clipboard) {
@@ -128,28 +128,28 @@ export function ActivationCards({
             <span>Share announcement copy:</span>
             <div className="flex items-center gap-1.5">
               <button
-                onClick={() => handleCopyTemplate("slack")}
+                onClick={() => handleCopyTemplate("whatsapp")}
                 className="px-2 py-1 rounded-md text-[11px] font-medium bg-[#F1F4F8] hover:bg-[#E9FAF2] hover:text-[#28D17C] text-[#0B1F33] transition-colors flex items-center gap-1"
-                title="Copy Slack announcement template"
+                title="Copy WhatsApp announcement template"
               >
-                <MessageSquare className="w-3 h-3" />
-                <span>{copiedChannel === "slack" ? "Copied Slack!" : "Slack"}</span>
-              </button>
-              <button
-                onClick={() => handleCopyTemplate("teams")}
-                className="px-2 py-1 rounded-md text-[11px] font-medium bg-[#F1F4F8] hover:bg-[#E9FAF2] hover:text-[#28D17C] text-[#0B1F33] transition-colors flex items-center gap-1"
-                title="Copy MS Teams announcement template"
-              >
-                <Layers className="w-3 h-3" />
-                <span>{copiedChannel === "teams" ? "Copied Teams!" : "Teams"}</span>
+                <MessageSquare className="w-3 h-3 text-[#28D17C]" />
+                <span>{copiedChannel === "whatsapp" ? "Copied WhatsApp!" : "WhatsApp"}</span>
               </button>
               <button
                 onClick={() => handleCopyTemplate("email")}
                 className="px-2 py-1 rounded-md text-[11px] font-medium bg-[#F1F4F8] hover:bg-[#E9FAF2] hover:text-[#28D17C] text-[#0B1F33] transition-colors flex items-center gap-1"
                 title="Copy Email announcement template"
               >
-                <Mail className="w-3 h-3" />
+                <Mail className="w-3 h-3 text-[#3B82F6]" />
                 <span>{copiedChannel === "email" ? "Copied Email!" : "Email"}</span>
+              </button>
+              <button
+                onClick={() => handleCopyTemplate("sms")}
+                className="px-2 py-1 rounded-md text-[11px] font-medium bg-[#F1F4F8] hover:bg-[#E9FAF2] hover:text-[#28D17C] text-[#0B1F33] transition-colors flex items-center gap-1"
+                title="Copy SMS / Memo announcement template"
+              >
+                <Layers className="w-3 h-3 text-slate-500" />
+                <span>{copiedChannel === "sms" ? "Copied SMS!" : "SMS / Circular"}</span>
               </button>
             </div>
           </div>

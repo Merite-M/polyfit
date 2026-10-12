@@ -279,14 +279,29 @@ router.post('/organizations/:slug/join', leadFormLimiter, async (req, res) => {
     const defaultPlan = (benefits && benefits.find(b => b.tier === 'standard')) || (benefits && benefits[0]);
     const planTier = defaultPlan ? defaultPlan.tier : 'standard';
 
-    // 4. Check if employee already exists
-    const { data: existingEmp } = await supabase
-      .from('employees')
-      .select('*')
-      .eq('org_id', org.id)
-      .eq('email', cleanEmail)
-      .maybeSingle();
+    // 4. Check if employee already exists by email OR by staff ID
+    const cleanStaffId = employee_id_external && typeof employee_id_external === 'string' ? employee_id_external.trim() : null;
+    let existingEmp = null;
 
+    if (cleanStaffId) {
+      const { data: matchedEmp } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('org_id', org.id)
+        .or(`email.eq.${cleanEmail},employee_id_external.ilike.${cleanStaffId}`)
+        .maybeSingle();
+      existingEmp = matchedEmp;
+    } else {
+      const { data: matchedEmp } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('org_id', org.id)
+        .eq('email', cleanEmail)
+        .maybeSingle();
+      existingEmp = matchedEmp;
+    }
+
+    const wasAlreadyEnrolled = !!(existingEmp && existingEmp.status === 'active');
     let employee = existingEmp;
 
     if (!employee) {
@@ -296,7 +311,7 @@ router.post('/organizations/:slug/join', leadFormLimiter, async (req, res) => {
           org_id: org.id,
           full_name: full_name.trim(),
           email: cleanEmail,
-          employee_id_external: employee_id_external ? employee_id_external.trim() : null,
+          employee_id_external: cleanStaffId,
           department: department ? department.trim() : 'General',
           tier: planTier,
           status: 'active'
@@ -308,15 +323,26 @@ router.post('/organizations/:slug/join', leadFormLimiter, async (req, res) => {
         throw insertError;
       }
       employee = newEmp;
-    } else if (employee.status !== 'active') {
-      const { data: updatedEmp, error: updateError } = await supabase
-        .from('employees')
-        .update({ status: 'active' })
-        .eq('id', employee.id)
-        .select()
-        .single();
-      if (!updateError && updatedEmp) {
-        employee = updatedEmp;
+    } else {
+      // If inactive or if external staff ID was provided and missing in profile, update it
+      const updates = {};
+      if (employee.status !== 'active') {
+        updates.status = 'active';
+      }
+      if (!employee.employee_id_external && cleanStaffId) {
+        updates.employee_id_external = cleanStaffId;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        const { data: updatedEmp, error: updateError } = await supabase
+          .from('employees')
+          .update(updates)
+          .eq('id', employee.id)
+          .select()
+          .single();
+        if (!updateError && updatedEmp) {
+          employee = updatedEmp;
+        }
       }
     }
 
@@ -335,13 +361,25 @@ router.post('/organizations/:slug/join', leadFormLimiter, async (req, res) => {
         );
     }
 
+    // 6. Generate Mobile Pass Activation Token / Code for smartphone app linking
+    const activationCode = (
+      employee.employee_id_external ||
+      cleanStaffId ||
+      `PF-${employee.id.replace(/-/g, '').substring(0, 6).toUpperCase()}`
+    );
+
     return res.status(200).json({
       success: true,
-      message: `Wellness pass activated for ${org.name}`,
+      is_already_enrolled: wasAlreadyEnrolled,
+      activation_code: activationCode,
+      message: wasAlreadyEnrolled
+        ? `You are already enrolled with ${org.name}! Your wellness pass is ready for use on the PolyFit Mobile App.`
+        : `Wellness pass activated for ${org.name}`,
       employee: {
         id: employee.id,
         full_name: employee.full_name,
         email: employee.email,
+        employee_id_external: employee.employee_id_external || cleanStaffId,
         department: employee.department,
         tier: employee.tier,
         status: employee.status

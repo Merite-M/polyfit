@@ -66,8 +66,8 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
   // Curated baseline of verified facilities in Rwanda & East Africa
   const defaultFacilities: Facility[] = [
     {
-      id: "waka-kimihurura",
-      name: "WAKA Fitness Kimihurura",
+      id: "premier-kimihurura",
+      name: "Premier Functional Fitness Hub",
       city: "kigali",
       cityLabel: "Kigali, Kimihurura",
       category: "gym",
@@ -82,8 +82,8 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
       featured: true,
     },
     {
-      id: "csk-rugunga",
-      name: "Cercle Sportif de Kigali (CSK)",
+      id: "olympic-rugunga",
+      name: "Olympic Aquatic & Multi-Sport Club",
       city: "kigali",
       cityLabel: "Kigali, Rugunga",
       category: "pool",
@@ -114,8 +114,8 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
       featured: true,
     },
     {
-      id: "heaven-spa",
-      name: "Heaven Wellness & Spa",
+      id: "kiyovu-spa",
+      name: "Kiyovu Thermal Spa & Recovery Lounge",
       city: "kigali",
       cityLabel: "Kigali, Kiyovu",
       category: "spa",
@@ -130,8 +130,8 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
       featured: true,
     },
     {
-      id: "cali-musanze",
-      name: "Cali Fitness & High-Altitude Center",
+      id: "altitude-musanze",
+      name: "Northern High-Altitude Fitness Center",
       city: "musanze",
       cityLabel: "Musanze, Northern Hub",
       category: "gym",
@@ -146,8 +146,8 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
       featured: false,
     },
     {
-      id: "inzu-yoga",
-      name: "Inzu Eco Mindfulness & Yoga",
+      id: "kinigi-yoga",
+      name: "Kinigi Eco Mindfulness & Yoga Shala",
       city: "musanze",
       cityLabel: "Musanze, Kinigi Corridor",
       category: "studio",

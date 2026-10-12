@@ -19,8 +19,8 @@ interface NetworkPreviewProps {
 
 const FEATURED_VENUES = [
   {
-    id: "waka-kimihurura",
-    name: "WAKA Fitness Kimihurura",
+    id: "premier-kimihurura",
+    name: "Premier Functional Fitness Hub",
     district: "Kimihurura, Kigali",
     category: "Gym & Strength",
     icon: Dumbbell,
@@ -31,8 +31,8 @@ const FEATURED_VENUES = [
     highlight: "Kigali's Premier Functional Facility",
   },
   {
-    id: "csk-rugunga",
-    name: "Cercle Sportif de Kigali (CSK)",
+    id: "olympic-rugunga",
+    name: "Olympic Aquatic & Sports Club",
     district: "Rugunga, Kigali",
     category: "Olympic Pool & Sports",
     icon: Waves,
@@ -43,8 +43,8 @@ const FEATURED_VENUES = [
     highlight: "Historic Multi-Sport & Aquatics Hub",
   },
   {
-    id: "zenith-kacyiru",
-    name: "Zenith Wellness Studio",
+    id: "reformer-kacyiru",
+    name: "Executive Reformer & Yoga Studio",
     district: "Kacyiru, Kigali",
     category: "Yoga & Reformer Pilates",
     icon: Sparkles,
@@ -55,8 +55,8 @@ const FEATURED_VENUES = [
     highlight: "Executive Mindfulness & Core Studio",
   },
   {
-    id: "nyarutarama-club",
-    name: "Nyarutarama Sports Club",
+    id: "diplomatic-nyarutarama",
+    name: "Diplomatic Sports & Racquet Club",
     district: "Nyarutarama, Kigali",
     category: "Tennis, Gym & Recovery",
     icon: Dumbbell,

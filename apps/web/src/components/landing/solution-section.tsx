@@ -5,10 +5,10 @@ import { CheckCircle2, Building2, Dumbbell, Waves, Sparkles, ShieldCheck, BadgeC
 import { IsometricHexMark } from "@/components/ui/polyfit-logo";
 
 const VERIFIED_ACCESS_EVENTS = [
-  { tier: "Corporate Tier A", venue: "WAKA Fitness Kimihurura", category: "Gym & Strength", method: "15s Dynamic TOTP Pass", status: "Verified" },
-  { tier: "Executive Pass", venue: "Cercle Sportif (CSK)", category: "Olympic Pool & Tennis", method: "Anti-Passback Validated", status: "Verified" },
-  { tier: "Wellness Tier", venue: "Zenith Studio Kacyiru", category: "Reformer Pilates & Yoga", method: "Dynamic TOTP Pass", status: "Verified" },
-  { tier: "Corporate Tier B", venue: "Cali Fitness & Pool", category: "Swim & Cardio", method: "Geofence Verified", status: "Verified" }
+  { tier: "Corporate Tier A", venue: "Premier Multi-Club Hub (Kimihurura)", category: "Gym & Strength", method: "15s Dynamic TOTP Pass", status: "Verified" },
+  { tier: "Executive Pass", venue: "Olympic Aquatic & Racquet Club (Rugunga)", category: "Olympic Pool & Tennis", method: "Anti-Passback Validated", status: "Verified" },
+  { tier: "Wellness Tier", venue: "Boutique Reformer & Yoga Studio (Kacyiru)", category: "Reformer Pilates & Yoga", method: "Dynamic TOTP Pass", status: "Verified" },
+  { tier: "Corporate Tier B", venue: "Cardio & Aquatic Training Center (Remera)", category: "Swim & Cardio", method: "Geofence Verified", status: "Verified" }
 ];
 
 export default function SolutionSection() {
@@ -163,9 +163,9 @@ export default function SolutionSection() {
                       </div>
                       <span className="text-[10px] font-mono font-semibold text-accent uppercase tracking-wider">Gym & Strength</span>
                     </div>
-                    <p className="text-xs font-bold text-white truncate">WAKA Fitness</p>
+                    <p className="text-xs font-bold text-white truncate">Premier Multi-Club Hub</p>
                     <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
-                      <MapPin className="w-2.5 h-2.5 text-accent" /> Kimihurura
+                      <MapPin className="w-2.5 h-2.5 text-accent" /> Kimihurura / CBD
                     </p>
                   </div>
 
@@ -177,7 +177,7 @@ export default function SolutionSection() {
                       </div>
                       <span className="text-[10px] font-mono font-semibold text-secondary uppercase tracking-wider">Olympic Pool & Club</span>
                     </div>
-                    <p className="text-xs font-bold text-white truncate">Cercle Sportif (CSK)</p>
+                    <p className="text-xs font-bold text-white truncate">Olympic Aquatic Center</p>
                     <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
                       <MapPin className="w-2.5 h-2.5 text-secondary" /> Rugunga
                     </p>
@@ -191,7 +191,7 @@ export default function SolutionSection() {
                       </div>
                       <span className="text-[10px] font-mono font-semibold text-highlight uppercase tracking-wider">Pilates & Yoga</span>
                     </div>
-                    <p className="text-xs font-bold text-white truncate">Zenith Studio</p>
+                    <p className="text-xs font-bold text-white truncate">Boutique Reformer Studio</p>
                     <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
                       <MapPin className="w-2.5 h-2.5 text-highlight" /> Kacyiru
                     </p>

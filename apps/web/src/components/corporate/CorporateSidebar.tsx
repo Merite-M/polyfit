@@ -272,7 +272,7 @@ export function CorporateSidebar({
           <span className="text-xs font-semibold text-white">Employee Join Link</span>
         </div>
         <p className="text-[11px] text-slate-400 mb-2 leading-relaxed">
-          Share with your staff on Slack/Teams for instant mobile registration.
+          Share with your staff on WhatsApp or Corporate Email for instant mobile registration.
         </p>
         <button
           onClick={handleCopyInviteLink}

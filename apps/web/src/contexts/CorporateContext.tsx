@@ -242,7 +242,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
   const copyInviteLink = useCallback(() => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(inviteUrl);
-      showToast("Join link copied to clipboard! Ready to share on Slack or Teams.");
+      showToast("Join link copied to clipboard! Ready to share on WhatsApp or corporate email.");
     }
   }, [inviteUrl, showToast]);
 

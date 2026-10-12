@@ -5,10 +5,10 @@ import { Building2, Dumbbell, Waves, Footprints, ShieldCheck, BadgeCheck, Activi
 import { IsometricHexMark } from "@/components/ui/polyfit-logo";
 
 const VERIFIED_ACCESS_EVENTS = [
-  { tier: "Corporate Tier A", venue: "WAKA Fitness Kimihurura", category: "Gym & Strength", method: "15s Dynamic TOTP Pass", status: "Verified" },
-  { tier: "Executive Pass", venue: "Cercle Sportif (CSK)", category: "Olympic Pool & Tennis", method: "Anti-Passback Validated", status: "Verified" },
-  { tier: "Corporate Tier B", venue: "Cali Fitness & Pool", category: "Swim & Cardio", method: "Geofence & TOTP Pass", status: "Verified" },
-  { tier: "Wellness Tier", venue: "Zenith Studio Kacyiru", category: "Reformer Pilates & Yoga", method: "15s Dynamic TOTP Pass", status: "Verified" }
+  { tier: "Corporate Tier A", venue: "Premier Multi-Club Hub (Kimihurura)", category: "Gym & Strength", method: "15s Dynamic TOTP Pass", status: "Verified" },
+  { tier: "Executive Pass", venue: "Olympic Aquatic & Racquet Club (Rugunga)", category: "Olympic Pool & Tennis", method: "Anti-Passback Validated", status: "Verified" },
+  { tier: "Corporate Tier B", venue: "Cardio & Aquatic Training Center (Remera)", category: "Swim & Cardio", method: "Geofence & TOTP Pass", status: "Verified" },
+  { tier: "Wellness Tier", venue: "Boutique Reformer & Yoga Studio (Kacyiru)", category: "Reformer Pilates & Yoga", method: "15s Dynamic TOTP Pass", status: "Verified" }
 ];
 
 export default function NetworkVisualization() {
@@ -145,7 +145,7 @@ export default function NetworkVisualization() {
                   <Dumbbell className="w-3.5 h-3.5 text-[#28D17C]" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-bold text-white truncate">WAKA Fitness</p>
+                  <p className="text-[11px] font-bold text-white truncate">Premier Multi-Club</p>
                   <p className="text-[9px] text-slate-400 truncate flex items-center gap-0.5">
                     <MapPin className="w-2.5 h-2.5 text-[#28D17C]" /> Kimihurura
                   </p>
@@ -158,7 +158,7 @@ export default function NetworkVisualization() {
                   <Footprints className="w-3.5 h-3.5 text-[#00D2B4]" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-bold text-white truncate">Cercle Sportif (CSK)</p>
+                  <p className="text-[11px] font-bold text-white truncate">Olympic Aquatic Club</p>
                   <p className="text-[9px] text-slate-400 truncate flex items-center gap-0.5">
                     <MapPin className="w-2.5 h-2.5 text-[#00D2B4]" /> Rugunga
                   </p>
@@ -171,9 +171,9 @@ export default function NetworkVisualization() {
                   <Waves className="w-3.5 h-3.5 text-[#B8F36B]" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-bold text-white truncate">Cali Fitness & Pool</p>
+                  <p className="text-[11px] font-bold text-white truncate">Cardio & Swim Center</p>
                   <p className="text-[9px] text-slate-400 truncate flex items-center gap-0.5">
-                    <MapPin className="w-2.5 h-2.5 text-[#B8F36B]" /> Musanze
+                    <MapPin className="w-2.5 h-2.5 text-[#B8F36B]" /> Remera
                   </p>
                 </div>
               </div>

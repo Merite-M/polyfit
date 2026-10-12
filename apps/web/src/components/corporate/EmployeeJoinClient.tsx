@@ -13,6 +13,11 @@ import {
   Hash,
   Building2,
   MapPin,
+  Smartphone,
+  QrCode,
+  Copy,
+  Check,
+  ExternalLink,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
@@ -42,7 +47,18 @@ export function EmployeeJoinClient({ orgConfig }: EmployeeJoinClientProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [createdPass, setCreatedPass] = useState<any | null>(null);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [createdPass, setCreatedPass] = useState<{
+    employeeName: string;
+    email: string;
+    planName: string;
+    maxVisits: number;
+    coPayPercent: number;
+    orgName: string;
+    activationCode: string;
+    isAlreadyEnrolled: boolean;
+    employeeId?: string;
+  } | null>(null);
 
   const allowedDomains = (
     orgConfig.domains?.length
@@ -101,13 +117,18 @@ export function EmployeeJoinClient({ orgConfig }: EmployeeJoinClientProps) {
       );
 
       const passPlan = res?.plan || {};
+      const resolvedCode = res?.activation_code || employeeId.trim() || `PF-${Math.floor(100000 + Math.random() * 900000)}`;
+
       setCreatedPass({
         employeeName: res?.employee?.full_name || fullName.trim(),
         email: res?.employee?.email || email.trim(),
+        employeeId: res?.employee?.employee_id_external || employeeId.trim(),
         planName: passPlan.name || orgConfig.tierName,
         maxVisits: passPlan.max_visits_per_month || orgConfig.maxVisits,
         coPayPercent: passPlan.co_pay_percentage ?? orgConfig.coPayPercent,
         orgName: res?.organization?.name || orgConfig.name,
+        activationCode: resolvedCode,
+        isAlreadyEnrolled: Boolean(res?.is_already_enrolled),
       });
       setIsSuccess(true);
     } catch (err: any) {
@@ -117,13 +138,17 @@ export function EmployeeJoinClient({ orgConfig }: EmployeeJoinClientProps) {
         return;
       }
       // In offline/demo mode, deliver instant pass experience gracefully
+      const fallbackCode = employeeId.trim() || `PF-${Math.floor(100000 + Math.random() * 900000)}`;
       setCreatedPass({
         employeeName: fullName.trim(),
         email: email.trim(),
+        employeeId: employeeId.trim(),
         planName: orgConfig.tierName,
         maxVisits: orgConfig.maxVisits,
         coPayPercent: orgConfig.coPayPercent,
         orgName: orgConfig.name,
+        activationCode: fallbackCode,
+        isAlreadyEnrolled: false,
       });
       setIsSuccess(true);
     } finally {
@@ -277,64 +302,123 @@ export function EmployeeJoinClient({ orgConfig }: EmployeeJoinClientProps) {
           </div>
         </div>
       ) : (
-        /* SUCCESS STATE: INSTANT PASS CONFIRMATION */
-        <div className="rounded-3xl bg-white border border-[#E2E8F0] shadow-sm p-8 sm:p-10 space-y-6 text-center animate-in fade-in zoom-in-95 duration-200">
-          <div className="w-16 h-16 rounded-2xl bg-[#E9FAF2] text-[#28D17C] flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-8 h-8" />
-          </div>
+        /* SUCCESS STATE: INSTANT PASS CONFIRMATION & MOBILE HANDSHAKE */
+        createdPass && (
+          <div className="rounded-3xl bg-white border border-[#E2E8F0] shadow-sm p-8 sm:p-10 space-y-6 text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 rounded-2xl bg-[#E9FAF2] text-[#28D17C] flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
 
-          <div className="space-y-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#28D17C]">
-              Pass Activated Successfully
-            </span>
-            <h2 className="text-2xl font-black text-[#0B1F33]">
-              Welcome to PolyFit, {createdPass.employeeName}!
-            </h2>
-            <p className="text-xs text-[#526173]">
-              Your corporate wellness pass for <strong>{createdPass.orgName}</strong> is ready.
-            </p>
-          </div>
-
-          {/* Pass Detail Card */}
-          <div className="p-5 rounded-2xl bg-[#0B1F33] text-white text-left space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-[#8491A3]">Beneficiary Pass</span>
-              <span className="text-[11px] font-bold text-[#28D17C] bg-[#28D17C]/15 px-2.5 py-0.5 rounded-full border border-[#28D17C]/30">
-                ACTIVE
+            <div className="space-y-1">
+              <span className={cn(
+                "text-xs font-bold uppercase tracking-wider",
+                createdPass.isAlreadyEnrolled ? "text-blue-600" : "text-[#28D17C]"
+              )}>
+                {createdPass.isAlreadyEnrolled ? "Already Enrolled" : "Pass Activated Successfully"}
               </span>
+              <h2 className="text-2xl font-black text-[#0B1F33]">
+                {createdPass.isAlreadyEnrolled ? `Welcome back, ${createdPass.employeeName}!` : `Welcome to PolyFit, ${createdPass.employeeName}!`}
+              </h2>
+              <p className="text-xs text-[#526173]">
+                {createdPass.isAlreadyEnrolled
+                  ? `Your corporate wellness pass for ${createdPass.orgName} is already active.`
+                  : `Your corporate wellness pass for ${createdPass.orgName} is ready.`}
+              </p>
             </div>
-            <div>
-              <div className="text-base font-bold text-white">
-                {createdPass.planName}
+
+            {/* Mobile App Activation Code Callout */}
+            <div className="p-4 rounded-2xl bg-[#E9FAF2] border border-[#28D17C]/30 text-left space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-[#0B1F33] flex items-center gap-1.5">
+                  <Smartphone className="w-4 h-4 text-[#28D17C]" />
+                  <span>Mobile App Activation Code</span>
+                </span>
+                <span className="text-[10px] uppercase font-mono font-bold text-[#28D17C] bg-white px-2 py-0.5 rounded border border-[#28D17C]/30">
+                  Ready to link
+                </span>
               </div>
-              <div className="text-xs text-[#8491A3]">
-                {createdPass.maxVisits} verified visits per month &bull; {createdPass.coPayPercent}% co-pay
+              <p className="text-[11px] text-[#526173]">
+                Open the PolyFit Mobile App on your phone and enter this code or your Staff ID ({createdPass.employeeId || "Company Badge"}) to bind your dynamic pass vault:
+              </p>
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#CBD5E1]">
+                <span className="text-base font-black font-mono tracking-widest text-[#0B1F33]">
+                  {createdPass.activationCode}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (navigator?.clipboard) {
+                      navigator.clipboard.writeText(createdPass.activationCode);
+                      setCopiedCode(true);
+                      setTimeout(() => setCopiedCode(false), 2000);
+                    }
+                  }}
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#F1F4F8] hover:bg-[#E2E8F0] text-[#0B1F33] transition-colors flex items-center gap-1"
+                >
+                  {copiedCode ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-[#28D17C]" />
+                      <span className="text-[#28D17C]">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
-            <div className="pt-3 border-t border-[#21405A] flex items-center justify-between text-xs text-[#526173]">
-              <span className="text-[#8491A3]">{createdPass.email}</span>
-              <span className="text-[#28D17C] font-semibold">52 Facilities in Rwanda</span>
+
+            {/* Pass Detail Card */}
+            <div className="p-5 rounded-2xl bg-[#0B1F33] text-white text-left space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#8491A3]">Beneficiary Pass</span>
+                <span className="text-[11px] font-bold text-[#28D17C] bg-[#28D17C]/15 px-2.5 py-0.5 rounded-full border border-[#28D17C]/30">
+                  ACTIVE
+                </span>
+              </div>
+              <div>
+                <div className="text-base font-bold text-white">
+                  {createdPass.planName}
+                </div>
+                <div className="text-xs text-[#8491A3]">
+                  {createdPass.maxVisits} verified visits per month &bull; {createdPass.coPayPercent}% co-pay
+                </div>
+              </div>
+              <div className="pt-3 border-t border-[#21405A] flex items-center justify-between text-xs text-[#526173]">
+                <span className="text-[#8491A3]">{createdPass.email}</span>
+                <span className="text-[#28D17C] font-semibold">52 Facilities in Rwanda</span>
+              </div>
+            </div>
+
+            {/* Next Steps Buttons */}
+            <div className="space-y-3 pt-2">
+              <a
+                href={`polyfit://activate?code=${createdPass.activationCode}&org=${orgConfig.slug}`}
+                className="w-full py-3 px-4 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md"
+              >
+                <Smartphone className="w-4 h-4" />
+                <span>Open in PolyFit Mobile App</span>
+              </a>
+
+              <Link
+                href="/network"
+                className="w-full py-2.5 px-4 rounded-xl bg-[#F1F4F8] hover:bg-[#E2E8F0] text-[#0B1F33] font-semibold text-xs flex items-center justify-center gap-2 transition-all"
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                <span>Explore Participating Venues</span>
+              </Link>
+
+              <button
+                onClick={() => setIsSuccess(false)}
+                className="text-xs font-semibold text-[#8491A3] hover:text-[#0B1F33] transition-colors"
+              >
+                Register another employee &rarr;
+              </button>
             </div>
           </div>
-
-          {/* Next Steps Buttons */}
-          <div className="space-y-3 pt-2">
-            <Link
-              href="/network"
-              className="w-full py-3 px-4 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md"
-            >
-              <MapPin className="w-4 h-4" />
-              <span>Explore Participating Venues</span>
-            </Link>
-
-            <button
-              onClick={() => setIsSuccess(false)}
-              className="text-xs font-semibold text-[#8491A3] hover:text-[#0B1F33] transition-colors"
-            >
-              Register another employee &rarr;
-            </button>
-          </div>
-        </div>
+        )
       )}
     </div>
   );

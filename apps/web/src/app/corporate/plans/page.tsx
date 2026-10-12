@@ -141,13 +141,12 @@ export default function PlansPage() {
             <button
               type="button"
               onClick={() => {
-                setEditingPlan(null);
-                setIsBuilderOpen(true);
+                showToast("Your request for an additional contracted tier has been logged with PolyFit Operations.");
               }}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-card border border-border text-foreground hover:bg-muted text-xs font-semibold transition-all shadow-xs cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Create Plan</span>
+              <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Request Custom Tier</span>
             </button>
           </div>
         }
@@ -158,13 +157,13 @@ export default function PlansPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border">
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-xl font-bold text-foreground">Corporate Benefit Plans</h1>
+              <h1 className="text-xl font-bold text-foreground">Corporate Benefit Tiers & Cost Sharing</h1>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
-                {plans.length} Configured Tiers
+                {plans.length} Contracted Tiers
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1 max-w-2xl leading-relaxed">
-              Design multi-tier corporate wellness benefits, configure monthly visit allowances, set co-pay cost sharing rules, and model liability forecasting for your workforce.
+              Manage your contracted PolyFit wellness benefit tiers, configure employer subsidy vs employee payroll co-pays, and assign departments or employees across your workforce.
             </p>
           </div>
         </div>

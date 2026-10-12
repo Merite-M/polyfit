@@ -189,10 +189,10 @@ export const PlanBuilderModal: React.FC<PlanBuilderModalProps> = ({
         <div className="sticky top-0 z-10 px-6 py-4 border-b border-border bg-card/95 backdrop-blur-xs flex items-center justify-between">
           <div>
             <h2 id="plan-builder-title" className="text-lg font-bold text-foreground">
-              {initialPlan ? "Edit Corporate Benefit Plan" : "Create Corporate Benefit Plan"}
+              {initialPlan ? "Configure Tier Cost Sharing & Policy" : "Configure Benefit Tier Policy"}
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Configure subsidy tiers, visit allowances, and co-pay rules for your employees.
+              Adjust employer subsidy percentage, employee payroll co-pays, and family eligibility for this contracted tier.
             </p>
           </div>
           <button
