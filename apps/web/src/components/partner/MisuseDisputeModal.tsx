@@ -17,7 +17,7 @@ interface MisuseDisputeModalProps {
   visit: TodayVisit | null;
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (visitId: string) => void;
+  onSuccess: (visitId: string, reason?: string) => void;
 }
 
 export function MisuseDisputeModal({
@@ -92,13 +92,15 @@ export function MisuseDisputeModal({
 
       await apiFetch<{ success: boolean; dispute: any }>(`/api/visits/${visit.id}/dispute`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          reason: reason,
           dispute_reason: reason,
           notes: notes.trim()
         })
       });
 
-      onSuccess(visit.id);
+      onSuccess(visit.id, reason);
       onClose();
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to submit misuse dispute');
@@ -162,9 +164,9 @@ export function MisuseDisputeModal({
                 </strong>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#526173]">Corporate Client:</span>
+                <span className="text-[#526173]">Authorized Activity:</span>
                 <span className="text-[#0B1F33] font-medium">
-                  {visit.organizations?.name || 'Corporate Partner'}
+                  {visit.activity_name || 'Gym & Cardio Access'}
                 </span>
               </div>
               <div className="flex justify-between">

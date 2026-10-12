@@ -228,7 +228,7 @@ export default function EmployeesPage() {
       }
 
       // Status
-      if (statusFilter !== "all" && e.status !== statusFilter) return false;
+      if (statusFilter !== "all" && (e.status || "").toLowerCase() !== statusFilter.toLowerCase()) return false;
 
       // Department
       if (
@@ -238,7 +238,7 @@ export default function EmployeesPage() {
         return false;
 
       // Tier
-      if (tierFilter !== "all" && e.tier !== tierFilter) return false;
+      if (tierFilter !== "all" && (e.tier || "").toLowerCase() !== tierFilter.toLowerCase()) return false;
 
       return true;
     });
@@ -526,9 +526,10 @@ export default function EmployeesPage() {
               {filteredEmployees.length > 0 ? (
                 filteredEmployees.map((emp) => {
                   const isSelected = selectedIds.has(emp.id);
+                  const empTier = (emp.tier || "").toLowerCase();
                   const maxQuota =
                     emp.eligibility?.benefits?.max_monthly_visits ??
-                    (emp.tier === "premium" ? 20 : emp.tier === "standard" ? 10 : 4);
+                    (empTier === "executive" ? 20 : empTier === "premium" ? 20 : empTier === "standard" ? 10 : 4);
                   const visits = emp.visits_this_month || 0;
                   const pct = Math.min(100, Math.round((visits / Math.max(1, maxQuota)) * 100));
 
@@ -591,20 +592,31 @@ export default function EmployeesPage() {
 
                       {/* Tier */}
                       <td className="py-3.5 px-4">
-                        {emp.tier === "premium" && (
+                        {empTier === "executive" && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#0B1F33] text-[#F59E0B] border border-[#F59E0B]/40 shadow-xs">
+                            <Crown className="w-3 h-3 text-[#F59E0B]" />
+                            Executive
+                          </span>
+                        )}
+                        {empTier === "premium" && (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FAF5FF] text-[#7E22CE] border border-[#D8B4FE]">
                             <Crown className="w-3 h-3 text-[#7E22CE]" />
                             Premium
                           </span>
                         )}
-                        {emp.tier === "standard" && (
+                        {empTier === "standard" && (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#E6FFFA] text-[#0D9488] border border-[#5EEAD4]">
                             Standard
                           </span>
                         )}
-                        {emp.tier === "basic" && (
+                        {empTier === "basic" && (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#F1F5F9] text-[#475569] border border-[#CBD5E1]">
                             Basic
+                          </span>
+                        )}
+                        {!["executive", "premium", "standard", "basic"].includes(empTier) && emp.tier && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#F1F5F9] text-[#475569] border border-[#CBD5E1] capitalize">
+                            {emp.tier}
                           </span>
                         )}
                       </td>

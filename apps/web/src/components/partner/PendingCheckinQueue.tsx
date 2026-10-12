@@ -9,7 +9,8 @@ import {
   UserCheck,
   AlertTriangle,
   DoorOpen,
-  Sparkles
+  Sparkles,
+  Activity
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api-client';
 
@@ -20,6 +21,7 @@ export interface PendingVisit {
   expires_at: string;
   employee_id: string;
   verification_method: string;
+  activity_name?: string;
   employees?: {
     id: string;
     full_name: string;
@@ -168,9 +170,9 @@ export function PendingCheckinQueue({
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[#526173] mt-0.5">
-                    <span className="flex items-center gap-1 font-medium">
-                      <Building className="w-3 h-3 text-[#8491A3]" />
-                      {item.organizations?.name || 'Corporate Beneficiary'}
+                    <span className="flex items-center gap-1 font-medium text-[#0B1F33]">
+                      <Activity className="w-3 h-3 text-[#28D17C]" />
+                      {item.activity_name || 'Gym & Cardio Access'}
                     </span>
                     <span className="text-[#8491A3]">ID: {item.employees?.employee_id_external || item.id.slice(0, 8)}</span>
                     <span className="text-[#8491A3]">{item.provider_locations?.name}</span>

@@ -467,6 +467,69 @@ router.patch('/:id', requireAuth, orgScope, requireRole('super_admin', 'polyfit_
 });
 
 /**
+ * PATCH /api/organizations/:orgId/employees/:id/status
+ * Dedicated status update route (active, frozen, terminated)
+ */
+router.patch('/:id/status', requireAuth, orgScope, requireRole('super_admin', 'polyfit_ops', 'org_admin'), async (req, res) => {
+  try {
+    const { orgId, id } = req.params;
+    const { status } = req.body;
+
+    if (!status || !VALID_STATUSES.includes(String(status).toLowerCase().trim())) {
+      return res.status(400).json({
+        error: `Invalid status '${status}'. Allowed: ${VALID_STATUSES.join(', ')}`,
+        code: 'EMPLOYEE_INVALID_STATUS'
+      });
+    }
+
+    const cleanStatus = String(status).toLowerCase().trim();
+
+    if (cleanStatus === 'frozen') {
+      const emp = await freezeEmployee(orgId, id);
+      return res.status(200).json({ success: true, message: 'Employee access frozen', employee: emp });
+    } else if (cleanStatus === 'active') {
+      const emp = await activateEmployee(orgId, id);
+      return res.status(200).json({ success: true, message: 'Employee access activated', employee: emp });
+    } else if (cleanStatus === 'terminated') {
+      const emp = await terminateEmployee(orgId, id);
+      return res.status(200).json({ success: true, message: 'Employee access terminated', employee: emp });
+    }
+
+    if (!supabase) {
+      return res.status(200).json({
+        success: true,
+        message: `Employee status updated to ${cleanStatus}`,
+        employee: { id, org_id: orgId, status: cleanStatus, updated_at: new Date().toISOString() }
+      });
+    }
+
+    const { data: updatedEmployee, error: updError } = await supabase
+      .from('employees')
+      .update({ status: cleanStatus, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('org_id', orgId)
+      .select()
+      .maybeSingle();
+
+    return res.status(200).json({
+      success: true,
+      message: `Employee status updated to ${cleanStatus}`,
+      employee: updatedEmployee || { id, org_id: orgId, status: cleanStatus, updated_at: new Date().toISOString() }
+    });
+  } catch (error) {
+    if (error.status && error.code) {
+      return res.status(error.status).json({ error: error.message, code: error.code });
+    }
+    console.error('[employeeRoutes/status] Error:', error);
+    return res.status(500).json({
+      error: 'Internal server error updating employee status',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+
+/**
  * DELETE /api/organizations/:orgId/employees/:id
  * Terminate employee (revoke all access)
  */

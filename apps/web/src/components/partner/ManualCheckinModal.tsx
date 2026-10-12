@@ -35,7 +35,7 @@ export function ManualCheckinModal({ isOpen, onClose, onSuccess }: ManualCheckin
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successResult, setSuccessResult] = useState<{
     beneficiaryName: string;
-    orgName: string;
+    activityName: string;
     rate: number;
     relayMs: number;
   } | null>(null);
@@ -140,7 +140,7 @@ export function ManualCheckinModal({ isOpen, onClose, onSuccess }: ManualCheckin
 
       setSuccessResult({
         beneficiaryName: intentRes.visit.employees?.full_name || identifier,
-        orgName: intentRes.visit.organizations?.name || 'Corporate Partner',
+        activityName: (intentRes.visit as any)?.activity_name || 'Gym & Cardio Access',
         rate: 5000,
         relayMs: approveRes?.gate_relay_ms || 3000
       });

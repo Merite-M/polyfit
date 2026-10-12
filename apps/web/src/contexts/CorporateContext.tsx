@@ -182,21 +182,45 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // 3. Funnel & Economics State
-  const [funnelData, setFunnelData] = useState<AdoptionFunnelData>(
-    TECHCORP_CANONICAL_DATA.funnel
-  );
+  const [funnelData, setFunnelData] = useState<AdoptionFunnelData>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem(`polyfit_corporate_funnel_${initialOrg.id}`);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return TECHCORP_CANONICAL_DATA.funnel;
+  });
   const [economics, setEconomics] = useState(TECHCORP_CANONICAL_DATA.economics);
 
   // 4. Employee Roster State
-  const [employees, setEmployees] = useState<CorporateEmployee[]>(
-    TECHCORP_CANONICAL_DATA.employees as CorporateEmployee[]
-  );
+  const [employees, setEmployees] = useState<CorporateEmployee[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem(`polyfit_corporate_employees_${initialOrg.id}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return TECHCORP_CANONICAL_DATA.employees as CorporateEmployee[];
+  });
   const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
 
   // 5. Benefit Plans State
-  const [plans, setPlans] = useState<BenefitPlan[]>(
-    TECHCORP_CANONICAL_DATA.plans as unknown as BenefitPlan[]
-  );
+  const [plans, setPlans] = useState<BenefitPlan[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem(`polyfit_corporate_plans_${initialOrg.id}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return TECHCORP_CANONICAL_DATA.plans as unknown as BenefitPlan[];
+  });
   const [isLoadingPlans, setIsLoadingPlans] = useState(false);
 
   // 6. Invoices State
@@ -294,6 +318,14 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       );
       if (res?.employees && Array.isArray(res.employees) && res.employees.length > 0) {
         setEmployees(res.employees);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem(
+              `polyfit_corporate_employees_${organization.id}`,
+              JSON.stringify(res.employees)
+            );
+          } catch {}
+        }
       }
     } catch {
       // Keep canonical data
@@ -311,6 +343,14 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       );
       if (res?.benefits && Array.isArray(res.benefits) && res.benefits.length > 0) {
         setPlans(res.benefits);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem(
+              `polyfit_corporate_plans_${organization.id}`,
+              JSON.stringify(res.benefits)
+            );
+          } catch {}
+        }
       }
     } catch {
       // Keep canonical data
@@ -420,7 +460,18 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
 
       // Reactive cross-tab sync:
       // 1. Update employees list
-      setEmployees((prev) => [created, ...prev]);
+      setEmployees((prev) => {
+        const next = [created, ...prev];
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem(
+              `polyfit_corporate_employees_${organization.id}`,
+              JSON.stringify(next)
+            );
+          } catch {}
+        }
+        return next;
+      });
 
       // 2. Update funnel counters
       setFunnelData((prev) => ({
@@ -483,7 +534,18 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       }));
 
       // Update state
-      setEmployees((prev) => [...fullRecords, ...prev]);
+      setEmployees((prev) => {
+        const next = [...fullRecords, ...prev];
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem(
+              `polyfit_corporate_employees_${organization.id}`,
+              JSON.stringify(next)
+            );
+          } catch {}
+        }
+        return next;
+      });
       setFunnelData((prev) => ({
         ...prev,
         totalEligible: prev.totalEligible + createdCount,
@@ -513,21 +575,52 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Update employees list
-      setEmployees((prev) =>
-        prev.map((e) => (e.id === id ? { ...e, status: newStatus } : e))
-      );
+      setEmployees((prev) => {
+        const next = prev.map((e) => (e.id === id ? { ...e, status: newStatus } : e));
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem(
+              `polyfit_corporate_employees_${organization.id}`,
+              JSON.stringify(next)
+            );
+          } catch {}
+        }
+        return next;
+      });
 
       // Reactive sync with Funnel:
       if (oldStatus === "active" && (newStatus === "frozen" || newStatus === "terminated")) {
-        setFunnelData((prev) => ({
-          ...prev,
-          activeBeneficiaries: Math.max(0, prev.activeBeneficiaries - 1),
-        }));
+        setFunnelData((prev) => {
+          const next = {
+            ...prev,
+            activeBeneficiaries: Math.max(0, prev.activeBeneficiaries - 1),
+          };
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem(
+                `polyfit_corporate_funnel_${organization.id}`,
+                JSON.stringify(next)
+              );
+            } catch {}
+          }
+          return next;
+        });
       } else if ((oldStatus === "frozen" || oldStatus === "terminated") && newStatus === "active") {
-        setFunnelData((prev) => ({
-          ...prev,
-          activeBeneficiaries: prev.activeBeneficiaries + 1,
-        }));
+        setFunnelData((prev) => {
+          const next = {
+            ...prev,
+            activeBeneficiaries: prev.activeBeneficiaries + 1,
+          };
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem(
+                `polyfit_corporate_funnel_${organization.id}`,
+                JSON.stringify(next)
+              );
+            } catch {}
+          }
+          return next;
+        });
       }
 
       showToast(`Status updated to ${newStatus.toUpperCase()}. Mobile access updated instantly.`);
@@ -550,13 +643,22 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
         // Optimistic fallback
       }
 
-      setEmployees((prev) =>
-        prev.map((e) => (e.id === id ? { ...e, tier: newTier } : e))
-      );
+      setEmployees((prev) => {
+        const next = prev.map((e) => (e.id === id ? { ...e, tier: newTier } : e));
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem(
+              `polyfit_corporate_employees_${organization.id}`,
+              JSON.stringify(next)
+            );
+          } catch {}
+        }
+        return next;
+      });
 
       // Rebalance plan enrollments
-      setPlans((prev) =>
-        prev.map((p) => {
+      setPlans((prev) => {
+        const next = prev.map((p) => {
           if (p.tier && p.tier.toLowerCase() === oldTier.toLowerCase()) {
             return { ...p, enrolled_count: Math.max(0, (p.enrolled_count || 1) - 1) };
           }
@@ -564,8 +666,17 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
             return { ...p, enrolled_count: (p.enrolled_count || 0) + 1 };
           }
           return p;
-        })
-      );
+        });
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem(
+              `polyfit_corporate_plans_${organization.id}`,
+              JSON.stringify(next)
+            );
+          } catch {}
+        }
+        return next;
+      });
 
       showToast(`Reassigned employee to ${newTier.toUpperCase()} tier.`);
     },
@@ -593,9 +704,18 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
           // Optimistic fallback
         }
 
-        setPlans((prev) =>
-          prev.map((p) => (p.id === planData.id ? savedPlan : p))
-        );
+        setPlans((prev) => {
+          const next = prev.map((p) => (p.id === planData.id ? savedPlan : p));
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem(
+                `polyfit_corporate_plans_${organization.id}`,
+                JSON.stringify(next)
+              );
+            } catch {}
+          }
+          return next;
+        });
         showToast(`Updated benefit plan "${savedPlan.name}". Tiers synced across portal.`);
       } else {
         savedPlan = {
@@ -629,7 +749,18 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
           // Optimistic fallback
         }
 
-        setPlans((prev) => [savedPlan, ...prev]);
+        setPlans((prev) => {
+          const next = [savedPlan, ...prev];
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem(
+                `polyfit_corporate_plans_${organization.id}`,
+                JSON.stringify(next)
+              );
+            } catch {}
+          }
+          return next;
+        });
         showToast(`Created new plan "${savedPlan.name}". Now selectable in employee roster.`);
       }
 

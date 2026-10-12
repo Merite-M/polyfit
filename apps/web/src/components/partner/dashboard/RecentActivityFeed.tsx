@@ -87,8 +87,8 @@ export function RecentActivityFeed() {
                         {badge.label}
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#526173] truncate">
-                      {act.employer_name}
+                    <p className="text-[11px] text-[#28D17C] font-medium truncate">
+                      {act.activity_name || 'Gym & Cardio Access'}
                     </p>
                   </div>
                 </div>

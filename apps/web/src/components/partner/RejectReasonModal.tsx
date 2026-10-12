@@ -157,9 +157,9 @@ export function RejectReasonModal({
                 </strong>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#526173]">Corporate Client:</span>
+                <span className="text-[#526173]">Authorized Activity:</span>
                 <span className="text-[#0B1F33] font-medium">
-                  {visit.organizations?.name || 'Corporate Partner'}
+                  {visit.activity_name || 'Gym & Cardio Access'}
                 </span>
               </div>
             </div>

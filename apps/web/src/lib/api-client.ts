@@ -85,6 +85,12 @@ export async function apiFetch<T = unknown>(
     }
   }
 
+  // Automatically set Content-Type to application/json if body is provided and not FormData
+  if (fetchOptions.body && !(fetchOptions.body instanceof FormData) && !requestHeaders.has('Content-Type')) {
+    requestHeaders.set('Content-Type', 'application/json');
+  }
+
+
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {

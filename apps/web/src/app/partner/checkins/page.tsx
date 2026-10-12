@@ -153,8 +153,27 @@ export default function PartnerCheckinsPage() {
     showToast('Check-in declined. Operational rejection reason recorded in audit log.', 'info');
   };
 
-  const handleDisputeSuccess = (visitId: string) => {
+  const handleDisputeSuccess = (visitId: string, reason?: string) => {
     notifyCheckinAction('disputed');
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('polyfit_partner_today_visits');
+        if (cached) {
+          const parsed: TodayVisit[] = JSON.parse(cached);
+          const updated = parsed.map((v) =>
+            v.id === visitId
+              ? {
+                  ...v,
+                  status: 'disputed' as const,
+                  is_disputed: true,
+                  dispute_reason: reason || 'beneficiary_impersonation'
+                }
+              : v
+          );
+          localStorage.setItem('polyfit_partner_today_visits', JSON.stringify(updated));
+        }
+      } catch {}
+    }
     setRefreshTrigger((prev) => prev + 1);
     showToast('Check-in flagged for PolyFit Ops dispute investigation.', 'info');
   };

@@ -107,7 +107,8 @@ export interface RecentActivityItem {
   id: string;
   check_in_at: string;
   employee_masked: string;
-  employer_name: string;
+  employer_name?: string;
+  activity_name?: string;
   verification_method: string;
   location_id: string;
 }
@@ -362,7 +363,7 @@ const DEFAULT_DASHBOARD_OVERVIEW: DashboardOverview = {
       id: 'act-1',
       check_in_at: '2026-09-30T07:42:10Z',
       employee_masked: 'PF-EMP-1082',
-      employer_name: 'Bank of Kigali Plc',
+      activity_name: 'Gym & Cardio Access',
       verification_method: 'totp_qr',
       location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4'
     },
@@ -370,7 +371,7 @@ const DEFAULT_DASHBOARD_OVERVIEW: DashboardOverview = {
       id: 'act-2',
       check_in_at: '2026-09-30T07:15:30Z',
       employee_masked: 'PF-EMP-9114',
-      employer_name: 'MTN Rwandacell',
+      activity_name: 'Aquatics & Pool Access',
       verification_method: 'totp_qr',
       location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4'
     },
@@ -378,7 +379,7 @@ const DEFAULT_DASHBOARD_OVERVIEW: DashboardOverview = {
       id: 'act-3',
       check_in_at: '2026-09-30T06:55:00Z',
       employee_masked: 'PF-EMP-3045',
-      employer_name: 'TechCorp Rwanda',
+      activity_name: 'Gym & Cardio Access',
       verification_method: 'turnstile',
       location_id: '189e7cb8-155e-419a-8b83-bd9e3eb021da'
     },
@@ -386,7 +387,7 @@ const DEFAULT_DASHBOARD_OVERVIEW: DashboardOverview = {
       id: 'act-4',
       check_in_at: '2026-09-30T06:30:15Z',
       employee_masked: 'PF-EMP-7712',
-      employer_name: 'Bank of Kigali Plc',
+      activity_name: 'Yoga & Studio Class',
       verification_method: 'totp_qr',
       location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4'
     }

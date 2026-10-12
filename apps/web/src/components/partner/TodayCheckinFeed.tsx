@@ -14,7 +14,8 @@ import {
   Clock,
   ExternalLink,
   ShieldAlert,
-  ArrowUpDown
+  ArrowUpDown,
+  Activity
 } from 'lucide-react';
 import { usePartner } from '@/contexts/PartnerContext';
 import { apiFetch } from '@/lib/api-client';
@@ -27,10 +28,11 @@ export interface TodayVisit {
   reimbursement_rate?: number;
   is_disputed?: boolean;
   dispute_reason?: string;
+  activity_name?: string;
   employees?: {
     id: string;
     full_name: string;
-    email: string;
+    email?: string;
     tier?: string;
     department?: string;
     employee_id_external?: string;
@@ -50,7 +52,8 @@ interface TodayCheckinFeedProps {
   refreshTrigger?: number;
 }
 
-// Fallback seed visits for realistic testing and demonstration
+// Fallback seed visits adhering strictly to Wellhub Enterprise Privacy standards
+// Front desk staff only see visitor name, PolyFit ID, authorized activity, and check-in modality
 const DEFAULT_TODAY_VISITS: TodayVisit[] = [
   {
     id: 'vis-today-101',
@@ -58,17 +61,12 @@ const DEFAULT_TODAY_VISITS: TodayVisit[] = [
     status: 'verified',
     verification_method: 'totp_qr',
     reimbursement_rate: 5000,
+    activity_name: 'Gym & Cardio Access',
     employees: {
       id: 'emp-101',
       full_name: 'Aline Umutoni',
-      email: 'a.umutoni@bk.rw',
       tier: 'Executive',
-      department: 'Corporate Banking',
-      employee_id_external: 'BK-8902'
-    },
-    organizations: {
-      id: 'org-bk',
-      name: 'Bank of Kigali Plc'
+      employee_id_external: 'PF-8902'
     },
     provider_locations: {
       id: '447f4bf2-ff66-48c5-851e-460cba17bfe4',
@@ -81,17 +79,12 @@ const DEFAULT_TODAY_VISITS: TodayVisit[] = [
     status: 'verified',
     verification_method: 'turnstile',
     reimbursement_rate: 5000,
+    activity_name: 'Aquatics & Pool Access',
     employees: {
       id: 'emp-102',
       full_name: 'Jean-Luc Habimana',
-      email: 'jl.habimana@mtn.rw',
       tier: 'Standard',
-      department: 'Network Operations',
-      employee_id_external: 'MTN-4421'
-    },
-    organizations: {
-      id: 'org-mtn',
-      name: 'MTN Rwandacell'
+      employee_id_external: 'PF-4421'
     },
     provider_locations: {
       id: '447f4bf2-ff66-48c5-851e-460cba17bfe4',
@@ -104,17 +97,12 @@ const DEFAULT_TODAY_VISITS: TodayVisit[] = [
     status: 'verified',
     verification_method: 'manual',
     reimbursement_rate: 5000,
+    activity_name: 'Gym & Cardio Access',
     employees: {
       id: 'emp-103',
       full_name: 'Grace Mutoniwase',
-      email: 'grace.m@imbank.rw',
       tier: 'Standard',
-      department: 'Finance & Audit',
-      employee_id_external: 'IM-1099'
-    },
-    organizations: {
-      id: 'org-im',
-      name: 'I&M Bank Rwanda'
+      employee_id_external: 'PF-1099'
     },
     provider_locations: {
       id: '189e7cb8-155e-419a-8b83-bd9e3eb021da',
@@ -127,17 +115,12 @@ const DEFAULT_TODAY_VISITS: TodayVisit[] = [
     status: 'verified',
     verification_method: 'totp_qr',
     reimbursement_rate: 5000,
+    activity_name: 'Yoga & Studio Class',
     employees: {
       id: 'emp-104',
       full_name: 'Patrick Kayisire',
-      email: 'p.kayisire@bboxx.com',
       tier: 'Executive',
-      department: 'Field Engineering',
-      employee_id_external: 'BBX-3012'
-    },
-    organizations: {
-      id: 'org-bbx',
-      name: 'Bboxx Capital Rwanda'
+      employee_id_external: 'PF-3012'
     },
     provider_locations: {
       id: '447f4bf2-ff66-48c5-851e-460cba17bfe4',
@@ -152,17 +135,12 @@ const DEFAULT_TODAY_VISITS: TodayVisit[] = [
     dispute_reason: 'beneficiary_impersonation',
     verification_method: 'totp_qr',
     reimbursement_rate: 5000,
+    activity_name: 'Gym & Cardio Access',
     employees: {
       id: 'emp-105',
       full_name: 'Emmanuel Nshimiyimana',
-      email: 'e.nshimi@airtel.rw',
       tier: 'Standard',
-      department: 'Commercial Sales',
-      employee_id_external: 'ART-5510'
-    },
-    organizations: {
-      id: 'org-airtel',
-      name: 'Airtel Rwanda'
+      employee_id_external: 'PF-5510'
     },
     provider_locations: {
       id: '447f4bf2-ff66-48c5-851e-460cba17bfe4',
@@ -173,7 +151,21 @@ const DEFAULT_TODAY_VISITS: TodayVisit[] = [
 
 export function TodayCheckinFeed({ onFlagDispute, refreshTrigger }: TodayCheckinFeedProps) {
   const { selectedLocationId } = usePartner();
-  const [visits, setVisits] = useState<TodayVisit[]>(DEFAULT_TODAY_VISITS);
+  
+  // Hydrate visits from localStorage to guarantee persistence across browser refreshes
+  const [visits, setVisits] = useState<TodayVisit[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('polyfit_partner_today_visits');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return DEFAULT_TODAY_VISITS;
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -187,7 +179,7 @@ export function TodayCheckinFeed({ onFlagDispute, refreshTrigger }: TodayCheckin
       if (selectedLocationId && selectedLocationId !== 'all') {
         params.append('provider_location_id', selectedLocationId);
       }
-      params.append('status', 'verified');
+      // Include all visit statuses so disputed visits are visible in the feed
       params.append('limit', '50');
 
       const res = await apiFetch<{ success: boolean; visits: TodayVisit[] }>(
@@ -195,7 +187,34 @@ export function TodayCheckinFeed({ onFlagDispute, refreshTrigger }: TodayCheckin
       );
 
       if (res?.visits && res.visits.length > 0) {
-        setVisits(res.visits);
+        setVisits((prev) => {
+          const merged = res.visits.map((mv) => {
+            const existingDispute = prev.find(
+              (p) => p.id === mv.id && (p.is_disputed || p.status === 'disputed')
+            );
+            if (existingDispute) {
+              return {
+                ...mv,
+                status: 'disputed' as const,
+                is_disputed: true,
+                dispute_reason: existingDispute.dispute_reason || mv.dispute_reason
+              };
+            }
+            return mv;
+          });
+
+          // Also keep any local-only or mock-seeded visits that aren't on remote DB yet
+          const remoteIds = new Set(res.visits.map((v) => v.id));
+          const localOnly = prev.filter((p) => !remoteIds.has(p.id));
+          const allVisits = [...merged, ...localOnly];
+
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('polyfit_partner_today_visits', JSON.stringify(allVisits));
+            } catch {}
+          }
+          return allVisits;
+        });
       }
       setLastRefreshedAt(new Date());
     } catch (err) {
@@ -205,12 +224,24 @@ export function TodayCheckinFeed({ onFlagDispute, refreshTrigger }: TodayCheckin
     }
   };
 
-  // Initial fetch and 5s auto-polling
+  // Re-sync from localStorage when refreshTrigger or location changes
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('polyfit_partner_today_visits');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setVisits(parsed);
+          }
+        }
+      } catch {}
+    }
     fetchTodayVisits();
     const interval = setInterval(fetchTodayVisits, 10000); // 10s auto polling
     return () => clearInterval(interval);
   }, [selectedLocationId, refreshTrigger]);
+
 
   const filteredVisits = useMemo(() => {
     return visits.filter((v) => {
@@ -240,14 +271,12 @@ export function TodayCheckinFeed({ onFlagDispute, refreshTrigger }: TodayCheckin
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const empName = v.employees?.full_name?.toLowerCase() || '';
-        const empEmail = v.employees?.email?.toLowerCase() || '';
-        const empCode = v.employees?.employee_id_external?.toLowerCase() || '';
-        const orgName = v.organizations?.name?.toLowerCase() || '';
+        const empCode = (v.employees?.employee_id_external || `PF-${v.id.slice(-4)}`).toLowerCase();
+        const activity = (v.activity_name || 'Gym & Cardio Access').toLowerCase();
         return (
           empName.includes(q) ||
-          empEmail.includes(q) ||
           empCode.includes(q) ||
-          orgName.includes(q)
+          activity.includes(q)
         );
       }
 
@@ -379,7 +408,7 @@ export function TodayCheckinFeed({ onFlagDispute, refreshTrigger }: TodayCheckin
           <thead>
             <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[11px] font-semibold text-[#526173] uppercase tracking-wider">
               <th className="py-3 px-4">Beneficiary</th>
-              <th className="py-3 px-4">Corporate Client</th>
+              <th className="py-3 px-4">Authorized Activity</th>
               <th className="py-3 px-4">Facility & Gate</th>
               <th className="py-3 px-4">Verification</th>
               <th className="py-3 px-4">Rate (RWF)</th>
@@ -395,7 +424,7 @@ export function TodayCheckinFeed({ onFlagDispute, refreshTrigger }: TodayCheckin
                 .split(' ')
                 .map((n) => n[0])
                 .join('')
-                .slice(0, 2)
+                .slice(0, 2);
               const isVeryRecent = Math.abs(Date.now() - new Date(visit.check_in_at).getTime()) < 20000;
 
               return (
@@ -405,7 +434,7 @@ export function TodayCheckinFeed({ onFlagDispute, refreshTrigger }: TodayCheckin
                     isVeryRecent ? 'pf-feed-row-new' : ''
                   } ${isFlagged ? 'bg-[#FFFBEB]' : ''}`}
                 >
-                  {/* Beneficiary Profile */}
+                  {/* Beneficiary Profile (Wellhub Enterprise Privacy: No Work Email or Dept) */}
                   <td className="py-3.5 px-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-[#E9FAF2] text-[#28D17C] font-bold text-xs flex items-center justify-center border border-[#28D17C]/20 flex-shrink-0">
@@ -421,25 +450,23 @@ export function TodayCheckinFeed({ onFlagDispute, refreshTrigger }: TodayCheckin
                           )}
                         </div>
                         <div className="text-[11px] text-[#526173] font-mono">
-                          {visit.employees?.employee_id_external || visit.employees?.email}
+                          {visit.employees?.employee_id_external || `PF-${visit.id.slice(-4).toUpperCase()}`}
                         </div>
                       </div>
                     </div>
                   </td>
 
-                  {/* Corporate Client */}
+                  {/* Authorized Activity (Wellhub Model: Privacy Shield on Employer) */}
                   <td className="py-3.5 px-4">
                     <div className="flex items-center gap-1.5 font-medium text-[#0B1F33]">
-                      <Building className="w-3.5 h-3.5 text-[#8491A3] flex-shrink-0" />
-                      <span className="truncate max-w-[140px] sm:max-w-[180px]">
-                        {visit.organizations?.name || 'Corporate Partner'}
+                      <Activity className="w-3.5 h-3.5 text-[#28D17C] flex-shrink-0" />
+                      <span className="truncate max-w-[160px] sm:max-w-[200px]">
+                        {visit.activity_name || 'Gym & Cardio Access'}
                       </span>
                     </div>
-                    {visit.employees?.department && (
-                      <div className="text-[11px] text-[#8491A3] truncate max-w-[180px]">
-                        {visit.employees.department}
-                      </div>
-                    )}
+                    <div className="text-[11px] text-[#8491A3] truncate max-w-[180px]">
+                      Access Pass Verified
+                    </div>
                   </td>
 
                   {/* Facility */}
@@ -481,7 +508,7 @@ export function TodayCheckinFeed({ onFlagDispute, refreshTrigger }: TodayCheckin
                     {isFlagged ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A] text-xs font-semibold">
                         <ShieldAlert className="w-3.5 h-3.5 text-[#D97706]" />
-                        Flagged Misuse
+                        Dispute Under Review
                       </span>
                     ) : (
                       <button
