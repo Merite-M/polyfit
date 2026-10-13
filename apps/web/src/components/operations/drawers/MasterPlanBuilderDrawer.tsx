@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   Layers,
@@ -96,6 +97,7 @@ export function MasterPlanBuilderDrawer({
   organizations = [],
   onSaveSuccess
 }: MasterPlanBuilderDrawerProps) {
+  const [mounted, setMounted] = useState(false);
   const [name, setName] = useState("");
   const [orgId, setOrgId] = useState("");
   const [tier, setTier] = useState<string>("standard");
@@ -112,6 +114,10 @@ export function MasterPlanBuilderDrawer({
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Sync state when drawer opens or plan changes
   useEffect(() => {
@@ -217,8 +223,10 @@ export function MasterPlanBuilderDrawer({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="master-plan-builder-title">
+  if (!isOpen || !mounted) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex justify-end" role="dialog" aria-modal="true" aria-labelledby="master-plan-builder-title">
       {/* Backdrop overlay */}
       <div
         className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity animate-in fade-in-50 duration-200"
@@ -568,6 +576,7 @@ export function MasterPlanBuilderDrawer({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

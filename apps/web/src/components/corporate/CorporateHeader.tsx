@@ -100,7 +100,8 @@ export function CorporateHeader({
     DATE_RANGES.find((r) => r.id === selectedRange)?.label || "Last 30 Days";
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between min-h-[4.5rem] px-4 sm:px-6 bg-card/95 backdrop-blur-md border-b border-border transition-colors">
+    <>
+      <header className="sticky top-0 z-30 flex items-center justify-between min-h-[4.5rem] px-4 sm:px-6 bg-card/95 backdrop-blur-md border-b border-border transition-colors">
       {/* Left: Mobile Toggle & Page Context */}
       <div className="flex items-center gap-3 min-w-0">
         <button
@@ -267,13 +268,14 @@ export function CorporateHeader({
           <span className="xl:hidden">Pass</span>
         </button>
       </div>
-
-      {/* Live Pass Virtualization Modal */}
-      <LivePassVirtualizationModal
-        isOpen={isPassPreviewOpen}
-        onClose={() => setIsPassPreviewOpen(false)}
-        companyName={organization.name}
-      />
     </header>
-  );
+
+    {/* Live Pass Virtualization Modal (Mounted outside header) */}
+    <LivePassVirtualizationModal
+      isOpen={isPassPreviewOpen}
+      onClose={() => setIsPassPreviewOpen(false)}
+      companyName={organization.name}
+    />
+  </>
+);
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   Building2,
@@ -39,9 +40,31 @@ export function LivePassVirtualizationModal({
   visitsLeft = 8,
   totalVisits = 12,
 }: LivePassVirtualizationModalProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [mounted, setMounted] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(45);
   const [totpCode, setTotpCode] = useState("042 819");
   const [activeTab, setActiveTab] = useState<"pass" | "explore" | "profile">("pass");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Sync native <dialog> with isOpen state and promote to browser Top Layer
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (isOpen) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } else {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+  }, [isOpen]);
 
   // Generate dynamic pseudo-TOTP rotation every 60s
   useEffect(() => {
@@ -62,29 +85,38 @@ export function LivePassVirtualizationModal({
     return () => clearInterval(interval);
   }, [isOpen]);
 
-  // Handle Escape key to close slide-over drawer
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  // Handle native Escape key
+  const handleCancel = (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    onClose();
+  };
 
-  if (!isOpen) return null;
+  // Handle click outside drawer chassis on native backdrop
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
+    const rect = dialogRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    if (
+      e.clientX < rect.left ||
+      e.clientX > rect.right ||
+      e.clientY < rect.top ||
+      e.clientY > rect.bottom
+    ) {
+      onClose();
+    }
+  };
 
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="pass-virtualization-title">
-      {/* Backdrop overlay */}
-      <div
-        className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity animate-in fade-in-50 duration-200"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+  if (!mounted || !isOpen) return null;
 
+  return createPortal(
+    <dialog
+      ref={dialogRef}
+      onClick={handleBackdropClick}
+      onCancel={handleCancel}
+      className="fixed inset-y-0 right-0 left-auto m-0 ml-auto h-[100dvh] max-h-none w-full max-w-md sm:max-w-lg p-0 bg-transparent border-none text-white overflow-hidden shadow-2xl backdrop:bg-slate-950/70 backdrop:backdrop-blur-xs z-[9999] outline-none select-none"
+      aria-labelledby="pass-virtualization-title"
+    >
       {/* Slide-over Drawer Panel */}
-      <div className="relative z-50 w-full max-w-md sm:max-w-lg bg-[#0B1F33] border-l border-[#21405A] shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-300 overflow-hidden">
+      <div className="h-full w-full bg-[#0B1F33] border-l border-[#21405A] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
         {/* Drawer Header */}
         <div className="h-16 px-6 border-b border-[#21405A] bg-[#071521] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
@@ -385,6 +417,7 @@ export function LivePassVirtualizationModal({
           </button>
         </div>
       </div>
-    </div>
+    </dialog>,
+    document.body
   );
 }
