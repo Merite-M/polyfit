@@ -25,9 +25,12 @@ export default function PlansPage() {
   const {
     organization,
     plans,
+    employees,
     isLoadingPlans,
     savePlan,
     refreshPlans,
+    refreshEmployees,
+    updateEmployeeTier,
     showToast,
   } = useCorporate();
 
@@ -38,6 +41,17 @@ export default function PlansPage() {
   const [isCoPayModalOpen, setIsCoPayModalOpen] = useState(false);
   const [selectedPlanForCoPay, setSelectedPlanForCoPay] = useState<BenefitPlan | null>(null);
   const [assigningPlan, setAssigningPlan] = useState<BenefitPlan | null>(null);
+
+  // Dynamic departments computed from active employee roster
+  const dynamicDepartments = useMemo(() => {
+    if (!employees || employees.length === 0) return undefined;
+    const map: Record<string, number> = {};
+    employees.forEach((emp) => {
+      const dept = emp.department || "General";
+      map[dept] = (map[dept] || 0) + 1;
+    });
+    return Object.entries(map).map(([name, count]) => ({ name, count }));
+  }, [employees]);
 
   // Modern Web Guidance: View Transitions for intra-page filter & view changes
   const handleTabChange = (tab: "all" | "active" | "draft") => {
@@ -94,13 +108,27 @@ export default function PlansPage() {
     }
   };
 
-  // Bulk Assign Handler
+  // Bulk / Individual Assign Handler
   const handleAssignSubmit = async (payload: {
     departments: string[];
     employeeIds: string[];
     effectiveTiming: "immediate" | "next_billing_cycle";
   }) => {
     if (!assigningPlan) return;
+
+    let summaryLabel = "";
+    if (payload.employeeIds.length > 0 && payload.departments.length > 0) {
+      summaryLabel = `${payload.employeeIds.length} employee${payload.employeeIds.length === 1 ? "" : "s"} & ${payload.departments.join(", ")} department${payload.departments.length === 1 ? "" : "s"}`;
+    } else if (payload.employeeIds.length > 0) {
+      if (payload.employeeIds.length === 1) {
+        const singleEmp = employees.find((e) => e.id === payload.employeeIds[0]);
+        summaryLabel = singleEmp ? singleEmp.full_name : "1 employee";
+      } else {
+        summaryLabel = `${payload.employeeIds.length} selected employees`;
+      }
+    } else {
+      summaryLabel = `${payload.departments.join(", ")} department${payload.departments.length === 1 ? "" : "s"}`;
+    }
 
     try {
       await apiFetch(`/api/organizations/${organization.id}/benefits/${assigningPlan.id}/assign`, {
@@ -109,18 +137,30 @@ export default function PlansPage() {
         body: JSON.stringify(payload),
       });
       showToast(
-        `Assigned ${payload.departments.join(", ")} to ${assigningPlan.name} (${
+        `Assigned ${summaryLabel} to ${assigningPlan.name} (${
           payload.effectiveTiming === "next_billing_cycle" ? "Scheduled for next cycle" : "Effective immediately"
         })`
       );
     } catch {
       showToast(
-        `Assigned ${payload.departments.join(", ")} to ${assigningPlan.name} (updated locally)`
+        `Assigned ${summaryLabel} to ${assigningPlan.name} (updated locally)`
       );
+    }
+
+    // Optimistically update employee tiers across local state
+    const targetTier = (assigningPlan.tier || assigningPlan.name).toLowerCase();
+    for (const empId of payload.employeeIds) {
+      updateEmployeeTier(empId, targetTier);
+    }
+    if (payload.departments.length > 0) {
+      employees
+        .filter((e) => e.department && payload.departments.includes(e.department))
+        .forEach((e) => updateEmployeeTier(e.id, targetTier));
     }
 
     setAssigningPlan(null);
     refreshPlans();
+    refreshEmployees();
   };
 
   const formatRwf = (amt: number) => {
@@ -357,6 +397,8 @@ export default function PlansPage() {
         onClose={() => setAssigningPlan(null)}
         plan={assigningPlan}
         onAssignSubmit={handleAssignSubmit}
+        availableEmployees={employees}
+        availableDepartments={dynamicDepartments}
       />
     </div>
   );
