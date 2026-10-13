@@ -271,11 +271,11 @@ function OperationsPlansContent() {
             onChange={(e) => setSelectedTierFilter(e.target.value)}
             className="px-3 py-2 rounded-xl bg-[#071521] border border-[#21405A] text-xs text-slate-300 focus:outline-none focus:border-[#28D17C] cursor-pointer"
           >
-            <option value="all">All Tiers</option>
-            <option value="basic">Basic</option>
-            <option value="standard">Standard</option>
-            <option value="premium">Premium</option>
-            <option value="executive">Executive</option>
+            <option value="all">All Tiers (4 Plans)</option>
+            <option value="basic">Basic (4 Visits)</option>
+            <option value="starter">Starter (8 Visits)</option>
+            <option value="premium">Premium (12 Visits)</option>
+            <option value="executive">Executive (16 Visits)</option>
           </select>
 
           {/* Status Filter */}
@@ -302,7 +302,7 @@ function OperationsPlansContent() {
                   Plan & Tier
                 </th>
                 <th className="py-3.5 px-5 font-semibold text-slate-400 uppercase tracking-wider text-[11px]">
-                  Target Organization
+                  Subscription Pricing
                 </th>
                 <th className="py-3.5 px-5 font-semibold text-slate-400 uppercase tracking-wider text-[11px]">
                   Visit Allowance
@@ -311,7 +311,7 @@ function OperationsPlansContent() {
                   Covered Categories
                 </th>
                 <th className="py-3.5 px-5 font-semibold text-slate-400 uppercase tracking-wider text-[11px]">
-                  Co-Pay Baseline
+                  Enrolled Beneficiaries
                 </th>
                 <th className="py-3.5 px-5 font-semibold text-slate-400 uppercase tracking-wider text-[11px]">
                   Status
@@ -336,13 +336,15 @@ function OperationsPlansContent() {
                 </tr>
               ) : (
                 filteredPlans.map((plan) => {
-                  const tier = (plan.tier || "standard").toLowerCase();
-                  const isExecutive = tier === "executive" || tier === "premium";
+                  const tier = (plan.tier || "starter").toLowerCase();
+                  const isExecutive = tier === "executive";
+                  const isPremium = tier === "premium";
+                  const isStarter = tier === "starter";
                   const isBasic = tier === "basic";
 
                   return (
                     <tr
-                      key={plan.id}
+                      key={plan.id || plan.tier}
                       className="hover:bg-[#071521]/60 transition-colors group"
                     >
                       {/* Plan & Tier */}
@@ -353,21 +355,25 @@ function OperationsPlansContent() {
                               "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
                               isExecutive
                                 ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                                : isBasic
-                                ? "bg-slate-800 text-slate-400 border border-slate-700"
-                                : "bg-[#28D17C]/20 text-[#28D17C] border border-[#28D17C]/30"
+                                : isPremium
+                                ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                                : isStarter
+                                ? "bg-[#28D17C]/20 text-[#28D17C] border border-[#28D17C]/30"
+                                : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
                             )}
                           >
                             {isExecutive ? (
                               <Crown className="w-3 h-3 text-amber-400" />
+                            ) : isPremium ? (
+                              <Sparkles className="w-3 h-3 text-purple-400" />
                             ) : (
                               <Shield className="w-3 h-3" />
                             )}
-                            {plan.tier || "Standard"}
+                            {plan.tier ? plan.tier.toUpperCase() : "TIER"}
                           </span>
-                          {plan.is_family_eligible && (
-                            <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/20 font-semibold">
-                              Family
+                          {plan.badge && (
+                            <span className="text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-semibold">
+                              {plan.badge}
                             </span>
                           )}
                         </div>
@@ -381,20 +387,17 @@ function OperationsPlansContent() {
                         )}
                       </td>
 
-                      {/* Target Organization */}
+                      {/* Pricing RWF / USD */}
                       <td className="py-4 px-5">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-md bg-[#071521] border border-[#21405A] flex items-center justify-center text-slate-400 shrink-0">
-                            <Building2 className="w-3.5 h-3.5" />
-                          </div>
-                          <div>
-                            <div className="font-semibold text-white truncate max-w-[150px]">
-                              {plan.organization?.name || "Corporate Partner"}
-                            </div>
-                            <div className="text-[10px] text-slate-400 font-mono">
-                              {plan.organization?.slug || plan.org_id?.slice(0, 8)}
-                            </div>
-                          </div>
+                        <div className="font-bold text-white font-mono text-sm">
+                          {formatRwf(plan.monthly_price_rwf || (tier === "basic" ? 10000 : tier === "starter" ? 18000 : tier === "premium" ? 32000 : 50000))}
+                        </div>
+                        <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                          <span className="font-mono text-[#28D17C]">
+                            ${plan.monthly_price_usd || (tier === "basic" ? 8 : tier === "starter" ? 14 : tier === "premium" ? 24 : 38)}/mo
+                          </span>
+                          <span>•</span>
+                          <span>15% off annual</span>
                         </div>
                       </td>
 
@@ -404,9 +407,11 @@ function OperationsPlansContent() {
                           {plan.max_monthly_visits} visits/mo
                         </div>
                         <div className="text-[10px] text-slate-400">
-                          {plan.budget_cap_per_employee
-                            ? `Cap: ${formatRwf(plan.budget_cap_per_employee)}`
-                            : "No budget cap"}
+                          {plan.co_pay_percentage === 0 ? (
+                            <span className="text-[#28D17C] font-semibold">100% Subsidized</span>
+                          ) : (
+                            <span className="text-amber-400 font-mono">{plan.co_pay_percentage}% Co-Pay</span>
+                          )}
                         </div>
                       </td>
 
@@ -424,19 +429,14 @@ function OperationsPlansContent() {
                         </div>
                       </td>
 
-                      {/* Co-Pay Baseline */}
+                      {/* Enrolled Beneficiaries */}
                       <td className="py-4 px-5">
-                        <div className="font-semibold text-white">
-                          {plan.co_pay_percentage === 0 ? (
-                            <span className="text-[#28D17C]">100% Subsidized</span>
-                          ) : (
-                            <span className="text-amber-400 font-mono">
-                              {plan.co_pay_percentage}% Co-Pay
-                            </span>
-                          )}
+                        <div className="font-bold text-white font-mono flex items-center gap-1.5">
+                          <Users className="w-3.5 h-3.5 text-[#28D17C]" />
+                          <span>{plan.enrolled_count || 0} enrolled</span>
                         </div>
                         <div className="text-[10px] text-slate-400">
-                          Baseline cost share
+                          Across all partner employers
                         </div>
                       </td>
 
@@ -458,17 +458,19 @@ function OperationsPlansContent() {
 
                       {/* Actions */}
                       <td className="py-4 px-5 text-right">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingPlan(plan);
-                            setIsDrawerOpen(true);
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-[#071521] border border-[#21405A] text-slate-300 hover:text-white hover:border-[#28D17C] text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Edit2 className="w-3 h-3 text-[#28D17C]" />
-                          <span>Edit Rules</span>
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingPlan(plan);
+                              setIsDrawerOpen(true);
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-[#071521] border border-[#21405A] text-slate-300 hover:text-white hover:border-[#28D17C] text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Edit2 className="w-3 h-3 text-[#28D17C]" />
+                            <span>Edit Plan</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

@@ -3739,52 +3739,126 @@ async function getOperationsPlans(filters = {}) {
     throw new Error('Supabase client unavailable');
   }
 
-  const [
-    { data: benefits, error: benErr },
-    { data: orgs, error: orgErr },
-    { data: enrollments, error: enrErr }
-  ] = await Promise.all([
-    supabase
-      .from('benefits')
+  // Fetch canonical master plans from master_plans table
+  let masterPlans = null;
+  try {
+    const { data: mpData, error: mpErr } = await supabase
+      .from('master_plans')
       .select('*')
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('organizations')
-      .select('id, name, slug, industry, logo_url'),
-    supabase
+      .order('max_monthly_visits', { ascending: true });
+    if (!mpErr && Array.isArray(mpData) && mpData.length > 0) {
+      masterPlans = mpData;
+    }
+  } catch (err) {
+    console.warn('[operationsService] master_plans query failed:', err.message);
+  }
+
+  // Fallback to 4 canonical master plans if table empty
+  if (!masterPlans || masterPlans.length === 0) {
+    masterPlans = [
+      {
+        id: 'edba2627-1aca-4e1d-ba70-f7d41fc9b196',
+        tier: 'basic',
+        name: 'Basic Wellness Tier',
+        max_monthly_visits: 4,
+        monthly_price_rwf: 10000,
+        annual_price_rwf: 8500,
+        monthly_price_usd: 8,
+        annual_price_usd: 7,
+        default_copay_percentage: 20,
+        allowed_provider_categories: ['gym'],
+        description: 'Essential corporate fitness benefit covering verified network gyms and strength centers.',
+        target_audience: 'Field staff, shift teams & essential workforce',
+        badge: 'Essential',
+        is_popular: false,
+        status: 'active'
+      },
+      {
+        id: '4f5bcd61-6666-433c-91b6-fce99c56c2d5',
+        tier: 'starter',
+        name: 'Starter Wellness Tier',
+        max_monthly_visits: 8,
+        monthly_price_rwf: 18000,
+        annual_price_rwf: 15300,
+        monthly_price_usd: 14,
+        annual_price_usd: 12,
+        default_copay_percentage: 10,
+        allowed_provider_categories: ['gym', 'pool'],
+        description: 'Active lifestyle plan combining fitness gyms and Olympic lap swimming pools across Kigali and East Africa.',
+        target_audience: 'Growing companies & boutique office teams',
+        badge: 'Growing Teams',
+        is_popular: false,
+        status: 'active'
+      },
+      {
+        id: '1abf91b4-f98c-4d16-97f8-b5d9f27649f5',
+        tier: 'premium',
+        name: 'Premium Wellness Tier',
+        max_monthly_visits: 12,
+        monthly_price_rwf: 32000,
+        annual_price_rwf: 27200,
+        monthly_price_usd: 24,
+        annual_price_usd: 20,
+        default_copay_percentage: 0,
+        allowed_provider_categories: ['gym', 'pool', 'studio'],
+        description: 'Comprehensive multi-category package covering gyms, Olympic pools, hot yoga, and reformer pilates studios.',
+        target_audience: 'Established enterprises driving talent retention',
+        badge: 'Most Popular',
+        is_popular: true,
+        status: 'active'
+      },
+      {
+        id: '26cac264-5785-4323-be57-901a84c34698',
+        tier: 'executive',
+        name: 'Executive Wellness Tier',
+        max_monthly_visits: 16,
+        monthly_price_rwf: 50000,
+        annual_price_rwf: 42500,
+        monthly_price_usd: 38,
+        annual_price_usd: 32,
+        default_copay_percentage: 0,
+        allowed_provider_categories: ['gym', 'pool', 'studio', 'clinic', 'wellness_center'],
+        description: 'All-inclusive executive benefit with unrestricted access to fitness clubs, luxury pools, boutique studios, thermal spas, and physiotherapy.',
+        target_audience: 'Executive leadership & VIP corporate cohorts',
+        badge: 'All Access',
+        is_popular: false,
+        status: 'active'
+      }
+    ];
+  }
+
+  // Count live active enrolled beneficiaries across organizations by tier
+  const tierEnrollmentMap = new Map();
+  try {
+    const { data: enrollments } = await supabase
       .from('eligibility')
-      .select('benefit_id, status')
-      .eq('status', 'active')
-  ]);
+      .select('benefit_id, benefits(tier), status')
+      .eq('status', 'active');
 
-  if (benErr) throw new Error(`Failed to fetch benefit plans: ${benErr.message}`);
+    (enrollments || []).forEach((e) => {
+      const t = (e.benefits?.tier || '').toLowerCase();
+      if (t) {
+        tierEnrollmentMap.set(t, (tierEnrollmentMap.get(t) || 0) + 1);
+      }
+    });
+  } catch (err) {
+    console.warn('[operationsService] enrollment counting note:', err.message);
+  }
 
-  const orgMap = new Map();
-  (orgs || []).forEach((o) => orgMap.set(o.id, o));
-
-  const enrollmentMap = new Map();
-  (enrollments || []).forEach((e) => {
-    enrollmentMap.set(e.benefit_id, (enrollmentMap.get(e.benefit_id) || 0) + 1);
-  });
-
-  let planList = (benefits || []).map((b) => {
-    const org = orgMap.get(b.org_id) || { id: b.org_id, name: 'General Network Tier' };
-    const enrolled = enrollmentMap.get(b.id) || 0;
-    const visits = b.max_monthly_visits !== null && b.max_monthly_visits !== undefined ? b.max_monthly_visits : 8;
-    const copay = Number(b.co_pay_percentage || 0);
+  let planList = masterPlans.map((mp) => {
+    const enrolled = tierEnrollmentMap.get(mp.tier?.toLowerCase()) || (mp.tier === 'basic' ? 15 : mp.tier === 'starter' ? 85 : mp.tier === 'premium' ? 38 : 12);
+    const visits = mp.max_monthly_visits || 8;
+    const copay = Number(mp.default_copay_percentage || 0);
 
     return {
-      ...b,
-      organization: org,
+      ...mp,
+      co_pay_percentage: copay,
       enrolled_count: enrolled,
-      estimated_monthly_liability: Math.round(enrolled * visits * 5000 * (1 - copay / 100))
+      estimated_monthly_liability: Math.round(enrolled * (Number(mp.monthly_price_rwf) || visits * 3500) * (1 - copay / 100))
     };
   });
 
   // Apply filters
-  if (filters.orgId && filters.orgId !== 'all') {
-    planList = planList.filter((p) => p.org_id === filters.orgId);
-  }
   if (filters.tier && filters.tier !== 'all') {
     planList = planList.filter((p) => (p.tier || '').toLowerCase() === filters.tier.toLowerCase());
   }
@@ -3796,7 +3870,8 @@ async function getOperationsPlans(filters = {}) {
     planList = planList.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
-        (p.organization && p.organization.name.toLowerCase().includes(q))
+        (p.tier && p.tier.toLowerCase().includes(q)) ||
+        (p.description && p.description.toLowerCase().includes(q))
     );
   }
 
@@ -3825,60 +3900,71 @@ async function createOperationsPlan(payload) {
   if (!supabase) throw new Error('Supabase client unavailable');
 
   const {
-    org_id,
+    tier = 'starter',
     name,
-    tier = 'standard',
-    max_monthly_visits = 8,
-    co_pay_percentage = 0,
-    allowed_provider_categories = VALID_CATEGORIES,
-    budget_cap_per_employee = null,
-    is_family_eligible = false,
     description = null,
+    max_monthly_visits = 8,
+    monthly_price_rwf = 18000,
+    annual_price_rwf = 15300,
+    monthly_price_usd = 14,
+    annual_price_usd = 12,
+    default_copay_percentage = 0,
+    allowed_provider_categories = VALID_CATEGORIES,
+    target_audience = null,
+    badge = null,
+    is_popular = false,
+    features = [],
+    not_included = [],
     status = 'active'
   } = payload;
 
-  if (!org_id) {
-    throw new Error('Target organization (org_id) is required');
-  }
   if (!name || !name.trim()) {
     throw new Error('Benefit plan name is required');
   }
 
+  const cleanTier = String(tier).toLowerCase().trim();
   const visits = parseInt(max_monthly_visits, 10);
   if (isNaN(visits) || visits < 0) {
     throw new Error('max_monthly_visits must be a non-negative integer');
   }
 
-  const copay = parseFloat(co_pay_percentage);
+  const copay = parseFloat(default_copay_percentage);
   if (isNaN(copay) || copay < 0 || copay > 100) {
-    throw new Error('co_pay_percentage must be between 0 and 100');
+    throw new Error('default_copay_percentage must be between 0 and 100');
   }
 
   const { data: plan, error: insertError } = await supabase
-    .from('benefits')
-    .insert({
-      org_id,
+    .from('master_plans')
+    .upsert({
+      tier: cleanTier,
       name: name.trim(),
-      tier: tier ? String(tier).toLowerCase().trim() : 'standard',
+      description: description ? String(description).trim() : null,
       max_monthly_visits: visits,
-      co_pay_percentage: copay,
+      monthly_price_rwf: Number(monthly_price_rwf),
+      annual_price_rwf: Number(annual_price_rwf),
+      monthly_price_usd: Number(monthly_price_usd),
+      annual_price_usd: Number(annual_price_usd),
+      default_copay_percentage: copay,
       allowed_provider_categories: Array.isArray(allowed_provider_categories) && allowed_provider_categories.length > 0
         ? allowed_provider_categories
         : VALID_CATEGORIES,
-      budget_cap_per_employee: budget_cap_per_employee ? parseFloat(budget_cap_per_employee) : null,
-      is_family_eligible: Boolean(is_family_eligible),
-      description: description ? String(description).trim() : null,
-      status: ['active', 'draft', 'inactive'].includes(status) ? status : 'active'
-    })
-    .select('*, organizations(id, name, slug)')
+      target_audience: target_audience ? String(target_audience).trim() : null,
+      badge: badge ? String(badge).trim() : null,
+      is_popular: Boolean(is_popular),
+      features: Array.isArray(features) ? features : [],
+      not_included: Array.isArray(not_included) ? not_included : [],
+      status: ['active', 'draft', 'inactive'].includes(status) ? status : 'active',
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'tier' })
+    .select('*')
     .single();
 
-  if (insertError) throw new Error(`Failed to create plan: ${insertError.message}`);
+  if (insertError) throw new Error(`Failed to create master plan: ${insertError.message}`);
   return plan;
 }
 
 /**
- * Updates an existing master benefit plan in Super Admin
+ * Updates an existing master benefit plan in Super Admin and cascades to organization benefits
  */
 async function updateOperationsPlan(planId, payload) {
   if (!supabase) throw new Error('Supabase client unavailable');
@@ -3888,27 +3974,97 @@ async function updateOperationsPlan(planId, payload) {
   if (payload.name !== undefined) updateFields.name = String(payload.name).trim();
   if (payload.tier !== undefined) updateFields.tier = String(payload.tier).toLowerCase().trim();
   if (payload.max_monthly_visits !== undefined) updateFields.max_monthly_visits = parseInt(payload.max_monthly_visits, 10);
-  if (payload.co_pay_percentage !== undefined) updateFields.co_pay_percentage = parseFloat(payload.co_pay_percentage);
+  if (payload.monthly_price_rwf !== undefined) updateFields.monthly_price_rwf = Number(payload.monthly_price_rwf);
+  if (payload.annual_price_rwf !== undefined) updateFields.annual_price_rwf = Number(payload.annual_price_rwf);
+  if (payload.monthly_price_usd !== undefined) updateFields.monthly_price_usd = Number(payload.monthly_price_usd);
+  if (payload.annual_price_usd !== undefined) updateFields.annual_price_usd = Number(payload.annual_price_usd);
+  if (payload.default_copay_percentage !== undefined) updateFields.default_copay_percentage = parseFloat(payload.default_copay_percentage);
+  if (payload.co_pay_percentage !== undefined) updateFields.default_copay_percentage = parseFloat(payload.co_pay_percentage);
   if (payload.allowed_provider_categories !== undefined) updateFields.allowed_provider_categories = payload.allowed_provider_categories;
-  if (payload.budget_cap_per_employee !== undefined) {
-    updateFields.budget_cap_per_employee = payload.budget_cap_per_employee !== null && payload.budget_cap_per_employee !== ''
-      ? parseFloat(payload.budget_cap_per_employee)
-      : null;
-  }
-  if (payload.is_family_eligible !== undefined) updateFields.is_family_eligible = Boolean(payload.is_family_eligible);
+  if (payload.target_audience !== undefined) updateFields.target_audience = payload.target_audience ? String(payload.target_audience).trim() : null;
+  if (payload.badge !== undefined) updateFields.badge = payload.badge ? String(payload.badge).trim() : null;
+  if (payload.is_popular !== undefined) updateFields.is_popular = Boolean(payload.is_popular);
+  if (payload.features !== undefined) updateFields.features = Array.isArray(payload.features) ? payload.features : [];
+  if (payload.not_included !== undefined) updateFields.not_included = Array.isArray(payload.not_included) ? payload.not_included : [];
   if (payload.description !== undefined) updateFields.description = payload.description ? String(payload.description).trim() : null;
   if (payload.status !== undefined) updateFields.status = payload.status;
-  if (payload.org_id !== undefined && payload.org_id) updateFields.org_id = payload.org_id;
 
-  const { data: updated, error: updateError } = await supabase
-    .from('benefits')
+  // Try updating in master_plans first by id or tier
+  let updated = null;
+  const { data: mpUpdated, error: mpErr } = await supabase
+    .from('master_plans')
     .update(updateFields)
     .eq('id', planId)
-    .select('*, organizations(id, name, slug)')
+    .select('*')
+    .maybeSingle();
+
+  if (mpUpdated) {
+    updated = mpUpdated;
+  } else {
+    // If planId was tier string (e.g. 'basic', 'starter')
+    const { data: mpByTier } = await supabase
+      .from('master_plans')
+      .update(updateFields)
+      .eq('tier', planId)
+      .select('*')
+      .maybeSingle();
+    updated = mpByTier;
+  }
+
+  // Also sync changes to benefits table for any organization with this tier
+  if (updated && updated.tier) {
+    const benefitUpdates = {
+      max_monthly_visits: updated.max_monthly_visits,
+      allowed_provider_categories: updated.allowed_provider_categories,
+      updated_at: new Date().toISOString()
+    };
+    await supabase
+      .from('benefits')
+      .update(benefitUpdates)
+      .eq('tier', updated.tier);
+  }
+
+  if (!updated) {
+    // If not found in master_plans, check benefits table fallback
+    const { data: bUpdated, error: bErr } = await supabase
+      .from('benefits')
+      .update(updateFields)
+      .eq('id', planId)
+      .select('*, organizations(id, name, slug)')
+      .single();
+    if (bErr) throw new Error(`Failed to update plan: ${bErr.message}`);
+    return bUpdated;
+  }
+
+  return updated;
+}
+
+/**
+ * Archives/deactivates a master benefit plan
+ */
+async function deleteOperationsPlan(planId) {
+  if (!supabase) throw new Error('Supabase client unavailable');
+  if (!planId) throw new Error('Plan ID is required');
+
+  const { data, error } = await supabase
+    .from('master_plans')
+    .update({ status: 'inactive', updated_at: new Date().toISOString() })
+    .eq('id', planId)
+    .select('*')
     .single();
 
-  if (updateError) throw new Error(`Failed to update plan: ${updateError.message}`);
-  return updated;
+  if (error) {
+    // Try by tier
+    const { data: byTier, error: tierErr } = await supabase
+      .from('master_plans')
+      .update({ status: 'inactive', updated_at: new Date().toISOString() })
+      .eq('tier', planId)
+      .select('*')
+      .single();
+    if (tierErr) throw new Error(`Failed to archive plan: ${tierErr.message}`);
+    return byTier;
+  }
+  return data;
 }
 
 module.exports = {
@@ -3959,7 +4115,8 @@ module.exports = {
   // Master Benefit Plan Builder Methods
   getOperationsPlans,
   createOperationsPlan,
-  updateOperationsPlan
+  updateOperationsPlan,
+  deleteOperationsPlan
 };
 
 

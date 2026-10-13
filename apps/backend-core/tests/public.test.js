@@ -176,11 +176,16 @@ describe('Public Lead & Demo Pipeline Test Suite (PF-88)', () => {
       assert.ok(res.body.network);
       assert.ok(res.body.pricing);
       assert.ok(Array.isArray(res.body.pricing));
+      assert.equal(res.body.pricing.length, 4);
+      const basic = res.body.pricing.find((t) => t.id === "basic");
       const starter = res.body.pricing.find((t) => t.id === "starter");
-      const professional = res.body.pricing.find((t) => t.id === "professional");
+      const premium = res.body.pricing.find((t) => t.id === "premium");
+      const executive = res.body.pricing.find((t) => t.id === "executive");
+      assert.ok(basic);
       assert.ok(starter);
-      assert.ok(professional);
-      assert.equal(starter.pricing.RWF.monthly, 16000);
+      assert.ok(premium);
+      assert.ok(executive);
+      assert.equal(starter.pricing.RWF.monthly, 18000);
     });
 
     test('GET /api/public/verify-company verifies enrolled employer domain (techcorp.rw)', async () => {

@@ -45,7 +45,8 @@ const {
   assignOperationsTeamRole,
   getOperationsPlans,
   createOperationsPlan,
-  updateOperationsPlan
+  updateOperationsPlan,
+  deleteOperationsPlan
 } = require('../services/operationsService');
 
 const router = express.Router();
@@ -982,6 +983,28 @@ router.put('/plans/:id', async (req, res) => {
     return res.status(400).json({
       error: error.message,
       code: 'OPERATIONS_PLAN_UPDATE_FAILED'
+    });
+  }
+});
+
+/**
+ * DELETE /api/operations/plans/:id
+ * Archive / deactivate an existing master benefit plan in Super Admin
+ */
+router.delete('/plans/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const plan = await deleteOperationsPlan(id);
+    return res.status(200).json({
+      success: true,
+      message: 'Master benefit plan archived successfully',
+      plan
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Delete plan error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_PLAN_DELETE_FAILED'
     });
   }
 });

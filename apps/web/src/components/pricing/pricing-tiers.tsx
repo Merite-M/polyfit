@@ -38,38 +38,85 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
     loadConfig();
   }, []);
 
-  const starterTier = Array.isArray(pricingData)
-    ? pricingData.find((t: any) => t.id === "starter")
-    : pricingData?.starter;
-  const profTier = Array.isArray(pricingData)
-    ? pricingData.find((t: any) => t.id === "professional")
-    : pricingData?.professional;
+  const getTierFromData = (id: string) => {
+    if (Array.isArray(pricingData)) {
+      return pricingData.find((t: any) => t.id === id || t.tier === id);
+    }
+    return pricingData?.[id];
+  };
 
-  const starterRwfMonthly =
-    starterTier?.pricing?.RWF?.monthly || starterTier?.monthly_rwf || 16000;
-  const starterRwfAnnual =
-    starterTier?.pricing?.RWF?.annual || starterTier?.annual_rwf || Math.round(starterRwfMonthly * 0.85);
-  const starterUsdMonthly =
-    starterTier?.pricing?.USD?.monthly || starterTier?.monthly_usd || Math.round(starterRwfMonthly / 1350);
-  const starterUsdAnnual =
-    starterTier?.pricing?.USD?.annual || starterTier?.annual_usd || Math.round(starterRwfAnnual / 1350);
+  const basicData = getTierFromData("basic");
+  const starterData = getTierFromData("starter");
+  const premiumData = getTierFromData("premium");
+  const execData = getTierFromData("executive");
 
-  const profRwfMonthly =
-    profTier?.pricing?.RWF?.monthly || profTier?.monthly_rwf || 29000;
-  const profRwfAnnual =
-    profTier?.pricing?.RWF?.annual || profTier?.annual_rwf || Math.round(profRwfMonthly * 0.85);
-  const profUsdMonthly =
-    profTier?.pricing?.USD?.monthly || profTier?.monthly_usd || Math.round(profRwfMonthly / 1350);
-  const profUsdAnnual =
-    profTier?.pricing?.USD?.annual || profTier?.annual_usd || Math.round(profRwfAnnual / 1350);
+  const basicRwfMonthly = basicData?.pricing?.RWF?.monthly || basicData?.monthly_price_rwf || 10000;
+  const basicRwfAnnual = basicData?.pricing?.RWF?.annual || basicData?.annual_price_rwf || Math.round(basicRwfMonthly * 0.85);
+  const basicUsdMonthly = basicData?.pricing?.USD?.monthly || basicData?.monthly_price_usd || 8;
+  const basicUsdAnnual = basicData?.pricing?.USD?.annual || basicData?.annual_price_usd || Math.round(basicUsdMonthly * 0.85);
+
+  const starterRwfMonthly = starterData?.pricing?.RWF?.monthly || starterData?.monthly_price_rwf || 18000;
+  const starterRwfAnnual = starterData?.pricing?.RWF?.annual || starterData?.annual_price_rwf || Math.round(starterRwfMonthly * 0.85);
+  const starterUsdMonthly = starterData?.pricing?.USD?.monthly || starterData?.monthly_price_usd || 14;
+  const starterUsdAnnual = starterData?.pricing?.USD?.annual || starterData?.annual_price_usd || Math.round(starterUsdMonthly * 0.85);
+
+  const premiumRwfMonthly = premiumData?.pricing?.RWF?.monthly || premiumData?.monthly_price_rwf || 32000;
+  const premiumRwfAnnual = premiumData?.pricing?.RWF?.annual || premiumData?.annual_price_rwf || Math.round(premiumRwfMonthly * 0.85);
+  const premiumUsdMonthly = premiumData?.pricing?.USD?.monthly || premiumData?.monthly_price_usd || 24;
+  const premiumUsdAnnual = premiumData?.pricing?.USD?.annual || premiumData?.annual_price_usd || Math.round(premiumUsdMonthly * 0.85);
+
+  const execRwfMonthly = execData?.pricing?.RWF?.monthly || execData?.monthly_price_rwf || 50000;
+  const execRwfAnnual = execData?.pricing?.RWF?.annual || execData?.annual_price_rwf || Math.round(execRwfMonthly * 0.85);
+  const execUsdMonthly = execData?.pricing?.USD?.monthly || execData?.monthly_price_usd || 38;
+  const execUsdAnnual = execData?.pricing?.USD?.annual || execData?.annual_price_usd || Math.round(execUsdMonthly * 0.85);
 
   const tiers = [
     {
+      id: "basic",
+      tier: "basic",
+      name: basicData?.name || "Basic",
+      badge: basicData?.badge || "Essential",
+      description: basicData?.description || "Essential fitness benefit for shift and operations teams covering vetted gyms & strength centers.",
+      target: basicData?.target || "Field & shift teams",
+      visits: basicData?.visits || 4,
+      pricing: {
+        RWF: {
+          monthly: basicRwfMonthly,
+          annual: basicRwfAnnual,
+          period: "/ employee / mo",
+        },
+        USD: {
+          monthly: basicUsdMonthly,
+          annual: basicUsdAnnual,
+          period: "/ employee / mo",
+        },
+      },
+      popular: false,
+      ctaText: "Start Basic Plan",
+      ctaVariant: "secondary",
+      features: basicData?.features || [
+        "4 verified visits per month",
+        "Access to 30+ vetted gyms & strength centers",
+        "Single consolidated RRA EBM monthly invoice",
+        "Dynamic anti-passback mobile web passes",
+        "Monthly aggregated utilization report (PDF/CSV)",
+        "Standard employee roster upload (CSV)",
+        "Email support (24h SLA)",
+      ],
+      notIncluded: basicData?.notIncluded || [
+        "Olympic pools & aquatic access",
+        "Yoga & Reformer Pilates studios",
+        "Thermal spas & clinical physiotherapy",
+      ],
+    },
+    {
       id: "starter",
-      name: "Starter",
-      badge: "Growing Teams",
-      description: "Essential wellness benefit for emerging companies and boutique offices seeking vetted fitness access.",
-      target: "Up to 50 employees",
+      tier: "starter",
+      name: starterData?.name || "Starter",
+      badge: starterData?.badge || "Growing Teams",
+      description: starterData?.description || "Active lifestyle wellness benefit combining fitness gyms and Olympic lap swimming pools.",
+      target: starterData?.target || "Up to 50 employees",
+      visits: starterData?.visits || 8,
       pricing: {
         RWF: {
           monthly: starterRwfMonthly,
@@ -85,46 +132,46 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
       popular: false,
       ctaText: "Start Starter Plan",
       ctaVariant: "secondary",
-      features: [
-        "Up to 50 active beneficiaries",
-        "Access to Core Network (25+ vetted gyms)",
+      features: starterData?.features || [
+        "8 verified visits per month",
+        "Access to 50+ network gyms & Olympic lap pools",
         "Single consolidated RRA EBM monthly invoice",
-        "Dynamic anti-passback mobile web passes",
-        "Monthly aggregated utilization report (PDF/CSV)",
+        "Dual check-in modality (turnstile QR & desk plaque)",
+        "Live department utilization telemetry",
         "Standard employee roster upload (CSV)",
-        "Email support (24h SLA)",
+        "Priority support (12h SLA)",
       ],
-      notIncluded: [
-        "Multi-category access (pools, yoga studios)",
-        "Real-time live check-in telemetry",
-        "Dedicated Customer Success Manager",
-        "Custom provider network additions",
+      notIncluded: starterData?.notIncluded || [
+        "Yoga & Reformer Pilates studios",
+        "Thermal spas & clinical physiotherapy",
       ],
     },
     {
-      id: "professional",
-      name: "Professional",
-      badge: "Most Popular",
-      description: "Comprehensive corporate wellness infrastructure for established companies driving employee retention and health ROI.",
-      target: "50 to 500 employees",
+      id: "premium",
+      tier: "premium",
+      name: premiumData?.name || "Premium",
+      badge: premiumData?.badge || "Most Popular",
+      description: premiumData?.description || "Comprehensive corporate wellness infrastructure covering gyms, Olympic pools, hot yoga & reformer pilates.",
+      target: premiumData?.target || "50 to 500 employees",
+      visits: premiumData?.visits || 12,
       pricing: {
         RWF: {
-          monthly: profRwfMonthly,
-          annual: profRwfAnnual,
+          monthly: premiumRwfMonthly,
+          annual: premiumRwfAnnual,
           period: "/ employee / mo",
         },
         USD: {
-          monthly: profUsdMonthly,
-          annual: profUsdAnnual,
+          monthly: premiumUsdMonthly,
+          annual: premiumUsdAnnual,
           period: "/ employee / mo",
         },
       },
       popular: true,
-      ctaText: "Request Professional Pilot",
+      ctaText: "Request Premium Pilot",
       ctaVariant: "primary",
-      features: [
-        "Up to 500 active beneficiaries",
-        "Full Multi-Category Network (50+ venues)",
+      features: premiumData?.features || [
+        "12 verified visits per month",
+        "Full Multi-Category Network (80+ venues)",
         "Gyms, Olympic Pools, Yoga, Pilates & Studios",
         "Automated RRA EBM 18% VAT compliant invoicing",
         "Instant Anti-Passback biometric & geo lock",
@@ -133,42 +180,42 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
         "Priority support via WhatsApp & Email (4h SLA)",
         "Quarterly corporate wellness impact review",
       ],
-      notIncluded: [
-        "Custom provider contract commissioning",
-        "Direct HRIS / API webhook sync",
+      notIncluded: premiumData?.notIncluded || [
+        "Thermal spas & clinical physiotherapy",
       ],
     },
     {
-      id: "enterprise",
-      name: "Enterprise",
-      badge: "Full Customization",
-      description: "Tailored multi-facility wellness network with bespoke contract terms, dedicated venue onboarding, and HRIS integration.",
-      target: "500+ employees / Multi-country",
+      id: "executive",
+      tier: "executive",
+      name: execData?.name || "Executive",
+      badge: execData?.badge || "All Access",
+      description: execData?.description || "All-inclusive executive benefit with unrestricted access to fitness clubs, luxury pools, boutique studios, thermal spas & physiotherapy.",
+      target: execData?.target || "Leadership & VIP cohorts",
+      visits: execData?.visits || 16,
       pricing: {
         RWF: {
-          monthly: "Custom",
-          annual: "Custom",
-          period: "volume tiered pricing",
+          monthly: execRwfMonthly,
+          annual: execRwfAnnual,
+          period: "/ employee / mo",
         },
         USD: {
-          monthly: "Custom",
-          annual: "Custom",
-          period: "volume tiered pricing",
+          monthly: execUsdMonthly,
+          annual: execUsdAnnual,
+          period: "/ employee / mo",
         },
       },
       popular: false,
-      ctaText: "Contact Enterprise Sales",
-      ctaVariant: "enterprise",
-      features: [
-        "Unlimited beneficiaries & multi-country roaming",
-        "Full network + custom venue commissioning on demand",
-        "Bespoke billing terms (Net 30/60, quarterly PO)",
-        "Direct HRIS API integration (BambooHR, Workday, SAP)",
-        "Single Sign-On (SAML / Okta / Azure AD)",
-        "Role-based executive administrative controls",
-        "Dedicated Enterprise Account Manager & onsite days",
-        "99.9% uptime SLA with 1-hour urgent incident response",
-        "Full audit trail & settlement compliance documentation",
+      ctaText: "Contact Executive Sales",
+      ctaVariant: "secondary",
+      features: execData?.features || [
+        "16 verified visits per month",
+        "Unrestricted all-category access across entire network",
+        "Gyms, Olympic Pools, Reformer Pilates, Physio Clinics & Spas",
+        "Zero employee co-pay baseline option",
+        "Dedicated PolyFit VIP wellness concierge",
+        "Custom corporate wellness challenges & executive reviews",
+        "Direct HRIS integration & automated webhook sync",
+        "Full tax audit trail & RRA EBM certificate",
       ],
       notIncluded: [],
     },
@@ -248,7 +295,7 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
         </div>
 
         {/* Pricing Cards Container Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch">
           {tiers.map((tier) => {
             const priceDisplay = formatPrice(tier.pricing[currency]);
             const isCustom = priceDisplay === "Custom";
@@ -321,7 +368,7 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
                       <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                         Plan Includes:
                       </p>
-                      {tier.features.map((feature, idx) => (
+                      {(tier.features as string[]).map((feature: string, idx: number) => (
                         <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground">
                           <div className="w-4 h-4 rounded-full bg-accent-subtle text-accent flex items-center justify-center flex-shrink-0 mt-0.5">
                             <Check className="w-3 h-3 stroke-[2.5]" />
@@ -332,7 +379,7 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
 
                       {tier.notIncluded.length > 0 && (
                         <div className="pt-2 space-y-2 opacity-50">
-                          {tier.notIncluded.map((item, idx) => (
+                          {(tier.notIncluded as string[]).map((item: string, idx: number) => (
                             <div key={idx} className="flex items-start gap-2.5 text-xs text-muted-foreground">
                               <span className="w-4 text-center font-mono text-xs">—</span>
                               <span className="line-through">{item}</span>

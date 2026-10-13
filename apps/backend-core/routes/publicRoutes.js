@@ -466,91 +466,178 @@ router.get('/platform-config', async (req, res) => {
       }
     }
 
-    const pricingTiers = [
-      {
-        id: 'starter',
-        name: 'Starter',
-        badge: 'Growing Teams',
-        description: 'Essential wellness benefit for emerging companies and boutique offices seeking vetted fitness access.',
-        target: 'Up to 50 employees',
-        pricing: {
-          RWF: { monthly: 16000, annual: 13600, period: '/ employee / mo' },
-          USD: { monthly: 13, annual: 11, period: '/ employee / mo' }
-        },
-        popular: false,
-        ctaText: 'Start Starter Plan',
-        ctaVariant: 'secondary',
-        features: [
-          'Up to 50 active beneficiaries',
-          'Access to Core Network (25+ vetted gyms)',
-          'Single consolidated RRA EBM monthly invoice',
-          'Dynamic anti-passback mobile web passes',
-          'Monthly aggregated utilization report (PDF/CSV)',
-          'Standard employee roster upload (CSV)',
-          'Email support (24h SLA)'
-        ],
-        notIncluded: [
-          'Multi-category access (pools, yoga studios)',
-          'Real-time live check-in telemetry',
-          'Dedicated Customer Success Manager',
-          'Custom provider network additions'
-        ]
-      },
-      {
-        id: 'professional',
-        name: 'Professional',
-        badge: 'Most Popular',
-        description: 'Comprehensive corporate wellness infrastructure for established companies driving employee retention and health ROI.',
-        target: '50 to 500 employees',
-        pricing: {
-          RWF: { monthly: 29000, annual: 24650, period: '/ employee / mo' },
-          USD: { monthly: 24, annual: 20, period: '/ employee / mo' }
-        },
-        popular: true,
-        ctaText: 'Request Professional Pilot',
-        ctaVariant: 'primary',
-        features: [
-          'Up to 500 active beneficiaries',
-          'Full Multi-Category Network (50+ venues)',
-          'Gyms, Olympic Pools, Yoga, Pilates & Studios',
-          'Automated RRA EBM 18% VAT compliant invoicing',
-          'Instant Anti-Passback biometric & geo lock',
-          'Live check-in telemetry & department heatmaps',
-          'Bulk CSV & automated employee onboarding',
-          'Priority support via WhatsApp & Email (4h SLA)',
-          'Quarterly corporate wellness impact review'
-        ],
-        notIncluded: [
-          'Custom provider contract commissioning',
-          'Direct HRIS / API webhook sync'
-        ]
-      },
-      {
-        id: 'enterprise',
-        name: 'Enterprise',
-        badge: 'Custom Corporate',
-        description: 'Dedicated wellness network infrastructure for enterprise employers, banks, institutions and multi-country workforces.',
-        target: '500+ employees',
-        pricing: {
-          RWF: { monthly: 42000, annual: 35700, period: '/ employee / mo' },
-          USD: { monthly: 35, annual: 30, period: '/ employee / mo' }
-        },
-        popular: false,
-        ctaText: 'Design Enterprise Agreement',
-        ctaVariant: 'outline',
-        features: [
-          'Unlimited beneficiaries & bespoke tiers',
-          'Full network + custom facility commissioning',
-          'Executive wellness perks & thermal spa access',
-          'Biometric turnstile IoT hardware integration',
-          'Dedicated PolyFit Account Director & SLA',
-          'Multi-currency billing (RWF, USD, KES)',
-          'Automated HRIS census synchronization',
-          'Full tax audit trail & RRA EBM certificate'
-        ],
-        notIncluded: []
+    let pricingTiers = [];
+
+    if (supabase) {
+      try {
+        const { data: dbPlans } = await supabase
+          .from('master_plans')
+          .select('*')
+          .eq('status', 'active')
+          .order('max_monthly_visits', { ascending: true });
+
+        if (Array.isArray(dbPlans) && dbPlans.length > 0) {
+          pricingTiers = dbPlans.map((p) => ({
+            id: p.tier,
+            tier: p.tier,
+            name: p.name,
+            badge: p.badge || (p.tier === 'premium' ? 'Most Popular' : p.tier === 'executive' ? 'All Access' : p.tier === 'starter' ? 'Growing Teams' : 'Essential'),
+            description: p.description,
+            target: p.target_audience || `${p.max_monthly_visits} visits / month`,
+            visits: p.max_monthly_visits,
+            pricing: {
+              RWF: {
+                monthly: Number(p.monthly_price_rwf),
+                annual: Number(p.annual_price_rwf),
+                period: '/ employee / mo'
+              },
+              USD: {
+                monthly: Number(p.monthly_price_usd),
+                annual: Number(p.annual_price_usd),
+                period: '/ employee / mo'
+              }
+            },
+            popular: Boolean(p.is_popular),
+            ctaText: p.tier === 'executive' ? 'Contact Executive Sales' : `Start ${p.name}`,
+            ctaVariant: p.is_popular ? 'primary' : 'secondary',
+            features: Array.isArray(p.features) && p.features.length > 0 ? p.features : [
+              `${p.max_monthly_visits} verified visits per month`,
+              `Access to ${p.tier === 'basic' ? '30+' : p.tier === 'starter' ? '50+' : p.tier === 'premium' ? '80+' : 'all'} network facilities`,
+              'Single consolidated RRA EBM 18% VAT invoice',
+              'Dynamic anti-passback mobile passes',
+              'Aggregated utilization analytics & reporting',
+              'Corporate concierge support'
+            ],
+            notIncluded: Array.isArray(p.not_included) ? p.not_included : []
+          }));
+        }
+      } catch (err) {
+        console.warn('[PublicConfig] Error fetching live master_plans, using canonical fallbacks:', err.message);
       }
-    ];
+    }
+
+    if (pricingTiers.length === 0) {
+      pricingTiers = [
+        {
+          id: 'basic',
+          tier: 'basic',
+          name: 'Basic',
+          badge: 'Essential',
+          description: 'Essential corporate fitness benefit covering verified network gyms and strength centers.',
+          target: 'Field staff & shift teams',
+          visits: 4,
+          pricing: {
+            RWF: { monthly: 10000, annual: 8500, period: '/ employee / mo' },
+            USD: { monthly: 8, annual: 7, period: '/ employee / mo' }
+          },
+          popular: false,
+          ctaText: 'Start Basic Plan',
+          ctaVariant: 'secondary',
+          features: [
+            '4 verified visits per month',
+            'Access to 30+ vetted gyms & strength centers',
+            'Consolidated monthly RRA EBM 18% VAT invoice',
+            'Dynamic anti-passback mobile web passes',
+            'Monthly aggregated utilization report (PDF/CSV)',
+            'Standard employee roster upload (CSV)',
+            'Standard email support (24h SLA)'
+          ],
+          notIncluded: [
+            'Olympic pools & aquatic access',
+            'Yoga & Reformer Pilates studios',
+            'Thermal spas & clinical physiotherapy',
+            'Dedicated wellness concierge'
+          ]
+        },
+        {
+          id: 'starter',
+          tier: 'starter',
+          name: 'Starter',
+          badge: 'Growing Teams',
+          description: 'Active lifestyle plan combining fitness gyms and Olympic lap swimming pools across Kigali and East Africa.',
+          target: 'Up to 50 employees',
+          visits: 8,
+          pricing: {
+            RWF: { monthly: 18000, annual: 15300, period: '/ employee / mo' },
+            USD: { monthly: 14, annual: 12, period: '/ employee / mo' }
+          },
+          popular: false,
+          ctaText: 'Start Starter Plan',
+          ctaVariant: 'secondary',
+          features: [
+            '8 verified visits per month',
+            'Access to 50+ network gyms & Olympic lap pools',
+            'Single consolidated RRA EBM monthly invoice',
+            'Dual check-in modality (turnstile QR & desk plaque)',
+            'Live department utilization telemetry',
+            'Standard employee roster upload (CSV)',
+            'Priority support (12h SLA)'
+          ],
+          notIncluded: [
+            'Yoga & Reformer Pilates studios',
+            'Thermal spas & clinical physiotherapy',
+            'Dedicated wellness concierge'
+          ]
+        },
+        {
+          id: 'premium',
+          tier: 'premium',
+          name: 'Premium',
+          badge: 'Most Popular',
+          description: 'Comprehensive multi-category package covering gyms, Olympic pools, hot yoga, and reformer pilates studios.',
+          target: '50 to 500 employees',
+          visits: 12,
+          pricing: {
+            RWF: { monthly: 32000, annual: 27200, period: '/ employee / mo' },
+            USD: { monthly: 24, annual: 20, period: '/ employee / mo' }
+          },
+          popular: true,
+          ctaText: 'Request Premium Pilot',
+          ctaVariant: 'primary',
+          features: [
+            '12 verified visits per month',
+            'Full Multi-Category Network (80+ venues)',
+            'Gyms, Olympic Pools, Yoga, Pilates & Studios',
+            'Automated RRA EBM 18% VAT compliant invoicing',
+            'Instant Anti-Passback biometric & geo lock',
+            'Live check-in telemetry & department heatmaps',
+            'Bulk CSV & automated employee onboarding',
+            'Priority support via WhatsApp & Email (4h SLA)',
+            'Quarterly corporate wellness impact review'
+          ],
+          notIncluded: [
+            'Thermal spas & clinical physiotherapy'
+          ]
+        },
+        {
+          id: 'executive',
+          tier: 'executive',
+          name: 'Executive',
+          badge: 'All Access',
+          description: 'All-inclusive executive benefit with unrestricted access to fitness clubs, luxury pools, boutique studios, thermal spas, and physiotherapy.',
+          target: 'Leadership & VIP cohorts',
+          visits: 16,
+          pricing: {
+            RWF: { monthly: 50000, annual: 42500, period: '/ employee / mo' },
+            USD: { monthly: 38, annual: 32, period: '/ employee / mo' }
+          },
+          popular: false,
+          ctaText: 'Contact Executive Sales',
+          ctaVariant: 'secondary',
+          features: [
+            '16 verified visits per month',
+            'Unrestricted all-category access across entire network',
+            'Gyms, Olympic Pools, Reformer Pilates, Physio Clinics & Spas',
+            'Zero employee co-pay (100% employer sponsored)',
+            'Dedicated PolyFit VIP wellness concierge',
+            'Custom corporate health challenges & executive reviews',
+            'Direct HRIS integration & automated webhook sync',
+            'Full tax audit trail & RRA EBM certificate'
+          ],
+          notIncluded: []
+        }
+      ];
+    }
 
     return res.status(200).json({
       success: true,

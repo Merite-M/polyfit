@@ -29,9 +29,17 @@ export interface MasterPlanData {
   tier?: string;
   max_monthly_visits: number;
   co_pay_percentage: number;
+  monthly_price_rwf?: number;
+  annual_price_rwf?: number;
+  monthly_price_usd?: number;
+  annual_price_usd?: number;
   allowed_provider_categories: string[];
   budget_cap_per_employee?: number | null;
   is_family_eligible?: boolean;
+  enrolled_count?: number;
+  target_audience?: string;
+  badge?: string;
+  is_popular?: boolean;
   description?: string;
   status: "active" | "draft" | "inactive";
   organization?: {
@@ -84,10 +92,10 @@ const CATEGORY_OPTIONS = [
 ];
 
 const TIER_OPTIONS = [
-  { id: "basic", label: "Basic", desc: "Off-peak fitness & core gyms", icon: Layers },
-  { id: "standard", label: "Standard", desc: "Core network, gyms & pools", icon: Shield },
-  { id: "premium", label: "Premium", desc: "Full facilities + boutique studios", icon: Crown },
-  { id: "executive", label: "Executive", desc: "All-access + clinics & thermal spas", icon: Crown }
+  { id: "basic", label: "Basic", desc: "4 visits/mo • Fitness centers & strength", icon: Layers },
+  { id: "starter", label: "Starter", desc: "8 visits/mo • Gyms + Olympic lap pools", icon: Shield },
+  { id: "premium", label: "Premium", desc: "12 visits/mo • Gyms, pools + yoga/pilates", icon: Crown },
+  { id: "executive", label: "Executive", desc: "16 visits/mo • All-access + clinics & spas", icon: Crown }
 ];
 
 export function MasterPlanBuilderDrawer({
@@ -110,6 +118,12 @@ export function MasterPlanBuilderDrawer({
     "pool",
     "studio"
   ]);
+  const [monthlyPriceRwf, setMonthlyPriceRwf] = useState<number>(18000);
+  const [annualPriceRwf, setAnnualPriceRwf] = useState<number>(15300);
+  const [monthlyPriceUsd, setMonthlyPriceUsd] = useState<number>(14);
+  const [annualPriceUsd, setAnnualPriceUsd] = useState<number>(12);
+  const [badge, setBadge] = useState<string>("");
+  const [targetAudience, setTargetAudience] = useState<string>("");
   const [status, setStatus] = useState<"active" | "draft" | "inactive">("active");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -124,9 +138,15 @@ export function MasterPlanBuilderDrawer({
     if (plan) {
       setName(plan.name || "");
       setOrgId(plan.org_id || "");
-      setTier(plan.tier || "standard");
+      setTier(plan.tier || "starter");
       setMaxVisits(plan.max_monthly_visits || 8);
       setCopayPct(Number(plan.co_pay_percentage || 0));
+      setMonthlyPriceRwf(Number(plan.monthly_price_rwf || (plan.tier === "basic" ? 10000 : plan.tier === "premium" ? 32000 : plan.tier === "executive" ? 50000 : 18000)));
+      setAnnualPriceRwf(Number(plan.annual_price_rwf || Math.round((plan.monthly_price_rwf || 18000) * 0.85)));
+      setMonthlyPriceUsd(Number(plan.monthly_price_usd || (plan.tier === "basic" ? 8 : plan.tier === "premium" ? 24 : plan.tier === "executive" ? 38 : 14)));
+      setAnnualPriceUsd(Number(plan.annual_price_usd || Math.round((plan.monthly_price_usd || 14) * 0.85)));
+      setBadge(plan.badge || (plan.tier === "premium" ? "Most Popular" : plan.tier === "executive" ? "All Access" : plan.tier === "starter" ? "Growing Teams" : "Essential"));
+      setTargetAudience(plan.target_audience || "");
       setBudgetCap(plan.budget_cap_per_employee != null ? Number(plan.budget_cap_per_employee) : "");
       setIsFamilyEligible(Boolean(plan.is_family_eligible));
       setSelectedCategories(plan.allowed_provider_categories || ["gym", "pool"]);
@@ -135,17 +155,67 @@ export function MasterPlanBuilderDrawer({
     } else {
       setName("");
       setOrgId(organizations[0]?.id || "");
-      setTier("standard");
+      setTier("starter");
       setMaxVisits(8);
       setCopayPct(0);
+      setMonthlyPriceRwf(18000);
+      setAnnualPriceRwf(15300);
+      setMonthlyPriceUsd(14);
+      setAnnualPriceUsd(12);
+      setBadge("Growing Teams");
+      setTargetAudience("Up to 50 employees");
       setBudgetCap("");
       setIsFamilyEligible(false);
-      setSelectedCategories(["gym", "pool", "studio"]);
+      setSelectedCategories(["gym", "pool"]);
       setStatus("active");
       setDescription("");
     }
     setError(null);
   }, [plan, isOpen, organizations]);
+
+  // Auto-adjust default visits & pricing when tier changes in new mode
+  const handleSelectTier = (newTier: string) => {
+    setTier(newTier);
+    if (!plan) {
+      if (newTier === "basic") {
+        setMaxVisits(4);
+        setMonthlyPriceRwf(10000);
+        setAnnualPriceRwf(8500);
+        setMonthlyPriceUsd(8);
+        setAnnualPriceUsd(7);
+        setBadge("Essential");
+        setSelectedCategories(["gym"]);
+        setCopayPct(20);
+      } else if (newTier === "starter") {
+        setMaxVisits(8);
+        setMonthlyPriceRwf(18000);
+        setAnnualPriceRwf(15300);
+        setMonthlyPriceUsd(14);
+        setAnnualPriceUsd(12);
+        setBadge("Growing Teams");
+        setSelectedCategories(["gym", "pool"]);
+        setCopayPct(10);
+      } else if (newTier === "premium") {
+        setMaxVisits(12);
+        setMonthlyPriceRwf(32000);
+        setAnnualPriceRwf(27200);
+        setMonthlyPriceUsd(24);
+        setAnnualPriceUsd(20);
+        setBadge("Most Popular");
+        setSelectedCategories(["gym", "pool", "studio"]);
+        setCopayPct(0);
+      } else if (newTier === "executive") {
+        setMaxVisits(16);
+        setMonthlyPriceRwf(50000);
+        setAnnualPriceRwf(42500);
+        setMonthlyPriceUsd(38);
+        setAnnualPriceUsd(32);
+        setBadge("All Access");
+        setSelectedCategories(["gym", "pool", "studio", "clinic", "wellness_center"]);
+        setCopayPct(0);
+      }
+    }
+  };
 
   // Handle ESC key
   useEffect(() => {
@@ -167,14 +237,26 @@ export function MasterPlanBuilderDrawer({
     );
   };
 
+  const handleDelete = async () => {
+    if (!plan?.id) return;
+    if (!confirm(`Are you sure you want to deactivate master plan "${plan.name}"?`)) return;
+    try {
+      setIsSubmitting(true);
+      await apiFetch(`/api/operations/plans/${plan.id}`, { method: "DELETE" });
+      onSaveSuccess();
+      onClose();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to archive plan.";
+      setError(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setError("Please enter a master plan name.");
-      return;
-    }
-    if (!orgId) {
-      setError("Please select a target client organization.");
       return;
     }
     if (selectedCategories.length === 0) {
@@ -187,11 +269,17 @@ export function MasterPlanBuilderDrawer({
       setError(null);
 
       const payload = {
-        org_id: orgId,
+        org_id: orgId || undefined,
         name: name.trim(),
         tier,
         max_monthly_visits: Number(maxVisits),
         co_pay_percentage: Number(copayPct),
+        monthly_price_rwf: Number(monthlyPriceRwf),
+        annual_price_rwf: Number(annualPriceRwf),
+        monthly_price_usd: Number(monthlyPriceUsd),
+        annual_price_usd: Number(annualPriceUsd),
+        badge: badge.trim() || undefined,
+        target_audience: targetAudience.trim() || undefined,
         allowed_provider_categories: selectedCategories,
         budget_cap_per_employee: budgetCap !== "" ? Number(budgetCap) : null,
         is_family_eligible: isFamilyEligible,
@@ -332,7 +420,7 @@ export function MasterPlanBuilderDrawer({
                   <button
                     key={t.id}
                     type="button"
-                    onClick={() => setTier(t.id)}
+                    onClick={() => handleSelectTier(t.id)}
                     className={cn(
                       "p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between",
                       isSelected
@@ -409,6 +497,111 @@ export function MasterPlanBuilderDrawer({
               <p className="text-[10px] text-slate-400">
                 0% means 100% employer-funded. Employer HR can adjust their cost share later.
               </p>
+            </div>
+          </div>
+
+          {/* Subscription Pricing Architecture */}
+          <div className="space-y-3 p-3.5 rounded-2xl bg-[#071521] border border-[#21405A]">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                <Coins className="w-3.5 h-3.5 text-[#28D17C]" />
+                <span>Aggregator Tier Pricing (Per Employee)</span>
+              </label>
+              <span className="text-[10px] text-slate-400 font-mono">RRA EBM INVOICING</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300">Monthly Price (RWF)</label>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    min={0}
+                    step={1000}
+                    value={monthlyPriceRwf}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setMonthlyPriceRwf(val);
+                      setAnnualPriceRwf(Math.round(val * 0.85));
+                    }}
+                    className="w-full px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white font-mono focus:outline-none focus:border-[#28D17C]"
+                  />
+                  <span className="text-[10px] font-mono text-slate-400 shrink-0">RWF</span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300">Annual Price (RWF/mo)</label>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    min={0}
+                    step={1000}
+                    value={annualPriceRwf}
+                    onChange={(e) => setAnnualPriceRwf(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white font-mono focus:outline-none focus:border-[#28D17C]"
+                  />
+                  <span className="text-[10px] font-mono text-slate-400 shrink-0">RWF</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300">Monthly Price (USD)</label>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    min={0}
+                    value={monthlyPriceUsd}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setMonthlyPriceUsd(val);
+                      setAnnualPriceUsd(Math.round(val * 0.85));
+                    }}
+                    className="w-full px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white font-mono focus:outline-none focus:border-[#28D17C]"
+                  />
+                  <span className="text-[10px] font-mono text-slate-400 shrink-0">USD</span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300">Annual Price (USD/mo)</label>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    min={0}
+                    value={annualPriceUsd}
+                    onChange={(e) => setAnnualPriceUsd(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white font-mono focus:outline-none focus:border-[#28D17C]"
+                  />
+                  <span className="text-[10px] font-mono text-slate-400 shrink-0">USD</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300">Public Badge</label>
+                <input
+                  type="text"
+                  value={badge}
+                  onChange={(e) => setBadge(e.target.value)}
+                  placeholder="e.g. Most Popular"
+                  className="w-full px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#28D17C]"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300">Target Cohort</label>
+                <input
+                  type="text"
+                  value={targetAudience}
+                  onChange={(e) => setTargetAudience(e.target.value)}
+                  placeholder="e.g. 50 to 500 staff"
+                  className="w-full px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#28D17C]"
+                />
+              </div>
             </div>
           </div>
 
@@ -550,30 +743,45 @@ export function MasterPlanBuilderDrawer({
         </form>
 
         {/* Drawer Footer Actions */}
-        <div className="p-4 border-t border-[#21405A] bg-[#071521] flex items-center justify-end gap-3 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="px-4 py-2 rounded-xl border border-[#21405A] text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="px-5 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] font-bold text-xs transition-all shadow-md cursor-pointer flex items-center gap-1.5"
-          >
-            {isSubmitting ? (
-              <span>Deploying...</span>
-            ) : (
-              <>
-                <Layers className="w-3.5 h-3.5" />
-                <span>{plan?.id ? "Update Master Plan" : "Deploy Master Plan"}</span>
-              </>
-            )}
-          </button>
+        <div className="p-4 border-t border-[#21405A] bg-[#071521] flex items-center justify-between gap-3 shrink-0">
+          {plan?.id ? (
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isSubmitting}
+              className="px-3.5 py-2 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold transition-all cursor-pointer"
+            >
+              Deactivate Plan
+            </button>
+          ) : (
+            <div />
+          )}
+
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="px-4 py-2 rounded-xl border border-[#21405A] text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="px-5 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] font-bold text-xs transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+            >
+              {isSubmitting ? (
+                <span>Deploying...</span>
+              ) : (
+                <>
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>{plan?.id ? "Update Master Plan" : "Deploy Master Plan"}</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>,
