@@ -474,6 +474,7 @@ router.get('/platform-config', async (req, res) => {
           .from('master_plans')
           .select('*')
           .eq('status', 'active')
+          .eq('is_exclusive', false)
           .order('max_monthly_visits', { ascending: true });
 
         if (Array.isArray(dbPlans) && dbPlans.length > 0) {

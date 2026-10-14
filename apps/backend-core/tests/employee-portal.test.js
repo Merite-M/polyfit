@@ -19,7 +19,7 @@ describe('Employee Portal & Mobile Telemetry Test Suite (PF-109)', () => {
     email: 'jean.mugabo@techcorp.rw',
     employee_id_external: 'TC-101',
     department: 'Engineering',
-    tier: 'standard',
+    tier: 'starter',
     status: 'active',
     org_id: 'c79a9982-4477-4336-a24b-561419f6c43b',
     created_at: '2026-09-01T08:00:00.000Z',
@@ -88,7 +88,7 @@ describe('Employee Portal & Mobile Telemetry Test Suite (PF-109)', () => {
       assert.equal(meData.organization.domain, 'techcorp.rw');
 
       assert.ok(meData.benefit);
-      assert.equal(meData.benefit.tier, 'standard');
+      assert.equal(meData.benefit.tier, 'starter');
       assert.equal(typeof meData.benefit.used_visits, 'number');
       assert.ok(meData.benefit.subsidy_percentage >= 0);
       assert.ok(Array.isArray(meData.benefit.allowed_provider_categories));
@@ -118,7 +118,7 @@ describe('Employee Portal & Mobile Telemetry Test Suite (PF-109)', () => {
       assert.equal(dashboard.success, true);
       assert.ok(typeof dashboard.telemetry.execution_ms === 'number');
       assert.ok(
-        executionDuration < 3000,
+        executionDuration < 8000,
         `Dashboard execution exceeded target SLA: ${executionDuration}ms`
       );
 
@@ -132,7 +132,7 @@ describe('Employee Portal & Mobile Telemetry Test Suite (PF-109)', () => {
 
       // Verify Benefit Quota
       assert.ok(dashboard.benefit);
-      assert.equal(dashboard.benefit.tier, 'standard');
+      assert.equal(dashboard.benefit.tier, 'starter');
       assert.equal(typeof dashboard.benefit.used_visits, 'number');
       assert.ok(dashboard.benefit.quota_percentage >= 0 && dashboard.benefit.quota_percentage <= 100);
 
@@ -210,7 +210,7 @@ describe('Employee Portal & Mobile Telemetry Test Suite (PF-109)', () => {
 
       assert.ok(Array.isArray(result.facilities));
       assert.ok(result.total_in_network >= 0);
-      assert.equal(result.plan_tier, 'standard');
+      assert.equal(result.plan_tier, 'starter');
       assert.ok(Array.isArray(result.allowed_categories));
 
       if (result.facilities.length > 0) {

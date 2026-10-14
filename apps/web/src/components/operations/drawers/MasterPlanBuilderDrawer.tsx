@@ -17,7 +17,9 @@ import {
   Sparkles,
   Users,
   Coins,
-  ChevronDown
+  ChevronDown,
+  Plus,
+  MinusCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api-client";
@@ -28,7 +30,7 @@ export interface MasterPlanData {
   name: string;
   tier?: string;
   max_monthly_visits: number;
-  co_pay_percentage: number;
+  co_pay_percentage?: number;
   monthly_price_rwf?: number;
   annual_price_rwf?: number;
   monthly_price_usd?: number;
@@ -41,6 +43,10 @@ export interface MasterPlanData {
   badge?: string;
   is_popular?: boolean;
   description?: string;
+  features?: string[];
+  not_included?: string[];
+  notIncluded?: string[];
+  is_exclusive?: boolean;
   status: "active" | "draft" | "inactive";
   organization?: {
     id: string;
@@ -98,6 +104,67 @@ const TIER_OPTIONS = [
   { id: "executive", label: "Executive", desc: "16 visits/mo • All-access + clinics & spas", icon: Crown }
 ];
 
+const DEFAULT_TIER_FEATURES: Record<string, { features: string[]; notIncluded: string[] }> = {
+  basic: {
+    features: [
+      "4 verified visits per month",
+      "Access to 30+ vetted gyms & strength centers",
+      "Consolidated monthly RRA EBM 18% VAT invoice",
+      "Dynamic anti-passback mobile passes",
+      "Standard monthly employee utilization report",
+      "Standard email support (24h SLA)"
+    ],
+    notIncluded: [
+      "Aquatic pools & Olympic lap access",
+      "Yoga & Reformer Pilates studios",
+      "Thermal spas & clinical physiotherapy",
+      "Dedicated wellness concierge"
+    ]
+  },
+  starter: {
+    features: [
+      "8 verified visits per month",
+      "Access to 50+ network gyms & Olympic lap pools",
+      "Single consolidated RRA EBM monthly invoice",
+      "Dual check-in modality (turnstile QR & desk plaque)",
+      "Live department utilization telemetry",
+      "Standard employee roster upload (CSV)",
+      "Priority support (12h SLA)"
+    ],
+    notIncluded: [
+      "Yoga & Reformer Pilates studios",
+      "Thermal spas & clinical physiotherapy",
+      "Dedicated wellness concierge"
+    ]
+  },
+  premium: {
+    features: [
+      "12 verified visits per month",
+      "Full multi-category access: Gyms, Pools, Yoga & Pilates",
+      "Access to 80+ top partner facilities across Kigali",
+      "Instant anti-passback biometric & geo lock",
+      "Live check-in telemetry & department heatmaps",
+      "Quarterly corporate wellness impact review",
+      "Priority support via WhatsApp & phone (4h SLA)"
+    ],
+    notIncluded: [
+      "Thermal spas & clinical physiotherapy"
+    ]
+  },
+  executive: {
+    features: [
+      "16 verified visits per month",
+      "Unrestricted all-category access across entire network",
+      "Gyms, Olympic Pools, Reformer Pilates, Physio Clinics & Spas",
+      "Zero employee co-pay (100% employer sponsored)",
+      "Dedicated PolyFit VIP wellness concierge",
+      "Custom corporate health challenges & executive reviews",
+      "Direct HRIS integration & automated webhook sync"
+    ],
+    notIncluded: []
+  }
+};
+
 export function MasterPlanBuilderDrawer({
   isOpen,
   onClose,
@@ -108,9 +175,8 @@ export function MasterPlanBuilderDrawer({
   const [mounted, setMounted] = useState(false);
   const [name, setName] = useState("");
   const [orgId, setOrgId] = useState("");
-  const [tier, setTier] = useState<string>("standard");
+  const [tier, setTier] = useState<string>("starter");
   const [maxVisits, setMaxVisits] = useState(8);
-  const [copayPct, setCopayPct] = useState(0);
   const [budgetCap, setBudgetCap] = useState<number | "">("");
   const [isFamilyEligible, setIsFamilyEligible] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([
@@ -126,6 +192,11 @@ export function MasterPlanBuilderDrawer({
   const [targetAudience, setTargetAudience] = useState<string>("");
   const [status, setStatus] = useState<"active" | "draft" | "inactive">("active");
   const [description, setDescription] = useState("");
+  const [features, setFeatures] = useState<string[]>([]);
+  const [notIncluded, setNotIncluded] = useState<string[]>([]);
+  const [newFeatureInput, setNewFeatureInput] = useState("");
+  const [newNotIncludedInput, setNewNotIncludedInput] = useState("");
+  const [isExclusive, setIsExclusive] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -138,9 +209,9 @@ export function MasterPlanBuilderDrawer({
     if (plan) {
       setName(plan.name || "");
       setOrgId(plan.org_id || "");
+      setIsExclusive(Boolean(plan.is_exclusive || plan.org_id));
       setTier(plan.tier || "starter");
       setMaxVisits(plan.max_monthly_visits || 8);
-      setCopayPct(Number(plan.co_pay_percentage || 0));
       setMonthlyPriceRwf(Number(plan.monthly_price_rwf || (plan.tier === "basic" ? 10000 : plan.tier === "premium" ? 32000 : plan.tier === "executive" ? 50000 : 18000)));
       setAnnualPriceRwf(Number(plan.annual_price_rwf || Math.round((plan.monthly_price_rwf || 18000) * 0.85)));
       setMonthlyPriceUsd(Number(plan.monthly_price_usd || (plan.tier === "basic" ? 8 : plan.tier === "premium" ? 24 : plan.tier === "executive" ? 38 : 14)));
@@ -152,12 +223,23 @@ export function MasterPlanBuilderDrawer({
       setSelectedCategories(plan.allowed_provider_categories || ["gym", "pool"]);
       setStatus(plan.status || "active");
       setDescription(plan.description || "");
+
+      const planTier = (plan.tier || "starter").toLowerCase();
+      const fallbackDefs = DEFAULT_TIER_FEATURES[planTier] || DEFAULT_TIER_FEATURES.starter;
+      const initialFeatures = Array.isArray(plan.features) && plan.features.length > 0
+        ? plan.features
+        : fallbackDefs.features;
+      const initialNotIncluded = Array.isArray(plan.not_included)
+        ? plan.not_included
+        : (Array.isArray(plan.notIncluded) ? plan.notIncluded : fallbackDefs.notIncluded);
+
+      setFeatures([...initialFeatures]);
+      setNotIncluded([...initialNotIncluded]);
     } else {
       setName("");
       setOrgId(organizations[0]?.id || "");
       setTier("starter");
       setMaxVisits(8);
-      setCopayPct(0);
       setMonthlyPriceRwf(18000);
       setAnnualPriceRwf(15300);
       setMonthlyPriceUsd(14);
@@ -169,7 +251,13 @@ export function MasterPlanBuilderDrawer({
       setSelectedCategories(["gym", "pool"]);
       setStatus("active");
       setDescription("");
+      setIsExclusive(false);
+      const defaults = DEFAULT_TIER_FEATURES.starter;
+      setFeatures([...defaults.features]);
+      setNotIncluded([...defaults.notIncluded]);
     }
+    setNewFeatureInput("");
+    setNewNotIncludedInput("");
     setError(null);
   }, [plan, isOpen, organizations]);
 
@@ -177,6 +265,10 @@ export function MasterPlanBuilderDrawer({
   const handleSelectTier = (newTier: string) => {
     setTier(newTier);
     if (!plan) {
+      const defaults = DEFAULT_TIER_FEATURES[newTier] || DEFAULT_TIER_FEATURES.starter;
+      setFeatures([...defaults.features]);
+      setNotIncluded([...defaults.notIncluded]);
+
       if (newTier === "basic") {
         setMaxVisits(4);
         setMonthlyPriceRwf(10000);
@@ -185,7 +277,6 @@ export function MasterPlanBuilderDrawer({
         setAnnualPriceUsd(7);
         setBadge("Essential");
         setSelectedCategories(["gym"]);
-        setCopayPct(20);
       } else if (newTier === "starter") {
         setMaxVisits(8);
         setMonthlyPriceRwf(18000);
@@ -194,7 +285,6 @@ export function MasterPlanBuilderDrawer({
         setAnnualPriceUsd(12);
         setBadge("Growing Teams");
         setSelectedCategories(["gym", "pool"]);
-        setCopayPct(10);
       } else if (newTier === "premium") {
         setMaxVisits(12);
         setMonthlyPriceRwf(32000);
@@ -203,7 +293,6 @@ export function MasterPlanBuilderDrawer({
         setAnnualPriceUsd(20);
         setBadge("Most Popular");
         setSelectedCategories(["gym", "pool", "studio"]);
-        setCopayPct(0);
       } else if (newTier === "executive") {
         setMaxVisits(16);
         setMonthlyPriceRwf(50000);
@@ -212,9 +301,28 @@ export function MasterPlanBuilderDrawer({
         setAnnualPriceUsd(32);
         setBadge("All Access");
         setSelectedCategories(["gym", "pool", "studio", "clinic", "wellness_center"]);
-        setCopayPct(0);
       }
     }
+  };
+
+  const handleAddFeature = () => {
+    if (!newFeatureInput.trim()) return;
+    setFeatures((prev) => [...prev, newFeatureInput.trim()]);
+    setNewFeatureInput("");
+  };
+
+  const handleRemoveFeature = (index: number) => {
+    setFeatures((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddNotIncluded = () => {
+    if (!newNotIncludedInput.trim()) return;
+    setNotIncluded((prev) => [...prev, newNotIncludedInput.trim()]);
+    setNewNotIncludedInput("");
+  };
+
+  const handleRemoveNotIncluded = (index: number) => {
+    setNotIncluded((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Handle ESC key
@@ -269,11 +377,11 @@ export function MasterPlanBuilderDrawer({
       setError(null);
 
       const payload = {
-        org_id: orgId || undefined,
+        org_id: isExclusive && orgId ? orgId : undefined,
+        is_exclusive: isExclusive,
         name: name.trim(),
         tier,
         max_monthly_visits: Number(maxVisits),
-        co_pay_percentage: Number(copayPct),
         monthly_price_rwf: Number(monthlyPriceRwf),
         annual_price_rwf: Number(annualPriceRwf),
         monthly_price_usd: Number(monthlyPriceUsd),
@@ -284,7 +392,9 @@ export function MasterPlanBuilderDrawer({
         budget_cap_per_employee: budgetCap !== "" ? Number(budgetCap) : null,
         is_family_eligible: isFamilyEligible,
         status,
-        description: description.trim() || null
+        description: description.trim() || null,
+        features,
+        not_included: notIncluded
       };
 
       if (plan?.id) {
@@ -365,30 +475,88 @@ export function MasterPlanBuilderDrawer({
             </div>
           )}
 
-          {/* Target Organization Assignment */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-200 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
+          {/* Plan Scope: Global Public vs Client-Exclusive Enterprise */}
+          <div className="space-y-3 p-3.5 rounded-2xl bg-[#071521] border border-[#21405A]">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                 <Building2 className="w-3.5 h-3.5 text-[#28D17C]" />
-                <span>Client Organization</span>
+                <span>Plan Scope & Visibility</span>
+              </label>
+              <span className={cn(
+                "text-[10px] font-mono px-2 py-0.5 rounded-full font-bold",
+                isExclusive
+                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                  : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+              )}>
+                {isExclusive ? "CLIENT EXCLUSIVE (HIDDEN PUBLICLY)" : "GLOBAL NETWORK (PUBLIC)"}
               </span>
-              <span className="text-[10px] text-slate-400 font-mono">REQUIRED</span>
-            </label>
-            <select
-              value={orgId}
-              onChange={(e) => setOrgId(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#071521] border border-[#21405A] text-xs text-white focus:outline-none focus:border-[#28D17C] transition-colors cursor-pointer"
-              required
-            >
-              {organizations.map((org) => (
-                <option key={org.id} value={org.id} className="bg-[#0B1F33] text-white">
-                  {org.name} {org.slug ? `(${org.slug})` : ""}
-                </option>
-              ))}
-            </select>
-            <p className="text-[10px] text-slate-400">
-              Select the corporate employer under which this wellness benefit package will be deployed.
-            </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setIsExclusive(false)}
+                className={cn(
+                  "p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between",
+                  !isExclusive
+                    ? "bg-[#28D17C]/15 border-[#28D17C] text-white shadow-xs"
+                    : "bg-[#0B1F33] border-[#21405A] text-slate-400 hover:text-white"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold">Global Network Tier</span>
+                  {!isExclusive && <span className="w-1.5 h-1.5 rounded-full bg-[#28D17C]" />}
+                </div>
+                <span className="text-[10px] text-slate-400 mt-0.5 leading-snug">
+                  Published on marketing pricing & ROI calculator for all clients.
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsExclusive(true)}
+                className={cn(
+                  "p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between",
+                  isExclusive
+                    ? "bg-amber-500/15 border-amber-500 text-white shadow-xs"
+                    : "bg-[#0B1F33] border-[#21405A] text-slate-400 hover:text-white"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold">Client-Exclusive Tier</span>
+                  {isExclusive && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
+                </div>
+                <span className="text-[10px] text-slate-400 mt-0.5 leading-snug">
+                  Hidden from public site. Custom-contracted for a specific enterprise client.
+                </span>
+              </button>
+            </div>
+
+            {/* If Client-Exclusive, pick the dedicated client organization */}
+            {isExclusive && (
+              <div className="space-y-1.5 pt-2 border-t border-[#21405A]/70 animate-in fade-in-50 duration-200">
+                <label className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
+                  <span>Exclusive Client Organization</span>
+                  <span className="text-[9px] text-amber-400 font-mono">DEDICATED ACCOUNT</span>
+                </label>
+                <select
+                  value={orgId}
+                  onChange={(e) => setOrgId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white focus:outline-none focus:border-amber-400 transition-colors cursor-pointer"
+                  required={isExclusive}
+                >
+                  <option value="" disabled className="bg-[#0B1F33] text-slate-400">Select enterprise client...</option>
+                  {organizations.map((org) => (
+                    <option key={org.id} value={org.id} className="bg-[#0B1F33] text-white">
+                      {org.name} {org.slug ? `(${org.slug})` : ""}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-400 leading-snug">
+                  Only eligible employees and HR administrators of this organization will see and access this plan.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Plan Name */}
@@ -442,12 +610,12 @@ export function MasterPlanBuilderDrawer({
             </div>
           </div>
 
-          {/* Visit Quota & Default Co-Pay Split */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Visit Quota Allowance & HR Co-Pay Policy Architecture */}
+          <div className="p-3.5 rounded-2xl bg-[#071521] border border-[#21405A] space-y-3">
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-200 flex items-center justify-between">
                 <span>Monthly Visit Cap</span>
-                <span className="text-[10px] text-slate-400 font-mono">VISITS / MO</span>
+                <span className="text-[10px] text-slate-400 font-mono">VISITS / MO PER EMPLOYEE</span>
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -456,7 +624,7 @@ export function MasterPlanBuilderDrawer({
                   max={99}
                   value={maxVisits}
                   onChange={(e) => setMaxVisits(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#071521] border border-[#21405A] text-xs text-white font-mono focus:outline-none focus:border-[#28D17C]"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white font-mono focus:outline-none focus:border-[#28D17C]"
                 />
               </div>
               <div className="flex gap-1.5 pt-1">
@@ -478,25 +646,11 @@ export function MasterPlanBuilderDrawer({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-200 flex items-center justify-between">
-                <span>Baseline Co-Pay %</span>
-                <span className="text-[10px] text-slate-400 font-mono">EMPLOYEE %</span>
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={copayPct}
-                  onChange={(e) => setCopayPct(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#071521] border border-[#21405A] text-xs text-white font-mono focus:outline-none focus:border-[#28D17C]"
-                />
-                <span className="text-xs font-mono text-slate-400">%</span>
-              </div>
-              <p className="text-[10px] text-slate-400">
-                0% means 100% employer-funded. Employer HR can adjust their cost share later.
-              </p>
+            <div className="pt-2 border-t border-[#21405A]/60 flex items-start gap-2 text-[11px] text-slate-400">
+              <Shield className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <span>
+                <strong className="text-slate-300">Subsidy & Co-Pay Authority:</strong> Configured exclusively by client HR administrators in the Corporate Portal based on employer wellness benefit budget.
+              </span>
             </div>
           </div>
 
@@ -700,6 +854,128 @@ export function MasterPlanBuilderDrawer({
                 >
                   {isFamilyEligible ? "ENABLED" : "DISABLED"}
                 </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Plan Inclusions (What's Included) */}
+          <div className="space-y-3 p-3.5 rounded-2xl bg-[#071521] border border-[#21405A]">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#28D17C]" />
+                <span>What&apos;s Included ({features.length})</span>
+              </label>
+              <span className="text-[10px] text-slate-400 font-mono">VISIBLE IN PRICING & PORTALS</span>
+            </div>
+
+            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+              {features.map((feat, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-slate-200"
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#28D17C] shrink-0" />
+                    <span className="truncate">{feat}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFeature(idx)}
+                    className="p-1 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0 cursor-pointer"
+                    title="Remove item"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+              {features.length === 0 && (
+                <p className="text-[11px] text-slate-500 italic p-2">No included items added yet.</p>
+              )}
+            </div>
+
+            {/* Add new feature input */}
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="text"
+                value={newFeatureInput}
+                onChange={(e) => setNewFeatureInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddFeature();
+                  }
+                }}
+                placeholder="Add included feature (press Enter)..."
+                className="flex-1 px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#28D17C]"
+              />
+              <button
+                type="button"
+                onClick={handleAddFeature}
+                className="px-3 py-2 rounded-xl bg-[#28D17C]/15 border border-[#28D17C]/40 text-[#28D17C] hover:bg-[#28D17C]/25 text-xs font-semibold cursor-pointer shrink-0 transition-colors flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Plan Exclusions (What's NOT Included) */}
+          <div className="space-y-3 p-3.5 rounded-2xl bg-[#071521] border border-[#21405A]">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                <MinusCircle className="w-3.5 h-3.5 text-amber-400" />
+                <span>What&apos;s NOT Included ({notIncluded.length})</span>
+              </label>
+              <span className="text-[10px] text-slate-400 font-mono">SHOWN WITH STRIKETHROUGH</span>
+            </div>
+
+            <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+              {notIncluded.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-slate-400"
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="text-amber-400 font-mono font-bold">—</span>
+                    <span className="truncate line-through opacity-80">{item}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveNotIncluded(idx)}
+                    className="p-1 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0 cursor-pointer"
+                    title="Remove item"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+              {notIncluded.length === 0 && (
+                <p className="text-[11px] text-slate-500 italic p-2">No exclusions (all network benefits accessible).</p>
+              )}
+            </div>
+
+            {/* Add new exclusion input */}
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="text"
+                value={newNotIncludedInput}
+                onChange={(e) => setNewNotIncludedInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddNotIncluded();
+                  }
+                }}
+                placeholder="Add excluded item (press Enter)..."
+                className="flex-1 px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+              />
+              <button
+                type="button"
+                onClick={handleAddNotIncluded}
+                className="px-3 py-2 rounded-xl bg-amber-400/15 border border-amber-400/40 text-amber-400 hover:bg-amber-400/25 text-xs font-semibold cursor-pointer shrink-0 transition-colors flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add</span>
               </button>
             </div>
           </div>
