@@ -734,15 +734,14 @@ async function batchUpdateEmployees(orgId, { action, employee_ids = [], tier = n
       .in('employee_id', matchedIds)
       .eq('status', 'active');
 
-    for (const emp of matchedEmployees) {
-      if (emp.user_id) {
-        try {
-          await supabase.auth.admin.updateUserById(emp.user_id, {
-            app_metadata: { status: 'frozen' }
-          });
-        } catch (e) {}
-      }
-    }
+    const freezePromises = matchedEmployees
+      .filter((emp) => emp.user_id)
+      .map((emp) =>
+        supabase.auth.admin.updateUserById(emp.user_id, {
+          app_metadata: { status: 'frozen' }
+        }).catch(() => {})
+      );
+    await Promise.allSettled(freezePromises);
 
     results.succeeded = matchedIds.length;
   } else if (action === 'activate') {
@@ -764,15 +763,14 @@ async function batchUpdateEmployees(orgId, { action, employee_ids = [], tier = n
       .in('employee_id', matchedIds)
       .eq('status', 'suspended');
 
-    for (const emp of matchedEmployees) {
-      if (emp.user_id) {
-        try {
-          await supabase.auth.admin.updateUserById(emp.user_id, {
-            app_metadata: { status: 'active' }
-          });
-        } catch (e) {}
-      }
-    }
+    const activatePromises = matchedEmployees
+      .filter((emp) => emp.user_id)
+      .map((emp) =>
+        supabase.auth.admin.updateUserById(emp.user_id, {
+          app_metadata: { status: 'active' }
+        }).catch(() => {})
+      );
+    await Promise.allSettled(activatePromises);
 
     results.succeeded = matchedIds.length;
   } else if (action === 'terminate') {
@@ -793,15 +791,14 @@ async function batchUpdateEmployees(orgId, { action, employee_ids = [], tier = n
       .update({ status: 'expired' })
       .in('employee_id', matchedIds);
 
-    for (const emp of matchedEmployees) {
-      if (emp.user_id) {
-        try {
-          await supabase.auth.admin.updateUserById(emp.user_id, {
-            app_metadata: { status: 'terminated' }
-          });
-        } catch (e) {}
-      }
-    }
+    const terminatePromises = matchedEmployees
+      .filter((emp) => emp.user_id)
+      .map((emp) =>
+        supabase.auth.admin.updateUserById(emp.user_id, {
+          app_metadata: { status: 'terminated' }
+        }).catch(() => {})
+      );
+    await Promise.allSettled(terminatePromises);
 
     results.succeeded = matchedIds.length;
   } else if (action === 'change_tier') {
