@@ -186,10 +186,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: null,
       });
       return true;
-    } catch (err: any) {
+    } catch (err) {
+      const errorMessage = err instanceof Error && err.message
+        ? err.message
+        : 'Corporate domain not recognized';
       set({
         isLoading: false,
-        error: err.message || 'Corporate domain not recognized',
+        error: errorMessage,
         organization: null,
         benefit: null,
       });
@@ -215,10 +218,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: null,
       });
       return true;
-    } catch (err: any) {
+    } catch (err) {
+      const errorMessage = err instanceof Error && err.message
+        ? err.message
+        : 'Invalid or expired HR invite code';
       set({
         isLoading: false,
-        error: err.message || 'Invalid or expired HR invite code',
+        error: errorMessage,
         organization: null,
         benefit: null,
       });
@@ -243,8 +249,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: null,
       });
       return true;
-    } catch (err: any) {
-      set({ isLoading: false, error: err.message || 'Failed to dispatch verification code' });
+    } catch (err) {
+      const errorMessage = err instanceof Error && err.message
+        ? err.message
+        : 'Failed to dispatch verification code';
+      set({ isLoading: false, error: errorMessage });
       return false;
     }
   },
@@ -278,8 +287,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       return true;
-    } catch (err: any) {
-      set({ isLoading: false, error: err.message || 'Verification failed. Please check the code.' });
+    } catch (err) {
+      const errorMessage = err instanceof Error && err.message
+        ? err.message
+        : 'Verification failed. Please check the code.';
+      set({ isLoading: false, error: errorMessage });
       return false;
     }
   },
@@ -308,8 +320,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: null,
       });
       return true;
-    } catch (err: any) {
-      set({ isLoading: false, error: err.message || 'Failed to activate benefit' });
+    } catch (err) {
+      const errorMessage = err instanceof Error && err.message
+        ? err.message
+        : 'Failed to activate benefit';
+      set({ isLoading: false, error: errorMessage });
       return false;
     }
   },
