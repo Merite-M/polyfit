@@ -276,12 +276,14 @@ export default function AccessPassScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        alwaysBounceVertical={true}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={onRefresh}
             tintColor={Palette.green}
             colors={[Palette.green]}
+            progressBackgroundColor={Palette.navyElevated}
           />
         }
       >

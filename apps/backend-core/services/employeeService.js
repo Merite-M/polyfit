@@ -436,25 +436,34 @@ async function processBulkImport(orgId, rows, options = {}) {
     }
   }
 
-  // 7. Batch Update Existing Employees (concurrent batches)
+  // 7. Batch Update Existing Employees (concurrent batches in chunks of 50)
   let updatedCount = 0;
   if (toUpdate.length > 0) {
-    for (const item of toUpdate) {
-      const { error: updErr } = await supabase
-        .from('employees')
-        .update({
-          full_name: item.full_name,
-          tier: item.tier,
-          department: item.department,
-          employee_id_external: item.employee_id_external,
-          updated_at: item.updated_at
-        })
-        .eq('id', item.id);
+    const UPDATE_CHUNK_SIZE = 50;
+    for (let i = 0; i < toUpdate.length; i += UPDATE_CHUNK_SIZE) {
+      const chunk = toUpdate.slice(i, i + UPDATE_CHUNK_SIZE);
+      const results = await Promise.all(
+        chunk.map((item) =>
+          supabase
+            .from('employees')
+            .update({
+              full_name: item.full_name,
+              tier: item.tier,
+              department: item.department,
+              employee_id_external: item.employee_id_external,
+              updated_at: item.updated_at
+            })
+            .eq('id', item.id)
+            .then(({ error }) => ({ item, error }))
+        )
+      );
 
-      if (!updErr) {
-        updatedCount++;
-      } else {
-        failed.push({ email: item.email, error: updErr.message });
+      for (const { item, error } of results) {
+        if (!error) {
+          updatedCount++;
+        } else {
+          failed.push({ email: item.email, error: error.message });
+        }
       }
     }
   }
@@ -725,14 +734,14 @@ async function batchUpdateEmployees(orgId, { action, employee_ids = [], tier = n
       .in('employee_id', matchedIds)
       .eq('status', 'active');
 
-    const freezeAuthPromises = matchedEmployees
+    const freezePromises = matchedEmployees
       .filter((emp) => emp.user_id)
       .map((emp) =>
         supabase.auth.admin.updateUserById(emp.user_id, {
           app_metadata: { status: 'frozen' }
         }).catch(() => {})
       );
-    await Promise.allSettled(freezeAuthPromises);
+    await Promise.allSettled(freezePromises);
 
     results.succeeded = matchedIds.length;
   } else if (action === 'activate') {
@@ -754,14 +763,14 @@ async function batchUpdateEmployees(orgId, { action, employee_ids = [], tier = n
       .in('employee_id', matchedIds)
       .eq('status', 'suspended');
 
-    const activateAuthPromises = matchedEmployees
+    const activatePromises = matchedEmployees
       .filter((emp) => emp.user_id)
       .map((emp) =>
         supabase.auth.admin.updateUserById(emp.user_id, {
           app_metadata: { status: 'active' }
         }).catch(() => {})
       );
-    await Promise.allSettled(activateAuthPromises);
+    await Promise.allSettled(activatePromises);
 
     results.succeeded = matchedIds.length;
   } else if (action === 'terminate') {
@@ -782,14 +791,14 @@ async function batchUpdateEmployees(orgId, { action, employee_ids = [], tier = n
       .update({ status: 'expired' })
       .in('employee_id', matchedIds);
 
-    const terminateAuthPromises = matchedEmployees
+    const terminatePromises = matchedEmployees
       .filter((emp) => emp.user_id)
       .map((emp) =>
         supabase.auth.admin.updateUserById(emp.user_id, {
           app_metadata: { status: 'terminated' }
         }).catch(() => {})
       );
-    await Promise.allSettled(terminateAuthPromises);
+    await Promise.allSettled(terminatePromises);
 
     results.succeeded = matchedIds.length;
   } else if (action === 'change_tier') {

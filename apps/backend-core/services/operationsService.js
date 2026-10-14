@@ -3744,7 +3744,7 @@ async function getOperationsPlans(filters = {}) {
   try {
     const { data: mpData, error: mpErr } = await supabase
       .from('master_plans')
-      .select('*')
+      .select('*, organization:organizations(id, name, slug)')
       .order('max_monthly_visits', { ascending: true });
     if (!mpErr && Array.isArray(mpData) && mpData.length > 0) {
       masterPlans = mpData;
@@ -3902,6 +3902,8 @@ async function createOperationsPlan(payload) {
   const {
     tier = 'starter',
     name,
+    org_id = null,
+    is_exclusive = false,
     description = null,
     max_monthly_visits = 8,
     monthly_price_rwf = 18000,
@@ -3933,11 +3935,17 @@ async function createOperationsPlan(payload) {
     throw new Error('default_copay_percentage must be between 0 and 100');
   }
 
+  const notIncludedArray = Array.isArray(not_included) && not_included.length > 0
+    ? not_included
+    : (Array.isArray(payload.notIncluded) ? payload.notIncluded : []);
+
   const { data: plan, error: insertError } = await supabase
     .from('master_plans')
     .upsert({
       tier: cleanTier,
       name: name.trim(),
+      org_id: org_id || null,
+      is_exclusive: Boolean(is_exclusive),
       description: description ? String(description).trim() : null,
       max_monthly_visits: visits,
       monthly_price_rwf: Number(monthly_price_rwf),
@@ -3952,7 +3960,7 @@ async function createOperationsPlan(payload) {
       badge: badge ? String(badge).trim() : null,
       is_popular: Boolean(is_popular),
       features: Array.isArray(features) ? features : [],
-      not_included: Array.isArray(not_included) ? not_included : [],
+      not_included: notIncludedArray,
       status: ['active', 'draft', 'inactive'].includes(status) ? status : 'active',
       updated_at: new Date().toISOString()
     }, { onConflict: 'tier' })
@@ -3985,8 +3993,14 @@ async function updateOperationsPlan(planId, payload) {
   if (payload.badge !== undefined) updateFields.badge = payload.badge ? String(payload.badge).trim() : null;
   if (payload.is_popular !== undefined) updateFields.is_popular = Boolean(payload.is_popular);
   if (payload.features !== undefined) updateFields.features = Array.isArray(payload.features) ? payload.features : [];
-  if (payload.not_included !== undefined) updateFields.not_included = Array.isArray(payload.not_included) ? payload.not_included : [];
+  if (payload.not_included !== undefined) {
+    updateFields.not_included = Array.isArray(payload.not_included) ? payload.not_included : [];
+  } else if (payload.notIncluded !== undefined) {
+    updateFields.not_included = Array.isArray(payload.notIncluded) ? payload.notIncluded : [];
+  }
   if (payload.description !== undefined) updateFields.description = payload.description ? String(payload.description).trim() : null;
+  if (payload.org_id !== undefined) updateFields.org_id = payload.org_id || null;
+  if (payload.is_exclusive !== undefined) updateFields.is_exclusive = Boolean(payload.is_exclusive);
   if (payload.status !== undefined) updateFields.status = payload.status;
 
   // Try updating in master_plans first by id or tier
