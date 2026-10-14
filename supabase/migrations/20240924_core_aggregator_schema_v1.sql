@@ -159,11 +159,35 @@ ALTER TABLE eligibility ENABLE ROW LEVEL SECURITY;
 CREATE OR REPLACE FUNCTION is_org_admin(org_id UUID)
 RETURNS BOOLEAN AS $$
 BEGIN
-  -- For now, allow service role and authenticated users with org membership
-  -- TODO: Implement proper org admin check via app_metadata
-  RETURN auth.uid() IS NOT NULL;
+  -- 1. Service role full access
+  IF (SELECT auth.role()) = 'service_role' THEN
+    RETURN TRUE;
+  END IF;
+
+  -- 2. Platform admins (super_admin, polyfit_ops) full access
+  IF public.is_admin() THEN
+    RETURN TRUE;
+  END IF;
+
+  -- 3. Check org admin role and org scoping via auth.jwt() app_metadata
+  IF (((SELECT auth.jwt()) -> 'app_metadata' ->> 'role') IN ('org_admin', 'admin'))
+     AND (((SELECT auth.jwt()) -> 'app_metadata' ->> 'org_id')::text = org_id::text) THEN
+    RETURN TRUE;
+  END IF;
+
+  -- 4. Check database-backed role assignments in user_roles table
+  IF EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = (SELECT auth.uid())
+      AND role IN ('super_admin', 'polyfit_ops', 'org_admin')
+      AND (role IN ('super_admin', 'polyfit_ops') OR user_roles.org_id = is_org_admin.org_id)
+  ) THEN
+    RETURN TRUE;
+  END IF;
+
+  RETURN FALSE;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public';
 
 -- Organizations RLS policies
 CREATE POLICY "Service role full access" ON organizations
