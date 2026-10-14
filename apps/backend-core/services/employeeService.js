@@ -653,6 +653,25 @@ async function terminateEmployee(orgId, employeeId) {
 }
 
 /**
+ * Helper function to update Supabase Auth app_metadata status concurrently
+ */
+async function updateAuthMetadataInBatch(employees, status) {
+  const tasks = employees
+    .filter((emp) => emp.user_id)
+    .map((emp) =>
+      supabase.auth.admin
+        .updateUserById(emp.user_id, {
+          app_metadata: { status }
+        })
+        .catch(() => {})
+    );
+
+  if (tasks.length > 0) {
+    await Promise.allSettled(tasks);
+  }
+}
+
+/**
  * Batch updates employee records (freeze, activate, terminate, change_tier)
  *
  * @param {string} orgId - Organization UUID
