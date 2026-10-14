@@ -13,7 +13,7 @@ import {
   HelpCircle,
   ArrowRight
 } from 'lucide-react';
-import { usePartner } from '@/contexts/PartnerContext';
+import { usePartner, type AccessHours } from '@/contexts/PartnerContext';
 import { formatRwf } from '@/lib/invoice-pdf';
 
 interface CommercialTermsCardProps {
@@ -28,7 +28,7 @@ export function CommercialTermsCard({ onOpenAmendmentModal }: CommercialTermsCar
   const cap = contract?.monthly_cap ? `${contract.monthly_cap} visits / month` : 'Unlimited';
   const tierName = contract?.tier_classification || 'Tier 1 - Certified Network Facility';
 
-  const formatHours = (hours: any) => {
+  const formatHours = (hours: AccessHours | undefined) => {
     if (!hours) return 'Weekdays: 06:00 – 21:00 | Weekends: 08:00 – 18:00';
     if (typeof hours === 'string') return hours;
     return `Weekdays: ${hours.weekdays || '06:00 – 21:00'} | Weekends: ${hours.weekends || '08:00 – 18:00'}`;
