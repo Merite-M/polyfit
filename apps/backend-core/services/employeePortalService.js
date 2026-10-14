@@ -9,6 +9,12 @@ const {
 
 const VALID_CATEGORIES = ['gym', 'pool', 'studio', 'clinic', 'wellness_center'];
 
+const DEFAULT_MAX_VISITS_BY_TIER = {
+  basic: 8,
+  standard: 12,
+  premium: 20
+};
+
 /**
  * Helper: Calculate start of current month and week in UTC
  */
@@ -265,7 +271,7 @@ async function resolveActiveBenefit(employee) {
     id: null,
     name: `${empTier.toUpperCase()} Corporate Benefit`,
     tier: empTier,
-    max_monthly_visits: empTier === 'basic' ? 8 : empTier === 'standard' ? 12 : empTier === 'premium' ? 20 : null,
+    max_monthly_visits: DEFAULT_MAX_VISITS_BY_TIER[empTier] ?? null,
     co_pay_percentage: 0.00,
     allowed_provider_categories: VALID_CATEGORIES,
     allowed_locations: null,

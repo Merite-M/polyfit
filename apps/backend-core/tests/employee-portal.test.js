@@ -95,16 +95,26 @@ describe('Employee Portal & Mobile Telemetry Test Suite (PF-109)', () => {
       assert.ok(meData.benefit.reset_date);
     });
 
-    test('resolveActiveBenefit falls back to standard tier defaults when no explicit record', async () => {
-      const mockEmp = {
-        ...sampleEmployee,
-        id: '99999999-9999-9999-9999-999999999999',
-        tier: 'premium'
+    test('resolveActiveBenefit falls back to tier defaults correctly when no explicit record', async () => {
+      const tiersToExpectedVisits = {
+        basic: 8,
+        standard: 12,
+        premium: 20,
+        executive: null
       };
-      const benefit = await resolveActiveBenefit(mockEmp);
-      assert.ok(benefit);
-      assert.equal(benefit.tier, 'premium');
-      assert.ok(Array.isArray(benefit.allowed_provider_categories));
+
+      for (const [tier, expectedVisits] of Object.entries(tiersToExpectedVisits)) {
+        const mockEmp = {
+          ...sampleEmployee,
+          id: '99999999-9999-9999-9999-999999999999',
+          tier
+        };
+        const benefit = await resolveActiveBenefit(mockEmp);
+        assert.ok(benefit);
+        assert.equal(benefit.tier, tier);
+        assert.equal(benefit.max_monthly_visits, expectedVisits);
+        assert.ok(Array.isArray(benefit.allowed_provider_categories));
+      }
     });
   });
 
