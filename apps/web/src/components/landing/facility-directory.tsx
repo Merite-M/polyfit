@@ -41,6 +41,21 @@ interface Facility {
   featured?: boolean;
 }
 
+const CATEGORY_COLORS: Record<'gym' | 'pool' | 'studio' | 'spa', string> = {
+  gym: 'bg-emerald-500',
+  pool: 'bg-teal-400',
+  studio: 'bg-purple-400',
+  spa: 'bg-amber-400',
+};
+
+function resolveCategory(rawCategory?: string): 'gym' | 'pool' | 'studio' | 'spa' {
+  const cat = (rawCategory || "").toLowerCase();
+  if (cat.includes('pool') || cat.includes('aquatic')) return 'pool';
+  if (cat.includes('studio') || cat.includes('yoga') || cat.includes('pilates')) return 'studio';
+  if (cat.includes('spa') || cat.includes('recovery')) return 'spa';
+  return 'gym';
+}
+
 interface FacilityDirectoryProps {
   onOpenLeadForm?: (type: 'employer' | 'provider') => void;
 }
@@ -207,11 +222,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
           if (Array.isArray(rawList) && rawList.length > 0) {
             const mapped: Facility[] = rawList.map((p: any, idx: number) => {
               const providerObj = p.provider || {};
-              const rawCat = (p.category || providerObj.category || "gym").toLowerCase();
-              const validCategory: 'gym' | 'pool' | 'studio' | 'spa' = 
-                rawCat.includes('pool') || rawCat.includes('aquatic') ? 'pool' :
-                rawCat.includes('studio') || rawCat.includes('yoga') || rawCat.includes('pilates') ? 'studio' :
-                rawCat.includes('spa') || rawCat.includes('recovery') ? 'spa' : 'gym';
+              const validCategory = resolveCategory(p.category || providerObj.category);
 
               return {
                 id: p.id || p.location_id || `live-${idx}`,
@@ -518,10 +529,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
                 const normX = ((facility.lng - 29.2) / (30.2 - 29.2)) * 80 + 10;
                 const normY = ((facility.lat - -1.4) / (-1.98 - -1.4)) * 75 + 15;
 
-                const pinColor = 
-                  facility.category === 'gym' ? 'bg-[#28D17C]' :
-                  facility.category === 'pool' ? 'bg-[#00D2B4]' :
-                  facility.category === 'studio' ? 'bg-purple-400' : 'bg-amber-400';
+                const pinColor = CATEGORY_COLORS[facility.category];
 
                 return (
                   <div
