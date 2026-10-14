@@ -151,6 +151,35 @@ export interface BenefitTierMatrixItem {
   restriction_reason: string;
 }
 
+export interface AccessHoursSchedule {
+  weekdays?: string;
+  weekends?: string;
+  monday?: string;
+  tuesday?: string;
+  wednesday?: string;
+  thursday?: string;
+  friday?: string;
+  saturday?: string;
+  sunday?: string;
+  [key: string]: string | undefined;
+}
+
+export type AccessHours = string | AccessHoursSchedule | null;
+
+export interface CommercialContract {
+  id?: string;
+  org_name?: string;
+  tier_classification?: string;
+  per_visit_rate: number;
+  currency?: string;
+  monthly_cap: number | null;
+  access_hours?: AccessHours;
+  status: string;
+  effective_from?: string;
+  effective_to?: string;
+  contract_party?: string;
+}
+
 export interface CommercialConditions {
   provider: {
     id: string;
@@ -158,19 +187,8 @@ export interface CommercialConditions {
     category: string;
     status: string;
   };
-  active_contract: {
-    id?: string;
-    tier_classification: string;
-    per_visit_rate: number;
-    currency: string;
-    monthly_cap: number | null;
-    access_hours: any;
-    status: string;
-    effective_from?: string;
-    effective_to?: string;
-    contract_party: string;
-  };
-  all_contracts: any[];
+  active_contract: CommercialContract;
+  all_contracts: CommercialContract[];
   tier_access_matrix: BenefitTierMatrixItem[];
   payment_calculation_rules: {
     gross_rate_per_checkin_rwf: number;
