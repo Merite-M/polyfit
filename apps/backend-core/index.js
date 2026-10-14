@@ -8,22 +8,33 @@ require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 const app = express();
 const port = process.env.PORT || 3001;
 
-const allowedOrigins = [
-  'https://polyfit.onrender.com',
-  'http://localhost:3000',
-  'http://localhost:8085',
-  'http://127.0.0.1:8085',
-  'http://localhost:8081',
-  process.env.FRONTEND_URL
-].filter(Boolean);
+const extraOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map((o) => o.trim())
+  : [];
+
+const allowedOrigins = Array.from(
+  new Set([
+    'https://polyfit.onrender.com',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:8085',
+    'http://127.0.0.1:8085',
+    'http://localhost:8081',
+    'http://127.0.0.1:8081',
+    ...extraOrigins
+  ])
+).filter(Boolean);
 
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || origin.endsWith('.onrender.com')) {
+    if (
+      allowedOrigins.includes(origin) ||
+      /^https:\/\/polyfit(-[a-zA-Z0-9-]+)?\.onrender\.com$/.test(origin)
+    ) {
       return callback(null, true);
     }
-    return callback(null, true);
+    return callback(null, false);
   },
   credentials: true,
   optionsSuccessStatus: 200

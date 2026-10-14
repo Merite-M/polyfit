@@ -264,23 +264,39 @@ async function generateAllSettlements(periodStart, periodEnd) {
 
   if (provError) throw new Error(`Failed to list providers: ${provError.message}`);
 
+  const activeProviders = providers || [];
+  if (activeProviders.length === 0) {
+    return { generated: 0, skipped: 0, errors: [], results: [] };
+  }
+
+  const settleResults = await Promise.allSettled(
+    activeProviders.map(async (provider) => {
+      const result = await generateSettlement(provider.id, periodStart, periodEnd);
+      return { provider, result };
+    })
+  );
+
   const results = [];
   let generated = 0;
   let skipped = 0;
   const errors = [];
 
-  for (const provider of (providers || [])) {
-    try {
-      const result = await generateSettlement(provider.id, periodStart, periodEnd);
+  for (let i = 0; i < settleResults.length; i++) {
+    const provider = activeProviders[i];
+    const item = settleResults[i];
+
+    if (item.status === 'fulfilled') {
+      const { result } = item.value;
       results.push({ providerId: provider.id, providerName: provider.name, ...result });
       if (result.created) generated++;
       else skipped++;
-    } catch (err) {
-      // "No verified visits" is not an error — just means this provider had no traffic
-      if (err.message.includes('No verified visits') || err.message.includes('No billable visits')) {
+    } else {
+      const err = item.reason;
+      const errMsg = err && err.message ? err.message : String(err);
+      if (errMsg.includes('No verified visits') || errMsg.includes('No billable visits')) {
         skipped++;
       } else {
-        errors.push({ providerId: provider.id, providerName: provider.name, error: err.message });
+        errors.push({ providerId: provider.id, providerName: provider.name, error: errMsg });
       }
     }
   }
