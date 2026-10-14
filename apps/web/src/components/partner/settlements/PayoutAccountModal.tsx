@@ -121,7 +121,7 @@ export function PayoutAccountModal({ isOpen, onClose, onSuccess }: PayoutAccount
        .pf-native-dialog drives @starting-style entry + allow-discrete exit animations. */
     <dialog
       ref={dialogRef}
-      className="pf-native-dialog w-full overflow-hidden"
+      className="pf-native-dialog w-full overflow-hidden bg-white dark:bg-card text-card-foreground shadow-2xl"
       aria-labelledby="payout-modal-title"
       onClose={onClose}
     >
@@ -129,7 +129,7 @@ export function PayoutAccountModal({ isOpen, onClose, onSuccess }: PayoutAccount
       <div className="h-1.5 bg-gradient-to-r from-accent to-secondary" />
 
       {/* Modal Header */}
-      <div className="p-5 sm:p-6 border-b border-border flex items-start justify-between gap-4">
+      <div className="p-5 sm:p-6 border-b border-border bg-white dark:bg-card flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-accent bg-accent-subtle px-2 py-0.5 rounded-full border border-accent/20">
@@ -157,7 +157,7 @@ export function PayoutAccountModal({ isOpen, onClose, onSuccess }: PayoutAccount
       </div>
 
       {/* Form Body */}
-      <form onSubmit={handleSave} className="p-5 sm:p-6 space-y-5">
+      <form onSubmit={handleSave} className="p-5 sm:p-6 space-y-5 bg-white dark:bg-card">
         {errorMsg && (
           <div className="p-3 rounded-xl bg-error/10 border border-error/30 text-xs text-error font-medium flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />

@@ -6,6 +6,8 @@ const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 const app = express();
+// Enable trust proxy for Render, Cloudflare, and reverse proxies so express-rate-limit correctly resolves client IPs
+app.set('trust proxy', 1);
 const port = process.env.PORT || 3001;
 
 const extraOrigins = process.env.FRONTEND_URL

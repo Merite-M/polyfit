@@ -45,9 +45,9 @@ const COUNTRY_CODES = [
 ];
 
 export function Step2ContactSocial({ state, onChange }: Step2Props) {
-  // Format WhatsApp preview link
-  const cleanPhone = (state.whatsapp_number || state.phone_number).replace(/[^0-9]/g, '');
-  const cleanCode = state.phone_country_code.replace(/[^0-9]/g, '');
+  // Format WhatsApp preview link safely
+  const cleanPhone = (state.whatsapp_number || state.phone_number || '').replace(/[^0-9]/g, '');
+  const cleanCode = (state.phone_country_code || '+250').replace(/[^0-9]/g, '');
   const whatsappUrl = cleanPhone ? `https://wa.me/${cleanCode}${cleanPhone}` : '';
 
   return (

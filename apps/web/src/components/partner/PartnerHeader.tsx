@@ -104,25 +104,21 @@ export function PartnerHeader({
 
       {/* Right: Telemetry & Contextual Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Live Cloud Sync Pulse */}
+        {/* Refresh Action */}
         <button
           onClick={handleManualRefresh}
-          title="Click to refresh live feed"
-          className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F7F9FC] border border-[#E2E8F0] text-xs font-medium text-[#526173] hover:bg-[#F1F4F8] transition-colors"
+          title="Refresh live partner data"
+          className="hidden md:inline-flex items-center gap-2 h-9 px-3.5 rounded-xl bg-white border border-[#E2E8F0] text-xs font-semibold text-[#526173] hover:text-[#0B1F33] hover:bg-[#F1F4F8] transition-colors shadow-2xs cursor-pointer"
         >
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#28D17C] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#28D17C]"></span>
-          </span>
-          <span className="text-[11px] font-mono text-[#0B1F33]">Cloud Sync: Live</span>
-          <RefreshCw className={`w-3 h-3 text-[#8491A3] ml-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 text-[#526173] ${isRefreshing ? 'animate-spin text-[#28D17C]' : ''}`} />
+          <span>Refresh</span>
         </button>
 
         {/* If on Check-ins page: Render fast Counter Manual Check-in with hotkey badge */}
         {isCheckinPage ? (
           <button
             onClick={onOpenManualCheckin}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] text-xs font-bold shadow-xs transition-all active:scale-98"
+            className="inline-flex items-center gap-2 h-9 px-3.5 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] text-xs font-bold shadow-xs transition-all active:scale-98 cursor-pointer"
             title="Press 'M' on your keyboard anytime to open Manual Check-in"
           >
             <PlusCircle className="w-4 h-4 text-[#0B1F33]" />
@@ -136,7 +132,7 @@ export function PartnerHeader({
           pendingCount > 0 && (
             <Link
               href="/partner/checkins"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F59E0B]/15 hover:bg-[#F59E0B]/25 text-[#B45309] border border-[#F59E0B]/30 text-xs font-bold transition-colors"
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-[#F59E0B]/15 hover:bg-[#F59E0B]/25 text-[#B45309] border border-[#F59E0B]/30 text-xs font-bold transition-colors shadow-2xs"
             >
               <span className="w-2 h-2 rounded-full bg-[#F59E0B] animate-ping" />
               <span>Arriving Visitors ({pendingCount})</span>

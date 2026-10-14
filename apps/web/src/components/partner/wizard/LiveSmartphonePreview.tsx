@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Smartphone,
   MapPin,
@@ -17,22 +17,56 @@ import {
   ArrowRight,
   SlidersHorizontal,
   ChevronRight,
-  Compass
+  Compass,
+  AlertCircle,
+  Image as ImageIcon,
+  Users
 } from 'lucide-react';
-import { WizardLocationState, DAYS_OF_WEEK } from './types';
+import { WizardLocationState } from './types';
 
 interface LiveSmartphonePreviewProps {
   state: WizardLocationState;
+  currentStep?: number;
 }
 
-export function LiveSmartphonePreview({ state }: LiveSmartphonePreviewProps) {
+export function LiveSmartphonePreview({ state, currentStep }: LiveSmartphonePreviewProps) {
   const [activeTab, setActiveTab] = useState<'card' | 'detail' | 'pass'>('card');
+  const [countdown, setCountdown] = useState<number>(28);
+  const [passNumber, setPassNumber] = useState<string>('8491');
+
+  // Auto-switch smartphone tab based on wizard current step
+  useEffect(() => {
+    if (!currentStep) return;
+    if ([1, 5, 6, 7].includes(currentStep)) {
+      setActiveTab('card');
+    } else if ([2, 3, 4, 8, 9].includes(currentStep)) {
+      setActiveTab('detail');
+    } else if ([10, 11].includes(currentStep)) {
+      setActiveTab('pass');
+    }
+  }, [currentStep]);
+
+  // Dynamic TOTP countdown simulation
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          // Generate new simulated random code
+          setPassNumber(String(Math.floor(1000 + Math.random() * 9000)));
+          return 30;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   // Check if open now based on today's operating hours
   const now = new Date();
   const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const todayKey = dayNames[now.getDay()];
-  const todaySched = state.operating_hours[todayKey];
+  const todaySched = state.operating_hours?.[todayKey];
   const isOpenToday = todaySched && !todaySched.is_closed;
 
   const displayShifts = todaySched?.shifts
@@ -55,7 +89,7 @@ export function LiveSmartphonePreview({ state }: LiveSmartphonePreviewProps) {
           <button
             type="button"
             onClick={() => setActiveTab('card')}
-            className={`px-2 py-1 rounded text-[10px] font-bold transition-colors ${
+            className={`px-2 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer ${
               activeTab === 'card'
                 ? 'bg-[#28D17C] text-[#0B1F33]'
                 : 'text-[#8491A3] hover:text-white'
@@ -66,7 +100,7 @@ export function LiveSmartphonePreview({ state }: LiveSmartphonePreviewProps) {
           <button
             type="button"
             onClick={() => setActiveTab('detail')}
-            className={`px-2 py-1 rounded text-[10px] font-bold transition-colors ${
+            className={`px-2 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer ${
               activeTab === 'detail'
                 ? 'bg-[#28D17C] text-[#0B1F33]'
                 : 'text-[#8491A3] hover:text-white'
@@ -77,7 +111,7 @@ export function LiveSmartphonePreview({ state }: LiveSmartphonePreviewProps) {
           <button
             type="button"
             onClick={() => setActiveTab('pass')}
-            className={`px-2 py-1 rounded text-[10px] font-bold transition-colors ${
+            className={`px-2 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer ${
               activeTab === 'pass'
                 ? 'bg-[#28D17C] text-[#0B1F33]'
                 : 'text-[#8491A3] hover:text-white'
@@ -115,7 +149,7 @@ export function LiveSmartphonePreview({ state }: LiveSmartphonePreviewProps) {
               {/* App Search Bar Simulation */}
               <div className="bg-[#0D2235] border border-[#21405A] rounded-xl px-2.5 py-1.5 flex items-center gap-2 text-[10px] text-slate-400">
                 <Compass className="w-3 h-3 text-[#28D17C]" />
-                <span className="truncate">Search Kigali facilities...</span>
+                <span className="truncate">Search Kigali network facilities...</span>
               </div>
 
               {/* Discovery Card as seen by Corporate Employees */}
@@ -132,16 +166,16 @@ export function LiveSmartphonePreview({ state }: LiveSmartphonePreviewProps) {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0D2235] via-transparent to-black/40" />
 
-                  {/* Distance & Geofence Badge */}
+                  {/* Geofence & Proximity Badge */}
                   <div className="absolute top-2 left-2 bg-[#071521]/80 backdrop-blur-xs px-2 py-0.5 rounded-full text-[9px] font-bold text-white border border-white/10 flex items-center gap-1">
                     <MapPin className="w-2.5 h-2.5 text-[#28D17C]" />
-                    <span>0.8 km</span>
+                    <span>{state.geofence_radius_meters || 100}m geofence</span>
                   </div>
 
                   {/* Rating Chip */}
                   <div className="absolute top-2 right-2 bg-[#071521]/80 backdrop-blur-xs px-2 py-0.5 rounded-full text-[9px] font-bold text-white border border-white/10 flex items-center gap-1">
                     <Star className="w-2.5 h-2.5 fill-[#F59E0B] text-[#F59E0B]" />
-                    <span>4.8</span>
+                    <span>4.9</span>
                   </div>
 
                   {/* Logo Avatar Overlay */}
@@ -187,6 +221,14 @@ export function LiveSmartphonePreview({ state }: LiveSmartphonePreviewProps) {
                     </span>
                   </div>
 
+                  {/* Capacity & Geofence info */}
+                  <div className="flex items-center gap-2 text-[9px] text-slate-400 pl-0.5">
+                    <span className="flex items-center gap-1">
+                      <Users className="w-2.5 h-2.5 text-[#28D17C]" />
+                      <span>Cap: {state.capacity || 120}</span>
+                    </span>
+                  </div>
+
                   {/* Amenity Badges */}
                   <div className="flex flex-wrap gap-1 pt-1">
                     {(state.amenities || []).slice(0, 3).map((item, idx) => (
@@ -208,7 +250,7 @@ export function LiveSmartphonePreview({ state }: LiveSmartphonePreviewProps) {
                   <button
                     type="button"
                     onClick={() => setActiveTab('detail')}
-                    className="w-full py-1.5 bg-[#28D17C] text-[#0B1F33] rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 mt-2 cursor-pointer"
+                    className="w-full py-1.5 bg-[#28D17C] text-[#0B1F33] rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 mt-2 cursor-pointer hover:bg-[#20ba6c] transition-colors"
                   >
                     <span>View Venue & Access</span>
                     <ChevronRight className="w-3 h-3" />
@@ -225,7 +267,7 @@ export function LiveSmartphonePreview({ state }: LiveSmartphonePreviewProps) {
               <button
                 type="button"
                 onClick={() => setActiveTab('card')}
-                className="text-[9px] text-[#28D17C] hover:underline flex items-center gap-1"
+                className="text-[9px] text-[#28D17C] hover:underline flex items-center gap-1 cursor-pointer"
               >
                 ← Back to Feed
               </button>
@@ -261,7 +303,7 @@ export function LiveSmartphonePreview({ state }: LiveSmartphonePreviewProps) {
               <div className="grid grid-cols-2 gap-1.5">
                 {state.whatsapp_number && (
                   <div className="bg-[#132D43] p-1.5 rounded-lg flex items-center gap-1.5 border border-[#21405A]">
-                    <MessageSquare className="w-3 h-3 text-[#25D366]" />
+                    <MessageSquare className="w-3 h-3 text-[#25D366] shrink-0" />
                     <span className="text-[9px] font-bold text-white truncate">
                       WhatsApp Chat
                     </span>
@@ -269,7 +311,7 @@ export function LiveSmartphonePreview({ state }: LiveSmartphonePreviewProps) {
                 )}
                 {state.phone_number && (
                   <div className="bg-[#132D43] p-1.5 rounded-lg flex items-center gap-1.5 border border-[#21405A]">
-                    <Phone className="w-3 h-3 text-[#28D17C]" />
+                    <Phone className="w-3 h-3 text-[#28D17C] shrink-0" />
                     <span className="text-[9px] font-bold text-white truncate">
                       {state.phone_number}
                     </span>
@@ -286,6 +328,19 @@ export function LiveSmartphonePreview({ state }: LiveSmartphonePreviewProps) {
                   {state.description || 'Welcome to our verified partner facility...'}
                 </p>
               </div>
+
+              {/* Important Notice if typed */}
+              {state.important_notice && (
+                <div className="bg-amber-950/40 border border-amber-800/60 p-2 rounded-xl text-amber-200 space-y-0.5">
+                  <span className="text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 text-amber-300">
+                    <AlertCircle className="w-2.5 h-2.5" />
+                    Reception Notice
+                  </span>
+                  <p className="text-[8.5px] line-clamp-2 leading-tight">
+                    {state.important_notice}
+                  </p>
+                </div>
+              )}
 
               {/* First Check-in Requirements */}
               <div className="bg-[#0D2235] p-2.5 rounded-xl border border-[#21405A] space-y-1.5">
@@ -313,13 +368,40 @@ export function LiveSmartphonePreview({ state }: LiveSmartphonePreviewProps) {
                     </span>
                   </div>
                 </div>
+
+                {state.recommended_gear && state.recommended_gear.length > 0 && (
+                  <div className="pt-1.5 border-t border-[#21405A]/60 flex flex-wrap gap-1">
+                    {state.recommended_gear.map((gear, idx) => (
+                      <span key={idx} className="px-1.5 py-0.5 rounded text-[8px] bg-[#132D43] text-slate-300 border border-[#21405A]">
+                        ✓ {gear}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
+
+              {/* Photo Gallery Strip */}
+              {state.gallery_urls && state.gallery_urls.length > 0 && (
+                <div className="space-y-1">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block flex items-center gap-1">
+                    <ImageIcon className="w-2.5 h-2.5 text-[#28D17C]" />
+                    Facility Gallery ({state.gallery_urls.length})
+                  </span>
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                    {state.gallery_urls.map((url, idx) => (
+                      <div key={idx} className="w-14 h-12 rounded-lg overflow-hidden shrink-0 border border-[#21405A]">
+                        <img src={url} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Test Access Pass CTA */}
               <button
                 type="button"
                 onClick={() => setActiveTab('pass')}
-                className="w-full py-2 bg-[#28D17C] text-[#0B1F33] rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-md"
+                className="w-full py-2 bg-[#28D17C] text-[#0B1F33] rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-md cursor-pointer hover:bg-[#20ba6c] transition-colors"
               >
                 <QrCode className="w-3.5 h-3.5" />
                 <span>Simulate Dynamic Pass</span>
@@ -333,7 +415,7 @@ export function LiveSmartphonePreview({ state }: LiveSmartphonePreviewProps) {
               <button
                 type="button"
                 onClick={() => setActiveTab('card')}
-                className="text-[9px] text-[#28D17C] hover:underline flex items-center gap-1 mb-1"
+                className="text-[9px] text-[#28D17C] hover:underline flex items-center gap-1 mb-1 cursor-pointer"
               >
                 ← Back to Card
               </button>
@@ -350,7 +432,7 @@ export function LiveSmartphonePreview({ state }: LiveSmartphonePreviewProps) {
                   <div className="w-full h-full flex flex-col items-center justify-center text-[#0B1F33]">
                     <QrCode className="w-20 h-20 text-[#0B1F33]" />
                     <span className="text-[8px] font-mono font-bold text-[#28D17C]">
-                      PASS #8491
+                      PASS #{passNumber}
                     </span>
                   </div>
                 </div>
@@ -360,10 +442,22 @@ export function LiveSmartphonePreview({ state }: LiveSmartphonePreviewProps) {
                   <p className="text-[#8491A3] mt-0.5">Corporate Employee Access</p>
                 </div>
 
-                {/* TOTP 30-sec Timer */}
-                <div className="bg-[#071521] rounded-lg p-2 border border-[#21405A] text-[9px] flex items-center justify-between text-slate-300">
-                  <span>Pass Refreshes In:</span>
-                  <span className="text-[#28D17C] font-mono font-bold">24s</span>
+                {/* Dynamic TOTP 30-sec Timer */}
+                <div className="bg-[#071521] rounded-lg p-2 border border-[#21405A] text-[9px] space-y-1.5">
+                  <div className="flex items-center justify-between text-slate-300">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-2.5 h-2.5 text-[#28D17C]" />
+                      Pass Refreshes In:
+                    </span>
+                    <span className="text-[#28D17C] font-mono font-bold">{countdown}s</span>
+                  </div>
+                  {/* Progress bar */}
+                  <div className="w-full h-1 bg-[#132D43] rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#28D17C] transition-all duration-1000 ease-linear rounded-full"
+                      style={{ width: `${(countdown / 30) * 100}%` }}
+                    />
+                  </div>
                 </div>
               </div>
 

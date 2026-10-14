@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { useDialog } from '@/lib/use-dialog';
+import { IsometricHexMark } from '@/components/ui/polyfit-logo';
 
 interface MarketingToolkitModalProps {
   isOpen: boolean;
@@ -61,9 +62,16 @@ export function MarketingToolkitModal({
   </defs>
   <rect width="500" height="180" rx="16" fill="url(#polyGrad)" stroke="#10B981" stroke-width="2" />
   
-  <!-- PolyFit Hex Mark -->
-  <polygon points="50,45 75,30 100,45 100,75 75,90 50,75" fill="none" stroke="url(#emeraldGrad)" stroke-width="5" />
-  <circle cx="75" cy="60" r="10" fill="#10B981" />
+  <!-- PolyFit 3D Isometric Hex Mark -->
+  <g transform="translate(40, 40) scale(0.9)">
+    <path d="M50 10L82 28.5L68 36.5L50 26L32 36.5L18 28.5L50 10Z" fill="#34E58C" />
+    <path d="M82 28.5V56.5L68 64.5V36.5L82 28.5Z" fill="#10B981" />
+    <path d="M68 64.5L50 54V46L68 36.5V64.5Z" fill="#0B1F33" />
+    <path d="M18 28.5V75.5L32 83.5V36.5L18 28.5Z" fill="#28D17C" />
+    <path d="M18 75.5L50 94V86L32 75.5L18 75.5Z" fill="#28D17C" />
+    <path d="M32 83.5L50 94V66L32 55.5V83.5Z" fill="#059669" />
+    <path d="M32 55.5L50 66L68 55.5L50 45L32 55.5Z" fill="#34E58C" />
+  </g>
   
   <!-- Text Content -->
   <text x="120" y="55" font-family="Inter, sans-serif" font-weight="800" font-size="24" fill="#FFFFFF">POLYFIT</text>
@@ -179,7 +187,7 @@ Together, we are building a healthier, more active workforce across East Africa.
        cannot use Tailwind utilities. All JSX-level tokens use design system vars. */
     <dialog
       ref={dialogRef}
-      className="pf-native-dialog pf-dialog-lg w-full flex flex-col max-h-[90dvh] overflow-hidden"
+      className="pf-native-dialog pf-dialog-lg w-full flex flex-col max-h-[90dvh] overflow-hidden bg-white dark:bg-card text-card-foreground shadow-2xl"
       aria-labelledby="toolkit-modal-title"
       onClose={onClose}
     >
@@ -251,7 +259,7 @@ Together, we are building a healthier, more active workforce across East Africa.
       </div>
 
       {/* Modal Content */}
-      <div className="p-6 overflow-y-auto flex-1 space-y-4">
+      <div className="p-6 overflow-y-auto flex-1 space-y-4 bg-white dark:bg-card">
         {/* TAB 1: FRONT DESK SIGNAGE */}
         {activeTab === 'signage' && (
           <div className="space-y-4">
@@ -323,9 +331,7 @@ Together, we are building a healthier, more active workforce across East Africa.
             {/* Badge Visual Container — hex colors here are intentional brand colors inside a CSS preview */}
             <div className="p-4 bg-primary rounded-xl flex items-center justify-center">
               <div className="border border-accent bg-gradient-to-r from-primary to-primary/80 rounded-xl p-4 flex items-center gap-4 text-primary-foreground max-w-md w-full">
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-accent to-secondary flex items-center justify-center text-accent-foreground font-bold text-lg">
-                  P
-                </div>
+                <IsometricHexMark size={44} />
                 <div>
                   <div className="flex items-center gap-1.5 text-xs font-bold">
                     <span>POLYFIT</span>

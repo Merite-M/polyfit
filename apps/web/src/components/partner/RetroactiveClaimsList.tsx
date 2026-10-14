@@ -165,7 +165,7 @@ export function RetroactiveClaimsList({ onOpenNewClaim, refreshTrigger }: Retroa
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
             <Clock className="w-3 h-3 text-[#D97706]" />
-            Ops Review
+            Under Review
           </span>
         );
     }

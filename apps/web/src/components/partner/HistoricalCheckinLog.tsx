@@ -485,7 +485,7 @@ export function HistoricalCheckinLog() {
                   <td className="py-3 px-4">
                     <div className="font-semibold text-[#0B1F33]">{row.beneficiary_name}</div>
                     <div className="text-[11px] text-[#526173] font-mono">
-                      {row.beneficiary_id} • {row.tier}
+                      {row.beneficiary_id} • Verified ID
                     </div>
                   </td>
 

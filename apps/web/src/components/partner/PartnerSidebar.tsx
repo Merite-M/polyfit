@@ -19,6 +19,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { usePartner } from '@/contexts/PartnerContext';
+import { IsometricHexMark } from '@/components/ui/polyfit-logo';
 
 interface PartnerSidebarProps {
   onCloseMobile?: () => void;
@@ -70,22 +71,12 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
     {
       label: 'Reports & Audit',
       href: '/partner/reports',
-      icon: BarChart3,
-      badge: (
-        <span className="text-[10px] font-bold bg-accent-subtle text-emerald-700 px-1.5 py-0.5 rounded-full border border-emerald-200">
-          4-Tab
-        </span>
-      )
+      icon: BarChart3
     },
     {
       label: 'Facility & Locations',
       href: '/partner/locations',
-      icon: Building2,
-      badge: (
-        <span className="text-[10px] font-bold bg-accent-subtle text-emerald-700 px-1.5 py-0.5 rounded-full border border-emerald-200">
-          Setup
-        </span>
-      )
+      icon: Building2
     }
   ];
 
@@ -99,21 +90,7 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
           onClick={onCloseMobile}
         >
           {/* Isometric Hex Logo Mark */}
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-secondary flex items-center justify-center p-1.5 shadow-sm group-hover:scale-105 transition-transform">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-full h-full text-navy"
-            >
-              <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" />
-              <path d="M12 22V12" />
-              <path d="M12 12l8.5-5" />
-            </svg>
-          </div>
+          <IsometricHexMark size={32} />
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-bold tracking-tight text-white text-base">PolyFit</span>

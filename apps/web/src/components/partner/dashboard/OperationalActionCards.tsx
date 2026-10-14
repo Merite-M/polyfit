@@ -38,20 +38,20 @@ export function OperationalActionCards({ onOpenPayoutModal }: OperationalActionC
       iconBg: 'bg-[#28D17C]/15',
       badge: isPayoutConfigured ? 'Connected' : 'Action Needed',
       badgeType: isPayoutConfigured ? 'success' : 'warning',
-      actionType: 'modal',
+      actionType: 'modal' as const,
       actionLabel: isPayoutConfigured ? 'Update Account' : 'Set Up Payout',
       onClick: onOpenPayoutModal
     },
     {
       id: 'reports',
       title: 'Reports & Audit Suite',
-      description: 'Wellhub 4-tab reporting: payment per visitor, check-in audit log, and RRA EBM settlement statements.',
+      description: 'Verified visit tracking, per-visitor payouts, check-in audit logs, and RRA EBM settlement statements.',
       icon: BarChart3,
       iconColor: 'text-[#3B82F6]',
       iconBg: 'bg-[#3B82F6]/15',
-      badge: '4-Tab Audit',
+      badge: 'Visits & Audit',
       badgeType: 'neutral',
-      actionType: 'link',
+      actionType: 'link' as const,
       href: '/partner/reports',
       actionLabel: 'Open Reports Suite'
     },
@@ -64,7 +64,7 @@ export function OperationalActionCards({ onOpenPayoutModal }: OperationalActionC
       iconBg: 'bg-[#8B5CF6]/15',
       badge: `${locations.length} Branches`,
       badgeType: 'neutral',
-      actionType: 'link',
+      actionType: 'link' as const,
       href: '/partner/locations',
       actionLabel: 'Manage Branches'
     },
@@ -77,8 +77,8 @@ export function OperationalActionCards({ onOpenPayoutModal }: OperationalActionC
       iconBg: 'bg-[#06B6D4]/15',
       badge: 'Relay Live',
       badgeType: 'success',
-      actionType: 'link',
-      href: '/partner/locations',
+      actionType: 'link' as const,
+      href: '/partner/locations#iot-relay',
       actionLabel: 'Configure IoT'
     }
   ];
@@ -89,18 +89,21 @@ export function OperationalActionCards({ onOpenPayoutModal }: OperationalActionC
         <h3 className="text-xs font-bold text-[#8491A3] uppercase tracking-wider">
           Primary Operational Modules
         </h3>
-        <span className="text-[11px] text-[#526173]">Direct portal shortcuts</span>
+        <Link
+          href="/partner/locations?signage=true"
+          className="text-xs font-bold text-[#008A4B] hover:text-[#0B1F33] flex items-center gap-1 transition-colors"
+        >
+          <span>Desk Signage &amp; Marketing</span>
+          <ArrowRight className="w-3 h-3 text-[#28D17C]" />
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {actionCards.map((card) => {
           const Icon = card.icon;
 
-          return (
-            <div
-              key={card.id}
-              className="bg-white rounded-2xl border border-[#E2E8F0] p-4.5 flex flex-col justify-between hover:border-[#CBD5E1] hover:shadow-md transition-all group"
-            >
+          const cardInnerContent = (
+            <>
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <div className={`w-10 h-10 rounded-xl ${card.iconBg} flex items-center justify-center shrink-0`}>
@@ -129,26 +132,34 @@ export function OperationalActionCards({ onOpenPayoutModal }: OperationalActionC
                 </p>
               </div>
 
-              <div className="mt-4 pt-3.5 border-t border-[#F1F4F8]">
-                {card.actionType === 'modal' ? (
-                  <button
-                    onClick={card.onClick}
-                    className="w-full inline-flex items-center justify-between text-xs font-bold text-[#0B1F33] hover:text-[#008A4B] transition-colors py-1"
-                  >
-                    <span>{card.actionLabel}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-[#8491A3] group-hover:translate-x-0.5 transition-transform" />
-                  </button>
-                ) : (
-                  <Link
-                    href={card.href || '#'}
-                    className="w-full inline-flex items-center justify-between text-xs font-bold text-[#0B1F33] hover:text-[#008A4B] transition-colors py-1"
-                  >
-                    <span>{card.actionLabel}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-[#8491A3] group-hover:translate-x-0.5 transition-transform" />
-                  </Link>
-                )}
+              <div className="mt-4 pt-3.5 border-t border-[#F1F4F8] flex items-center justify-between text-xs font-bold text-[#0B1F33] group-hover:text-[#008A4B] transition-colors py-1">
+                <span>{card.actionLabel}</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#8491A3] group-hover:translate-x-1 group-hover:text-[#28D17C] transition-all" />
               </div>
-            </div>
+            </>
+          );
+
+          if (card.actionType === 'modal') {
+            return (
+              <button
+                key={card.id}
+                type="button"
+                onClick={card.onClick}
+                className="bg-white text-left rounded-2xl border border-[#E2E8F0] p-4.5 flex flex-col justify-between hover:border-[#28D17C] hover:shadow-md transition-all group active:scale-[0.99] cursor-pointer"
+              >
+                {cardInnerContent}
+              </button>
+            );
+          }
+
+          return (
+            <Link
+              key={card.id}
+              href={card.href || '#'}
+              className="bg-white text-left rounded-2xl border border-[#E2E8F0] p-4.5 flex flex-col justify-between hover:border-[#28D17C] hover:shadow-md transition-all group active:scale-[0.99] cursor-pointer"
+            >
+              {cardInnerContent}
+            </Link>
           );
         })}
       </div>

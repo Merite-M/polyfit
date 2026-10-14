@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Building2,
@@ -42,6 +42,15 @@ export default function PartnerLocationsPage() {
     });
     setEditingGeofenceLocId(null);
   };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if ((params.get('toolkit') === 'open' || params.get('signage') === 'true') && locations.length > 0) {
+        setSelectedLocForToolkit(locations[0]);
+      }
+    }
+  }, [locations]);
 
   return (
     <div className="space-y-6">
@@ -152,7 +161,7 @@ export default function PartnerLocationsPage() {
               </div>
 
               {/* Turnstile IoT Credentials & Hardware Gate Relay */}
-              <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3.5 text-xs space-y-2 font-mono">
+              <div id="iot-relay" className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3.5 text-xs space-y-2 font-mono scroll-mt-24">
                 <div className="flex justify-between items-center text-[#526173]">
                   <span>Turnstile API Auth:</span>
                   <span className="text-[#008A4B] font-semibold bg-[#E9FAF2] px-2 py-0.5 rounded text-[10px]">

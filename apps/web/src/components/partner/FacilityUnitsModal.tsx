@@ -49,7 +49,7 @@ export function FacilityUnitsModal({ isOpen, onClose }: FacilityUnitsModalProps)
        that merged backdrop and card — the worst pattern for overlays. */
     <dialog
       ref={dialogRef}
-      className="pf-native-dialog pf-dialog-lg w-full flex flex-col max-h-[85dvh] overflow-hidden"
+      className="pf-native-dialog pf-dialog-lg w-full flex flex-col max-h-[85dvh] overflow-hidden bg-white dark:bg-card text-card-foreground shadow-2xl"
       role="dialog"
       aria-labelledby="facility-modal-title"
       onClose={onClose}

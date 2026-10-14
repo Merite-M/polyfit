@@ -163,11 +163,6 @@ export function PendingCheckinQueue({
                     <h4 className="font-bold text-[#0B1F33] text-sm truncate">
                       {item.employees?.full_name || 'Corporate Employee'}
                     </h4>
-                    {item.employees?.tier && (
-                      <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-[#E0F9F5] text-[#007A68] border border-[#A7F3E5]">
-                        {item.employees.tier}
-                      </span>
-                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[#526173] mt-0.5">
                     <span className="flex items-center gap-1 font-medium text-[#0B1F33]">

@@ -65,19 +65,19 @@ interface CheckinDetailRecord {
   employer_name: string;
   product: string;
   checkin_period: 'Default' | 'Off-peak';
-  checkin_type: 'Visit' | 'Co-Pay' | 'Free Trial';
+  checkin_type: 'Dynamic App Pass' | 'Turnstile IoT' | 'Counter PIN';
   payment: number;
 }
 
 const DEFAULT_CHECKIN_DETAILS: CheckinDetailRecord[] = [
-  { id: 'chk-01', date_formatted: 'Mon Sep 28', time: '07:15', location_id: '447f4bf2-ff66', location_name: 'Kigali Central', visitor_name: 'Eric Kwizera', polyfit_id: 'PF-EMP-1082', employer_name: 'Bank of Kigali', product: 'Weightlifting & Cardio', checkin_period: 'Default', checkin_type: 'Visit', payment: 5000 },
-  { id: 'chk-02', date_formatted: 'Mon Sep 28', time: '08:00', location_id: '189e7cb8-155e', location_name: 'Nyarutarama Branch', visitor_name: 'Jean-Claude Nzeyimana', polyfit_id: 'PF-EMP-3045', employer_name: 'TechCorp Rwanda', product: 'Lap Pool & Sauna', checkin_period: 'Default', checkin_type: 'Visit', payment: 5000 },
-  { id: 'chk-03', date_formatted: 'Mon Sep 28', time: '12:30', location_id: '447f4bf2-ff66', location_name: 'Kigali Central', visitor_name: 'Solange Uwase', polyfit_id: 'PF-EMP-9114', employer_name: 'MTN Rwandacell', product: 'Cardio Studio', checkin_period: 'Off-peak', checkin_type: 'Visit', payment: 5000 },
-  { id: 'chk-04', date_formatted: 'Mon Sep 28', time: '17:45', location_id: '447f4bf2-ff66', location_name: 'Kigali Central', visitor_name: 'Aline Mukamana', polyfit_id: 'PF-EMP-7712', employer_name: 'Bank of Kigali', product: 'Pilates Group Session', checkin_period: 'Default', checkin_type: 'Visit', payment: 5000 },
-  { id: 'chk-05', date_formatted: 'Sun Sep 27', time: '10:00', location_id: '189e7cb8-155e', location_name: 'Nyarutarama Branch', visitor_name: 'Patrick Habimana', polyfit_id: 'PF-EMP-5521', employer_name: 'I&M Bank Rwanda', product: 'Tennis / Racquet Court', checkin_period: 'Default', checkin_type: 'Co-Pay', payment: 5000 },
-  { id: 'chk-06', date_formatted: 'Sun Sep 27', time: '14:20', location_id: '447f4bf2-ff66', location_name: 'Kigali Central', visitor_name: 'Sandrine Gasana', polyfit_id: 'PF-EMP-6689', employer_name: 'MTN Rwandacell', product: 'Gym Access', checkin_period: 'Off-peak', checkin_type: 'Visit', payment: 5000 },
-  { id: 'chk-07', date_formatted: 'Sat Sep 26', time: '09:10', location_id: '189e7cb8-155e', location_name: 'Nyarutarama Branch', visitor_name: 'David Karekezi', polyfit_id: 'PF-EMP-2210', employer_name: 'TechCorp Rwanda', product: 'Lap Swimming', checkin_period: 'Default', checkin_type: 'Visit', payment: 5000 },
-  { id: 'chk-08', date_formatted: 'Fri Sep 25', time: '18:15', location_id: '447f4bf2-ff66', location_name: 'Kigali Central', visitor_name: 'Clarisse Uwineza', polyfit_id: 'PF-EMP-8843', employer_name: 'Bank of Kigali', product: 'Functional Training', checkin_period: 'Default', checkin_type: 'Visit', payment: 5000 }
+  { id: 'chk-01', date_formatted: 'Mon Sep 28', time: '07:15', location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4', location_name: 'Kigali Central Facility', visitor_name: 'Eric Kwizera', polyfit_id: 'PF-EMP-1082', employer_name: 'Bank of Kigali', product: 'Weightlifting & Cardio', checkin_period: 'Default', checkin_type: 'Dynamic App Pass', payment: 5000 },
+  { id: 'chk-02', date_formatted: 'Mon Sep 28', time: '08:00', location_id: '189e7cb8-155e-419a-8b83-bd9e3eb021da', location_name: 'Nyarutarama Health Branch', visitor_name: 'Jean-Claude Nzeyimana', polyfit_id: 'PF-EMP-3045', employer_name: 'TechCorp Rwanda', product: 'Lap Pool & Sauna', checkin_period: 'Default', checkin_type: 'Dynamic App Pass', payment: 5000 },
+  { id: 'chk-03', date_formatted: 'Mon Sep 28', time: '12:30', location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4', location_name: 'Kigali Central Facility', visitor_name: 'Solange Uwase', polyfit_id: 'PF-EMP-9114', employer_name: 'MTN Rwandacell', product: 'Cardio Studio', checkin_period: 'Off-peak', checkin_type: 'Turnstile IoT', payment: 5000 },
+  { id: 'chk-04', date_formatted: 'Mon Sep 28', time: '17:45', location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4', location_name: 'Kigali Central Facility', visitor_name: 'Aline Mukamana', polyfit_id: 'PF-EMP-7712', employer_name: 'Bank of Kigali', product: 'Pilates Group Session', checkin_period: 'Default', checkin_type: 'Dynamic App Pass', payment: 5000 },
+  { id: 'chk-05', date_formatted: 'Sun Sep 27', time: '10:00', location_id: '189e7cb8-155e-419a-8b83-bd9e3eb021da', location_name: 'Nyarutarama Health Branch', visitor_name: 'Patrick Habimana', polyfit_id: 'PF-EMP-5521', employer_name: 'I&M Bank Rwanda', product: 'Tennis / Racquet Court', checkin_period: 'Default', checkin_type: 'Dynamic App Pass', payment: 5000 },
+  { id: 'chk-06', date_formatted: 'Sun Sep 27', time: '14:20', location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4', location_name: 'Kigali Central Facility', visitor_name: 'Sandrine Gasana', polyfit_id: 'PF-EMP-6689', employer_name: 'MTN Rwandacell', product: 'Gym Access', checkin_period: 'Off-peak', checkin_type: 'Turnstile IoT', payment: 5000 },
+  { id: 'chk-07', date_formatted: 'Sat Sep 26', time: '09:10', location_id: '189e7cb8-155e-419a-8b83-bd9e3eb021da', location_name: 'Nyarutarama Health Branch', visitor_name: 'David Karekezi', polyfit_id: 'PF-EMP-2210', employer_name: 'TechCorp Rwanda', product: 'Lap Swimming', checkin_period: 'Default', checkin_type: 'Counter PIN', payment: 5000 },
+  { id: 'chk-08', date_formatted: 'Fri Sep 25', time: '18:15', location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4', location_name: 'Kigali Central Facility', visitor_name: 'Clarisse Uwineza', polyfit_id: 'PF-EMP-8843', employer_name: 'Bank of Kigali', product: 'Functional Training', checkin_period: 'Default', checkin_type: 'Dynamic App Pass', payment: 5000 }
 ];
 
 interface LocationSummaryRecord {
@@ -138,28 +138,63 @@ export default function PartnerReportsPage() {
     fetchLiveReports();
   }, [provider?.id, selectedMonth]);
 
-  // Filtered records by location
+  const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthIdx = useMemo(() => {
+    const parts = selectedMonth.split('-');
+    const m = parseInt(parts[1], 10);
+    return isNaN(m) ? 8 : Math.max(0, Math.min(11, m - 1));
+  }, [selectedMonth]);
+  const currentMonthName = MONTH_NAMES[monthIdx];
+
+  // Filtered records by location and reactive to selected month
   const filteredVisitorPayments = useMemo(() => {
-    if (selectedLocationId === 'all') return DEFAULT_VISITOR_PAYMENTS;
-    const loc = locations.find((l) => l.id === selectedLocationId);
-    if (!loc) return DEFAULT_VISITOR_PAYMENTS;
-    return DEFAULT_VISITOR_PAYMENTS.filter((item) =>
-      item.location_name.toLowerCase().includes(loc.name.split(' ')[0].toLowerCase())
-    );
+    let list = DEFAULT_VISITOR_PAYMENTS.map((item) => ({
+      ...item,
+      location_id: item.location_id.length < 20 ? '447f4bf2-ff66-48c5-851e-460cba17bfe4' : item.location_id
+    }));
+
+    if (selectedLocationId !== 'all') {
+      const loc = locations.find((l) => l.id === selectedLocationId);
+      list = list.filter((item) => {
+        if (loc && item.location_name.toLowerCase().includes(loc.name.split(' ')[0].toLowerCase())) {
+          return true;
+        }
+        return item.location_id === selectedLocationId || selectedLocationId.startsWith(item.location_id);
+      });
+    }
+    return list;
   }, [selectedLocationId, locations]);
 
   const filteredCheckins = useMemo(() => {
-    if (selectedLocationId === 'all') return DEFAULT_CHECKIN_DETAILS;
-    const loc = locations.find((l) => l.id === selectedLocationId);
-    if (!loc) return DEFAULT_CHECKIN_DETAILS;
-    return DEFAULT_CHECKIN_DETAILS.filter((item) =>
-      item.location_name.toLowerCase().includes(loc.name.split(' ')[0].toLowerCase())
-    );
-  }, [selectedLocationId, locations]);
+    let list = DEFAULT_CHECKIN_DETAILS.map((item, idx) => {
+      const day = 28 - (idx % 8);
+      const dayStr = day < 10 ? `0${day}` : `${day}`;
+      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const dayName = dayNames[(idx + 2) % 7];
+      return {
+        ...item,
+        date_formatted: `${dayName} ${currentMonthName} ${dayStr}`,
+      };
+    });
+
+    if (selectedLocationId !== 'all') {
+      const loc = locations.find((l) => l.id === selectedLocationId);
+      list = list.filter((item) => {
+        if (loc && item.location_name.toLowerCase().includes(loc.name.split(' ')[0].toLowerCase())) {
+          return true;
+        }
+        return item.location_id === selectedLocationId || selectedLocationId.startsWith(item.location_id);
+      });
+    }
+    return list;
+  }, [selectedLocationId, locations, currentMonthName]);
 
   const filteredLocationSummaries = useMemo(() => {
     if (selectedLocationId === 'all') return DEFAULT_LOCATION_SUMMARIES;
-    return DEFAULT_LOCATION_SUMMARIES.filter((item) => item.location_id === selectedLocationId);
+    return DEFAULT_LOCATION_SUMMARIES.filter((item) =>
+      item.location_id === selectedLocationId ||
+      selectedLocationId.startsWith(item.location_id.substring(0, 8))
+    );
   }, [selectedLocationId]);
 
   // Totals for Location Summary
@@ -477,26 +512,36 @@ export default function PartnerReportsPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white p-4 rounded-xl border border-[#E2E8F0] shadow-xs">
               <span className="text-xs text-[#8491A3] font-semibold">Total Verified Visits</span>
-              <div className="text-2xl font-extrabold text-[#0B1F33] font-mono mt-1">490</div>
-              <span className="text-[11px] text-[#008A4B] font-semibold mt-1 block">+12% vs last month</span>
+              <div className="text-2xl font-extrabold text-[#0B1F33] font-mono mt-1">
+                {totals.checkins.toLocaleString()}
+              </div>
+              <span className="text-[11px] text-[#008A4B] font-semibold mt-1 block">
+                {currentMonthName} Verified Activity
+              </span>
             </div>
 
             <div className="bg-white p-4 rounded-xl border border-[#E2E8F0] shadow-xs">
               <span className="text-xs text-[#8491A3] font-semibold">Unique Corporate Beneficiaries</span>
-              <div className="text-2xl font-extrabold text-[#0B1F33] font-mono mt-1">142</div>
-              <span className="text-[11px] text-[#526173] mt-1 block">Across 6 enterprise clients</span>
+              <div className="text-2xl font-extrabold text-[#0B1F33] font-mono mt-1">
+                {filteredVisitorPayments.length}
+              </div>
+              <span className="text-[11px] text-[#526173] mt-1 block">Across enrolled employer clients</span>
             </div>
 
             <div className="bg-white p-4 rounded-xl border border-[#E2E8F0] shadow-xs">
               <span className="text-xs text-[#8491A3] font-semibold">Average Visits / Day</span>
-              <div className="text-2xl font-extrabold text-[#0B1F33] font-mono mt-1">16.3</div>
-              <span className="text-[11px] text-[#526173] mt-1 block">Peak: Mon & Wed 07:00</span>
+              <div className="text-2xl font-extrabold text-[#0B1F33] font-mono mt-1">
+                {(totals.checkins / 30).toFixed(1)}
+              </div>
+              <span className="text-[11px] text-[#526173] mt-1 block">30-day active rolling period</span>
             </div>
 
             <div className="bg-white p-4 rounded-xl border border-[#E2E8F0] shadow-xs">
               <span className="text-xs text-[#8491A3] font-semibold">Estimated Net Payout</span>
-              <div className="text-2xl font-extrabold text-[#008A4B] font-mono mt-1">2,190,000 RWF</div>
-              <span className="text-[11px] text-[#8491A3] mt-1 block">Disbursement: Oct 15</span>
+              <div className="text-2xl font-extrabold text-[#008A4B] font-mono mt-1">
+                {formatRwf(totals.total_net_payout)}
+              </div>
+              <span className="text-[11px] text-[#8491A3] mt-1 block">Net-15 disbursement</span>
             </div>
           </div>
 
@@ -718,7 +763,7 @@ export default function PartnerReportsPage() {
       )}
 
       {/* ── Fixed / Bottom Action Bar (Wellhub Style "Get Report") ───────────── */}
-      <div className="fixed bottom-0 left-0 right-0 lg:pl-64 z-20 pointer-events-none">
+      <div className="fixed bottom-0 left-0 lg:left-64 right-0 z-20 pointer-events-none">
         <div className="max-w-7xl mx-auto p-4 sm:p-6 flex items-center justify-between">
           <div className="hidden sm:block" />
           <div className="pointer-events-auto bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-[#E2E8F0] flex items-center gap-2">

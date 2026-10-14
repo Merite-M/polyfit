@@ -263,6 +263,16 @@ const DEFAULT_PROVIDER: ProviderProfile = {
   }
 };
 
+const STANDARD_OPERATING_HOURS: Record<string, { is_closed: boolean; shifts: Array<{ open: string; close: string }> }> = {
+  mon: { is_closed: false, shifts: [{ open: '06:00', close: '21:00' }] },
+  tue: { is_closed: false, shifts: [{ open: '06:00', close: '21:00' }] },
+  wed: { is_closed: false, shifts: [{ open: '06:00', close: '21:00' }] },
+  thu: { is_closed: false, shifts: [{ open: '06:00', close: '21:00' }] },
+  fri: { is_closed: false, shifts: [{ open: '06:00', close: '21:00' }] },
+  sat: { is_closed: false, shifts: [{ open: '08:00', close: '20:00' }] },
+  sun: { is_closed: false, shifts: [{ open: '09:00', close: '18:00' }] },
+};
+
 const DEFAULT_LOCATIONS: ProviderLocation[] = [
   {
     id: '447f4bf2-ff66-48c5-851e-460cba17bfe4',
@@ -270,7 +280,27 @@ const DEFAULT_LOCATIONS: ProviderLocation[] = [
     name: 'Kigali Central Facility (Unit #851931)',
     city: 'Kigali',
     address: 'KN 3 Ave, Kigali City Tower, Level 2',
-    capacity: 150
+    capacity: 150,
+    operating_hours: STANDARD_OPERATING_HOURS,
+    amenities: ['Cardio Zone', 'Free Weights', 'Olympic Pool', 'Sauna', 'Lockers & Showers', 'WiFi'],
+    metadata: {
+      phone: '+250 788 123 456',
+      website: 'https://fitlife.rw',
+      social_links: {
+        instagram: 'fitlifekigali',
+        whatsapp: '+250788123456'
+      },
+      description: 'Premier Kigali wellness center with comprehensive resistance equipment, cardio decks, and certified personal trainers.',
+      guidelines: 'Clean gym attire and indoor training shoes required. Bring a workout towel.',
+      first_checkin_rules: {
+        booking_required: false,
+        registration_form_required: true,
+        guided_tour_mandatory: false,
+        arrive_early_minutes: 10
+      },
+      recommended_gear: ['Training Shoes', 'Workout Towel', 'Water Bottle'],
+      geofence_radius_meters: 100
+    }
   },
   {
     id: '189e7cb8-155e-419a-8b83-bd9e3eb021da',
@@ -278,7 +308,27 @@ const DEFAULT_LOCATIONS: ProviderLocation[] = [
     name: 'Nyarutarama Health Branch (Unit #851932)',
     city: 'Kigali',
     address: 'KG 9 Ave, Nyarutarama Tennis Club Annex',
-    capacity: 100
+    capacity: 100,
+    operating_hours: STANDARD_OPERATING_HOURS,
+    amenities: ['Cardio Machines', 'Strength Racks', 'Steam Room', 'Lockers & Showers', 'Smoothie Bar'],
+    metadata: {
+      phone: '+250 788 654 321',
+      website: 'https://fitlife.rw',
+      social_links: {
+        instagram: 'fitlifenyarutarama',
+        whatsapp: '+250788654321'
+      },
+      description: 'Scenic Nyarutarama branch offering boutique functional training, recovery amenities, and tranquil group exercise studios.',
+      guidelines: 'Check in via dynamic QR pass at reception counter before entering workout floor.',
+      first_checkin_rules: {
+        booking_required: false,
+        registration_form_required: false,
+        guided_tour_mandatory: true,
+        arrive_early_minutes: 15
+      },
+      recommended_gear: ['Training Shoes', 'Towel'],
+      geofence_radius_meters: 100
+    }
   }
 ];
 

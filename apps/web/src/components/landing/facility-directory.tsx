@@ -49,7 +49,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [activeCity, setActiveCity] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [selectedFacilityId, setSelectedFacilityId] = useState<string>("waka-kimihurura");
+  const [selectedFacilityId, setSelectedFacilityId] = useState<string>("premier-kimihurura");
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [spotlightIndex, setSpotlightIndex] = useState<number>(0);
   const [isLiveLoading, setIsLiveLoading] = useState<boolean>(false);

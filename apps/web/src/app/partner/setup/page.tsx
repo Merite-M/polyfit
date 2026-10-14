@@ -101,7 +101,7 @@ function PartnerSetupContent() {
           lat: existingLoc.lat ?? prev.lat,
           lng: existingLoc.lng ?? prev.lng,
           capacity: existingLoc.capacity ?? prev.capacity,
-          operating_hours: existingLoc.operating_hours || prev.operating_hours,
+          operating_hours: existingLoc.operating_hours || (existingLoc.metadata as any)?.operating_hours || prev.operating_hours,
           amenities: existingLoc.amenities || prev.amenities,
           logo_url: existingLoc.photos?.[0] || prev.logo_url,
           cover_url: existingLoc.photos?.[1] || prev.cover_url,
@@ -186,7 +186,9 @@ function PartnerSetupContent() {
           website: formState.website_url,
           social_links: {
             instagram: formState.instagram_handle,
-            whatsapp: `${formState.phone_country_code}${formState.whatsapp_number.replace(/[^0-9]/g, '')}`,
+            whatsapp: formState.whatsapp_number
+              ? `${formState.phone_country_code || '+250'}${formState.whatsapp_number.replace(/[^0-9]/g, '')}`
+              : undefined,
           },
           description: formState.description,
           guidelines: formState.important_notice,
@@ -360,7 +362,7 @@ function PartnerSetupContent() {
 
         {/* Right Column: Persistent Live Smartphone Preview (lg+ only) */}
         <div className="hidden lg:block lg:col-span-5 xl:col-span-4">
-          <LiveSmartphonePreview state={formState} />
+          <LiveSmartphonePreview state={formState} currentStep={currentStep} />
         </div>
       </div>
 
@@ -382,7 +384,7 @@ function PartnerSetupContent() {
             Close Preview ✕
           </button>
           <div className="pt-6">
-            <LiveSmartphonePreview state={formState} />
+            <LiveSmartphonePreview state={formState} currentStep={currentStep} />
           </div>
         </div>
       </dialog>

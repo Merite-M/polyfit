@@ -441,13 +441,8 @@ export function TodayCheckinFeed({ onFlagDispute, refreshTrigger }: TodayCheckin
                         {initials}
                       </div>
                       <div>
-                        <div className="font-semibold text-[#0B1F33] flex items-center gap-1.5">
+                        <div className="font-semibold text-[#0B1F33]">
                           <span>{beneficiaryName}</span>
-                          {visit.employees?.tier && (
-                            <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-[#F1F4F8] text-[#526173]">
-                              {visit.employees.tier}
-                            </span>
-                          )}
                         </div>
                         <div className="text-[11px] text-[#526173] font-mono">
                           {visit.employees?.employee_id_external || `PF-${visit.id.slice(-4).toUpperCase()}`}
