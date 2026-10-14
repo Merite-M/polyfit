@@ -4,5 +4,8 @@
   "main": "src/index.js",
   "type": "commonjs",
   "private": true,
-  "description": "Shared utility functions for PolyFit applications"
+  "description": "Shared utility functions for PolyFit applications",
+  "scripts": {
+    "test": "node --test"
+  }
 }
