@@ -86,6 +86,11 @@ Never assume, guess, or work from memory when a live data source is available vi
 1. **Check `package.json` before installing.** Never `npm install` a package that is already listed as a dependency.
 2. **Prefer existing packages.** If `node-fetch` is already installed, do not add `axios` to do the same job.
 
+### Cross-Portal Audit & Synchronization
+1. **Search across portals.** PolyFit's portals (`/operations`, `/corporate`, `/partner`), public marketing & pricing pages (`/pricing`, `/`, `/network`), mobile employee app (`apps/mobile-employee-app`), backend (`apps/backend-core`), and shared packages (`packages/*`) are tightly interconnected.
+2. **Never leave portals out of sync.** When updating any feature, data model, plan tier, pricing, or configuration in one portal (especially `/operations`), use `grep_search` across `apps/` and `packages/` to audit and synchronize all related portals, public pricing, and marketing copy.
+3. **Canonical single source of truth.** Use `packages/shared-types` for shared TypeScript interfaces and enums. When a shared type changes, update all consuming portals and apps immediately.
+
 ### General Cleanliness
 - Dead code (commented-out blocks, unused imports, unreachable branches) must be removed, not left in place.
 - Every new function must have a single, clearly named responsibility. No god-functions.
@@ -181,6 +186,17 @@ Without domain context, agents default to generic software patterns. PolyFit is 
 - Update `.env.example` with any new variables
 - If schema changes were made: verify via `execute_sql` that they took effect
 
+### 6. Cross-Portal & Public Site Synchronization Check
+- Use `grep_search` across `apps/web/src/app` (all portals & marketing pages), `apps/mobile-employee-app`, `apps/backend-core`, and `packages/` to ensure full synchronization of related concepts (pricing, plan tiers, limits, categories, enums)
+- If plan tiers, pricing, or perks were updated (e.g. in `/operations/plans`), verify that `/pricing`, `/corporate`, `/partner`, `/`, `packages/shared-types`, and mobile app displays are fully in sync
+- Confirm zero discrepancies between internal Operations configuration and public/client-facing portals
+
+### 7. Zero-Placeholder & Production-Readiness Check
+- Verify that every button, link, form, modal, filter, and tab has 100% full end-to-end functionality
+- Confirm zero `TODO` comments, zero `alert('Coming soon')`, zero empty click handlers (`() => {}`)
+- Confirm robust loading states (skeletons/spinners), empty states, error handling, and toast feedback for all interactions
+- Confirm zero browser console errors, zero uncaught exceptions, and clean TypeScript compilation
+
 ### What "Done" Means
 A task is **done** when ALL of these are true:
 - [x] Code is written and tested locally (zero test failures)
@@ -189,6 +205,8 @@ A task is **done** when ALL of these are true:
 - [x] Linear issue is marked **Done** with implementation summary comment
 - [x] Any new env vars are set on Render
 - [x] Any schema changes are verified in Supabase
+- [x] Cross-portal impact audit completed and all dependent portals/pages synced
+- [x] Zero placeholders, zero TODO stubs, full end-to-end functionality verified
 
 If ANY are incomplete, the task is **not done**. Do not tell the user it's done.
 
@@ -207,3 +225,7 @@ If ANY are incomplete, the task is **not done**. Do not tell the user it's done.
 - ❌ Forgetting to commit/push after implementation
 - ❌ Writing code but not wiring it (e.g., creating routes but not registering them in index.js)
 - ❌ Assuming schema, env vars, or deployment state instead of fetching live data via MCP
+- ❌ Modifying plans, pricing, features, or data models in one portal (e.g. Operations) while forgetting other portals, public pricing, or marketing pages
+- ❌ Leaving placeholder buttons, stubbed `onClick={() => {}}`, `alert('Coming soon')`, or `TODO: implement later` comments
+- ❌ Implementing half-baked features without complete error handling, loading states, or validation feedback
+

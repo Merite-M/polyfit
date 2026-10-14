@@ -172,15 +172,85 @@ Every feature should consider multiple actors:
 ### 7. UI Design
 
 **Applications should serve specific actors:**
-- `/employer` - Employer dashboard
-- `/employee` - Employee app interface
-- `/provider` - Provider/partner portal
-- `/operations` - PolyFit operations console
+- `/corporate` - Employer dashboard & HR administration
+- `/partner` - Provider / partner portal (check-in desk, locations, settlements)
+- `/operations` - PolyFit operations & Super Admin console
+- `apps/mobile-employee-app` - Beneficiary / employee mobile application
+- Public site (`/`, `/pricing`, `/network`, `/demo`) - Prospective employers, providers, and public discovery
 
 **NOT:**
 - `/gym` - Gym-specific interface
 - `/members` - Gym member management
 - `/reception` - Gym reception desk
+
+### 8. Unified Ecosystem & Mandatory Cross-Portal Synchronization
+
+**PolyFit is an interconnected, synchronized monorepo ecosystem. Portals, apps, backend services, shared packages, and public websites are NEVER isolated silos.**
+
+The platform comprises synchronized consumer surfaces:
+- **Operations / Super Admin (`apps/web/src/app/operations`)**: Global plan definitions, provider management, contract pricing, billing, and settlements.
+- **Corporate / Employer Portal (`apps/web/src/app/corporate`)**: Employer HR portal for employee roster, corporate plan enrollment, subsidy allocations, billing invoices.
+- **Partner / Provider Portal (`apps/web/src/app/partner`)**: Provider locations, check-in validation, payout history, negotiated rate cards.
+- **Public Marketing Website & Pricing (`apps/web/src/app/pricing`, `/`, `/corporate`, `/partner`, `/network`)**: Public plan tiers (Starter, Standard, Executive), ROI calculators, feature matrices, provider network directory.
+- **Mobile Employee App (`apps/mobile-employee-app`)**: Beneficiary experience, tier eligibility, dynamic TOTP access pass, facility discovery.
+- **Backend API (`apps/backend-core`)**: Central business logic, verification, billing calculations, anti-passback.
+- **Shared Packages (`packages/shared-types`, `packages/shared-utils`, `packages/ui-theme`)**: Canonical source of truth for interfaces, helpers, and tokens.
+- **Database (`supabase`)**: Unified database schema, RLS, and PostgREST grants.
+
+**MANDATORY CROSS-PORTAL SYNC RULE**:
+Whenever modifying, adding, or refactoring logic, pricing, data models, or features in ANY portal or sub-repo (especially `/operations`), every AI agent MUST proactively grep across all other portals and public pages to audit and synchronize related state.
+
+**Common Cross-Portal Ripple Effects:**
+1. **Plan Tiers, Pricing, or Perks Updated (e.g., in `/operations/plans` or DB)**:
+   - Immediately audit and synchronize:
+     - `/pricing` (pricing cards, ROI calculator, FAQ, comparison table).
+     - `/corporate` (employer plan selection and employee tier allocation).
+     - `/partner` (provider reimbursement rates or tier requirements).
+     - `/` (landing page feature highlights, benefit callouts).
+     - `packages/shared-types` (Benefit / Plan tier types).
+     - `apps/backend-core` (validation, billing, limits).
+     - `apps/mobile-employee-app` (tier labels, visit caps, category badges).
+2. **Provider Categories or Amenities Updated (e.g., in `/operations/providers` or DB)**:
+   - Immediately audit and synchronize:
+     - `/network` (filter chips, map legends, search options).
+     - `/partner` (onboarding and location forms).
+     - `apps/mobile-employee-app` (category tabs and icons).
+     - `packages/shared-types` (`ProviderCategory` enums).
+3. **Visit Verification or Check-in Logic Updated**:
+   - Immediately audit and synchronize:
+     - `/partner/checkins` (scanner interface).
+     - `apps/mobile-employee-app` (TOTP generation and QR rendering).
+     - `apps/backend-core` (visit validation routes, anti-passback).
+     - `/operations/visits` (audit and fraud detection tables).
+
+**Rule**: Never leave any portal, public page, or sub-repo with stale, conflicting, or desynchronized data.
+
+### 9. Pre-Launch Completeness & Zero-Placeholder Policy (Full End-to-End Functionality)
+
+**PolyFit is currently in the pre-launch polishing, finalizing, completeness, and debugging phase.**
+
+Every feature—whether modifying existing functionality or introducing new capabilities—must be **100% fully functioning end-to-end**.
+
+**Strict Anti-Placeholder Rules**:
+- ❌ **NO Placeholder Comments**: `// TODO: implement later`, `// FIXME`, `// Stub for now`.
+- ❌ **NO Dummy Handlers**: Empty click handlers `onClick={() => {}}`, non-functional buttons, dead links.
+- ❌ **NO Alert Stubs**: `alert("Coming soon")`, temporary toasts claiming a feature is unavailable.
+- ❌ **NO Hardcoded Mock Stubs**: Using hardcoded arrays where live Supabase or backend API queries exist.
+- ❌ **NO Half-Baked UI**: Every interactive element (buttons, forms, modals, filters, tabs, search inputs) must work end-to-end.
+
+**Complete Feature Lifecycle Requirements**:
+1. **Comprehensive UI States**: Every component, card, and table must handle Loading (skeletons/spinners), Empty (helpful empty states with action triggers), and Error (clear user-facing recovery messages).
+2. **Interactive Controls & Forms**: Robust client validation, disabled/loading states during submission to prevent double-submits, clear feedback (toasts, success banners).
+3. **Real Data Wiring**: Wired directly to Supabase PostgREST or Express backend with proper types and explicit Data API grants.
+4. **Resilient Edge Cases**: Graceful handling of network timeouts, unauthorized states, empty result sets, boundary numbers.
+
+### 10. Production-Readiness Standards
+
+1. **Zero Runtime Console Errors**: Zero uncaught exceptions, zero unhandled promise rejections, zero React hydration warnings.
+2. **Strict Type Safety**: TypeScript compiles cleanly without errors or regressions (`tsc --noEmit`).
+3. **Security & Authorization**: PostgREST grants explicit (`GRANT ... TO authenticated`), RLS enabled, inputs sanitized, no exposed secrets.
+4. **Modern Web Standards**: Use native `<dialog>` and Popover API, container queries (`@container`), zero layout shifts (CLS), fully responsive across desktop, tablet, and mobile.
+5. **No Half-Implemented Refactors**: If a component or function is modified, all calling sites across the monorepo must be updated in the same changeset.
 
 ---
 
@@ -280,6 +350,9 @@ PolyFit is:
 - [ ] Database schema uses new model
 - [ ] API routes follow aggregator conventions
 - [ ] UI serves specific actor(s)
+- [ ] **Cross-Portal Sync Check**: Audited and synchronized related portals (`operations`, `corporate`, `partner`), public pricing (`/pricing`), marketing site, mobile app, and shared types
+- [ ] **Zero-Placeholder Check**: Zero TODOs, zero dummy alerts, all buttons and forms have 100% full end-to-end working functionality
+- [ ] **Production-Readiness Check**: Clean console (zero errors/warnings), full loading/empty/error states, typed contracts, responsive layouts
 
 ---
 
@@ -320,3 +393,14 @@ Whenever working on the mobile employee application (`apps/mobile-employee-app`)
    - [`expo-router`](file:///e:/PolyFit/polyfit/.agents/skills/expo-router/SKILL.md) — File-based navigation, typed routes, modals, and sheets.
    - [`expo-animation`](file:///e:/PolyFit/polyfit/.agents/skills/expo-animation/SKILL.md) — 60/120 FPS Reanimated spring physics, gestures, and transitions.
    - [`vercel-react-native-skills`](file:///e:/PolyFit/polyfit/.agents/skills/vercel-react-native-skills/SKILL.md) — Performance rules, list virtualization, and zero-stutter rendering.
+
+---
+
+## Core Ecosystem Skills Directive
+
+Whenever working across portals, pricing, backend, database, or shared packages:
+1. **Always read [`.agents/rules/other-rules.md`](file:///e:/PolyFit/polyfit/.agents/rules/other-rules.md)** and [`.agents/rules/mcp-full-context.md`](file:///e:/PolyFit/polyfit/.agents/rules/mcp-full-context.md) for mandatory sync rules and closeout checklists.
+2. **Proactively consult installed workspace skills** in `.agents/skills/`:
+   - [`polyfit-ecosystem-sync`](file:///e:/PolyFit/polyfit/.agents/skills/polyfit-ecosystem-sync/SKILL.md) — Cross-portal synchronization matrix, ripple-effect audits, and pre-launch production-readiness standards.
+   - [`supabase`](file:///e:/PolyFit/polyfit/.agents/skills/supabase/SKILL.md) — Live schema inspection, RLS policies, PostgREST explicit grants, and migrations.
+   - [`supabase-postgres-best-practices`](file:///e:/PolyFit/polyfit/.agents/skills/supabase-postgres-best-practices/SKILL.md) — Postgres performance optimization and query architecture.
