@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const express = require('express');
 const { rateLimit } = require('express-rate-limit');
 const { requireAuth } = require('../middleware/authMiddleware');
@@ -491,7 +492,7 @@ router.post(['/auth/request-access', '/request-access'], async (req, res) => {
     const { supabase } = require('../services/supabaseService');
 
     // Generate a secure 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = crypto.randomInt(100000, 1000000).toString();
     const expiresAt = Date.now() + OTP_TTL_MS;
 
     // Cache the OTP for mobile verification
