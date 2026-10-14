@@ -47,7 +47,7 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
       href: '/partner/checkins',
       icon: ScanLine,
       badge: todaySummary?.pending_queue_count && todaySummary.pending_queue_count > 0 ? (
-        <span className="px-1.5 py-0.5 text-[11px] font-bold bg-[#F59E0B] text-[#0B1F33] rounded-full animate-pulse">
+        <span className="px-1.5 py-0.5 text-[11px] font-bold bg-warning text-navy rounded-full animate-pulse">
           {todaySummary.pending_queue_count}
         </span>
       ) : null
@@ -57,7 +57,7 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
       href: '/partner/partnership',
       icon: SlidersHorizontal,
       badge: (
-        <span className="text-[10px] font-bold bg-[#E9FAF2] text-[#008A4B] px-1.5 py-0.5 rounded-full border border-[#B7F1D2]">
+        <span className="text-[10px] font-bold bg-accent-subtle text-emerald-700 px-1.5 py-0.5 rounded-full border border-emerald-200">
           Terms
         </span>
       )
@@ -72,7 +72,7 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
       href: '/partner/reports',
       icon: BarChart3,
       badge: (
-        <span className="text-[10px] font-bold bg-[#E9FAF2] text-[#008A4B] px-1.5 py-0.5 rounded-full border border-[#B7F1D2]">
+        <span className="text-[10px] font-bold bg-accent-subtle text-emerald-700 px-1.5 py-0.5 rounded-full border border-emerald-200">
           4-Tab
         </span>
       )
@@ -82,7 +82,7 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
       href: '/partner/locations',
       icon: Building2,
       badge: (
-        <span className="text-[10px] font-bold bg-[#E9FAF2] text-[#008A4B] px-1.5 py-0.5 rounded-full border border-[#B7F1D2]">
+        <span className="text-[10px] font-bold bg-accent-subtle text-emerald-700 px-1.5 py-0.5 rounded-full border border-emerald-200">
           Setup
         </span>
       )
@@ -90,24 +90,24 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
   ];
 
   return (
-    <aside className="w-64 h-full bg-[#0B1F33] border-r border-[#21405A] flex flex-col select-none text-white">
+    <aside className="w-64 h-full bg-navy border-r border-border flex flex-col select-none text-white">
       {/* Brand Header */}
-      <div className="p-5 border-b border-[#21405A]">
+      <div className="p-5 border-b border-border">
         <Link
           href="/partner/dashboard"
           className="flex items-center gap-2.5 group"
           onClick={onCloseMobile}
         >
           {/* Isometric Hex Logo Mark */}
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#28D17C] to-[#00D2B4] flex items-center justify-center p-1.5 shadow-sm group-hover:scale-105 transition-transform">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-secondary flex items-center justify-center p-1.5 shadow-sm group-hover:scale-105 transition-transform">
             <svg
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#0B1F33"
+              stroke="currentColor"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="w-full h-full"
+              className="w-full h-full text-navy"
             >
               <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" />
               <path d="M12 22V12" />
@@ -117,19 +117,19 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-bold tracking-tight text-white text-base">PolyFit</span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#28D17C]/20 text-[#28D17C] border border-[#28D17C]/30">
+              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-accent/20 text-accent border border-accent/30">
                 Partner
               </span>
             </div>
-            <p className="text-[11px] text-[#8491A3] font-medium leading-none mt-0.5">
+            <p className="text-[11px] text-subdued font-medium leading-none mt-0.5">
               Operations Hub
             </p>
           </div>
         </Link>
 
         {/* Active Facility Chip */}
-        <div className="mt-4 p-2.5 rounded-lg bg-[#132D43] border border-[#21405A]/80 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-md bg-[#28D17C]/15 border border-[#28D17C]/30 text-[#28D17C] font-bold text-xs flex items-center justify-center shrink-0">
+        <div className="mt-4 p-2.5 rounded-lg bg-slate-800 border border-border/80 flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-md bg-accent/15 border border-accent/30 text-accent font-bold text-xs flex items-center justify-center shrink-0">
             {provider?.name ? provider.name.slice(0, 2).toUpperCase() : 'PF'}
           </div>
           <div className="min-w-0 flex-1">
@@ -137,8 +137,8 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
               {provider?.name || 'FitLife Gym Kigali'}
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#28D17C]"></span>
-              <span className="text-[10px] text-[#8491A3] capitalize">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
+              <span className="text-[10px] text-subdued capitalize">
                 {provider?.category || 'Wellness Provider'}
               </span>
             </div>
@@ -148,7 +148,7 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
 
       {/* Navigation Links */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        <div className="px-3 pt-2 pb-1.5 text-[10px] font-semibold text-[#8491A3] uppercase tracking-wider">
+        <div className="px-3 pt-2 pb-1.5 text-[10px] font-semibold text-subdued uppercase tracking-wider">
           Operations
         </div>
         {navItems.map((item) => {
@@ -162,12 +162,12 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
               onClick={onCloseMobile}
               className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
                 isActive
-                  ? 'bg-[#28D17C] text-[#0B1F33] font-semibold shadow-xs'
-                  : 'text-[#E0E3E6] hover:bg-[#132D43] hover:text-white'
+                  ? 'bg-accent text-navy font-semibold shadow-xs'
+                  : 'text-slate-200 hover:bg-slate-800 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <Icon className={`w-4 h-4 ${isActive ? 'text-[#0B1F33]' : 'text-[#8491A3]'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-navy' : 'text-subdued'}`} />
                 <span>{item.label}</span>
               </div>
               {item.badge}
@@ -177,20 +177,20 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
       </nav>
 
       {/* Footer / System Telemetry */}
-      <div className="p-3 border-t border-[#21405A] space-y-2 bg-[#071521]/60">
+      <div className="p-3 border-t border-border space-y-2 bg-slate-950/60">
         {/* Scanner Relay Telemetry */}
-        <div className="p-2.5 rounded-lg bg-[#132D43]/60 border border-[#21405A] flex items-center justify-between">
+        <div className="p-2.5 rounded-lg bg-slate-800/60 border border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#28D17C] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#28D17C]"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
             </span>
-            <span className="text-[11px] font-medium text-[#E0E3E6]">Cloud Relay</span>
+            <span className="text-[11px] font-medium text-slate-200">Cloud Relay</span>
           </div>
-          <span className="text-[10px] font-mono text-[#28D17C] font-semibold">ONLINE</span>
+          <span className="text-[10px] font-mono text-accent font-semibold">ONLINE</span>
         </div>
 
-        <div className="px-2 py-1 flex items-center justify-between text-[11px] text-[#8491A3]">
+        <div className="px-2 py-1 flex items-center justify-between text-[11px] text-subdued">
           <span>Counter Kiosk #01</span>
           <Link href="/terms" className="hover:text-white transition-colors flex items-center gap-1">
             Rules <ExternalLink className="w-2.5 h-2.5" />
