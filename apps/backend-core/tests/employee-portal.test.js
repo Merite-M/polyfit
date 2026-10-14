@@ -351,6 +351,8 @@ describe('Employee Portal & Mobile Telemetry Test Suite (PF-109)', () => {
       assert.equal(res.body.email, 'jean.mugisha@bk.rw');
       assert.ok(res.body.demo_otp, 'Demo OTP should be returned for non-prod testing');
       assert.equal(res.body.demo_otp.length, 6);
+      const otpNum = parseInt(res.body.demo_otp, 10);
+      assert.ok(otpNum >= 100000 && otpNum <= 999999, "OTP must be a cryptographically generated 6-digit integer");
     });
 
     test('POST /api/employee/auth/verify-access - rejects incorrect OTP', async () => {
