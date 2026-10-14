@@ -1,4 +1,4 @@
-const { supabase } = require('../services/supabaseService');
+const supabaseService = require('../services/supabaseService');
 
 /**
  * Role hierarchy for resolving primary role
@@ -16,6 +16,7 @@ const ROLE_HIERARCHY = {
  * Attaches user, roles, primaryRole, orgId, and providerId to req
  */
 const requireAuth = async (req, res, next) => {
+  const supabase = supabaseService.supabase;
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -122,6 +123,7 @@ const requireAuth = async (req, res, next) => {
  * If no token or demo token, defaults safely to provider_admin role.
  */
 const optionalAuth = async (req, res, next) => {
+  const supabase = supabaseService.supabase;
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {

@@ -321,6 +321,51 @@ Claude,Ndayishimiye,claude@example.com,EMP-888,Engineering,standard`;
       assert.equal(res.status, 401);
       assert.equal(res.body.code, 'AUTH_MISSING_HEADER');
     });
+
+    test('POST /api/eligibility/check - returns 500 internal error when eligibility evaluation throws', async () => {
+      const supabaseService = require('../services/supabaseService');
+      const origSupabase = supabaseService.supabase;
+
+      const mockSupabase = {
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: 'test-user-id', email: 'test@example.com' } },
+            error: null
+          })
+        },
+        from: (table) => {
+          if (table === 'user_roles') {
+            return {
+              select: () => ({
+                eq: () => Promise.resolve({ data: [{ role: 'super_admin' }], error: null })
+              })
+            };
+          }
+          // Cause evaluateEmployeeEligibility to throw inside route try-catch block
+          throw new Error('Database connection failure during eligibility evaluation');
+        }
+      };
+
+      try {
+        supabaseService.supabase = mockSupabase;
+
+        const res = await request(app)
+          .post('/api/eligibility/check')
+          .set('Authorization', 'Bearer test-valid-token')
+          .send({
+            employee_id: '00fbe4e1-86aa-44bc-ad89-fcce6fb75687',
+            provider_location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4'
+          });
+
+        assert.equal(res.status, 500);
+        assert.equal(res.body.eligible, false);
+        assert.equal(res.body.reason, 'Internal server error verifying eligibility');
+        assert.equal(res.body.code, 'INTERNAL_ERROR');
+        assert.equal(typeof res.body.duration_ms, 'number');
+      } finally {
+        supabaseService.supabase = origSupabase;
+      }
+    });
   });
 
   // ─── 5. Service & Live Database Integration Tests ───────────────────────────
