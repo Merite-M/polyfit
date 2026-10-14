@@ -1589,7 +1589,21 @@ router.get('/today-summary', requireAuth, requireRole('super_admin', 'polyfit_op
         .from('provider_locations')
         .select('id')
         .eq('provider_id', req.providerId);
-      locIds = locs?.map((l) => l.id) || [];
+      const allowedLocIds = locs?.map((l) => l.id) || [];
+
+      if (allowedLocIds.length === 0) {
+        locIds = ['00000000-0000-0000-0000-000000000000'];
+      } else if (provider_location_id) {
+        if (!allowedLocIds.includes(provider_location_id)) {
+          return res.status(403).json({
+            error: 'Unauthorized: Cannot access operational summary for another provider facility',
+            code: 'AUTH_FORBIDDEN_PROVIDER'
+          });
+        }
+        locIds = [provider_location_id];
+      } else {
+        locIds = allowedLocIds;
+      }
     } else if (provider_location_id) {
       locIds = [provider_location_id];
     }
