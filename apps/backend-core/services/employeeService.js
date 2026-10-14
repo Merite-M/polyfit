@@ -644,6 +644,25 @@ async function terminateEmployee(orgId, employeeId) {
 }
 
 /**
+ * Helper function to update Supabase Auth app_metadata status concurrently
+ */
+async function updateAuthMetadataInBatch(employees, status) {
+  const tasks = employees
+    .filter((emp) => emp.user_id)
+    .map((emp) =>
+      supabase.auth.admin
+        .updateUserById(emp.user_id, {
+          app_metadata: { status }
+        })
+        .catch(() => {})
+    );
+
+  if (tasks.length > 0) {
+    await Promise.allSettled(tasks);
+  }
+}
+
+/**
  * Batch updates employee records (freeze, activate, terminate, change_tier)
  *
  * @param {string} orgId - Organization UUID
@@ -725,15 +744,7 @@ async function batchUpdateEmployees(orgId, { action, employee_ids = [], tier = n
       .in('employee_id', matchedIds)
       .eq('status', 'active');
 
-    for (const emp of matchedEmployees) {
-      if (emp.user_id) {
-        try {
-          await supabase.auth.admin.updateUserById(emp.user_id, {
-            app_metadata: { status: 'frozen' }
-          });
-        } catch (e) {}
-      }
-    }
+    await updateAuthMetadataInBatch(matchedEmployees, 'frozen');
 
     results.succeeded = matchedIds.length;
   } else if (action === 'activate') {
@@ -755,15 +766,7 @@ async function batchUpdateEmployees(orgId, { action, employee_ids = [], tier = n
       .in('employee_id', matchedIds)
       .eq('status', 'suspended');
 
-    for (const emp of matchedEmployees) {
-      if (emp.user_id) {
-        try {
-          await supabase.auth.admin.updateUserById(emp.user_id, {
-            app_metadata: { status: 'active' }
-          });
-        } catch (e) {}
-      }
-    }
+    await updateAuthMetadataInBatch(matchedEmployees, 'active');
 
     results.succeeded = matchedIds.length;
   } else if (action === 'terminate') {
@@ -784,15 +787,7 @@ async function batchUpdateEmployees(orgId, { action, employee_ids = [], tier = n
       .update({ status: 'expired' })
       .in('employee_id', matchedIds);
 
-    for (const emp of matchedEmployees) {
-      if (emp.user_id) {
-        try {
-          await supabase.auth.admin.updateUserById(emp.user_id, {
-            app_metadata: { status: 'terminated' }
-          });
-        } catch (e) {}
-      }
-    }
+    await updateAuthMetadataInBatch(matchedEmployees, 'terminated');
 
     results.succeeded = matchedIds.length;
   } else if (action === 'change_tier') {
