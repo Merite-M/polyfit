@@ -1,5 +1,5 @@
 const express = require('express');
-const { supabase } = require('../services/supabaseService');
+const supabaseService = require('../services/supabaseService');
 const { requireAuth, requireRole } = require('../middleware/authMiddleware');
 const { evaluateEmployeeEligibility } = require('../services/eligibilityService');
 
@@ -13,6 +13,7 @@ const router = express.Router();
 router.post('/check', requireAuth, async (req, res) => {
   const startTime = Date.now();
   try {
+    const supabase = supabaseService.supabase;
     const { employee_id, user_id, email, provider_location_id, service_category } = req.body;
 
     if (!provider_location_id) {
@@ -84,6 +85,7 @@ router.post('/check', requireAuth, async (req, res) => {
  */
 router.get('/employee/:employeeId', requireAuth, async (req, res) => {
   try {
+    const supabase = supabaseService.supabase;
     const { employeeId } = req.params;
 
     if (!supabase) {
@@ -178,6 +180,7 @@ router.get('/employee/:employeeId', requireAuth, async (req, res) => {
  */
 router.post('/assign', requireAuth, requireRole('super_admin', 'polyfit_ops', 'org_admin'), async (req, res) => {
   try {
+    const supabase = supabaseService.supabase;
     const { employee_id, benefit_id, expires_at } = req.body;
 
     if (!employee_id || !benefit_id) {

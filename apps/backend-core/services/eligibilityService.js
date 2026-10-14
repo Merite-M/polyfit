@@ -1,4 +1,4 @@
-const { supabase } = require('./supabaseService');
+const supabaseService = require('./supabaseService');
 
 const TIER_RANKS = {
   starter: 1,
@@ -41,6 +41,7 @@ async function evaluateEmployeeEligibility(arg1, arg2, arg3, arg4, arg5) {
     serviceCategory = arg4;
     preloadedEmployee = arg5 || null;
   }
+  const supabase = supabaseService.supabase;
   if (!supabase) {
     return {
       eligible: false,
