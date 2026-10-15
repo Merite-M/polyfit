@@ -724,7 +724,7 @@ async function createOperationsClient(payload) {
   }
 
   const baseSlug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-  const slug = `${baseSlug}-${Math.random().toString(36).substring(2, 6)}`;
+  const slug = `${baseSlug}-${crypto.randomBytes(2).toString("hex")}`;
 
   // Sanitize allowed_domains
   const sanitizedDomains = Array.isArray(allowed_domains)
@@ -781,7 +781,7 @@ async function createOperationsClient(payload) {
   // 3. Dispatch HR admin invite if provided
   let invitation = null;
   if (admin_email) {
-    const inviteToken = `inv_${Math.random().toString(36).substring(2)}${Date.now()}`;
+    const inviteToken = `inv_${crypto.randomBytes(24).toString("hex")}`;
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data: inviteData, error: inviteErr } = await supabase
@@ -2259,7 +2259,7 @@ async function executeTurnstileEmergencyBypass(payload, adminUserId = null) {
   }
 
   // 3. Generate 6-digit Emergency Pass Token (e.g. EP-748921)
-  const generatedBypassCode = bypass_code || `EP-${Math.floor(100000 + Math.random() * 900000)}`;
+  const generatedBypassCode = bypass_code || `EP-${crypto.randomInt(100000, 1000000)}`;
   const nowIso = new Date().toISOString();
 
   // 4. Insert Verified Visit into DB with audit metadata
