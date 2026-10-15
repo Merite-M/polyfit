@@ -30,10 +30,7 @@ const allowedOrigins = Array.from(
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    if (
-      allowedOrigins.includes(origin) ||
-      /^https:\/\/polyfit(-[a-zA-Z0-9-]+)?\.onrender\.com$/.test(origin)
-    ) {
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     return callback(null, false);
