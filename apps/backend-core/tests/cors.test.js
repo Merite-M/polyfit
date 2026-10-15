@@ -29,14 +29,13 @@ describe('CORS Policy Security Test Suite', () => {
     assert.equal(res.headers['access-control-allow-credentials'], 'true');
   });
 
-  test('allows requests from polyfit preview subdomains on onrender.com', async () => {
+  test('blocks requests from unconfigured subdomains (e.g. polyfit-preview-123.onrender.com)', async () => {
     const res = await request(app)
       .get('/health')
       .set('Origin', 'https://polyfit-preview-123.onrender.com');
 
     assert.equal(res.status, 200);
-    assert.equal(res.headers['access-control-allow-origin'], 'https://polyfit-preview-123.onrender.com');
-    assert.equal(res.headers['access-control-allow-credentials'], 'true');
+    assert.equal(res.headers['access-control-allow-origin'], undefined);
   });
 
   test('blocks requests from arbitrary onrender.com domains (e.g. attacker.onrender.com)', async () => {
