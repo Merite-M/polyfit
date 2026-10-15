@@ -1803,43 +1803,70 @@ async function updateOperationsProviderPayoutMatrix(providerId, payload) {
     }
   }
 
-  // 2. Update location rates & minimum tiers
+  // 2. Update location rates & minimum tiers using batch fetching and parallel updates
   const updatedLocations = [];
   if (Array.isArray(location_rates) && location_rates.length > 0) {
-    for (const item of location_rates) {
-      if (!item.location_id) continue;
+    const validItems = location_rates.filter((item) => item && item.location_id);
+    const locationIds = Array.from(new Set(validItems.map((item) => item.location_id)));
 
-      const { data: loc } = await supabase
+    if (locationIds.length > 0) {
+      // Single batch SELECT for all location metadata
+      const { data: existingLocations, error: fetchErr } = await supabase
         .from('provider_locations')
-        .select('metadata')
-        .eq('id', item.location_id)
-        .eq('provider_id', providerId)
-        .single();
+        .select('id, metadata')
+        .in('id', locationIds)
+        .eq('provider_id', providerId);
 
-      if (loc) {
-        const meta = loc.metadata || {};
-        if (item.per_visit_payout_rate !== undefined) {
-          meta.per_visit_payout_rate = Math.max(0, parseFloat(item.per_visit_payout_rate) || 0);
-        }
-        if (item.currency !== undefined) {
-          meta.currency = String(item.currency).toUpperCase();
-        }
-        if (item.min_benefit_tier !== undefined) {
-          meta.min_benefit_tier = String(item.min_benefit_tier).toLowerCase();
-          meta.min_tier = meta.min_benefit_tier;
+      if (fetchErr) {
+        throw new Error(`Failed to fetch provider locations: ${fetchErr.message}`);
+      }
+
+      if (existingLocations && existingLocations.length > 0) {
+        const locMap = new Map(existingLocations.map((loc) => [loc.id, loc]));
+
+        const rateMap = new Map();
+        for (const item of validItems) {
+          rateMap.set(item.location_id, item);
         }
 
-        const { data: updatedLoc } = await supabase
-          .from('provider_locations')
-          .update({
-            metadata: meta,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', item.location_id)
-          .select()
-          .single();
+        const nowIso = new Date().toISOString();
+        const updatePromises = [];
 
-        if (updatedLoc) updatedLocations.push(updatedLoc);
+        for (const [locationId, loc] of locMap.entries()) {
+          const item = rateMap.get(locationId);
+          if (!item) continue;
+
+          const meta = { ...(loc.metadata || {}) };
+          if (item.per_visit_payout_rate !== undefined) {
+            meta.per_visit_payout_rate = Math.max(0, parseFloat(item.per_visit_payout_rate) || 0);
+          }
+          if (item.currency !== undefined) {
+            meta.currency = String(item.currency).toUpperCase();
+          }
+          if (item.min_benefit_tier !== undefined) {
+            meta.min_benefit_tier = String(item.min_benefit_tier).toLowerCase();
+            meta.min_tier = meta.min_benefit_tier;
+          }
+
+          updatePromises.push(
+            supabase
+              .from('provider_locations')
+              .update({
+                metadata: meta,
+                updated_at: nowIso
+              })
+              .eq('id', locationId)
+              .select()
+              .single()
+          );
+        }
+
+        const updateResults = await Promise.all(updatePromises);
+        for (const res of updateResults) {
+          if (res.data) {
+            updatedLocations.push(res.data);
+          }
+        }
       }
     }
   }
