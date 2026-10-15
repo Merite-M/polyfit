@@ -2259,7 +2259,7 @@ async function executeTurnstileEmergencyBypass(payload, adminUserId = null) {
   }
 
   // 3. Generate 6-digit Emergency Pass Token (e.g. EP-748921)
-  const generatedBypassCode = bypass_code || `EP-${Math.floor(100000 + Math.random() * 900000)}`;
+  const generatedBypassCode = bypass_code || `EP-${crypto.randomInt(100000, 1000000)}`;
   const nowIso = new Date().toISOString();
 
   // 4. Insert Verified Visit into DB with audit metadata
