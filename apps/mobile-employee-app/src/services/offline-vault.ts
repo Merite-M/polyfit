@@ -142,14 +142,11 @@ export class OfflineVaultService {
   /**
    * Flushes offline queue to backend if network connectivity is restored
    */
-  static async syncOfflineVisits(apiBaseUrl: string, token: string): Promise<number> {
+  static async syncOfflineVisits(apiBaseUrl: string, token: string, concurrencyLimit = 5): Promise<number> {
     const queue = await this.getOfflineQueue();
     if (queue.length === 0) return 0;
 
-    let syncedCount = 0;
-    const successfullySyncedIds: string[] = [];
-
-    for (const visit of queue) {
+    const processVisit = async (visit: QueuedOfflineVisit): Promise<string | null> => {
       try {
         const res = await fetch(`${apiBaseUrl}/api/employee/scan-plaque`, {
           method: 'POST',
@@ -168,11 +165,24 @@ export class OfflineVaultService {
         });
 
         if (res.ok) {
-          successfullySyncedIds.push(visit.id);
-          syncedCount++;
+          return visit.id;
         }
       } catch (err) {
         console.warn('[OfflineVault] Sync failed for visit:', visit.id, err);
+      }
+      return null;
+    };
+
+    const successfullySyncedIds: string[] = [];
+
+    // Process queue in bounded concurrent batches to minimize sync latency while avoiding network congestion
+    for (let i = 0; i < queue.length; i += concurrencyLimit) {
+      const batch = queue.slice(i, i + concurrencyLimit);
+      const batchResults = await Promise.all(batch.map(processVisit));
+      for (const id of batchResults) {
+        if (id) {
+          successfullySyncedIds.push(id);
+        }
       }
     }
 
@@ -180,6 +190,6 @@ export class OfflineVaultService {
       await this.markVisitsSynced(successfullySyncedIds);
     }
 
-    return syncedCount;
+    return successfullySyncedIds.length;
   }
 }
