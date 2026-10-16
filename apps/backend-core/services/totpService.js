@@ -1,8 +1,24 @@
 const crypto = require('crypto');
 const { getDistanceFromLatLonInM } = require('@polyfit/shared-utils');
 
-const TOTP_SECRET_PEPPER = process.env.TOTP_SECRET_PEPPER || 'polyfit_secure_totp_salt_v1_2026';
 const DEFAULT_TIME_STEP_SECONDS = 30;
+
+/**
+ * Retrieves the TOTP secret pepper safely from environment variables.
+ * Throws a fatal error in production if TOTP_SECRET_PEPPER is missing.
+ * In non-production environments, provides a safe local development fallback.
+ * @returns {string}
+ */
+function getSecretPepper() {
+  const pepper = process.env.TOTP_SECRET_PEPPER;
+  if (!pepper) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('FATAL SECURITY ERROR: TOTP_SECRET_PEPPER environment variable is required in production.');
+    }
+    return 'polyfit_dev_totp_pepper_fallback_do_not_use_in_prod';
+  }
+  return pepper;
+}
 
 /**
  * Derives a deterministic 32-byte secret for an employee using HMAC-SHA256
@@ -11,7 +27,7 @@ const DEFAULT_TIME_STEP_SECONDS = 30;
  */
 function deriveEmployeeSecret(employeeId) {
   return crypto
-    .createHmac('sha256', TOTP_SECRET_PEPPER)
+    .createHmac('sha256', getSecretPepper())
     .update(String(employeeId))
     .digest();
 }
@@ -92,7 +108,7 @@ function verifyTotp(token, secret, timeStepSeconds = DEFAULT_TIME_STEP_SECONDS, 
 function signPassPayload(passData) {
   const jsonStr = JSON.stringify(passData);
   const sig = crypto
-    .createHmac('sha256', TOTP_SECRET_PEPPER)
+    .createHmac('sha256', getSecretPepper())
     .update(jsonStr)
     .digest('base64url');
 
@@ -114,7 +130,7 @@ function verifySignedPassPayload(signedPayload) {
   try {
     const jsonStr = Buffer.from(encodedData, 'base64url').toString('utf8');
     const expectedSig = crypto
-      .createHmac('sha256', TOTP_SECRET_PEPPER)
+      .createHmac('sha256', getSecretPepper())
       .update(jsonStr)
       .digest('base64url');
 
@@ -138,6 +154,7 @@ function getSecondsRemainingInStep(timeStepSeconds = DEFAULT_TIME_STEP_SECONDS, 
 
 module.exports = {
   DEFAULT_TIME_STEP_SECONDS,
+  getSecretPepper,
   deriveEmployeeSecret,
   generateTotp,
   verifyTotp,

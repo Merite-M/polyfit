@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 const app = require('../index');
 const {
+  getSecretPepper,
   deriveEmployeeSecret,
   generateTotp,
   verifyTotp,
@@ -15,6 +16,36 @@ const {
 
 describe('Visit Verification Engine Test Suite (PF-79)', () => {
   // ─── 1. TOTP & Cryptography Service Tests ────────────────────────────────────
+  test('getSecretPepper enforces environment security in production and uses environment secret when configured', () => {
+    const originalEnv = process.env.NODE_ENV;
+    const originalPepper = process.env.TOTP_SECRET_PEPPER;
+
+    try {
+      // 1. When TOTP_SECRET_PEPPER is explicitly set
+      process.env.TOTP_SECRET_PEPPER = 'custom_production_pepper_secret_998877';
+      assert.equal(getSecretPepper(), 'custom_production_pepper_secret_998877');
+
+      // 2. In production without TOTP_SECRET_PEPPER set, throws fatal security error
+      delete process.env.TOTP_SECRET_PEPPER;
+      process.env.NODE_ENV = 'production';
+      assert.throws(
+        () => getSecretPepper(),
+        /FATAL SECURITY ERROR: TOTP_SECRET_PEPPER environment variable is required in production/
+      );
+
+      // 3. In non-production without TOTP_SECRET_PEPPER set, uses dev fallback
+      process.env.NODE_ENV = 'development';
+      assert.equal(getSecretPepper(), 'polyfit_dev_totp_pepper_fallback_do_not_use_in_prod');
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+      if (originalPepper !== undefined) {
+        process.env.TOTP_SECRET_PEPPER = originalPepper;
+      } else {
+        delete process.env.TOTP_SECRET_PEPPER;
+      }
+    }
+  });
+
   test('deriveEmployeeSecret returns deterministic 32-byte Buffer', () => {
     const secret1 = deriveEmployeeSecret('emp-1234');
     const secret2 = deriveEmployeeSecret('emp-1234');
