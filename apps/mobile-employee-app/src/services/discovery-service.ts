@@ -588,9 +588,11 @@ export class DiscoveryService {
     }
 
     if (amenities && amenities.length > 0) {
-      filtered = filtered.filter((f) =>
-        amenities.every((a) => f.amenities.map((x) => x.toLowerCase()).includes(a.toLowerCase()))
-      );
+      const targetAmenities = amenities.map((a) => a.toLowerCase());
+      filtered = filtered.filter((f) => {
+        const facilityAmenities = f.amenities.map((x) => x.toLowerCase());
+        return targetAmenities.every((a) => facilityAmenities.includes(a));
+      });
     }
 
     // Recompute distance if user coordinates provided
