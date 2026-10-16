@@ -129,9 +129,7 @@ export default function EmployeesPage() {
     if (selectedIds.size === 0) return;
     setIsBatchLoading(true);
     const ids = Array.from(selectedIds);
-    for (const id of ids) {
-      await updateEmployeeStatus(id, "frozen");
-    }
+    await Promise.all(ids.map((id) => updateEmployeeStatus(id, "frozen")));
     showToast(`Froze passes for ${ids.length} employees`);
     setSelectedIds(new Set());
     setIsBatchLoading(false);
@@ -142,9 +140,7 @@ export default function EmployeesPage() {
     if (selectedIds.size === 0) return;
     setIsBatchLoading(true);
     const ids = Array.from(selectedIds);
-    for (const id of ids) {
-      await updateEmployeeStatus(id, "active");
-    }
+    await Promise.all(ids.map((id) => updateEmployeeStatus(id, "active")));
     showToast(`Reactivated passes for ${ids.length} employees`);
     setSelectedIds(new Set());
     setIsBatchLoading(false);
@@ -157,9 +153,7 @@ export default function EmployeesPage() {
     if (selectedIds.size === 0) return;
     setIsBatchLoading(true);
     const ids = Array.from(selectedIds);
-    for (const id of ids) {
-      await updateEmployeeTier(id, newTier);
-    }
+    await Promise.all(ids.map((id) => updateEmployeeTier(id, newTier)));
     showToast(`Updated tier to ${newTier} for ${ids.length} employees`);
     setSelectedIds(new Set());
     setIsBatchLoading(false);
