@@ -52,7 +52,7 @@ const BENEFIT_FAQS: BenefitPolicyFaq[] = [
 export function SupportModal({
   visible,
   employeeName = 'Jean Mugisha',
-  organizationName = 'Bank of Kigali',
+  organizationName = 'Corporate Partner',
   onClose,
 }: SupportModalProps) {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);

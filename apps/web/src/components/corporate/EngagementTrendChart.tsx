@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { TrendingUp, Info } from "lucide-react";
+import { TrendingUp, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface MonthDataPoint {
+export interface MonthDataPoint {
   month: string;
   eligible: number;
   members: number;
@@ -17,20 +17,35 @@ interface EngagementTrendChartProps {
   className?: string;
 }
 
-const DEFAULT_TREND_DATA: MonthDataPoint[] = [
-  { month: "Apr", eligible: 1150, members: 320, active: 160, visits: 540 },
-  { month: "May", eligible: 1180, members: 480, active: 250, visits: 890 },
-  { month: "Jun", eligible: 1200, members: 590, active: 310, visits: 1120 },
-  { month: "Jul", eligible: 1200, members: 670, active: 360, visits: 1280 },
-  { month: "Aug", eligible: 1210, members: 735, active: 384, visits: 1390 },
-  { month: "Sep", eligible: 1217, members: 789, active: 412, visits: 1480 },
-];
-
 export function EngagementTrendChart({
-  data = DEFAULT_TREND_DATA,
+  data = [],
   className,
 }: EngagementTrendChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  if (!data || data.length === 0) {
+    return (
+      <div className={cn("p-5 rounded-2xl bg-card border border-border shadow-xs flex flex-col justify-between", className)}>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3 className="text-base font-bold text-foreground">
+              Engagement & Adoption Trends
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Track member registration adoption vs active monthly provider visits
+            </p>
+          </div>
+        </div>
+        <div className="py-12 text-center text-xs text-muted-foreground">
+          <Activity className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+          <p className="font-semibold text-foreground">No verified engagement trends recorded yet</p>
+          <p className="text-[11px] mt-0.5 text-muted-foreground">
+            Monthly registration and check-in trends will populate as employees activate benefits.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // SVG coordinate calculations
   const width = 600;
@@ -41,12 +56,13 @@ export function EngagementTrendChart({
   const chartHeight = height - paddingY * 2;
 
   // Max value calculation for scale (using 100% or absolute counts)
-  const maxEligible = Math.max(...data.map((d) => d.eligible), 1250);
+  const maxEligible = Math.max(...data.map((d) => d.eligible), 10);
 
   // Coordinate mapping function
   const getCoordinates = (value: number, index: number) => {
-    const x = paddingX + (index / (data.length - 1)) * chartWidth;
-    const y = height - paddingY - (value / maxEligible) * chartHeight;
+    const divisor = data.length > 1 ? data.length - 1 : 1;
+    const x = paddingX + (index / divisor) * chartWidth;
+    const y = height - paddingY - (maxEligible > 0 ? (value / maxEligible) * chartHeight : 0);
     return { x, y };
   };
 
@@ -65,32 +81,30 @@ export function EngagementTrendChart({
   const activePath = createPath(activePoints);
 
   // Area paths for gradient fills
-  const memberAreaPath = `${memberPath} L ${memberPoints[memberPoints.length - 1].x} ${height - paddingY} L ${memberPoints[0].x} ${height - paddingY} Z`;
-  const activeAreaPath = `${activePath} L ${activePoints[activePoints.length - 1].x} ${height - paddingY} L ${activePoints[0].x} ${height - paddingY} Z`;
+  const memberAreaPath = memberPoints.length > 0
+    ? `${memberPath} L ${memberPoints[memberPoints.length - 1].x} ${height - paddingY} L ${memberPoints[0].x} ${height - paddingY} Z`
+    : "";
+  const activeAreaPath = activePoints.length > 0
+    ? `${activePath} L ${activePoints[activePoints.length - 1].x} ${height - paddingY} L ${activePoints[0].x} ${height - paddingY} Z`
+    : "";
 
   const activePoint = hoveredIndex !== null ? data[hoveredIndex] : data[data.length - 1];
-  const activeCoords = hoveredIndex !== null
-    ? getCoordinates(activePoint.active, hoveredIndex)
-    : getCoordinates(activePoint.active, data.length - 1);
-  const memberCoords = hoveredIndex !== null
-    ? getCoordinates(activePoint.members, hoveredIndex)
-    : getCoordinates(activePoint.members, data.length - 1);
 
   return (
-    <div className={cn("p-5 rounded-2xl bg-white border border-[#E2E8F0] shadow-sm", className)}>
+    <div className={cn("p-5 rounded-2xl bg-card border border-border shadow-xs", className)}>
       {/* Header & Legend */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-bold text-[#0B1F33]">
+            <h3 className="text-base font-bold text-foreground">
               Engagement & Adoption Trends
             </h3>
-            <span className="text-xs font-semibold text-[#28D17C] bg-[#E9FAF2] px-2 py-0.5 rounded-full flex items-center gap-1">
+            <span className="text-xs font-semibold text-accent bg-accent-subtle px-2 py-0.5 rounded-full flex items-center gap-1">
               <TrendingUp className="w-3 h-3" />
-              +64% Growth
+              Live Telemetry
             </span>
           </div>
-          <p className="text-xs text-[#526173]">
+          <p className="text-xs text-muted-foreground">
             Track member registration adoption vs active monthly provider visits
           </p>
         </div>
@@ -98,12 +112,12 @@ export function EngagementTrendChart({
         {/* Legend */}
         <div className="flex items-center gap-4 text-xs">
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-1 rounded-full bg-[#00D2B4]" />
-            <span className="text-[#526173]">Registered Members</span>
+            <span className="w-3 h-1 rounded-full bg-secondary" />
+            <span className="text-muted-foreground">Registered Members</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-1.5 rounded-full bg-[#28D17C]" />
-            <span className="text-[#0B1F33] font-semibold">Active Beneficiaries</span>
+            <span className="w-3 h-1.5 rounded-full bg-accent" />
+            <span className="text-foreground font-semibold">Active Beneficiaries</span>
           </div>
         </div>
       </div>
@@ -137,7 +151,7 @@ export function EngagementTrendChart({
                   y1={y}
                   x2={width - paddingX}
                   y2={y}
-                  stroke="#F1F4F8"
+                  stroke="var(--color-border, #E2E8F0)"
                   strokeWidth="1"
                   strokeDasharray="4 4"
                 />
@@ -145,7 +159,7 @@ export function EngagementTrendChart({
                   x={paddingX - 8}
                   y={y + 3}
                   textAnchor="end"
-                  className="text-[9px] fill-[#8491A3] font-mono"
+                  className="text-[9px] fill-muted-foreground font-mono"
                 >
                   {labelValue}
                 </text>
@@ -154,26 +168,30 @@ export function EngagementTrendChart({
           })}
 
           {/* Shaded Areas */}
-          <path d={memberAreaPath} fill="url(#member-area)" />
-          <path d={activeAreaPath} fill="url(#active-area)" />
+          {memberAreaPath && <path d={memberAreaPath} fill="url(#member-area)" />}
+          {activeAreaPath && <path d={activeAreaPath} fill="url(#active-area)" />}
 
           {/* Path Lines */}
-          <path
-            d={memberPath}
-            fill="none"
-            stroke="#00D2B4"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d={activePath}
-            fill="none"
-            stroke="#28D17C"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          {memberPath && (
+            <path
+              d={memberPath}
+              fill="none"
+              stroke="#00D2B4"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+          {activePath && (
+            <path
+              d={activePath}
+              fill="none"
+              stroke="#28D17C"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
 
           {/* X Axis Labels & Interactive Vertical Hover Bars */}
           {data.map((d, i) => {
@@ -203,7 +221,7 @@ export function EngagementTrendChart({
                     y1={paddingY}
                     x2={x}
                     y2={height - paddingY}
-                    stroke="#0B1F33"
+                    stroke="var(--color-foreground, #0B1F33)"
                     strokeWidth="1.5"
                     strokeDasharray="3 3"
                     opacity="0.4"
@@ -217,7 +235,7 @@ export function EngagementTrendChart({
                   textAnchor="middle"
                   className={cn(
                     "text-[10px] font-semibold transition-colors",
-                    isHovered ? "fill-[#0B1F33] font-bold" : "fill-[#8491A3]"
+                    isHovered ? "fill-foreground font-bold" : "fill-muted-foreground"
                   )}
                 >
                   {d.month}
@@ -249,27 +267,27 @@ export function EngagementTrendChart({
 
         {/* Hover Tooltip Overlay */}
         {activePoint && (
-          <div className="absolute top-2 right-2 bg-[#0B1F33] text-white p-2.5 rounded-xl shadow-lg border border-[#21405A] text-xs pointer-events-none transition-all">
-            <div className="font-bold text-[#28D17C] mb-1">
-              {activePoint.month} 2026 Snapshot
+          <div className="absolute top-2 right-2 bg-card text-card-foreground p-2.5 rounded-xl shadow-lg border border-border text-xs pointer-events-none transition-all">
+            <div className="font-bold text-accent mb-1">
+              {activePoint.month} Snapshot
             </div>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
-              <span className="text-[#8491A3]">Active Users:</span>
-              <span className="font-semibold text-right text-white">
+              <span className="text-muted-foreground">Active Users:</span>
+              <span className="font-semibold text-right text-foreground">
                 {activePoint.active}{" "}
-                <span className="text-[#28D17C]">
-                  ({Math.round((activePoint.active / activePoint.eligible) * 100)}%)
+                <span className="text-accent">
+                  ({activePoint.eligible > 0 ? Math.round((activePoint.active / activePoint.eligible) * 100) : 0}%)
                 </span>
               </span>
-              <span className="text-[#8491A3]">Registered:</span>
-              <span className="font-semibold text-right text-[#00D2B4]">
+              <span className="text-muted-foreground">Registered:</span>
+              <span className="font-semibold text-right text-secondary">
                 {activePoint.members}{" "}
-                <span className="text-[#8491A3]">
-                  ({Math.round((activePoint.members / activePoint.eligible) * 100)}%)
+                <span className="text-muted-foreground">
+                  ({activePoint.eligible > 0 ? Math.round((activePoint.members / activePoint.eligible) * 100) : 0}%)
                 </span>
               </span>
-              <span className="text-[#8491A3]">Verified Visits:</span>
-              <span className="font-semibold text-right text-white">
+              <span className="text-muted-foreground">Verified Visits:</span>
+              <span className="font-semibold text-right text-foreground">
                 {activePoint.visits}
               </span>
             </div>

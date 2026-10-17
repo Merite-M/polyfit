@@ -100,10 +100,10 @@ export function CreateProviderDrawer({
   // Step 3: Negotiated Payout Matrix & MoMo Rails
   const [perVisitPayoutRate, setPerVisitPayoutRate] = useState<number>(4500);
   const [minBenefitTier, setMinBenefitTier] = useState<string>("standard");
-  const [bankName, setBankName] = useState("Bank of Kigali");
+  const [bankName, setBankName] = useState("");
   const [accountName, setAccountName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
-  const [swiftCode, setSwiftCode] = useState("BKIGRWRW");
+  const [swiftCode, setSwiftCode] = useState("");
   const [momoProvider, setMomoProvider] = useState("MTN Mobile Money Rwanda");
   const [momoCode, setMomoCode] = useState("");
   const [momoPhone, setMomoPhone] = useState("");

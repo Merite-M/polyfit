@@ -129,7 +129,7 @@ export function CommercialTermsCard({ onOpenAmendmentModal }: CommercialTermsCar
             Annual Auto-Renewal
           </div>
           <p className="text-[11px] text-[#526173] mt-1">
-            Effective from: {contract?.effective_from || 'Sep 2026'}
+            Effective from: {contract?.effective_from || 'Pending contract activation'}
           </p>
         </div>
       </div>

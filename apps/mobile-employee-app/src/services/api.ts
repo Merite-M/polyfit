@@ -42,7 +42,7 @@ export async function verifyDomain(email: string): Promise<DomainVerificationRes
         recognized: true,
         organization: {
           id: 'b0000000-0000-0000-0000-000000000001',
-          name: 'Bank of Kigali',
+          name: 'Corporate Partner',
           slug: 'bank-of-kigali',
           domain: 'bk.rw',
           logo_url: null,
@@ -50,7 +50,7 @@ export async function verifyDomain(email: string): Promise<DomainVerificationRes
         benefit: {
           id: 'b0000000-0000-0000-0000-000000000011',
           tier: 'standard',
-          name: 'Bank of Kigali Standard Corporate Tier',
+          name: 'Corporate Standard Wellness Plan',
           max_monthly_visits: 12,
           subsidy_percentage: 100,
           is_fully_sponsored: true,
@@ -123,7 +123,7 @@ export async function verifyInviteCode(code: string): Promise<InviteVerification
         employee_name: 'David Contractor',
         organization: {
           id: 'b0000000-0000-0000-0000-000000000001',
-          name: 'Bank of Kigali',
+          name: 'Corporate Partner',
           slug: 'bank-of-kigali',
           domain: 'bk.rw',
           logo_url: null,
@@ -131,7 +131,7 @@ export async function verifyInviteCode(code: string): Promise<InviteVerification
         benefit: {
           id: 'b0000000-0000-0000-0000-000000000011',
           tier: 'standard',
-          name: 'Bank of Kigali Corporate Wellness Benefit',
+          name: 'Corporate Wellness Benefit',
           max_monthly_visits: 12,
           subsidy_percentage: 100,
           is_fully_sponsored: true,
@@ -363,7 +363,7 @@ export async function fetchEmployeeMe(token?: string | null, employeeId?: string
     },
     organization: {
       id: 'b0000000-0000-0000-0000-000000000001',
-      name: 'Bank of Kigali',
+      name: 'Corporate Partner',
       slug: 'bank-of-kigali',
       domain: 'bk.rw',
       logo_url: null,
@@ -371,7 +371,7 @@ export async function fetchEmployeeMe(token?: string | null, employeeId?: string
     benefit: {
       id: 'b0000000-0000-0000-0000-000000000011',
       tier: 'standard',
-      name: 'Bank of Kigali Standard Corporate Tier',
+      name: 'Corporate Standard Wellness Plan',
       max_monthly_visits: 12,
       subsidy_percentage: 100,
       is_fully_sponsored: true,
@@ -381,7 +381,7 @@ export async function fetchEmployeeMe(token?: string | null, employeeId?: string
     },
     telemetry: {
       tier: 'standard',
-      name: 'Bank of Kigali Standard Corporate Tier',
+      name: 'Corporate Standard Wellness Plan',
       usedVisits: 8,
       maxMonthlyVisits: 12,
       remainingVisits: 4,

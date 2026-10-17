@@ -65,10 +65,10 @@ export function ProviderDossierDrawer({
   const [minTier, setMinTier] = useState<string>("standard");
 
   // Bank & MoMo details states
-  const [bankName, setBankName] = useState("Bank of Kigali (BK)");
+  const [bankName, setBankName] = useState("");
   const [accountName, setAccountName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
-  const [swiftCode, setSwiftCode] = useState("BKIGRWRW");
+  const [swiftCode, setSwiftCode] = useState("");
   const [momoProvider, setMomoProvider] = useState("MTN Mobile Money Rwanda");
   const [momoCode, setMomoCode] = useState("");
   const [momoPhone, setMomoPhone] = useState("");
@@ -112,7 +112,7 @@ export function ProviderDossierDrawer({
         }
 
         const bd = data.bankDetails || {};
-        setBankName(bd.bankName || "Bank of Kigali (BK)");
+        setBankName(bd.bankName || "");
         setAccountName(bd.accountName || data.provider.name || "");
         setAccountNumber(bd.accountNumber || "");
         setSwiftCode(bd.swiftCode || "BKIGRWRW");

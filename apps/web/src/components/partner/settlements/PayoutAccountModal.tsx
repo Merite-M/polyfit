@@ -26,10 +26,10 @@ export function PayoutAccountModal({ isOpen, onClose, onSuccess }: PayoutAccount
   const { provider, updatePayoutDetails } = usePartner();
 
   const [payoutMethod, setPayoutMethod] = React.useState<'bank' | 'momo'>('bank');
-  const [bankName, setBankName] = React.useState('Bank of Kigali (BK)');
+  const [bankName, setBankName] = React.useState('');
   const [accountName, setAccountName] = React.useState('');
   const [accountNumber, setAccountNumber] = React.useState('');
-  const [swiftCode, setSwiftCode] = React.useState('BOKRRWRW');
+  const [swiftCode, setSwiftCode] = React.useState('');
   const [momoProvider, setMomoProvider] = React.useState<'mtn' | 'airtel'>('mtn');
   const [momoCode, setMomoCode] = React.useState('');
   const [momoPhone, setMomoPhone] = React.useState('');

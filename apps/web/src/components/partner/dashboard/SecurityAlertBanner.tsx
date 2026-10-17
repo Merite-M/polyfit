@@ -44,7 +44,7 @@ export function SecurityAlertBanner({ onOpenPayoutModal }: SecurityAlertBannerPr
     const methodDesc =
       bankDetails?.payout_method === 'momo'
         ? `${bankDetails.momo_provider?.toUpperCase() || 'MTN'} MoMo (${bankDetails.momo_phone || bankDetails.momo_code || 'Verified'})`
-        : `${bankDetails?.bank_name || 'Bank of Kigali'} (${bankDetails?.account_number ? `...${bankDetails.account_number.slice(-4)}` : 'Verified'})`;
+        : `${bankDetails?.bank_name || 'Bank Account'} (${bankDetails?.account_number ? `...${bankDetails.account_number.slice(-4)}` : 'Verified'})`;
 
     return (
       <div className="bg-[#E9FAF2] border border-[#B7F1D2] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">

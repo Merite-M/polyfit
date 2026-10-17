@@ -3,11 +3,7 @@
 import React from "react";
 import {
   Clock,
-  HeartHandshake,
-  DollarSign,
-  Briefcase,
   ShieldCheck,
-  Sparkles,
   TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,10 +17,10 @@ interface RoiMetricsCardProps {
 }
 
 export function RoiMetricsCard({
-  activeEmployees = 412,
-  totalSpendRwf = 1892000,
-  wellnessHour = "17:00 - 18:00",
-  peakDay = "Wednesday",
+  activeEmployees = 0,
+  totalSpendRwf = 0,
+  wellnessHour = "-- : --",
+  peakDay = "Pending visits",
   className,
 }: RoiMetricsCardProps) {
   // Wellhub Benchmark: 2.5x healthcare savings + 3.5 productivity hours saved
@@ -47,7 +43,7 @@ export function RoiMetricsCard({
               {wellnessHour}
             </p>
             <p className="text-[11px] text-muted-foreground">
-              Most active on <span className="font-semibold text-foreground">{peakDay} evenings</span>
+              Most active on <span className="font-semibold text-foreground">{peakDay}</span>
             </p>
           </div>
         </div>
