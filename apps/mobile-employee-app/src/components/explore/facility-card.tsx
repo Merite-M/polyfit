@@ -10,16 +10,15 @@ import {
   StyleSheet,
   Pressable,
   Platform,
+  Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import {
   MapPin,
   Star,
-  Clock,
   ShieldCheck,
   ChevronRight,
   Waves,
-  Dumbbell,
   Sparkles,
   Flame,
   Activity,
@@ -100,9 +99,26 @@ export const FacilityCard = memo(function FacilityCard({
   const categoryColor = getCategoryColor(facility.provider.category);
   const categoryLabel = getCategoryLabel(facility.provider.category);
   const operatingStatus = getFacilityOperatingStatus(facility.operating_hours);
+  const isIncluded = facility.isIncludedInPlan !== false;
   const coverPhoto = facility.photos && facility.photos.length > 0
     ? facility.photos[0]
     : 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80';
+
+  const handleQuickCheckinAction = (e: any) => {
+    e.stopPropagation();
+    if (!isIncluded) {
+      const msg = `Upgrade Required: ${facility.location_name} is excluded from your active corporate plan tier. Contact HR to upgrade your plan.`;
+      if (Platform.OS === 'web') {
+        alert(msg);
+      } else {
+        Alert.alert('Upgrade Required', msg);
+      }
+      return;
+    }
+    if (onQuickCheckIn) {
+      onQuickCheckIn(facility);
+    }
+  };
 
   return (
     <Pressable
@@ -130,15 +146,16 @@ export const FacilityCard = memo(function FacilityCard({
             <Text style={styles.categoryBadgeText}>{categoryLabel}</Text>
           </View>
 
-          {/* Plan Eligibility Badge (Strictly Navy text on Green) */}
-          {facility.isIncludedInPlan !== false ? (
+          {/* Plan Eligibility Badge */}
+          {isIncluded ? (
             <View style={styles.planIncludedBadge}>
               <ShieldCheck size={11} color="#0B1F33" strokeWidth={2.5} />
               <Text style={styles.planIncludedText}>INCLUDED IN PLAN</Text>
             </View>
           ) : (
             <View style={styles.planUpgradeBadge}>
-              <Text style={styles.planUpgradeText}>TIER 2 ONLY</Text>
+              <Lock size={11} color="#0B1F33" strokeWidth={2.5} />
+              <Text style={styles.planUpgradeText}>EXCLUDED FROM PLAN</Text>
             </View>
           )}
         </View>
@@ -193,7 +210,7 @@ export const FacilityCard = memo(function FacilityCard({
           )}
         </View>
 
-          {/* Footer: Live Operating Status & Quick Actions */}
+        {/* Footer: Live Operating Status & Quick Actions */}
         <View style={styles.cardFooter}>
           <View style={styles.statusRow}>
             <View
@@ -233,15 +250,21 @@ export const FacilityCard = memo(function FacilityCard({
 
             {onQuickCheckIn && (
               <Pressable
-                style={styles.cardQuickCheckinBtn}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  onQuickCheckIn(facility);
-                }}
+                style={[
+                  styles.cardQuickCheckinBtn,
+                  !isIncluded && styles.cardQuickCheckinBtnDisabled,
+                ]}
+                onPress={handleQuickCheckinAction}
                 hitSlop={6}
               >
-                <QrCode size={12} color="#0B1F33" />
-                <Text style={styles.cardQuickCheckinText}>Check In</Text>
+                {isIncluded ? (
+                  <QrCode size={12} color="#0B1F33" />
+                ) : (
+                  <Lock size={12} color="#0B1F33" />
+                )}
+                <Text style={styles.cardQuickCheckinText}>
+                  {isIncluded ? 'Check In' : 'Upgrade'}
+                </Text>
               </Pressable>
             )}
           </View>
@@ -321,19 +344,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Palette.green, // Electric green #28D17C
+    backgroundColor: Palette.green,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
   planIncludedText: {
-    color: '#0B1F33', // Midnight Navy for high-contrast accessibility!
+    color: '#0B1F33',
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 0.4,
   },
   planUpgradeBadge: {
-    backgroundColor: 'rgba(245, 158, 11, 0.9)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F59E0B',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -465,33 +491,9 @@ const styles = StyleSheet.create({
   },
   statusDotOpen: {
     backgroundColor: Palette.green,
-    ...Platform.select({
-      web: {
-        boxShadow: '0 0 6px rgba(40, 209, 124, 0.6)',
-      },
-      default: {
-        shadowColor: Palette.green,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.6,
-        shadowRadius: 3,
-        elevation: 2,
-      },
-    }),
   },
   statusDotClosing: {
     backgroundColor: '#F59E0B',
-    ...Platform.select({
-      web: {
-        boxShadow: '0 0 6px rgba(245, 158, 11, 0.6)',
-      },
-      default: {
-        shadowColor: '#F59E0B',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.6,
-        shadowRadius: 3,
-        elevation: 2,
-      },
-    }),
   },
   statusDotClosed: {
     backgroundColor: '#EF4444',
@@ -542,6 +544,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 5,
     borderRadius: 6,
+  },
+  cardQuickCheckinBtnDisabled: {
+    backgroundColor: '#F59E0B',
   },
   cardQuickCheckinText: {
     fontSize: 11,

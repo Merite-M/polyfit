@@ -18,9 +18,7 @@ import {
   Clock,
   Camera,
   WifiOff,
-  Maximize2,
   RefreshCw,
-  Sparkles,
 } from 'lucide-react-native';
 import { Palette, Spacing, Radius } from '@/constants/theme';
 import { QrCodeMatrix } from '@/components/pass/qr-code-matrix';
@@ -30,6 +28,7 @@ import {
   createDynamicPassPayload,
   TOTP_STEP_SECONDS,
 } from '@/services/totp';
+import { OfflineVaultService } from '@/services/offline-vault';
 
 interface DynamicQrPassProps {
   employeeId: string;
@@ -64,11 +63,23 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
   const [qrPayload, setQrPayload] = useState('polyfit_pass_initial');
   const [secondsRemaining, setSecondsRemaining] = useState(TOTP_STEP_SECONDS);
   const [liveTimestamp, setLiveTimestamp] = useState(new Date().toLocaleTimeString());
+  const [vaultSeed, setVaultSeed] = useState<string | null>(null);
 
-  // Animation values for the anti-screenshot ripple
+  // Animation value for smooth 60/120 FPS progress bar
+  const progressAnim = useRef(new Animated.Value(1)).current;
+  // Animation value for anti-screenshot shimmer ribbon
   const shimmerAnim = useRef(new Animated.Value(0)).current;
 
-  // Shimmer loop to break static screenshots
+  // Retrieve seed from SecureStore vault if prop is missing
+  useEffect(() => {
+    if (!offlineSeed) {
+      OfflineVaultService.getTokenSeed().then((stored) => {
+        if (stored) setVaultSeed(stored);
+      }).catch(() => {});
+    }
+  }, [offlineSeed]);
+
+  // Shimmer loop to prevent static screenshot spoofing
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -86,7 +97,7 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
     ).start();
   }, [shimmerAnim]);
 
-  // 15-second RFC 6238 TOTP rotation timer
+  // 30-second RFC 6238 TOTP rotation timer with smooth 60/120 FPS progress animation
   useEffect(() => {
     const updateTotp = () => {
       const now = Date.now();
@@ -94,8 +105,8 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
       setSecondsRemaining(rem);
       setLiveTimestamp(new Date(now).toLocaleTimeString());
 
-      const seed = offlineSeed || 'polyfit_secure_totp_seed_2026_default';
-      const rawCode = generateClientTotp(seed, TOTP_STEP_SECONDS, now);
+      const activeSeed = offlineSeed || vaultSeed || 'polyfit_secure_totp_seed_2026_default';
+      const rawCode = generateClientTotp(activeSeed, TOTP_STEP_SECONDS, now);
       setTotpCode(`${rawCode.slice(0, 3)} ${rawCode.slice(3)}`);
 
       const payload = createDynamicPassPayload({
@@ -104,20 +115,32 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
         offline: isOffline,
       });
       setQrPayload(payload);
+
+      // Calculate exact remaining milliseconds for smooth sub-second bar animation
+      const remMs = (rem * 1000) - (now % 1000);
+      const startRatio = rem / TOTP_STEP_SECONDS;
+      progressAnim.setValue(startRatio);
+
+      Animated.timing(progressAnim, {
+        toValue: 0,
+        duration: Math.max(0, remMs),
+        useNativeDriver: false,
+      }).start();
     };
 
     updateTotp();
     const interval = setInterval(updateTotp, 1000);
     return () => clearInterval(interval);
-  }, [employeeId, offlineSeed, isOffline]);
-
-  // Calculate circular progress angle
-  const progressRatio = secondsRemaining / TOTP_STEP_SECONDS;
-  const progressPercent = Math.round(progressRatio * 100);
+  }, [employeeId, offlineSeed, vaultSeed, isOffline, progressAnim]);
 
   const shimmerTranslate = shimmerAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [-30, 30],
+  });
+
+  const animatedBarWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
   });
 
   return (
@@ -203,13 +226,13 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
             </View>
           </View>
 
-          {/* Linear Progress Bar for 15s Window */}
+          {/* Linear Progress Bar for 30s Window (60/120 FPS Animation) */}
           <View style={styles.progressTrack}>
-            <View
+            <Animated.View
               style={[
                 styles.progressBar,
-                { width: `${progressPercent}%` },
-                secondsRemaining <= 3 && { backgroundColor: '#FF5A65' },
+                { width: animatedBarWidth },
+                secondsRemaining <= 5 && { backgroundColor: '#FF5A65' },
               ]}
             />
           </View>
@@ -224,7 +247,7 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
               <Text style={styles.statusNoticeText}>
                 {isOffline
                   ? 'Cryptographic Vault Active (Basement Safe)'
-                  : 'Rotating RFC 6238 TOTP (Turnstile & Scanner Ready)'}
+                  : 'Rotating RFC 6238 TOTP (30s Window • Turnstile & Scanner Ready)'}
               </Text>
             </View>
           </View>

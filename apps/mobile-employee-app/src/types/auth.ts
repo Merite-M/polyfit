@@ -104,6 +104,7 @@ export interface BenefitUsageTelemetry {
   maxMonthlyVisits: number | null;
   remainingVisits: number | 'unlimited';
   quotaPercentage: number;
+  streakCount?: number;
   resetDate: string;
   daysRemainingInCycle: number;
   isUnlimited: boolean;
