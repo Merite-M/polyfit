@@ -1,6 +1,6 @@
 /**
  * PolyFit Corporate Employee App - Active Benefit Card (PF-102)
- * High-contrast telemetry, transparent corporate subsidy breakdown, and category access chips
+ * High-contrast telemetry, streak tracking, transparent corporate subsidy breakdown, and category access chips
  */
 
 import React from 'react';
@@ -16,6 +16,7 @@ import {
   AlertCircle,
   ChevronRight,
   ShieldCheck,
+  Zap,
 } from 'lucide-react-native';
 import { Palette, Spacing, Radius } from '@/constants/theme';
 import { BenefitPackage, BenefitUsageTelemetry } from '@/types/auth';
@@ -46,6 +47,7 @@ export function ActiveBenefitCard({
   const maxVisits = telemetry?.maxMonthlyVisits ?? benefit?.max_monthly_visits ?? 12;
   const usedVisits = telemetry?.usedVisits ?? 8;
   const remainingVisits = telemetry?.remainingVisits ?? (maxVisits - usedVisits);
+  const streakCount = telemetry?.streakCount ?? 5;
   const isUnlimited = telemetry?.isUnlimited ?? false;
   const isFullySponsored = telemetry?.isFullySponsored ?? benefit?.is_fully_sponsored ?? true;
   const subsidyPct = telemetry?.subsidyPercentage ?? benefit?.subsidy_percentage ?? 100;
@@ -75,9 +77,17 @@ export function ActiveBenefitCard({
           </Text>
         </View>
 
-        <View style={styles.statusPill}>
-          <CheckCircle2 size={12} color="#0B1F33" />
-          <Text style={styles.statusPillText}>ACTIVE</Text>
+        <View style={styles.headerBadgesRow}>
+          {/* Active Streak Pill */}
+          <View style={styles.streakPill}>
+            <Zap size={12} color="#F59E0B" fill="#F59E0B" />
+            <Text style={styles.streakPillText}>{streakCount} Streak</Text>
+          </View>
+
+          <View style={styles.statusPill}>
+            <CheckCircle2 size={12} color="#0B1F33" />
+            <Text style={styles.statusPillText}>ACTIVE</Text>
+          </View>
         </View>
       </View>
 
@@ -132,7 +142,7 @@ export function ActiveBenefitCard({
         </View>
       </View>
 
-      {/* Corporate Subsidy Breakdown (The Anti-Anxiety Block) */}
+      {/* Corporate Subsidy Breakdown */}
       <View style={styles.subsidySection}>
         <View style={styles.subsidyHeader}>
           <ShieldCheck size={14} color={Palette.green} />
@@ -222,6 +232,27 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: -0.3,
+  },
+  headerBadgesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  streakPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radius.full,
+  },
+  streakPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#F59E0B',
   },
   statusPill: {
     flexDirection: 'row',

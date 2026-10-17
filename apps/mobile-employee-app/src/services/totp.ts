@@ -1,10 +1,10 @@
 /**
  * PolyFit Corporate Employee App - RFC 6238 Dynamic TOTP Engine
  * Pure TypeScript implementation for universal offline execution (Expo, Web, Hermes)
- * Compliant with backend totpService.js (HMAC-SHA1, 15-second time step)
+ * Compliant with backend totpService.js (HMAC-SHA1, 30-second time step)
  */
 
-export const TOTP_STEP_SECONDS = 15;
+export const TOTP_STEP_SECONDS = 30;
 
 /**
  * Pure JavaScript SHA-1 implementation (RFC 3174)
@@ -165,9 +165,17 @@ export function generateClientTotp(
   timeStepSeconds: number = TOTP_STEP_SECONDS,
   timestamp: number = Date.now()
 ): string {
-  const keyBytes = typeof secret === 'string'
-    ? (secret.length === 64 ? hexToBytes(secret) : stringToBytes(secret))
-    : secret;
+  let keyBytes: Uint8Array;
+  if (typeof secret === 'string') {
+    const clean = secret.trim();
+    if (/^[0-9a-fA-F]+$/.test(clean) && clean.length % 2 === 0) {
+      keyBytes = hexToBytes(clean);
+    } else {
+      keyBytes = stringToBytes(clean);
+    }
+  } else {
+    keyBytes = secret;
+  }
 
   const counter = Math.floor(timestamp / 1000 / timeStepSeconds);
 
@@ -194,7 +202,7 @@ export function generateClientTotp(
 }
 
 /**
- * Computes remaining seconds in the current 15-second time step
+ * Computes remaining seconds in the current time step
  */
 export function getClientSecondsRemaining(
   timeStepSeconds: number = TOTP_STEP_SECONDS,
