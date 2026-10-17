@@ -27,14 +27,15 @@ const DEFAULT_DEPARTMENTS: DepartmentItem[] = [
 ];
 
 export function DepartmentTable({
-  departments = DEFAULT_DEPARTMENTS,
+  departments,
   className,
 }: DepartmentTableProps) {
+  const departmentList = departments ?? [];
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"participationRate" | "visits" | "eligible">("participationRate");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  const filtered = departments
+  const filtered = departmentList
     .filter((d) => d.name.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => {
       const mult = sortOrder === "desc" ? -1 : 1;
@@ -63,105 +64,119 @@ export function DepartmentTable({
         </div>
 
         {/* Search Filter */}
-        <div className="relative">
-          <Search className="w-3.5 h-3.5 text-[#8491A3] absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Filter departments..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 pr-3 py-1.5 rounded-xl border border-[#E2E8F0] bg-[#F7F9FC] text-xs focus:outline-none focus:border-[#28D17C] w-48 transition-all"
-          />
+        {departmentList.length > 0 && (
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-[#8491A3] absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Filter departments..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 pr-3 py-1.5 rounded-xl border border-[#E2E8F0] bg-[#F7F9FC] text-xs focus:outline-none focus:border-[#28D17C] w-48 transition-all"
+            />
+          </div>
+        )}
+      </div>
+
+      {departmentList.length === 0 ? (
+        <div className="py-12 text-center text-xs text-[#8491A3]">
+          <Users className="w-8 h-8 text-[#8491A3]/40 mx-auto mb-2" />
+          <p className="font-semibold text-[#0B1F33]">No Department Activity Recorded</p>
+          <p className="text-[11px] mt-0.5 text-[#526173]">
+            Add employees and assign departmental tags in your Roster to view live divisional participation.
+          </p>
         </div>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-[#E2E8F0] text-[11px] font-semibold text-[#8491A3] uppercase tracking-wider">
-              <th className="py-2.5 px-3">Department</th>
-              <th
-                className="py-2.5 px-3 cursor-pointer hover:text-[#0B1F33]"
-                onClick={() => toggleSort("eligible")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Eligible</span>
-                  <ArrowUpDown className="w-3 h-3" />
-                </div>
-              </th>
-              <th className="py-2.5 px-3">Active Users</th>
-              <th
-                className="py-2.5 px-3 cursor-pointer hover:text-[#0B1F33]"
-                onClick={() => toggleSort("participationRate")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Participation Rate</span>
-                  <ArrowUpDown className="w-3 h-3" />
-                </div>
-              </th>
-              <th
-                className="py-2.5 px-3 cursor-pointer hover:text-[#0B1F33]"
-                onClick={() => toggleSort("visits")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Total Visits</span>
-                  <ArrowUpDown className="w-3 h-3" />
-                </div>
-              </th>
-              <th className="py-2.5 px-3 text-right">Spend (RWF)</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#F1F4F8] text-xs">
-            {filtered.map((dept) => (
-              <tr
-                key={dept.name}
-                className="hover:bg-[#F7F9FC] transition-colors group"
-              >
-                <td className="py-3 px-3 font-semibold text-[#0B1F33]">
-                  {dept.name}
-                </td>
-                <td className="py-3 px-3 text-[#526173]">
-                  {dept.eligible}
-                </td>
-                <td className="py-3 px-3 text-[#0B1F33] font-medium">
-                  {dept.active}
-                </td>
-                <td className="py-3 px-3">
-                  <div className="flex items-center gap-2 max-w-[140px]">
-                    <div className="flex-1 h-2 rounded-full bg-[#F1F4F8] overflow-hidden">
-                      <div
-                        className={cn(
-                          "h-full rounded-full transition-all duration-500",
-                          dept.participationRate >= 70
-                            ? "bg-[#28D17C]"
-                            : dept.participationRate >= 50
-                            ? "bg-[#00D2B4]"
-                            : "bg-amber-400"
-                        )}
-                        style={{ width: `${dept.participationRate}%` }}
-                      />
+      ) : (
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-[#E2E8F0] text-[11px] font-semibold text-[#8491A3] uppercase tracking-wider">
+                  <th className="py-2.5 px-3">Department</th>
+                  <th
+                    className="py-2.5 px-3 cursor-pointer hover:text-[#0B1F33]"
+                    onClick={() => toggleSort("eligible")}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Eligible</span>
+                      <ArrowUpDown className="w-3 h-3" />
                     </div>
-                    <span className="font-bold text-[#0B1F33] text-[11px] min-w-[36px]">
-                      {dept.participationRate}%
-                    </span>
-                  </div>
-                </td>
-                <td className="py-3 px-3 text-[#526173] font-medium">
-                  {dept.visits}
-                </td>
-                <td className="py-3 px-3 text-right font-semibold text-[#0B1F33]">
-                  {dept.spend.toLocaleString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  </th>
+                  <th className="py-2.5 px-3">Active Users</th>
+                  <th
+                    className="py-2.5 px-3 cursor-pointer hover:text-[#0B1F33]"
+                    onClick={() => toggleSort("participationRate")}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Participation Rate</span>
+                      <ArrowUpDown className="w-3 h-3" />
+                    </div>
+                  </th>
+                  <th
+                    className="py-2.5 px-3 cursor-pointer hover:text-[#0B1F33]"
+                    onClick={() => toggleSort("visits")}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Total Visits</span>
+                      <ArrowUpDown className="w-3 h-3" />
+                    </div>
+                  </th>
+                  <th className="py-2.5 px-3 text-right">Spend (RWF)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F1F4F8] text-xs">
+                {filtered.map((dept) => (
+                  <tr
+                    key={dept.name}
+                    className="hover:bg-[#F7F9FC] transition-colors group"
+                  >
+                    <td className="py-3 px-3 font-semibold text-[#0B1F33]">
+                      {dept.name}
+                    </td>
+                    <td className="py-3 px-3 text-[#526173]">
+                      {dept.eligible}
+                    </td>
+                    <td className="py-3 px-3 text-[#0B1F33] font-medium">
+                      {dept.active}
+                    </td>
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-2 max-w-[140px]">
+                        <div className="flex-1 h-2 rounded-full bg-[#F1F4F8] overflow-hidden">
+                          <div
+                            className={cn(
+                              "h-full rounded-full transition-all duration-500",
+                              dept.participationRate >= 70
+                                ? "bg-[#28D17C]"
+                                : dept.participationRate >= 50
+                                ? "bg-[#00D2B4]"
+                                : "bg-amber-400"
+                            )}
+                            style={{ width: `${dept.participationRate}%` }}
+                          />
+                        </div>
+                        <span className="font-bold text-[#0B1F33] text-[11px] min-w-[36px]">
+                          {dept.participationRate}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-[#526173] font-medium">
+                      {dept.visits}
+                    </td>
+                    <td className="py-3 px-3 text-right font-semibold text-[#0B1F33]">
+                      {dept.spend.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-      <div className="mt-3 pt-3 border-t border-[#F1F4F8] flex items-center justify-between text-[11px] text-[#8491A3]">
-        <span>Showing {filtered.length} departments</span>
-        <span className="text-[#28D17C] font-semibold">HR Lead: People & HR (86.7%)</span>
-      </div>
+          <div className="mt-3 pt-3 border-t border-[#F1F4F8] flex items-center justify-between text-[11px] text-[#8491A3]">
+            <span>Showing {filtered.length} departments</span>
+            <span className="text-[#008A4B] font-semibold">Aggregator Live Census</span>
+          </div>
+        </>
+      )}
     </div>
   );
 }

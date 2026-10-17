@@ -107,6 +107,7 @@ describe('Employee Portal & Mobile Telemetry Test Suite (PF-109)', () => {
         const mockEmp = {
           ...sampleEmployee,
           id: '99999999-9999-9999-9999-999999999999',
+          org_id: '99999999-9999-9999-9999-999999999999',
           tier
         };
         const benefit = await resolveActiveBenefit(mockEmp);

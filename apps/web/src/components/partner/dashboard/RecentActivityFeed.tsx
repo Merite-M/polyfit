@@ -8,7 +8,7 @@ import {
   CheckCircle2,
   Clock,
   QrCode,
-  Cpu,
+  DoorOpen,
   UserCheck
 } from 'lucide-react';
 import { usePartner } from '@/contexts/PartnerContext';
@@ -20,11 +20,11 @@ export function RecentActivityFeed() {
   const getMethodBadge = (method: string) => {
     switch (method) {
       case 'totp_qr':
-        return { label: 'Dynamic QR', icon: QrCode, bg: 'bg-[#E9FAF2]', text: 'text-[#008A4B]' };
+        return { label: 'Mobile App Pass', icon: QrCode, bg: 'bg-[#E9FAF2]', text: 'text-[#008A4B]' };
       case 'turnstile':
-        return { label: 'IoT Turnstile', icon: Cpu, bg: 'bg-[#EFF6FF]', text: 'text-[#1D4ED8]' };
+        return { label: 'Turnstile Gate', icon: DoorOpen, bg: 'bg-[#EFF6FF]', text: 'text-[#1D4ED8]' };
       case 'manual':
-        return { label: 'Desk Manual', icon: UserCheck, bg: 'bg-[#FFFBEB]', text: 'text-[#B45309]' };
+        return { label: 'Front Desk Entry', icon: UserCheck, bg: 'bg-[#FFFBEB]', text: 'text-[#B45309]' };
       default:
         return { label: 'Verified Pass', icon: CheckCircle2, bg: 'bg-[#F1F4F8]', text: 'text-[#526173]' };
     }
@@ -115,7 +115,7 @@ export function RecentActivityFeed() {
       </div>
 
       <div className="mt-4 pt-3 border-t border-[#F1F4F8] flex items-center justify-between text-[11px] text-[#526173]">
-        <span>Anti-passback active: 3-hour lock</span>
+        <span>Visit security: 1 visit per member / 3 hrs</span>
         <span className="text-[#008A4B] font-semibold">Real-time Verified</span>
       </div>
     </div>

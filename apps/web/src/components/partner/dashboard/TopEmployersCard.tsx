@@ -27,18 +27,18 @@ interface AggregatedActivity {
 export function TopEmployersCard() {
   const { dashboardData } = usePartner();
 
-  const totalVisitsMtd = dashboardData?.kpis.mtd_total_visits || 585;
-  const totalRevenueMtd = dashboardData?.kpis.estimated_mtd_revenue_rwf || 2925000;
+  const totalVisitsMtd = dashboardData?.kpis.mtd_total_visits ?? 0;
+  const totalRevenueMtd = dashboardData?.kpis.estimated_mtd_revenue_rwf ?? 0;
+  const uniqueVisitorsMtd = dashboardData?.kpis.unique_corporate_visitors_mtd ?? 0;
 
   // Wellhub Privacy Standard: Aggregated utilization data categorized by facility activity
-  // Zero corporate client data or employer identities exposed to wellness providers
-  const activities: AggregatedActivity[] = [
+  const activities: AggregatedActivity[] = totalVisitsMtd > 0 ? [
     {
       id: 'act-gym',
       name: 'Gym & Cardio Access',
       category: 'Fitness',
       visit_count: Math.round(totalVisitsMtd * 0.58),
-      unique_visitors_count: Math.round((dashboardData?.kpis.unique_corporate_visitors_mtd || 120) * 0.65),
+      unique_visitors_count: Math.round(uniqueVisitorsMtd * 0.65),
       gross_earnings: Math.round(totalRevenueMtd * 0.58),
       share_pct: 58,
       icon: Dumbbell
@@ -48,7 +48,7 @@ export function TopEmployersCard() {
       name: 'Aquatics & Pool Access',
       category: 'Aquatics',
       visit_count: Math.round(totalVisitsMtd * 0.25),
-      unique_visitors_count: Math.round((dashboardData?.kpis.unique_corporate_visitors_mtd || 120) * 0.30),
+      unique_visitors_count: Math.round(uniqueVisitorsMtd * 0.30),
       gross_earnings: Math.round(totalRevenueMtd * 0.25),
       share_pct: 25,
       icon: Waves
@@ -58,7 +58,7 @@ export function TopEmployersCard() {
       name: 'Group Fitness & Studios',
       category: 'Studio',
       visit_count: Math.round(totalVisitsMtd * 0.11),
-      unique_visitors_count: Math.round((dashboardData?.kpis.unique_corporate_visitors_mtd || 120) * 0.18),
+      unique_visitors_count: Math.round(uniqueVisitorsMtd * 0.18),
       gross_earnings: Math.round(totalRevenueMtd * 0.11),
       share_pct: 11,
       icon: Flame
@@ -68,12 +68,12 @@ export function TopEmployersCard() {
       name: 'Sauna & Recovery Sessions',
       category: 'Wellness',
       visit_count: Math.round(totalVisitsMtd * 0.06),
-      unique_visitors_count: Math.round((dashboardData?.kpis.unique_corporate_visitors_mtd || 120) * 0.10),
+      unique_visitors_count: Math.round(uniqueVisitorsMtd * 0.10),
       gross_earnings: Math.round(totalRevenueMtd * 0.06),
       share_pct: 6,
       icon: Sparkles
     }
-  ];
+  ] : [];
 
   // Palette for activity progress meters
   const colorPalette = [
@@ -93,7 +93,7 @@ export function TopEmployersCard() {
             </div>
             <div>
               <h3 className="text-sm font-bold text-[#0B1F33]">
-                Popular Activities & Utilization
+                Popular Activities &amp; Utilization
               </h3>
               <p className="text-xs text-[#526173]">
                 Aggregated visit volume and payout breakdown across services.
@@ -106,55 +106,65 @@ export function TopEmployersCard() {
           </span>
         </div>
 
-        <div className="mt-4 space-y-4">
-          {activities.map((act, index) => {
-            const colors = colorPalette[index % colorPalette.length];
-            const IconComponent = act.icon;
+        {activities.length === 0 ? (
+          <div className="py-12 text-center">
+            <Activity className="w-8 h-8 text-[#A0AEC0] mx-auto mb-2 opacity-40" />
+            <p className="text-xs font-semibold text-[#0B1F33]">No Activity Recorded This Month</p>
+            <p className="text-[11px] text-[#8491A3] mt-1 max-w-xs mx-auto">
+              Activity breakdown will automatically calculate and display as corporate employees verify check-ins at your facilities.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-4 space-y-4">
+            {activities.map((act, index) => {
+              const colors = colorPalette[index % colorPalette.length];
+              const IconComponent = act.icon;
 
-            return (
-              <div key={act.id} className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-6 h-6 rounded-md bg-[#F1F4F8] text-[#526173] flex items-center justify-center shrink-0">
-                      <IconComponent className="w-3.5 h-3.5 text-[#526173]" />
-                    </span>
-                    <span className="font-bold text-[#0B1F33] truncate">
-                      {act.name}
-                    </span>
+              return (
+                <div key={act.id} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-6 h-6 rounded-md bg-[#F1F4F8] text-[#526173] flex items-center justify-center shrink-0">
+                        <IconComponent className="w-3.5 h-3.5 text-[#526173]" />
+                      </span>
+                      <span className="font-bold text-[#0B1F33] truncate">
+                        {act.name}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0 text-[11px]">
+                      <span className="text-[#526173]">
+                        <strong className="text-[#0B1F33]">{act.visit_count}</strong> check-ins
+                      </span>
+                      <span className="font-mono font-bold text-[#008A4B]">
+                        {formatRwf(act.gross_earnings)}
+                      </span>
+                      <span className={`font-bold font-mono px-1.5 py-0.5 rounded text-[10px] ${colors.bg} ${colors.text}`}>
+                        {act.share_pct}%
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0 text-[11px]">
-                    <span className="text-[#526173]">
-                      <strong className="text-[#0B1F33]">{act.visit_count}</strong> check-ins
-                    </span>
-                    <span className="font-mono font-bold text-[#008A4B]">
-                      {formatRwf(act.gross_earnings)}
-                    </span>
-                    <span className={`font-bold font-mono px-1.5 py-0.5 rounded text-[10px] ${colors.bg} ${colors.text}`}>
-                      {act.share_pct}%
+                  {/* Meter Bar */}
+                  <div className="w-full h-2 rounded-full bg-[#F1F4F8] overflow-hidden">
+                    <div
+                      style={{ width: `${Math.max(act.share_pct, 4)}%` }}
+                      className={`h-full rounded-full transition-all duration-500 ${colors.bar}`}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] text-[#8491A3] px-0.5">
+                    <span>{act.unique_visitors_count} unique authorized visitors</span>
+                    <span className="flex items-center gap-1 text-[#28D17C]">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Verified Benefit
                     </span>
                   </div>
                 </div>
-
-                {/* Meter Bar */}
-                <div className="w-full h-2 rounded-full bg-[#F1F4F8] overflow-hidden">
-                  <div
-                    style={{ width: `${Math.max(act.share_pct, 4)}%` }}
-                    className={`h-full rounded-full transition-all duration-500 ${colors.bar}`}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between text-[10px] text-[#8491A3] px-0.5">
-                  <span>{act.unique_visitors_count} unique authorized visitors</span>
-                  <span className="flex items-center gap-1 text-[#28D17C]">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Verified Benefit
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="mt-5 pt-3.5 border-t border-[#F1F4F8] flex items-center justify-between text-xs text-[#526173]">

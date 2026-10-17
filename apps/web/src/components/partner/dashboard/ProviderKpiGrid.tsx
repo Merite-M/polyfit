@@ -23,10 +23,10 @@ export function ProviderKpiGrid() {
   const deltaPct = kpis?.vs_yesterday_delta_pct ?? 0;
   const isPositiveDelta = deltaPct >= 0;
 
-  const mtdVisitors = kpis?.unique_corporate_visitors_mtd ?? 84;
-  const mtdGross = kpis?.estimated_mtd_revenue_rwf ?? 1700000;
+  const mtdVisitors = kpis?.unique_corporate_visitors_mtd ?? 0;
+  const mtdGross = kpis?.estimated_mtd_revenue_rwf ?? 0;
   const mtdNet = kpis?.estimated_net_payout_rwf ?? Math.round(mtdGross * 0.90);
-  const activeContracts = kpis?.active_contracts_count ?? 4;
+  const activeContracts = kpis?.active_contracts_count ?? 0;
   const perVisitRate = kpis?.per_visit_rate ?? 5000;
 
   return (

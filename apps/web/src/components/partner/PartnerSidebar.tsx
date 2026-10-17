@@ -69,7 +69,7 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
       icon: Receipt
     },
     {
-      label: 'Reports & Audit',
+      label: 'Reports & Attendance',
       href: '/partner/reports',
       icon: BarChart3
     },
@@ -153,24 +153,23 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
         })}
       </nav>
 
-      {/* Footer / System Telemetry */}
+      {/* Footer / Desk Status */}
       <div className="p-3 border-t border-border space-y-2 bg-slate-950/60">
-        {/* Scanner Relay Telemetry */}
         <div className="p-2.5 rounded-lg bg-slate-800/60 border border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
             </span>
-            <span className="text-[11px] font-medium text-slate-200">Cloud Relay</span>
+            <span className="text-[11px] font-medium text-slate-200">Front Desk</span>
           </div>
-          <span className="text-[10px] font-mono text-accent font-semibold">ONLINE</span>
+          <span className="text-[10px] font-semibold text-accent uppercase tracking-wider">Active</span>
         </div>
 
         <div className="px-2 py-1 flex items-center justify-between text-[11px] text-subdued">
-          <span>Counter Kiosk #01</span>
+          <span>Reception Station #1</span>
           <Link href="/terms" className="hover:text-white transition-colors flex items-center gap-1">
-            Rules <ExternalLink className="w-2.5 h-2.5" />
+            Partner Terms <ExternalLink className="w-2.5 h-2.5" />
           </Link>
         </div>
       </div>

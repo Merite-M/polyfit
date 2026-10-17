@@ -44,16 +44,16 @@ export function OperationalActionCards({ onOpenPayoutModal }: OperationalActionC
     },
     {
       id: 'reports',
-      title: 'Reports & Audit Suite',
-      description: 'Verified visit tracking, per-visitor payouts, check-in audit logs, and RRA EBM settlement statements.',
+      title: 'Reports & Attendance',
+      description: 'Verified visit tracking, member payouts, check-in logs, and official settlement statements.',
       icon: BarChart3,
       iconColor: 'text-[#3B82F6]',
       iconBg: 'bg-[#3B82F6]/15',
-      badge: 'Visits & Audit',
+      badge: 'Visits & Revenue',
       badgeType: 'neutral',
       actionType: 'link' as const,
       href: '/partner/reports',
-      actionLabel: 'Open Reports Suite'
+      actionLabel: 'View Reports'
     },
     {
       id: 'premises',
@@ -70,16 +70,16 @@ export function OperationalActionCards({ onOpenPayoutModal }: OperationalActionC
     },
     {
       id: 'integrations',
-      title: 'Turnstile & Scanner IoT',
-      description: 'Manage counter kiosk cameras, cloud relays, webhooks, and IoT turnstile credentials.',
-      icon: Cpu,
+      title: 'Front Desk & Member Entry',
+      description: 'Set up your printable QR desk plaque, reception scanner phones, or automated turnstiles.',
+      icon: Smartphone,
       iconColor: 'text-[#06B6D4]',
       iconBg: 'bg-[#06B6D4]/15',
-      badge: 'Relay Live',
+      badge: 'Entry Ready',
       badgeType: 'success',
       actionType: 'link' as const,
-      href: '/partner/locations#iot-relay',
-      actionLabel: 'Configure IoT'
+      href: '/partner/locations#entry-tools',
+      actionLabel: 'Entry Setup'
     }
   ];
 

@@ -37,14 +37,14 @@ export function AdoptionFunnelRow({
   onUpdateListClick,
 }: AdoptionFunnelRowProps) {
   const {
-    totalEligible = 1200,
-    registeredEmployees = 789,
-    activeBeneficiaries = 412,
-    totalVisits = 1480,
-    newEmployees30d = 54,
-    newBeneficiaries30d = 28,
-    avgVisitsPerActive = 3.6,
-  } = data;
+    totalEligible = 0,
+    registeredEmployees = 0,
+    activeBeneficiaries = 0,
+    totalVisits = 0,
+    newEmployees30d = 0,
+    newBeneficiaries30d = 0,
+    avgVisitsPerActive = activeBeneficiaries > 0 ? Number((totalVisits / activeBeneficiaries).toFixed(1)) : 0,
+  } = data || {};
 
   const employeeAdoptionRate = totalEligible > 0
     ? Math.round((registeredEmployees / totalEligible) * 100)

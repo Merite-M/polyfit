@@ -28,92 +28,10 @@ import { generateSettlementPdf, SettlementPdfData } from '@/lib/settlement-pdf';
 import { downloadCsv } from '@/lib/export-csv';
 import { SettlementDetailDrawer } from '@/components/partner/settlements/SettlementDetailDrawer';
 
-// Resilient default settlement history for live evaluation & demo
-const DEFAULT_STATEMENTS: SettlementPdfData[] = [
-  {
-    id: 'set-2026-08',
-    statement_number: 'PF-SET-2026-08-0012',
-    period_start: '2026-08-01',
-    period_end: '2026-08-31',
-    total_visits: 420,
-    gross_amount: 2100000,
-    adjustments_amount: 0,
-    platform_fee_amount: 210000,
-    net_amount: 1890000,
-    status: 'paid',
-    payout_date: '2026-09-15',
-    payment_reference: 'BK-FT-20260915-082',
-    provider: {
-      name: 'FitLife Gym Kigali',
-      category: 'gym',
-      tax_id: '108392019',
-      settlement_email: 'finance@fitlife.rw',
-      bank_details: {
-        payout_method: 'bank',
-        bank_name: 'Bank of Kigali (BK)',
-        account_name: 'FitLife Ltd',
-        account_number: '00040-0692140-19',
-        swift_code: 'BOKRRWRW'
-      }
-    },
-    line_items: [
-      { org_name: 'Bank of Kigali Plc', category: 'Executive Fitness', visit_count: 180, per_visit_rate: 5000, subtotal: 900000 },
-      { org_name: 'MTN Rwandacell', category: 'Corporate All-Access', visit_count: 140, per_visit_rate: 5000, subtotal: 700000 },
-      { org_name: 'TechCorp Rwanda', category: 'Standard Wellness', visit_count: 70, per_visit_rate: 5000, subtotal: 350000 },
-      { org_name: 'I&M Bank Rwanda', category: 'Executive Fitness', visit_count: 30, per_visit_rate: 5000, subtotal: 150000 }
-    ]
-  },
-  {
-    id: 'set-2026-07',
-    statement_number: 'PF-SET-2026-07-0008',
-    period_start: '2026-07-01',
-    period_end: '2026-07-31',
-    total_visits: 380,
-    gross_amount: 1900000,
-    adjustments_amount: 10000,
-    platform_fee_amount: 190000,
-    net_amount: 1700000,
-    status: 'paid',
-    payout_date: '2026-08-15',
-    payment_reference: 'BK-FT-20260815-055',
-    provider: {
-      name: 'FitLife Gym Kigali',
-      category: 'gym',
-      tax_id: '108392019',
-      settlement_email: 'finance@fitlife.rw'
-    },
-    line_items: [
-      { org_name: 'Bank of Kigali Plc', category: 'Executive Fitness', visit_count: 160, per_visit_rate: 5000, subtotal: 800000 },
-      { org_name: 'MTN Rwandacell', category: 'Corporate All-Access', visit_count: 130, per_visit_rate: 5000, subtotal: 650000 },
-      { org_name: 'TechCorp Rwanda', category: 'Standard Wellness', visit_count: 65, per_visit_rate: 5000, subtotal: 325000 },
-      { org_name: 'I&M Bank Rwanda', category: 'Executive Fitness', visit_count: 25, per_visit_rate: 5000, subtotal: 125000 }
-    ]
-  },
-  {
-    id: 'set-2026-06',
-    statement_number: 'PF-SET-2026-06-0003',
-    period_start: '2026-06-01',
-    period_end: '2026-06-30',
-    total_visits: 310,
-    gross_amount: 1550000,
-    adjustments_amount: 0,
-    platform_fee_amount: 155000,
-    net_amount: 1395000,
-    status: 'paid',
-    payout_date: '2026-07-15',
-    payment_reference: 'BK-FT-20260715-019',
-    provider: {
-      name: 'FitLife Gym Kigali',
-      category: 'gym',
-      tax_id: '108392019'
-    }
-  }
-];
-
 export default function PartnerSettlementsPage() {
-  const { provider, todaySummary, openPayoutModal } = usePartner();
+  const { provider, dashboardData, openPayoutModal } = usePartner();
 
-  const [statements, setStatements] = useState<SettlementPdfData[]>(DEFAULT_STATEMENTS);
+  const [statements, setStatements] = useState<SettlementPdfData[]>([]);
   const [selectedStatement, setSelectedStatement] = useState<SettlementPdfData | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'processing' | 'pending'>('all');
@@ -126,11 +44,10 @@ export default function PartnerSettlementsPage() {
       const res = await apiFetch<{ settlements?: SettlementPdfData[] }>(
         `/api/settlements?limit=20`
       );
-      if (res?.settlements && res.settlements.length > 0) {
-        setStatements(res.settlements);
-      }
+      setStatements(res?.settlements || []);
     } catch (err) {
       console.warn('[PartnerSettlements] Live settlements API notice:', err);
+      setStatements([]);
     } finally {
       setIsRefreshing(false);
     }
@@ -227,17 +144,20 @@ export default function PartnerSettlementsPage() {
         {/* Card 1: Accrued Earnings for Current Cycle */}
         <div className="bg-white rounded-xl border border-[#E2E8F0] p-5 shadow-xs relative overflow-hidden">
           <div className="flex items-center justify-between text-xs font-semibold text-[#8491A3]">
-            <span>Accrued Earnings (Sept 2026)</span>
+            <span>Accrued Earnings (Current Cycle)</span>
             <span className="text-[10px] font-bold text-[#008A4B] bg-[#E9FAF2] px-2 py-0.5 rounded-full border border-[#B7F1D2]">
               Active Cycle
             </span>
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-[#0B1F33] font-mono mt-2">
-            2,450,000 <span className="text-xs font-sans text-[#8491A3]">RWF</span>
+            {formatRwf(dashboardData?.kpis?.estimated_mtd_revenue_rwf ?? 0)}{' '}
+            <span className="text-xs font-sans text-[#8491A3]">RWF</span>
           </div>
           <div className="text-[11px] text-[#526173] mt-2 flex items-center justify-between">
-            <span>490 verified visits @ 5,000 RWF</span>
-            <span className="text-[#8491A3]">Closes Sep 30, 23:59 CAT</span>
+            <span>
+              {dashboardData?.kpis?.mtd_total_visits ?? 0} verified visits recorded
+            </span>
+            <span className="text-[#8491A3]">Reconciliation at Month-End</span>
           </div>
         </div>
 
@@ -248,11 +168,11 @@ export default function PartnerSettlementsPage() {
             <Calendar className="w-4 h-4 text-[#28D17C]" />
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-[#0B1F33] mt-2 flex items-baseline gap-2">
-            <span>Oct 15, 2026</span>
+            <span>15th of Next Month</span>
           </div>
           <div className="text-[11px] text-[#526173] mt-2 flex items-center justify-between">
-            <span>Monthly settlement schedule</span>
-            <span className="text-[#D97706] font-semibold">Cut-off: Oct 2</span>
+            <span>Standard monthly cycle</span>
+            <span className="text-[#D97706] font-semibold">Cut-off: 2nd of Month</span>
           </div>
         </div>
 
@@ -270,15 +190,21 @@ export default function PartnerSettlementsPage() {
             </div>
             <div className="text-base font-bold text-[#0B1F33] mt-2 truncate flex items-center gap-1.5">
               <Building2 className="w-4 h-4 text-[#28D17C] flex-shrink-0" />
-              <span>{provider?.bank_details?.bank_name || 'Bank of Kigali (BK)'}</span>
+              <span>{provider?.bank_details?.bank_name || 'No Bank Configured'}</span>
             </div>
             <div className="text-xs font-mono text-[#526173] mt-0.5">
-              {provider?.bank_details?.account_number || '00040-0692140-19'} • RWF
+              {provider?.bank_details?.account_number
+                ? `${provider.bank_details.account_number} • RWF`
+                : 'Configure in Payout Settings'}
             </div>
           </div>
           <div className="text-[11px] text-[#008A4B] font-semibold mt-2 pt-2 border-t border-[#E2E8F0] flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-[#28D17C]" />
-            <span>TIN: {provider?.tax_id || '108392019'} (RRA Verified)</span>
+            <span>
+              {provider?.tax_id
+                ? `TIN: ${provider.tax_id} (RRA Verified)`
+                : 'TIN: Unregistered (Add in Settings)'}
+            </span>
           </div>
         </div>
       </div>

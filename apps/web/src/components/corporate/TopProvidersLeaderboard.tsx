@@ -79,9 +79,11 @@ const DEFAULT_PROVIDERS: ProviderItem[] = [
 ];
 
 export function TopProvidersLeaderboard({
-  providers = DEFAULT_PROVIDERS,
+  providers,
   className,
 }: TopProvidersLeaderboardProps) {
+  const providerList = providers ?? [];
+
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case "pool":
@@ -111,53 +113,63 @@ export function TopProvidersLeaderboard({
             href="/network"
             className="text-xs font-semibold text-foreground hover:text-accent transition-colors flex items-center gap-1"
           >
-            <span>Explore Network (29)</span>
+            <span>Explore Network</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        <div className="space-y-2.5">
-          {providers.map((p, index) => (
-            <div
-              key={p.id}
-              className="p-3 rounded-xl bg-muted/40 hover:bg-card border border-border transition-all flex items-center justify-between gap-3 group"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="w-5 font-bold text-xs text-muted-foreground group-hover:text-foreground text-center">
-                  #{index + 1}
-                </span>
-                <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center flex-shrink-0 group-hover:border-accent transition-colors">
-                  {getCategoryIcon(p.category)}
+        {providerList.length === 0 ? (
+          <div className="py-10 text-center text-xs text-muted-foreground my-auto">
+            <Building2 className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+            <p className="font-semibold text-foreground">No Provider Visits Recorded Yet</p>
+            <p className="text-[11px] mt-0.5">Visits to partner facilities will automatically populate this leaderboard.</p>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {providerList.map((p, index) => (
+              <div
+                key={p.id}
+                className="p-3 rounded-xl bg-muted/40 hover:bg-card border border-border transition-all flex items-center justify-between gap-3 group"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="w-5 font-bold text-xs text-muted-foreground group-hover:text-foreground text-center">
+                    #{index + 1}
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center flex-shrink-0 group-hover:border-accent transition-colors">
+                    {getCategoryIcon(p.category)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate group-hover:text-accent transition-colors">
+                      {p.name}
+                    </p>
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground truncate">
+                      <MapPin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">{p.location || 'Kigali'}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-foreground truncate group-hover:text-accent transition-colors">
-                    {p.name}
-                  </p>
-                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground truncate">
-                    <MapPin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-                    <span className="truncate">{p.location}</span>
+
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  {p.rating && (
+                    <div className="hidden pf-leaderboard-rating items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                      <span>{p.rating.toFixed(1)}</span>
+                    </div>
+                  )}
+
+                  <div className="text-right">
+                    <div className="text-xs font-bold text-foreground">
+                      {p.visits} <span className="text-[10px] font-normal text-muted-foreground">visits</span>
+                    </div>
+                    <div className="text-[10px] font-medium text-accent">
+                      {p.percentage}% of total
+                    </div>
                   </div>
                 </div>
               </div>
-
-              <div className="flex items-center gap-4 flex-shrink-0">
-                <div className="hidden pf-leaderboard-rating items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
-                  <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                  <span>{p.rating.toFixed(1)}</span>
-                </div>
-
-                <div className="text-right">
-                  <div className="text-xs font-bold text-foreground">
-                    {p.visits} <span className="text-[10px] font-normal text-muted-foreground">visits</span>
-                  </div>
-                  <div className="text-[10px] font-medium text-accent">
-                    {p.percentage}% of total
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
           <span>All visits authenticated via dynamic TOTP</span>

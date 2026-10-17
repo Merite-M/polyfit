@@ -1,8 +1,7 @@
 import React from "react";
 import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, AlertTriangle } from "lucide-react";
 import { EmployeeJoinClient } from "@/components/corporate/EmployeeJoinClient";
-import { TECHCORP_CANONICAL_DATA } from "@/lib/constants";
 
 export function generateStaticParams() {
   return [
@@ -17,19 +16,19 @@ interface PageProps {
 
 export default async function EmployeeJoinPage({ params }: PageProps) {
   const { orgSlug } = await params;
-  const slug = (orgSlug || "techcorp-rwanda").toLowerCase();
+  const slug = (orgSlug || "").toLowerCase();
 
-  let orgConfig = {
-    id: TECHCORP_CANONICAL_DATA.organization.id,
-    name: TECHCORP_CANONICAL_DATA.organization.name,
-    slug: TECHCORP_CANONICAL_DATA.organization.slug,
-    domains: TECHCORP_CANONICAL_DATA.organization.allowed_domains,
-    domain: TECHCORP_CANONICAL_DATA.organization.allowed_domains[0] || "techcorp.rw",
-    tierName: "TechCorp Standard Wellness Plan",
-    maxVisits: 8,
-    coPayPercent: 0,
-    venuesCount: 52,
-  };
+  let orgConfig: {
+    id: string;
+    name: string;
+    slug: string;
+    domains: string[];
+    domain: string;
+    tierName: string;
+    maxVisits: number;
+    coPayPercent: number;
+    venuesCount: number;
+  } | null = null;
 
   try {
     const apiBase =
@@ -47,8 +46,8 @@ export default async function EmployeeJoinPage({ params }: PageProps) {
           id: data.organization.id,
           name: data.organization.name,
           slug: data.organization.slug || slug,
-          domains: data.organization.allowed_domains || ["techcorp.rw"],
-          domain: (data.organization.allowed_domains || ["techcorp.rw"])[0],
+          domains: data.organization.allowed_domains || [],
+          domain: (data.organization.allowed_domains || [])[0] || `${slug}.rw`,
           tierName: data.default_plan?.name || "Standard Corporate Wellness Pass",
           maxVisits: data.default_plan?.max_visits_per_month || 8,
           coPayPercent: data.default_plan?.co_pay_percentage || 0,
@@ -57,7 +56,7 @@ export default async function EmployeeJoinPage({ params }: PageProps) {
       }
     }
   } catch {
-    // Graceful fallback to canonical data
+    // Handled by null check
   }
 
   return (
@@ -88,7 +87,25 @@ export default async function EmployeeJoinPage({ params }: PageProps) {
 
       {/* Main Registration Area */}
       <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <EmployeeJoinClient orgConfig={orgConfig} />
+        {orgConfig ? (
+          <EmployeeJoinClient orgConfig={orgConfig} />
+        ) : (
+          <div className="max-w-md w-full bg-white rounded-2xl border border-[#E2E8F0] p-8 text-center shadow-xs">
+            <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 border border-amber-200">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <h2 className="text-lg font-bold text-[#0B1F33]">Corporate Link Not Recognized</h2>
+            <p className="text-xs text-[#526173] mt-2 leading-relaxed">
+              We could not find an active corporate wellness enrollment for <strong>{slug || "this employer"}</strong>. Please verify the enrollment link with your HR team or PolyFit support.
+            </p>
+            <Link
+              href="/"
+              className="mt-6 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#0B1F33] text-white text-xs font-semibold hover:bg-slate-800 transition-colors"
+            >
+              Back to PolyFit
+            </Link>
+          </div>
+        )}
       </main>
 
       {/* Simple Footer */}

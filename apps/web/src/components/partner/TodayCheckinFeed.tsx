@@ -52,119 +52,11 @@ interface TodayCheckinFeedProps {
   refreshTrigger?: number;
 }
 
-// Fallback seed visits adhering strictly to Wellhub Enterprise Privacy standards
-// Front desk staff only see visitor name, PolyFit ID, authorized activity, and check-in modality
-const DEFAULT_TODAY_VISITS: TodayVisit[] = [
-  {
-    id: 'vis-today-101',
-    check_in_at: new Date(Date.now() - 4 * 60 * 1000).toISOString(), // 4m ago
-    status: 'verified',
-    verification_method: 'totp_qr',
-    reimbursement_rate: 5000,
-    activity_name: 'Gym & Cardio Access',
-    employees: {
-      id: 'emp-101',
-      full_name: 'Aline Umutoni',
-      tier: 'Executive',
-      employee_id_external: 'PF-8902'
-    },
-    provider_locations: {
-      id: '447f4bf2-ff66-48c5-851e-460cba17bfe4',
-      name: 'Kigali Central Facility'
-    }
-  },
-  {
-    id: 'vis-today-102',
-    check_in_at: new Date(Date.now() - 14 * 60 * 1000).toISOString(), // 14m ago
-    status: 'verified',
-    verification_method: 'turnstile',
-    reimbursement_rate: 5000,
-    activity_name: 'Aquatics & Pool Access',
-    employees: {
-      id: 'emp-102',
-      full_name: 'Jean-Luc Habimana',
-      tier: 'Standard',
-      employee_id_external: 'PF-4421'
-    },
-    provider_locations: {
-      id: '447f4bf2-ff66-48c5-851e-460cba17bfe4',
-      name: 'Kigali Central Facility'
-    }
-  },
-  {
-    id: 'vis-today-103',
-    check_in_at: new Date(Date.now() - 32 * 60 * 1000).toISOString(), // 32m ago
-    status: 'verified',
-    verification_method: 'manual',
-    reimbursement_rate: 5000,
-    activity_name: 'Gym & Cardio Access',
-    employees: {
-      id: 'emp-103',
-      full_name: 'Grace Mutoniwase',
-      tier: 'Standard',
-      employee_id_external: 'PF-1099'
-    },
-    provider_locations: {
-      id: '189e7cb8-155e-419a-8b83-bd9e3eb021da',
-      name: 'Nyarutarama Health Branch'
-    }
-  },
-  {
-    id: 'vis-today-104',
-    check_in_at: new Date(Date.now() - 58 * 60 * 1000).toISOString(), // 58m ago
-    status: 'verified',
-    verification_method: 'totp_qr',
-    reimbursement_rate: 5000,
-    activity_name: 'Yoga & Studio Class',
-    employees: {
-      id: 'emp-104',
-      full_name: 'Patrick Kayisire',
-      tier: 'Executive',
-      employee_id_external: 'PF-3012'
-    },
-    provider_locations: {
-      id: '447f4bf2-ff66-48c5-851e-460cba17bfe4',
-      name: 'Kigali Central Facility'
-    }
-  },
-  {
-    id: 'vis-today-105',
-    check_in_at: new Date(Date.now() - 95 * 60 * 1000).toISOString(),
-    status: 'disputed',
-    is_disputed: true,
-    dispute_reason: 'beneficiary_impersonation',
-    verification_method: 'totp_qr',
-    reimbursement_rate: 5000,
-    activity_name: 'Gym & Cardio Access',
-    employees: {
-      id: 'emp-105',
-      full_name: 'Emmanuel Nshimiyimana',
-      tier: 'Standard',
-      employee_id_external: 'PF-5510'
-    },
-    provider_locations: {
-      id: '447f4bf2-ff66-48c5-851e-460cba17bfe4',
-      name: 'Kigali Central Facility'
-    }
-  }
-];
-
 export function TodayCheckinFeed({ onFlagDispute, refreshTrigger }: TodayCheckinFeedProps) {
   const { selectedLocationId } = usePartner();
   
-  // Hydrate visits from localStorage to guarantee persistence across browser refreshes
-  const [visits, setVisits] = useState<TodayVisit[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('polyfit_partner_today_visits');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch {}
-    }
-    return DEFAULT_TODAY_VISITS;
-  });
+  // Real visits fetched live from database
+  const [visits, setVisits] = useState<TodayVisit[]>([]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('all');
@@ -186,57 +78,20 @@ export function TodayCheckinFeed({ onFlagDispute, refreshTrigger }: TodayCheckin
         `/api/visits?${params.toString()}`
       );
 
-      if (res?.visits && res.visits.length > 0) {
-        setVisits((prev) => {
-          const merged = res.visits.map((mv) => {
-            const existingDispute = prev.find(
-              (p) => p.id === mv.id && (p.is_disputed || p.status === 'disputed')
-            );
-            if (existingDispute) {
-              return {
-                ...mv,
-                status: 'disputed' as const,
-                is_disputed: true,
-                dispute_reason: existingDispute.dispute_reason || mv.dispute_reason
-              };
-            }
-            return mv;
-          });
-
-          // Also keep any local-only or mock-seeded visits that aren't on remote DB yet
-          const remoteIds = new Set(res.visits.map((v) => v.id));
-          const localOnly = prev.filter((p) => !remoteIds.has(p.id));
-          const allVisits = [...merged, ...localOnly];
-
-          if (typeof window !== 'undefined') {
-            try {
-              localStorage.setItem('polyfit_partner_today_visits', JSON.stringify(allVisits));
-            } catch {}
-          }
-          return allVisits;
-        });
+      if (res?.visits && Array.isArray(res.visits)) {
+        setVisits(res.visits);
+      } else {
+        setVisits([]);
       }
       setLastRefreshedAt(new Date());
     } catch (err) {
-      console.warn('[TodayCheckinFeed] Live feed network fallback:', err);
+      console.warn('[TodayCheckinFeed] Live feed network notice:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Re-sync from localStorage when refreshTrigger or location changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('polyfit_partner_today_visits');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setVisits(parsed);
-          }
-        }
-      } catch {}
-    }
     fetchTodayVisits();
     const interval = setInterval(fetchTodayVisits, 10000); // 10s auto polling
     return () => clearInterval(interval);

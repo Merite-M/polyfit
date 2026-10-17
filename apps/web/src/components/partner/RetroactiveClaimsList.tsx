@@ -37,52 +37,8 @@ interface RetroactiveClaimsListProps {
   refreshTrigger?: number;
 }
 
-const DEFAULT_CLAIMS: RetroactiveClaimItem[] = [
-  {
-    id: 'claim-001',
-    incident_date: '2026-09-28T17:30:00Z',
-    beneficiary_name: 'David Karekezi',
-    beneficiary_identifier: 'BK-9912',
-    organization_name: 'Bank of Kigali Plc',
-    location_name: 'Kigali Central Facility',
-    reason: 'power_outage',
-    notes: 'REG Grid outage across KN 3 Ave. Backup generator delay 22 mins. Beneficiary verified with national ID.',
-    evidence_ref: 'REG-OUTAGE-29012',
-    status: 'approved',
-    settlement_amount: 5000,
-    created_at: '2026-09-28T18:10:00Z'
-  },
-  {
-    id: 'claim-002',
-    incident_date: '2026-09-29T08:15:00Z',
-    beneficiary_name: 'Sandrine Uwamahoro',
-    beneficiary_identifier: 'MTN-7341',
-    organization_name: 'MTN Rwandacell',
-    location_name: 'Nyarutarama Health Branch',
-    reason: 'isp_cut',
-    notes: 'Liquid Telecom fiber cut along KG 9 Ave road construction. Reception router offline.',
-    evidence_ref: 'TICKET-LT-8812',
-    status: 'pending',
-    settlement_amount: 5000,
-    created_at: '2026-09-29T09:00:00Z'
-  },
-  {
-    id: 'claim-003',
-    incident_date: '2026-09-27T12:40:00Z',
-    beneficiary_name: 'Alain Mugabe',
-    beneficiary_identifier: 'IM-3019',
-    organization_name: 'I&M Bank Rwanda',
-    location_name: 'Kigali Central Facility',
-    reason: 'device_battery_dead',
-    notes: 'Member phone died during transit. Physical company ID badge verified against corporate roster.',
-    status: 'pending',
-    settlement_amount: 5000,
-    created_at: '2026-09-27T13:10:00Z'
-  }
-];
-
 export function RetroactiveClaimsList({ onOpenNewClaim, refreshTrigger }: RetroactiveClaimsListProps) {
-  const [claims, setClaims] = useState<RetroactiveClaimItem[]>(DEFAULT_CLAIMS);
+  const [claims, setClaims] = useState<RetroactiveClaimItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchClaims = async () => {
@@ -91,11 +47,14 @@ export function RetroactiveClaimsList({ onOpenNewClaim, refreshTrigger }: Retroa
       const res = await apiFetch<{ success: boolean; claims: RetroactiveClaimItem[] }>(
         '/api/visits/retroactive-claims'
       );
-      if (res?.claims && res.claims.length > 0) {
+      if (res?.claims && Array.isArray(res.claims)) {
         setClaims(res.claims);
+      } else {
+        setClaims([]);
       }
     } catch (err) {
-      console.warn('[RetroactiveClaimsList] Network fallback:', err);
+      console.warn('[RetroactiveClaimsList] Live claims fetch notice:', err);
+      setClaims([]);
     } finally {
       setLoading(false);
     }
@@ -179,10 +138,10 @@ export function RetroactiveClaimsList({ onOpenNewClaim, refreshTrigger }: Retroa
           <ClockAlert className="w-5 h-5 text-[#2563EB] flex-shrink-0 mt-0.5" />
           <div>
             <h4 className="text-xs sm:text-sm font-bold text-[#1E3A8A]">
-              Monthly Reconciliation & Technical Exception Window
+              Missed Check-ins &amp; Offline Admissions Window
             </h4>
             <p className="text-xs text-[#1E40AF] mt-0.5 leading-relaxed">
-              In cases of facility blackouts, fiber cuts, or terminal hardware failure, submit missed check-ins here.
+              In cases of power outages, internet cuts, or temporary device issues, log missed member visits here.
               All claims for the previous calendar month must be logged on or before the{' '}
               <strong className="font-bold underline">2nd day of the current month</strong> to be credited into the 15th
               provider payout statement.
@@ -203,13 +162,13 @@ export function RetroactiveClaimsList({ onOpenNewClaim, refreshTrigger }: Retroa
       <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-xs overflow-hidden">
         <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between bg-[#FBFDFE]">
           <div>
-            <h3 className="font-bold text-[#0B1F33] text-sm">Submitted Technical Claims</h3>
+            <h3 className="font-bold text-[#0B1F33] text-sm">Submitted Missed &amp; Offline Claims</h3>
             <p className="text-xs text-[#526173]">
-              Track reimbursement status for offline counter admissions and power/telecom outages
+              Track reimbursement status for offline counter admissions, power outages, and internet disruptions
             </p>
           </div>
           <span className="text-xs font-semibold text-[#526173]">
-            {claims.length} Exception {claims.length === 1 ? 'Record' : 'Records'}
+            {claims.length} {claims.length === 1 ? 'Claim' : 'Claims'}
           </span>
         </div>
 
@@ -218,12 +177,12 @@ export function RetroactiveClaimsList({ onOpenNewClaim, refreshTrigger }: Retroa
             <thead>
               <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[11px] font-semibold text-[#526173] uppercase tracking-wider">
                 <th className="py-3 px-4">Incident Time</th>
-                <th className="py-3 px-4">Beneficiary</th>
+                <th className="py-3 px-4">Corporate Member</th>
                 <th className="py-3 px-4">Corporate Client</th>
                 <th className="py-3 px-4">Outage / Reason</th>
                 <th className="py-3 px-4">Evidence / Log Reference</th>
-                <th className="py-3 px-4">Settlement Rate</th>
-                <th className="py-3 px-4 text-right">PolyFit Ops Audit</th>
+                <th className="py-3 px-4">Payout Rate</th>
+                <th className="py-3 px-4 text-right">Verification Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0] text-xs sm:text-sm">

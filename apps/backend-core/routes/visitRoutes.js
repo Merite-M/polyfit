@@ -1540,7 +1540,7 @@ router.get('/retroactive-claims', requireAuth, requireRole('super_admin', 'polyf
       `)
       .order('created_at', { ascending: false });
 
-    if (req.primaryRole === 'provider_admin') {
+    if (req.primaryRole === 'provider_admin' && req.providerId) {
       query = query.eq('provider_id', req.providerId);
     }
     if (provider_location_id) {
@@ -1584,7 +1584,7 @@ router.get('/today-summary', requireAuth, requireRole('super_admin', 'polyfit_op
     const twentyMinsAgo = new Date(Date.now() - 20 * 60 * 1000).toISOString();
 
     let locIds = [];
-    if (req.primaryRole === 'provider_admin') {
+    if (req.primaryRole === 'provider_admin' && req.providerId) {
       const { data: locs } = await supabase
         .from('provider_locations')
         .select('id')
@@ -1660,6 +1660,159 @@ router.get('/today-summary', requireAuth, requireRole('super_admin', 'polyfit_op
       error: 'Failed to retrieve today summary',
       code: 'TODAY_SUMMARY_INTERNAL_ERROR'
     });
+  }
+});
+
+// ─── 5h. Live Pending Check-ins Queue (20-min Window) ───────────────────────
+router.get('/pending', requireAuth, requireRole('super_admin', 'polyfit_ops', 'provider_admin'), async (req, res) => {
+  try {
+    const { provider_location_id } = req.query;
+
+    if (!supabase) {
+      return res.status(503).json({
+        error: 'Database service unavailable',
+        code: 'SERVICE_UNAVAILABLE'
+      });
+    }
+
+    const twentyMinsAgo = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+
+    let query = supabase
+      .from('visits')
+      .select(`
+        id,
+        check_in_at,
+        verification_method,
+        status,
+        employee_id,
+        provider_location_id,
+        employees (
+          id,
+          full_name,
+          email,
+          tier,
+          department,
+          employee_id_external
+        ),
+        organizations (
+          id,
+          name
+        ),
+        provider_locations (
+          id,
+          name,
+          providers (
+            name,
+            category
+          )
+        )
+      `)
+      .eq('status', 'pending')
+      .gte('check_in_at', twentyMinsAgo)
+      .order('check_in_at', { ascending: false });
+
+    if (provider_location_id && provider_location_id !== 'all') {
+      query = query.eq('provider_location_id', provider_location_id);
+    }
+
+    const { data: pendingData, error } = await query;
+    if (error) {
+      return res.status(400).json({ error: error.message, code: 'PENDING_VISITS_QUERY_FAILED' });
+    }
+
+    const pendingVisits = (pendingData || []).map((v) => {
+      const checkinTime = new Date(v.check_in_at).getTime();
+      const elapsedSec = Math.floor((Date.now() - checkinTime) / 1000);
+      const secondsRemaining = Math.max(0, 1200 - elapsedSec);
+      const expiresAt = new Date(checkinTime + 1200 * 1000).toISOString();
+
+      return {
+        ...v,
+        seconds_remaining: secondsRemaining,
+        expires_at: expiresAt
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      pending_visits: pendingVisits
+    });
+  } catch (error) {
+    console.error('[visitRoutes/pending] error:', error);
+    return res.status(500).json({
+      error: 'Failed to retrieve pending check-ins',
+      code: 'PENDING_VISITS_INTERNAL_ERROR'
+    });
+  }
+});
+
+// ─── 5i. Approve Pending Check-in ───────────────────────────────────────────
+router.patch('/:id/approve', requireAuth, requireRole('super_admin', 'polyfit_ops', 'provider_admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable' });
+    }
+
+    const { data: updated, error } = await supabase
+      .from('visits')
+      .update({
+        status: 'verified',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      return res.status(400).json({ error: error.message, code: 'APPROVE_FAILED' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Check-in approved and visit verified for payout',
+      visit: updated
+    });
+  } catch (error) {
+    console.error('[visitRoutes/approve] error:', error);
+    return res.status(500).json({ error: 'Failed to approve check-in', code: 'APPROVE_INTERNAL_ERROR' });
+  }
+});
+
+// ─── 5j. Reject Pending Check-in ────────────────────────────────────────────
+router.patch('/:id/reject', requireAuth, requireRole('super_admin', 'polyfit_ops', 'provider_admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason, notes } = req.body || {};
+
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable' });
+    }
+
+    const { data: updated, error } = await supabase
+      .from('visits')
+      .update({
+        status: 'rejected',
+        notes: notes ? `Reason: ${reason || 'unspecified'}. Notes: ${notes}` : `Reason: ${reason || 'unspecified'}`,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      return res.status(400).json({ error: error.message, code: 'REJECT_FAILED' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Check-in rejected',
+      visit: updated
+    });
+  } catch (error) {
+    console.error('[visitRoutes/reject] error:', error);
+    return res.status(500).json({ error: 'Failed to reject check-in', code: 'REJECT_INTERNAL_ERROR' });
   }
 });
 

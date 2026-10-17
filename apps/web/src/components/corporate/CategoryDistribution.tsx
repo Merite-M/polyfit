@@ -26,8 +26,8 @@ interface CategoryDistributionProps {
 }
 
 export function CategoryDistribution({
-  categories = { gym: 710, pool: 355, studio: 236, clinic: 179 },
-  totalVisits = 1480,
+  categories = { gym: 0, pool: 0, studio: 0, clinic: 0 },
+  totalVisits = 0,
   className,
 }: CategoryDistributionProps) {
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
@@ -36,32 +36,32 @@ export function CategoryDistribution({
     {
       category: "gym",
       label: "Fitness & Gyms",
-      visits: categories.gym || 710,
-      percentage: totalVisits > 0 ? Math.round(((categories.gym || 710) / totalVisits) * 100) : 48,
+      visits: categories?.gym || 0,
+      percentage: totalVisits > 0 ? Math.round(((categories?.gym || 0) / totalVisits) * 100) : 0,
       color: "#0B1F33",
       icon: Dumbbell,
     },
     {
       category: "pool",
       label: "Swimming Pools",
-      visits: categories.pool || 355,
-      percentage: totalVisits > 0 ? Math.round(((categories.pool || 355) / totalVisits) * 100) : 24,
+      visits: categories?.pool || 0,
+      percentage: totalVisits > 0 ? Math.round(((categories?.pool || 0) / totalVisits) * 100) : 0,
       color: "#00D2B4",
       icon: Waves,
     },
     {
       category: "studio",
       label: "Yoga & Studios",
-      visits: categories.studio || 236,
-      percentage: totalVisits > 0 ? Math.round(((categories.studio || 236) / totalVisits) * 100) : 16,
+      visits: categories?.studio || 0,
+      percentage: totalVisits > 0 ? Math.round(((categories?.studio || 0) / totalVisits) * 100) : 0,
       color: "#28D17C",
       icon: Sparkles,
     },
     {
       category: "clinic",
       label: "Clinics & Physio",
-      visits: categories.clinic || 179,
-      percentage: totalVisits > 0 ? Math.round(((categories.clinic || 179) / totalVisits) * 100) : 12,
+      visits: categories?.clinic || 0,
+      percentage: totalVisits > 0 ? Math.round(((categories?.clinic || 0) / totalVisits) * 100) : 0,
       color: "#3B82F6",
       icon: HeartPulse,
     },
@@ -95,6 +95,14 @@ export function CategoryDistribution({
         {/* SVG Donut Chart */}
         <div className="sm:col-span-5 flex justify-center relative">
           <svg width={size} height={size} className="transform -rotate-90">
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="transparent"
+              stroke="#F1F4F8"
+              strokeWidth={strokeWidth}
+            />
             {categoryList.map((item) => {
               const strokeDasharray = `${(item.percentage / 100) * circumference} ${circumference}`;
               const strokeDashoffset = -cumulativeAngle;

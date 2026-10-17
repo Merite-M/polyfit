@@ -11,7 +11,6 @@ import { DepartmentTable } from "@/components/corporate/DepartmentTable";
 import { RoiMetricsCard } from "@/components/corporate/RoiMetricsCard";
 import { useCorporate } from "@/contexts/CorporateContext";
 import { generateRraEbmInvoicePdf } from "@/lib/invoice-pdf";
-import { TECHCORP_CANONICAL_DATA } from "@/lib/constants";
 import {
   Users,
   Receipt,
@@ -33,6 +32,7 @@ export default function CorporateDashboardPage() {
   const {
     organization,
     funnelData,
+    reportingData,
     economics,
     showToast,
     downloadCensusCsv,
@@ -51,51 +51,41 @@ export default function CorporateDashboardPage() {
 
   // 1-Click "Download Official EBM Tax PDF"
   const handleDownloadInvoicePdf = () => {
+    const liveLineItems =
+      reportingData.topProviders && reportingData.topProviders.length > 0
+        ? reportingData.topProviders.map((p) => ({
+            provider_name: p.providerName,
+            provider_category: p.category,
+            visit_count: p.visitCount,
+            per_visit_rate: p.visitCount > 0 ? Math.round((p.spend || 0) / p.visitCount) : 5000,
+            subtotal: p.spend || p.visitCount * 5000,
+          }))
+        : [
+            {
+              provider_name: "Consolidated Network Venues",
+              provider_category: "Corporate Wellness Access",
+              visit_count: funnelData.totalVisits,
+              per_visit_rate: funnelData.totalVisits > 0 ? Math.round(economics.currentInvoiceRwf / funnelData.totalVisits) : 5000,
+              subtotal: economics.currentInvoiceRwf,
+            },
+          ];
+
     generateRraEbmInvoicePdf({
-      id: "PF-INV-2026-09-0045",
-      invoice_number: economics.invoiceNumber,
-      billing_period_start: "2026-09-01",
-      billing_period_end: "2026-09-30",
+      id: economics.invoiceNumber || "PF-INV-LIVE",
+      invoice_number: economics.invoiceNumber || `PF-INV-${new Date().toISOString().slice(0, 7)}-${organization.slug.slice(0, 4).toUpperCase()}`,
+      billing_period_start: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`,
+      billing_period_end: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0],
       organizations: {
         name: organization.name,
         tax_id: organization.tax_id || "109283746",
         billing_email: organization.billing_email || `finance@${organization.domain}`,
       },
-      status: economics.invoiceStatus,
-      due_date: "2026-09-30",
+      status: economics.invoiceStatus || "draft",
+      due_date: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0],
       total_visits: funnelData.totalVisits,
-      tax_amount: 346500,
+      tax_amount: Math.round(economics.currentInvoiceRwf * 0.18 / 1.18),
       total_amount: economics.currentInvoiceRwf,
-      line_items: [
-        {
-          provider_name: "Waka Fitness & Wellness Centers",
-          provider_category: "Gym & Fitness",
-          visit_count: 284,
-          per_visit_rate: 3500,
-          subtotal: 994000,
-        },
-        {
-          provider_name: "Cercle Sportif de Kigali (Lap Pools)",
-          provider_category: "Swimming & Aquatic",
-          visit_count: 142,
-          per_visit_rate: 4000,
-          subtotal: 568000,
-        },
-        {
-          provider_name: "Nyashad Movement & Yoga Studios",
-          provider_category: "Yoga & Studios",
-          visit_count: 110,
-          per_visit_rate: 3500,
-          subtotal: 385000,
-        },
-        {
-          provider_name: "Kigali Physio & Wellness Clinic",
-          provider_category: "Physiotherapy & Wellness",
-          visit_count: 106,
-          per_visit_rate: 4500,
-          subtotal: 477000,
-        },
-      ],
+      line_items: liveLineItems,
     });
     showToast("Official Rwanda EBM v2.1 Tax Invoice PDF downloaded!");
   };
@@ -103,7 +93,7 @@ export default function CorporateDashboardPage() {
   const activePercent =
     funnelData.registeredEmployees > 0
       ? Math.round((funnelData.activeBeneficiaries / funnelData.registeredEmployees) * 100)
-      : 52;
+      : 0;
 
   const handleTabChange = (tab: "overview" | "analytics") => {
     if (tab === activeTab) return;
@@ -400,10 +390,31 @@ export default function CorporateDashboardPage() {
             <section aria-label="Venues and Departments">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
                 <div className="lg:col-span-5">
-                  <TopProvidersLeaderboard className="h-full" />
+                  <TopProvidersLeaderboard
+                    className="h-full"
+                    providers={reportingData.topProviders?.map((p) => ({
+                      id: p.providerId,
+                      name: p.providerName,
+                      category: (p.category as any) || "gym",
+                      location: p.location || "Kigali",
+                      visits: p.visitCount,
+                      percentage: p.percentageOfVisits || 0,
+                      rating: p.rating || 4.9,
+                    }))}
+                  />
                 </div>
                 <div className="lg:col-span-7">
-                  <DepartmentTable className="h-full" />
+                  <DepartmentTable
+                    className="h-full"
+                    departments={reportingData.departments?.map((d) => ({
+                      name: d.department,
+                      eligible: d.totalEligibleEmployees,
+                      active: d.activeEmployees,
+                      participationRate: d.participationRate,
+                      visits: d.totalVisits,
+                      spend: d.totalSpend,
+                    }))}
+                  />
                 </div>
               </div>
             </section>
@@ -418,8 +429,8 @@ export default function CorporateDashboardPage() {
               <RoiMetricsCard
                 activeEmployees={funnelData.activeBeneficiaries}
                 totalSpendRwf={economics.currentInvoiceRwf}
-                wellnessHour={TECHCORP_CANONICAL_DATA.wellness.wellnessHour}
-                peakDay={TECHCORP_CANONICAL_DATA.wellness.peakDay}
+                wellnessHour={reportingData.temporal?.wellnessHour || "Pending visits"}
+                peakDay={reportingData.temporal?.peakDay || "Pending visits"}
               />
             </section>
 
@@ -431,7 +442,7 @@ export default function CorporateDashboardPage() {
                 </div>
                 <div className="lg:col-span-5">
                   <CategoryDistribution
-                    categories={TECHCORP_CANONICAL_DATA.wellness.categories}
+                    categories={reportingData.categories || { gym: 0, pool: 0, studio: 0, clinic: 0 }}
                     totalVisits={funnelData.totalVisits}
                     className="h-full"
                   />

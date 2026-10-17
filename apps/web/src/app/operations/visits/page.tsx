@@ -138,8 +138,8 @@ function LiveVisitMonitorContent() {
     verifiedRate: 100,
     activeDisputesCount: 0,
     activeAnomaliesCount: 0,
-    turnstilesOnlineCount: 108,
-    latencyMs: 142,
+    turnstilesOnlineCount: 0,
+    latencyMs: 0,
     gatewayNode: "Kigali Gateway Node (KG-OPS-01)",
     status: "nominal",
   });

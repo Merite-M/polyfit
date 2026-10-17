@@ -64,6 +64,82 @@ export const NETWORK_ORGANIZATIONS: CorporateOrganization[] = [
   },
 ];
 
+export interface CorporateReportingCategory {
+  category: string;
+  visits: number;
+  percentage: number;
+  uniqueBeneficiaries?: number;
+  spend?: number;
+}
+
+export interface CorporateReportingTopProvider {
+  providerId: string;
+  providerName: string;
+  category: string;
+  visitCount: number;
+  uniqueBeneficiariesCount?: number;
+  spend?: number;
+  percentageOfVisits?: number;
+  location?: string;
+  rating?: number;
+}
+
+export interface CorporateReportingDepartment {
+  department: string;
+  totalEligibleEmployees: number;
+  activeEmployees: number;
+  participationRate: number;
+  totalVisits: number;
+  totalSpend: number;
+  avgVisitsPerActiveEmployee?: number;
+}
+
+export interface CorporateReportingData {
+  categories?: Record<string, number>;
+  topProviders?: CorporateReportingTopProvider[];
+  departments?: CorporateReportingDepartment[];
+  temporal?: {
+    wellnessHour?: string;
+    peakDay?: string;
+    timeOfDayBuckets?: Record<string, number>;
+  };
+  roi?: any;
+}
+
+export interface CorporateEconomics {
+  currentBalance: number;
+  currentInvoiceRwf: number;
+  invoiceStatus: "draft" | "sent" | "paid" | "overdue";
+  invoiceNumber: string;
+  overdueAmount: number;
+  overdueInvoiceNumber: string;
+  hasOverdue: boolean;
+  overdueDays: number;
+  dueDateStr: string;
+  ytdTotalSpent: number;
+  ytdTotalVisits: number;
+  pmpmSpendRwf: number;
+  avgCostPerVisit: number;
+  citTaxShieldRwf: number;
+}
+
+const ZERO_ECONOMICS: CorporateEconomics = {
+  currentBalance: 0,
+  currentInvoiceRwf: 0,
+  invoiceStatus: "draft",
+  invoiceNumber: "PF-INV-PENDING",
+  overdueAmount: 0,
+  overdueInvoiceNumber: "",
+  hasOverdue: false,
+  overdueDays: 0,
+  dueDateStr: "End of Month",
+  ytdTotalSpent: 0,
+  ytdTotalVisits: 0,
+  pmpmSpendRwf: 0,
+  avgCostPerVisit: 0,
+  citTaxShieldRwf: 0,
+};
+
 interface CorporateContextType {
   // Organization state & switcher
   organization: CorporateOrganization;
@@ -71,8 +147,9 @@ interface CorporateContextType {
   switchOrganization: (orgId: string) => void;
   updateOrganizationProfile: (data: Partial<CorporateOrganization>) => Promise<void>;
 
-  // Adoption Funnel stats
+  // Adoption Funnel stats & Live Reporting Data
   funnelData: AdoptionFunnelData;
+  reportingData: CorporateReportingData;
   refreshFunnelData: () => Promise<void>;
 
   // Employee Roster state & mutations
@@ -93,7 +170,7 @@ interface CorporateContextType {
   // Invoices & Billing
   invoices: InvoiceRecord[];
   isLoadingInvoices: boolean;
-  economics: typeof TECHCORP_CANONICAL_DATA.economics;
+  economics: CorporateEconomics;
   disputeInvoice: (id: string, reason: string, notes: string) => Promise<void>;
   refreshInvoices: () => Promise<void>;
 
@@ -181,52 +258,95 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     }, 3500);
   }, []);
 
-  // 3. Funnel & Economics State
+  // 3. Funnel & Economics State (Zero-data default for real authenticated sessions)
   const [funnelData, setFunnelData] = useState<AdoptionFunnelData>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem(`polyfit_corporate_funnel_${initialOrg.id}`);
-        if (cached) return JSON.parse(cached);
-      } catch {}
+    if (isDemoMode) {
+      if (typeof window !== "undefined") {
+        try {
+          const cached = localStorage.getItem(`polyfit_corporate_funnel_${initialOrg.id}`);
+          if (cached) return JSON.parse(cached);
+        } catch {}
+      }
+      return TECHCORP_CANONICAL_DATA.funnel;
     }
-    return TECHCORP_CANONICAL_DATA.funnel;
+    return {
+      totalEligible: 0,
+      registeredEmployees: 0,
+      activeBeneficiaries: 0,
+      totalVisits: 0,
+      newEmployees30d: 0,
+      newBeneficiaries30d: 0,
+      avgVisitsPerActive: 0,
+    };
   });
-  const [economics, setEconomics] = useState(TECHCORP_CANONICAL_DATA.economics);
+
+  const [reportingData, setReportingData] = useState<CorporateReportingData>(() => {
+    if (isDemoMode) {
+      return {
+        categories: TECHCORP_CANONICAL_DATA.wellness.categories,
+        temporal: {
+          wellnessHour: TECHCORP_CANONICAL_DATA.wellness.wellnessHour,
+          peakDay: TECHCORP_CANONICAL_DATA.wellness.peakDay,
+        },
+      };
+    }
+    return {
+      categories: { gym: 0, pool: 0, studio: 0, clinic: 0 },
+      topProviders: [],
+      departments: [],
+      temporal: {
+        wellnessHour: "No activity yet",
+        peakDay: "No activity yet",
+      },
+    };
+  });
+
+  const [economics, setEconomics] = useState<CorporateEconomics>(() => {
+    if (isDemoMode) return TECHCORP_CANONICAL_DATA.economics;
+    return ZERO_ECONOMICS;
+  });
 
   // 4. Employee Roster State
   const [employees, setEmployees] = useState<CorporateEmployee[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem(`polyfit_corporate_employees_${initialOrg.id}`);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch {}
+    if (isDemoMode) {
+      if (typeof window !== "undefined") {
+        try {
+          const cached = localStorage.getItem(`polyfit_corporate_employees_${initialOrg.id}`);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          }
+        } catch {}
+      }
+      return TECHCORP_CANONICAL_DATA.employees as CorporateEmployee[];
     }
-    return TECHCORP_CANONICAL_DATA.employees as CorporateEmployee[];
+    return [];
   });
   const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
 
   // 5. Benefit Plans State
   const [plans, setPlans] = useState<BenefitPlan[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem(`polyfit_corporate_plans_${initialOrg.id}`);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch {}
+    if (isDemoMode) {
+      if (typeof window !== "undefined") {
+        try {
+          const cached = localStorage.getItem(`polyfit_corporate_plans_${initialOrg.id}`);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          }
+        } catch {}
+      }
+      return TECHCORP_CANONICAL_DATA.plans as unknown as BenefitPlan[];
     }
-    return TECHCORP_CANONICAL_DATA.plans as unknown as BenefitPlan[];
+    return [];
   });
   const [isLoadingPlans, setIsLoadingPlans] = useState(false);
 
   // 6. Invoices State
-  const [invoices, setInvoices] = useState<InvoiceRecord[]>(
-    TECHCORP_CANONICAL_DATA.invoices as unknown as InvoiceRecord[]
-  );
+  const [invoices, setInvoices] = useState<InvoiceRecord[]>(() => {
+    if (isDemoMode) return TECHCORP_CANONICAL_DATA.invoices as unknown as InvoiceRecord[];
+    return [];
+  });
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
 
   // Invite Link derived from origin
@@ -295,17 +415,40 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       const utilRes = await apiFetch<any>(
         `/api/reporting/employer/${organization.id}/utilization`
       );
-      if (utilRes?.summary) {
-        setFunnelData((prev) => ({
-          ...prev,
-          totalEligible: utilRes.summary.total_eligible ?? prev.totalEligible,
-          registeredEmployees: utilRes.summary.registered_employees ?? prev.registeredEmployees,
-          activeBeneficiaries: utilRes.summary.active_beneficiaries ?? prev.activeBeneficiaries,
-          totalVisits: utilRes.summary.total_visits ?? prev.totalVisits,
-        }));
+      if (utilRes) {
+        if (utilRes.summary) {
+          setFunnelData({
+            totalEligible: utilRes.summary.total_eligible ?? 0,
+            registeredEmployees: utilRes.summary.registered_employees ?? 0,
+            activeBeneficiaries: utilRes.summary.active_beneficiaries ?? 0,
+            totalVisits: utilRes.summary.total_visits ?? 0,
+            newEmployees30d: utilRes.summary.new_employees_30d ?? 0,
+            newBeneficiaries30d: utilRes.summary.new_beneficiaries_30d ?? 0,
+            avgVisitsPerActive: (utilRes.summary.active_beneficiaries && utilRes.summary.active_beneficiaries > 0)
+              ? Number((utilRes.summary.total_visits / utilRes.summary.active_beneficiaries).toFixed(1))
+              : 0,
+          });
+        }
+
+        const catMap: Record<string, number> = {};
+        if (Array.isArray(utilRes.categories)) {
+          utilRes.categories.forEach((c: any) => {
+            if (c.category) catMap[c.category] = c.visits ?? c.visitCount ?? 0;
+          });
+        } else if (utilRes.categories && typeof utilRes.categories === 'object') {
+          Object.assign(catMap, utilRes.categories);
+        }
+
+        setReportingData({
+          categories: catMap,
+          topProviders: utilRes.topProviders || [],
+          departments: utilRes.departments || [],
+          temporal: utilRes.temporal || { wellnessHour: 'No activity yet', peakDay: 'No activity yet' },
+          roi: utilRes.roi || null,
+        });
       }
     } catch {
-      // Keep resilient data
+      // Keep resilient state
     }
   }, [organization.id, user, isDemoMode]);
 
@@ -316,19 +459,18 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       const res = await apiFetch<{ employees: CorporateEmployee[] }>(
         `/api/organizations/${organization.id}/employees?limit=100`
       );
-      if (res?.employees && Array.isArray(res.employees) && res.employees.length > 0) {
-        setEmployees(res.employees);
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.setItem(
-              `polyfit_corporate_employees_${organization.id}`,
-              JSON.stringify(res.employees)
-            );
-          } catch {}
-        }
+      const employeeList = Array.isArray(res?.employees) ? res.employees : (Array.isArray(res) ? res : []);
+      setEmployees(employeeList);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(
+            `polyfit_corporate_employees_${organization.id}`,
+            JSON.stringify(employeeList)
+          );
+        } catch {}
       }
     } catch {
-      // Keep canonical data
+      // Keep resilient state
     } finally {
       setIsLoadingEmployees(false);
     }
@@ -341,19 +483,18 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       const res = await apiFetch<{ benefits: BenefitPlan[] }>(
         `/api/organizations/${organization.id}/benefits`
       );
-      if (res?.benefits && Array.isArray(res.benefits) && res.benefits.length > 0) {
-        setPlans(res.benefits);
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.setItem(
-              `polyfit_corporate_plans_${organization.id}`,
-              JSON.stringify(res.benefits)
-            );
-          } catch {}
-        }
+      const planList = Array.isArray(res?.benefits) ? res.benefits : (Array.isArray(res) ? res : []);
+      setPlans(planList);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(
+            `polyfit_corporate_plans_${organization.id}`,
+            JSON.stringify(planList)
+          );
+        } catch {}
       }
     } catch {
-      // Keep canonical data
+      // Keep resilient state
     } finally {
       setIsLoadingPlans(false);
     }
@@ -366,9 +507,8 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       const invRes = await apiFetch<{ invoices: InvoiceRecord[] }>(
         `/api/billing/invoices?org_id=${organization.id}&limit=50`
       );
-      if (invRes?.invoices && Array.isArray(invRes.invoices) && invRes.invoices.length > 0) {
-        setInvoices(invRes.invoices);
-      }
+      const invoiceList = Array.isArray(invRes?.invoices) ? invRes.invoices : (Array.isArray(invRes) ? invRes : []);
+      setInvoices(invoiceList);
 
       const summaryRes = await apiFetch<any>(
         `/api/billing/summary?org_id=${organization.id}&year=2026`
@@ -382,7 +522,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
         }));
       }
     } catch {
-      // Keep canonical data
+      // Keep resilient state
     } finally {
       setIsLoadingInvoices(false);
     }
@@ -796,6 +936,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       switchOrganization,
       updateOrganizationProfile,
       funnelData,
+      reportingData,
       refreshFunnelData,
       employees,
       isLoadingEmployees,
@@ -830,6 +971,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       switchOrganization,
       updateOrganizationProfile,
       funnelData,
+      reportingData,
       refreshFunnelData,
       employees,
       isLoadingEmployees,

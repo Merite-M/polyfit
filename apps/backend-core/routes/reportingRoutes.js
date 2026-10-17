@@ -1,6 +1,7 @@
 const express = require('express');
 const {
   requireAuth,
+  optionalAuth,
   requireRole,
   requireOrgAccess,
   requireProviderAccess
@@ -174,7 +175,6 @@ router.get(
   handleEmployerExport
 );
 
-// ─── Provider Routes ──────────────────────────────────────────────────────────
 // GET /api/reporting/provider/:providerId/visits
 router.get(
   '/provider/:providerId/visits',
@@ -193,10 +193,12 @@ router.get(
 
       const startDate = req.query.start_date || req.query.startDate;
       const endDate = req.query.end_date || req.query.endDate;
+      const month = req.query.month;
 
       const report = await getProviderAnalyticsReport(providerId, {
         startDate,
-        endDate
+        endDate,
+        month
       });
 
       return res.status(200).json(report);

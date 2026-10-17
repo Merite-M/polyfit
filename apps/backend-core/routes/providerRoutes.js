@@ -1,5 +1,5 @@
 const express = require('express');
-const { requireAuth, requireRole, requireProviderAccess } = require('../middleware/authMiddleware');
+const { requireAuth, optionalAuth, requireRole, requireProviderAccess } = require('../middleware/authMiddleware');
 const {
   registerProvider,
   listProviders,
@@ -278,7 +278,7 @@ router.post('/:id/locations', requireAuth, requireProviderAccess((req) => req.pa
  * GET /api/providers/:id/locations
  * List locations for a provider.
  */
-router.get('/:id/locations', requireAuth, async (req, res) => {
+router.get('/:id/locations', optionalAuth, async (req, res) => {
   try {
     const { status } = req.query;
     const locations = await listLocations(req.params.id, { status });

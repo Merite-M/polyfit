@@ -781,8 +781,17 @@ async function getProviderAnalyticsReport(providerId, options = {}) {
   });
 
   // 4. Query verified visits at provider's locations in period
-  const startIso = `${startDate}T00:00:00Z`;
-  const endIso = `${endDate}T23:59:59.999Z`;
+  let resolvedStart = startDate;
+  let resolvedEnd = endDate;
+  if (options.month && /^\d{4}-\d{2}$/.test(options.month)) {
+    resolvedStart = `${options.month}-01`;
+    const [yr, mo] = options.month.split('-').map(Number);
+    const lastDay = new Date(yr, mo, 0).getDate();
+    resolvedEnd = `${options.month}-${String(lastDay).padStart(2, '0')}`;
+  }
+
+  const startIso = `${resolvedStart}T00:00:00Z`;
+  const endIso = `${resolvedEnd}T23:59:59.999Z`;
 
   const { data: visits, error: visitErr } = await supabase
     .from('visits')
@@ -797,12 +806,23 @@ async function getProviderAnalyticsReport(providerId, options = {}) {
       organizations (
         id,
         name
+      ),
+      employees (
+        id,
+        full_name,
+        employee_id_external,
+        tier
+      ),
+      provider_locations (
+        id,
+        name
       )
     `)
     .in('provider_location_id', locationIds)
     .eq('status', 'verified')
     .gte('check_in_at', startIso)
-    .lte('check_in_at', endIso);
+    .lte('check_in_at', endIso)
+    .order('check_in_at', { ascending: false });
 
   if (visitErr) {
     throw new Error(`Failed to fetch visits for provider: ${visitErr.message}`);
@@ -814,11 +834,14 @@ async function getProviderAnalyticsReport(providerId, options = {}) {
   const heatmap = Array.from({ length: 7 }, () => Array(24).fill(0));
   let totalEarnings = 0;
 
+  // Real database aggregation: Visitor Payments
+  const visitorPaymentMap = new Map();
+
   allVisits.forEach((v) => {
     uniqueBeneficiaries.add(v.employee_id);
 
     const orgId = v.org_id || v.organizations?.id || 'unknown';
-    const orgName = v.organizations?.name || 'Corporate Partner';
+    const orgName = v.organizations?.name || 'Corporate Client';
     const rate = orgRateMap.get(orgId) || 5000;
 
     totalEarnings += rate;
@@ -850,6 +873,28 @@ async function getProviderAnalyticsReport(providerId, options = {}) {
     const day = checkInDate.getUTCDay();
     const hour = checkInDate.getUTCHours();
     heatmap[day][hour] += 1;
+
+    // Aggregate by visitor/employee
+    const empKey = v.employee_id || v.id;
+    const empName = v.employees?.full_name || 'Corporate Member';
+    const polyId = v.employees?.employee_id_external || `PF-${String(empKey).slice(0, 8).toUpperCase()}`;
+    const locName = v.provider_locations?.name || 'Main Location';
+    const locCode = v.provider_location_id ? `LOC-${v.provider_location_id.slice(0, 6).toUpperCase()}` : 'LOC-MAIN';
+
+    if (!visitorPaymentMap.has(empKey)) {
+      visitorPaymentMap.set(empKey, {
+        location_id: locCode,
+        location_name: locName,
+        visitor_name: empName,
+        polyfit_id: polyId,
+        employer_name: orgName,
+        total_checkins: 0,
+        total_payment: 0
+      });
+    }
+    const vRec = visitorPaymentMap.get(empKey);
+    vRec.total_checkins += 1;
+    vRec.total_payment += rate;
   });
 
   const totalVisitsCount = allVisits.length;
@@ -877,6 +922,55 @@ async function getProviderAnalyticsReport(providerId, options = {}) {
     }))
     .sort((a, b) => b.visitCount - a.visitCount);
 
+  // Itemized Check-in Details from real visits
+  const checkinDetails = allVisits.map((v) => {
+    const dt = new Date(v.check_in_at);
+    const dateFormatted = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const timeFormatted = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const rate = orgRateMap.get(v.org_id) || 5000;
+    const hour = dt.getUTCHours();
+    const isOffPeak = (hour >= 11 && hour <= 15) || hour >= 20;
+
+    let checkinType = 'Mobile App Pass';
+    if (v.verification_method === 'turnstile') checkinType = 'Turnstile Gate';
+    else if (v.verification_method === 'manual') checkinType = 'Front Desk Code';
+
+    return {
+      id: v.id,
+      date_formatted: dateFormatted,
+      time: timeFormatted,
+      location_id: v.provider_location_id ? `LOC-${v.provider_location_id.slice(0, 6).toUpperCase()}` : 'LOC-MAIN',
+      location_name: v.provider_locations?.name || 'Main Location',
+      visitor_name: v.employees?.full_name || 'Corporate Member',
+      polyfit_id: v.employees?.employee_id_external || `PF-${String(v.employee_id || v.id).slice(0, 8).toUpperCase()}`,
+      employer_name: v.organizations?.name || 'Corporate Client',
+      product: 'Gym & Facility Access',
+      checkin_period: isOffPeak ? 'Off-peak' : 'Default',
+      checkin_type: checkinType,
+      payment: rate
+    };
+  });
+
+  // Location Summaries from real locations and database counts
+  const locationSummaries = (locations || []).map((l) => {
+    const stat = locationMap.get(l.id) || { visitCount: 0, earnings: 0 };
+    const gross = stat.earnings;
+    const polyfitShare = Math.round(gross * 0.1);
+    const net = gross - polyfitShare;
+
+    return {
+      location_id: `LOC-${l.id.slice(0, 6).toUpperCase()}`,
+      location_name: l.name,
+      checkins: stat.visitCount,
+      checkin_amount: gross,
+      adjustments: 0,
+      platform_fee: -polyfitShare,
+      total_net_payout: net
+    };
+  });
+
+  const visitorPayments = Array.from(visitorPaymentMap.values()).sort((a, b) => b.total_checkins - a.total_checkins);
+
   // 5. Fetch settlement history for this provider
   const { data: settlements } = await supabase
     .from('settlements')
@@ -893,8 +987,9 @@ async function getProviderAnalyticsReport(providerId, options = {}) {
       status: provider.status
     },
     period: {
-      startDate,
-      endDate
+      startDate: resolvedStart,
+      endDate: resolvedEnd,
+      month: options.month || null
     },
     overview: {
       totalVisits: totalVisitsCount,
@@ -905,6 +1000,9 @@ async function getProviderAnalyticsReport(providerId, options = {}) {
         ? Number((totalVisitsCount / uniqueBeneficiaries.size).toFixed(2))
         : 0
     },
+    visitorPayments,
+    checkinDetails,
+    locationSummaries,
     visitsByOrganization,
     visitsByLocation,
     peakHoursHeatmap: {

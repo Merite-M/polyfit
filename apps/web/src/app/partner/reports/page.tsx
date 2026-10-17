@@ -29,8 +29,6 @@ import { generateSettlementPdf } from '@/lib/settlement-pdf';
 
 type ReportTab = 'overview' | 'payment-per-visitor' | 'checkin-details' | 'location-summary';
 
-// ── Realistic Data Sets for Wellhub 4-Tab Reporting Simulation ───────────────
-
 interface VisitorPaymentRecord {
   location_id: string;
   location_name: string;
@@ -40,19 +38,6 @@ interface VisitorPaymentRecord {
   total_checkins: number;
   total_payment: number;
 }
-
-const DEFAULT_VISITOR_PAYMENTS: VisitorPaymentRecord[] = [
-  { location_id: '447f4bf2-ff66', location_name: 'Kigali Central Facility', visitor_name: 'Eric Kwizera', polyfit_id: 'PF-EMP-1082', employer_name: 'Bank of Kigali Plc', total_checkins: 14, total_payment: 70000 },
-  { location_id: '447f4bf2-ff66', location_name: 'Kigali Central Facility', visitor_name: 'Solange Uwase', polyfit_id: 'PF-EMP-9114', employer_name: 'MTN Rwandacell', total_checkins: 11, total_payment: 55000 },
-  { location_id: '189e7cb8-155e', location_name: 'Nyarutarama Health Branch', visitor_name: 'Jean-Claude Nzeyimana', polyfit_id: 'PF-EMP-3045', employer_name: 'TechCorp Rwanda', total_checkins: 9, total_payment: 45000 },
-  { location_id: '447f4bf2-ff66', location_name: 'Kigali Central Facility', visitor_name: 'Aline Mukamana', polyfit_id: 'PF-EMP-7712', employer_name: 'Bank of Kigali Plc', total_checkins: 8, total_payment: 40000 },
-  { location_id: '189e7cb8-155e', location_name: 'Nyarutarama Health Branch', visitor_name: 'Patrick Habimana', polyfit_id: 'PF-EMP-5521', employer_name: 'I&M Bank Rwanda', total_checkins: 7, total_payment: 35000 },
-  { location_id: '447f4bf2-ff66', location_name: 'Kigali Central Facility', visitor_name: 'Sandrine Gasana', polyfit_id: 'PF-EMP-6689', employer_name: 'MTN Rwandacell', total_checkins: 7, total_payment: 35000 },
-  { location_id: '189e7cb8-155e', location_name: 'Nyarutarama Health Branch', visitor_name: 'David Karekezi', polyfit_id: 'PF-EMP-2210', employer_name: 'TechCorp Rwanda', total_checkins: 6, total_payment: 30000 },
-  { location_id: '447f4bf2-ff66', location_name: 'Kigali Central Facility', visitor_name: 'Clarisse Uwineza', polyfit_id: 'PF-EMP-8843', employer_name: 'Bank of Kigali Plc', total_checkins: 6, total_payment: 30000 },
-  { location_id: '189e7cb8-155e', location_name: 'Nyarutarama Health Branch', visitor_name: 'Fabrice Mugisha', polyfit_id: 'PF-EMP-4491', employer_name: 'MTN Rwandacell', total_checkins: 5, total_payment: 25000 },
-  { location_id: '447f4bf2-ff66', location_name: 'Kigali Central Facility', visitor_name: 'Diane Tuyisenge', polyfit_id: 'PF-EMP-1194', employer_name: 'I&M Bank Rwanda', total_checkins: 5, total_payment: 25000 }
-];
 
 interface CheckinDetailRecord {
   id: string;
@@ -65,20 +50,9 @@ interface CheckinDetailRecord {
   employer_name: string;
   product: string;
   checkin_period: 'Default' | 'Off-peak';
-  checkin_type: 'Dynamic App Pass' | 'Turnstile IoT' | 'Counter PIN';
+  checkin_type: 'Mobile App Pass' | 'Turnstile Gate' | 'Front Desk Code';
   payment: number;
 }
-
-const DEFAULT_CHECKIN_DETAILS: CheckinDetailRecord[] = [
-  { id: 'chk-01', date_formatted: 'Mon Sep 28', time: '07:15', location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4', location_name: 'Kigali Central Facility', visitor_name: 'Eric Kwizera', polyfit_id: 'PF-EMP-1082', employer_name: 'Bank of Kigali', product: 'Weightlifting & Cardio', checkin_period: 'Default', checkin_type: 'Dynamic App Pass', payment: 5000 },
-  { id: 'chk-02', date_formatted: 'Mon Sep 28', time: '08:00', location_id: '189e7cb8-155e-419a-8b83-bd9e3eb021da', location_name: 'Nyarutarama Health Branch', visitor_name: 'Jean-Claude Nzeyimana', polyfit_id: 'PF-EMP-3045', employer_name: 'TechCorp Rwanda', product: 'Lap Pool & Sauna', checkin_period: 'Default', checkin_type: 'Dynamic App Pass', payment: 5000 },
-  { id: 'chk-03', date_formatted: 'Mon Sep 28', time: '12:30', location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4', location_name: 'Kigali Central Facility', visitor_name: 'Solange Uwase', polyfit_id: 'PF-EMP-9114', employer_name: 'MTN Rwandacell', product: 'Cardio Studio', checkin_period: 'Off-peak', checkin_type: 'Turnstile IoT', payment: 5000 },
-  { id: 'chk-04', date_formatted: 'Mon Sep 28', time: '17:45', location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4', location_name: 'Kigali Central Facility', visitor_name: 'Aline Mukamana', polyfit_id: 'PF-EMP-7712', employer_name: 'Bank of Kigali', product: 'Pilates Group Session', checkin_period: 'Default', checkin_type: 'Dynamic App Pass', payment: 5000 },
-  { id: 'chk-05', date_formatted: 'Sun Sep 27', time: '10:00', location_id: '189e7cb8-155e-419a-8b83-bd9e3eb021da', location_name: 'Nyarutarama Health Branch', visitor_name: 'Patrick Habimana', polyfit_id: 'PF-EMP-5521', employer_name: 'I&M Bank Rwanda', product: 'Tennis / Racquet Court', checkin_period: 'Default', checkin_type: 'Dynamic App Pass', payment: 5000 },
-  { id: 'chk-06', date_formatted: 'Sun Sep 27', time: '14:20', location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4', location_name: 'Kigali Central Facility', visitor_name: 'Sandrine Gasana', polyfit_id: 'PF-EMP-6689', employer_name: 'MTN Rwandacell', product: 'Gym Access', checkin_period: 'Off-peak', checkin_type: 'Turnstile IoT', payment: 5000 },
-  { id: 'chk-07', date_formatted: 'Sat Sep 26', time: '09:10', location_id: '189e7cb8-155e-419a-8b83-bd9e3eb021da', location_name: 'Nyarutarama Health Branch', visitor_name: 'David Karekezi', polyfit_id: 'PF-EMP-2210', employer_name: 'TechCorp Rwanda', product: 'Lap Swimming', checkin_period: 'Default', checkin_type: 'Counter PIN', payment: 5000 },
-  { id: 'chk-08', date_formatted: 'Fri Sep 25', time: '18:15', location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4', location_name: 'Kigali Central Facility', visitor_name: 'Clarisse Uwineza', polyfit_id: 'PF-EMP-8843', employer_name: 'Bank of Kigali', product: 'Functional Training', checkin_period: 'Default', checkin_type: 'Dynamic App Pass', payment: 5000 }
-];
 
 interface LocationSummaryRecord {
   location_id: string;
@@ -90,41 +64,57 @@ interface LocationSummaryRecord {
   total_net_payout: number;
 }
 
-const DEFAULT_LOCATION_SUMMARIES: LocationSummaryRecord[] = [
-  {
-    location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4',
-    location_name: 'Kigali Central Facility (Unit #851931)',
-    checkins: 340,
-    checkin_amount: 1700000,
-    adjustments: 0,
-    platform_fee: -170000,
-    total_net_payout: 1530000
-  },
-  {
-    location_id: '189e7cb8-155e-419a-8b83-bd9e3eb021da',
-    location_name: 'Nyarutarama Health Branch (Unit #851932)',
-    checkins: 150,
-    checkin_amount: 750000,
-    adjustments: -15000,
-    platform_fee: -75000,
-    total_net_payout: 660000
-  }
-];
-
 export default function PartnerReportsPage() {
   const { provider, locations, selectedLocationId, setSelectedLocationId } = usePartner();
 
-  // State
-  const [activeTab, setActiveTab] = useState<ReportTab>('payment-per-visitor');
+  // State: Default to 'overview' so operators land on high-level analytics
+  const [activeTab, setActiveTab] = useState<ReportTab>('overview');
   const [selectedMonth, setSelectedMonth] = useState('2026-09');
   const [oneMonthOnly, setOneMonthOnly] = useState(true);
   const [isAccordionOpen, setIsAccordionOpen] = useState(false);
   const [liveReportData, setLiveReportData] = useState<any | null>(null);
+  const [isLoadingReports, setIsLoadingReports] = useState(false);
+
+  // Sync activeTab with URL search parameters on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam) {
+      if (tabParam === 'overview') {
+        setActiveTab('overview');
+      } else if (tabParam === 'payment-per-visitor' || tabParam === 'visitors' || tabParam === 'visitor') {
+        setActiveTab('payment-per-visitor');
+      } else if (tabParam === 'checkin-details' || tabParam === 'checkins' || tabParam === 'history' || tabParam === 'audit') {
+        setActiveTab('checkin-details');
+      } else if (tabParam === 'location-summary' || tabParam === 'locations' || tabParam === 'branches') {
+        setActiveTab('location-summary');
+      }
+    }
+  }, []);
+
+  // Reactive tab switcher with Modern Web Guidance view transitions and URL sync
+  const handleTabChange = (newTab: ReportTab) => {
+    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+      (document as unknown as { startViewTransition: (cb: () => void) => void }).startViewTransition(() => {
+        setActiveTab(newTab);
+      });
+    } else {
+      setActiveTab(newTab);
+    }
+
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', newTab);
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
 
   useEffect(() => {
     if (!provider?.id) return;
     const fetchLiveReports = async () => {
       try {
+        setIsLoadingReports(true);
         const res = await apiFetch<any>(
           `/api/reporting/provider/${provider.id}/visits?month=${selectedMonth}`
         );
@@ -132,7 +122,9 @@ export default function PartnerReportsPage() {
           setLiveReportData(res);
         }
       } catch (err) {
-        // Graceful fallback to resilient defaults
+        console.warn('[PartnerReports] Live report fetch fallback:', err);
+      } finally {
+        setIsLoadingReports(false);
       }
     };
     fetchLiveReports();
@@ -146,56 +138,60 @@ export default function PartnerReportsPage() {
   }, [selectedMonth]);
   const currentMonthName = MONTH_NAMES[monthIdx];
 
-  // Filtered records by location and reactive to selected month
-  const filteredVisitorPayments = useMemo(() => {
-    let list = DEFAULT_VISITOR_PAYMENTS.map((item) => ({
-      ...item,
-      location_id: item.location_id.length < 20 ? '447f4bf2-ff66-48c5-851e-460cba17bfe4' : item.location_id
+  // Live database records with reactive filtering by location
+  const filteredVisitorPayments: VisitorPaymentRecord[] = useMemo(() => {
+    const rawList: VisitorPaymentRecord[] = liveReportData?.visitorPayments || [];
+
+    if (selectedLocationId !== 'all') {
+      const loc = locations.find((l) => l.id === selectedLocationId);
+      return rawList.filter((item) => {
+        if (loc && item.location_name.toLowerCase().includes(loc.name.split(' ')[0].toLowerCase())) {
+          return true;
+        }
+        return item.location_id === selectedLocationId || selectedLocationId.startsWith(item.location_id);
+      });
+    }
+    return rawList;
+  }, [liveReportData, selectedLocationId, locations]);
+
+  const filteredCheckins: CheckinDetailRecord[] = useMemo(() => {
+    const rawList: CheckinDetailRecord[] = liveReportData?.checkinDetails || [];
+
+    if (selectedLocationId !== 'all') {
+      const loc = locations.find((l) => l.id === selectedLocationId);
+      return rawList.filter((item) => {
+        if (loc && item.location_name.toLowerCase().includes(loc.name.split(' ')[0].toLowerCase())) {
+          return true;
+        }
+        return item.location_id === selectedLocationId || selectedLocationId.startsWith(item.location_id);
+      });
+    }
+    return rawList;
+  }, [liveReportData, selectedLocationId, locations]);
+
+  const filteredLocationSummaries: LocationSummaryRecord[] = useMemo(() => {
+    if (liveReportData?.locationSummaries && liveReportData.locationSummaries.length > 0) {
+      if (selectedLocationId === 'all') return liveReportData.locationSummaries;
+      return liveReportData.locationSummaries.filter((item: LocationSummaryRecord) =>
+        item.location_id === selectedLocationId ||
+        selectedLocationId.startsWith(item.location_id.substring(0, 8))
+      );
+    }
+
+    // Dynamic fallback matching registered locations from database with real 0 counts
+    const registered = locations.map((loc) => ({
+      location_id: `LOC-${loc.id.slice(0, 6).toUpperCase()}`,
+      location_name: loc.name,
+      checkins: 0,
+      checkin_amount: 0,
+      adjustments: 0,
+      platform_fee: 0,
+      total_net_payout: 0
     }));
 
-    if (selectedLocationId !== 'all') {
-      const loc = locations.find((l) => l.id === selectedLocationId);
-      list = list.filter((item) => {
-        if (loc && item.location_name.toLowerCase().includes(loc.name.split(' ')[0].toLowerCase())) {
-          return true;
-        }
-        return item.location_id === selectedLocationId || selectedLocationId.startsWith(item.location_id);
-      });
-    }
-    return list;
-  }, [selectedLocationId, locations]);
-
-  const filteredCheckins = useMemo(() => {
-    let list = DEFAULT_CHECKIN_DETAILS.map((item, idx) => {
-      const day = 28 - (idx % 8);
-      const dayStr = day < 10 ? `0${day}` : `${day}`;
-      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      const dayName = dayNames[(idx + 2) % 7];
-      return {
-        ...item,
-        date_formatted: `${dayName} ${currentMonthName} ${dayStr}`,
-      };
-    });
-
-    if (selectedLocationId !== 'all') {
-      const loc = locations.find((l) => l.id === selectedLocationId);
-      list = list.filter((item) => {
-        if (loc && item.location_name.toLowerCase().includes(loc.name.split(' ')[0].toLowerCase())) {
-          return true;
-        }
-        return item.location_id === selectedLocationId || selectedLocationId.startsWith(item.location_id);
-      });
-    }
-    return list;
-  }, [selectedLocationId, locations, currentMonthName]);
-
-  const filteredLocationSummaries = useMemo(() => {
-    if (selectedLocationId === 'all') return DEFAULT_LOCATION_SUMMARIES;
-    return DEFAULT_LOCATION_SUMMARIES.filter((item) =>
-      item.location_id === selectedLocationId ||
-      selectedLocationId.startsWith(item.location_id.substring(0, 8))
-    );
-  }, [selectedLocationId]);
+    if (selectedLocationId === 'all') return registered;
+    return registered.filter((item) => item.location_id === selectedLocationId || selectedLocationId.startsWith(item.location_id));
+  }, [liveReportData, selectedLocationId, locations]);
 
   // Totals for Location Summary
   const totals = useMemo(() => {
@@ -217,13 +213,13 @@ export default function PartnerReportsPage() {
       downloadCsv(
         `polyfit-payment-per-visitor-${selectedMonth}.csv`,
         [
-          { header: 'Location ID', accessor: (r) => r.location_id },
-          { header: 'Location', accessor: (r) => r.location_name },
-          { header: 'Visitor Name', accessor: (r) => r.visitor_name },
-          { header: 'PolyFit ID', accessor: (r) => r.polyfit_id },
+          { header: 'Branch Code', accessor: (r) => r.location_id },
+          { header: 'Facility Location', accessor: (r) => r.location_name },
+          { header: 'Corporate Member', accessor: (r) => r.visitor_name },
+          { header: 'Member ID', accessor: (r) => r.polyfit_id },
           { header: 'Employer Organization', accessor: (r) => r.employer_name },
           { header: 'Total Check-ins', accessor: (r) => r.total_checkins },
-          { header: 'Total Payment (RWF)', accessor: (r) => r.total_payment }
+          { header: 'Guaranteed Payout (RWF)', accessor: (r) => r.total_payment }
         ],
         filteredVisitorPayments
       );
@@ -233,29 +229,29 @@ export default function PartnerReportsPage() {
         [
           { header: 'Date', accessor: (r) => r.date_formatted },
           { header: 'Time', accessor: (r) => r.time },
-          { header: 'Location ID', accessor: (r) => r.location_id },
-          { header: 'Location', accessor: (r) => r.location_name },
-          { header: 'Visitor Name', accessor: (r) => r.visitor_name },
-          { header: 'PolyFit ID', accessor: (r) => r.polyfit_id },
+          { header: 'Branch Code', accessor: (r) => r.location_id },
+          { header: 'Facility Location', accessor: (r) => r.location_name },
+          { header: 'Corporate Member', accessor: (r) => r.visitor_name },
+          { header: 'Member ID', accessor: (r) => r.polyfit_id },
           { header: 'Employer Organization', accessor: (r) => r.employer_name },
-          { header: 'Product', accessor: (r) => r.product },
+          { header: 'Activity', accessor: (r) => r.product },
           { header: 'Period', accessor: (r) => r.checkin_period },
-          { header: 'Check-in Type', accessor: (r) => r.checkin_type },
-          { header: 'Payment (RWF)', accessor: (r) => r.payment }
+          { header: 'Check-in Method', accessor: (r) => r.checkin_type },
+          { header: 'Visit Payout (RWF)', accessor: (r) => r.payment }
         ],
         filteredCheckins
       );
     } else if (activeTab === 'location-summary') {
       downloadCsv(
-        `polyfit-location-summary-${selectedMonth}.csv`,
+        `polyfit-branch-summary-${selectedMonth}.csv`,
         [
-          { header: 'Location ID', accessor: (r) => r.location_id },
-          { header: 'Location', accessor: (r) => r.location_name },
+          { header: 'Branch Code', accessor: (r) => r.location_id },
+          { header: 'Facility Location', accessor: (r) => r.location_name },
           { header: 'Total Check-ins', accessor: (r) => r.checkins },
-          { header: 'Gross Amount (RWF)', accessor: (r) => r.checkin_amount },
+          { header: 'Gross Visit Value (RWF)', accessor: (r) => r.checkin_amount },
           { header: 'Adjustments (RWF)', accessor: (r) => r.adjustments },
-          { header: 'Platform Share (RWF)', accessor: (r) => r.platform_fee },
-          { header: 'Total Net Payout (RWF)', accessor: (r) => r.total_net_payout }
+          { header: 'PolyFit Service Share (RWF)', accessor: (r) => r.platform_fee },
+          { header: 'Net Facility Payout (RWF)', accessor: (r) => r.total_net_payout }
         ],
         filteredLocationSummaries
       );
@@ -270,53 +266,53 @@ export default function PartnerReportsPage() {
       statement_number: `PF-REP-${selectedMonth.replace('-', '')}`,
       period_start: `${selectedMonth}-01`,
       period_end: `${selectedMonth}-30`,
-      total_visits: totals.checkins || 490,
-      gross_amount: totals.checkin_amount || 2450000,
-      adjustments_amount: Math.abs(totals.adjustments) || 15000,
-      platform_fee_amount: Math.abs(totals.platform_fee) || 245000,
-      net_amount: totals.total_net_payout || 2190000,
-      status: 'paid',
-      payout_date: '2026-10-15',
-      payment_reference: 'BK-FT-20261015-091',
+      total_visits: totals.checkins || 0,
+      gross_amount: totals.checkin_amount || 0,
+      adjustments_amount: Math.abs(totals.adjustments) || 0,
+      platform_fee_amount: Math.abs(totals.platform_fee) || 0,
+      net_amount: totals.total_net_payout || 0,
+      status: totals.checkins > 0 ? 'paid' : 'pending',
+      payout_date: `${selectedMonth}-15`,
+      payment_reference: `PF-SET-${selectedMonth.replace('-', '')}`,
       provider: {
-        name: provider?.name || 'FitLife Gym Kigali',
-        category: provider?.category || 'gym',
-        tax_id: provider?.tax_id || '108392019',
-        settlement_email: provider?.settlement_email || 'finance@fitlife.rw'
+        name: provider?.name || 'Wellness Partner',
+        category: provider?.category || 'wellness',
+        tax_id: provider?.tax_id || '',
+        settlement_email: provider?.settlement_email || provider?.contact_email || ''
       }
     });
   };
 
-  // Helper text per tab
+  // Helper text per tab with human gym operator language
   const getTabHelp = () => {
     switch (activeTab) {
       case 'overview':
         return {
-          title: 'Overview Analytics',
-          desc: 'High-level aggregation of visits, active employer partners, and overall revenue velocity for the selected period.',
-          q: 'What is the Overview report?',
-          a: 'The Overview summarizes aggregate platform utilization and revenue metrics across all registered locations.'
+          title: 'Monthly Overview & Attendance',
+          desc: 'High-level summary of verified member visits, unique corporate guests, and estimated monthly earnings.',
+          q: 'What is the Monthly Overview report?',
+          a: 'The Overview summarizes your facility attendance volume, top employer corporate clients, and estimated monthly settlement payouts.'
         };
       case 'payment-per-visitor':
         return {
-          title: 'Payment per visitor',
-          desc: 'This report shows all check-ins done by each corporate visitor for the selected locations and period.',
-          q: "What's a Payment per visitor report?",
-          a: 'This report groups check-in volume by individual corporate beneficiary. It lets you analyze client loyalty, repeat attendance, and total revenue generated per user under corporate wellness plans.'
+          title: 'Earnings per Member / Employee',
+          desc: 'Attendance count and payout totals grouped by individual corporate employee.',
+          q: 'What is the Payment per Visitor report?',
+          a: 'This report groups check-in volume by individual corporate member. It lets you see repeat member attendance and exact earnings per employee under corporate wellness plans.'
         };
       case 'checkin-details':
         return {
-          title: 'Check-in details',
-          desc: 'This report shows all check-in details for the selected locations and period, including the date, time, payment per check-in, and product used.',
-          q: "What's a Check-in details report?",
-          a: 'An itemized chronological audit of every verified entrance. It provides full transparency into off-peak rates, employee tiers, and payment calculation.'
+          title: 'Detailed Check-in Log & Visits',
+          desc: 'Itemized chronological log of every verified entry, arrival time, activity, and visit payout.',
+          q: 'What is the Detailed Check-in Log?',
+          a: 'A complete line-by-line record of every verified entrance. It gives full transparency into peak and off-peak check-ins, entry methods, and per-visit earnings.'
         };
       case 'location-summary':
         return {
-          title: 'Location summary',
-          desc: 'This report shows revenue for your selected locations and period, including total visitors and unique visits.',
-          q: "What's a Revenue per location report?",
-          a: 'A financial comparison across your physical facility branches, showing gross check-in value, adjustments, and net payout distribution.'
+          title: 'Branch & Facility Summary',
+          desc: 'Financial and visit breakdown across your physical facility locations.',
+          q: 'What is the Branch Summary report?',
+          a: 'A financial comparison across your physical facility branches, showing check-in totals, gross visit earnings, and net payout distribution.'
         };
     }
   };
@@ -331,13 +327,13 @@ export default function PartnerReportsPage() {
           <div className="flex items-center gap-2 text-xs font-semibold text-[#8491A3]">
             <span>PolyFit Partner Network</span>
             <span>/</span>
-            <span className="text-[#0B1F33]">Audit & Intelligence</span>
+            <span className="text-[#0B1F33]">Attendance &amp; Payout Reports</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-[#0B1F33] tracking-tight mt-1">
-            Reports
+            Reports &amp; Attendance
           </h1>
           <p className="text-xs sm:text-sm text-[#526173] mt-0.5">
-            Track your payment, check-in, and visitor history, all in one place!
+            Track your verified visits, corporate member arrivals, and monthly payout statements in one place.
           </p>
         </div>
 
@@ -347,7 +343,7 @@ export default function PartnerReportsPage() {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-[#F1F4F8] text-[#0B1F33] text-xs font-semibold border border-[#E2E8F0] transition-colors shadow-xs"
           >
             <Receipt className="w-4 h-4 text-[#28D17C]" />
-            <span>Settlement Statements</span>
+            <span>Monthly Statements</span>
           </Link>
 
           <a
@@ -356,7 +352,7 @@ export default function PartnerReportsPage() {
               e.preventDefault();
               setIsAccordionOpen(true);
             }}
-            className="text-xs text-[#0B1F33] hover:text-[#008A4B] font-semibold flex items-center gap-1"
+            className="text-xs text-[#0B1F33] hover:text-[#008A4B] font-semibold flex items-center gap-1 cursor-pointer"
           >
             <HelpCircle className="w-4 h-4 text-[#8491A3]" />
             <span>How it works</span>
@@ -364,17 +360,21 @@ export default function PartnerReportsPage() {
         </div>
       </div>
 
-      {/* Segmented 4-Tab Navigation Bar (Wellhub Style) */}
+      {/* Segmented 4-Tab Navigation Bar with Full Accessibility & URL Reactivity */}
       <div className="border-b border-[#E2E8F0] overflow-x-auto scrollbar-none">
-        <nav className="flex items-center gap-1 sm:gap-8 min-w-max">
+        <nav className="flex items-center gap-1 sm:gap-6 min-w-max" role="tablist" aria-label="Partner Reports Tabs">
           <button
-            onClick={() => setActiveTab('overview')}
-            className={`py-3.5 px-1 sm:px-2 text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors relative ${
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'overview'}
+            onClick={() => handleTabChange('overview')}
+            className={`py-3.5 px-3 sm:px-4 text-xs sm:text-sm font-bold tracking-wide transition-all cursor-pointer relative flex items-center gap-2 ${
               activeTab === 'overview'
-                ? 'text-[#0B1F33]'
+                ? 'text-[#0B1F33] font-extrabold'
                 : 'text-[#8491A3] hover:text-[#0B1F33]'
             }`}
           >
+            <BarChart3 className={`w-4 h-4 ${activeTab === 'overview' ? 'text-[#28D17C]' : 'text-[#8491A3]'}`} />
             <span>Overview</span>
             {activeTab === 'overview' && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#28D17C] rounded-t-full" />
@@ -382,42 +382,54 @@ export default function PartnerReportsPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab('payment-per-visitor')}
-            className={`py-3.5 px-1 sm:px-2 text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors relative ${
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'payment-per-visitor'}
+            onClick={() => handleTabChange('payment-per-visitor')}
+            className={`py-3.5 px-3 sm:px-4 text-xs sm:text-sm font-bold tracking-wide transition-all cursor-pointer relative flex items-center gap-2 ${
               activeTab === 'payment-per-visitor'
-                ? 'text-[#0B1F33]'
+                ? 'text-[#0B1F33] font-extrabold'
                 : 'text-[#8491A3] hover:text-[#0B1F33]'
             }`}
           >
-            <span>Payment per visitor</span>
+            <Users className={`w-4 h-4 ${activeTab === 'payment-per-visitor' ? 'text-[#28D17C]' : 'text-[#8491A3]'}`} />
+            <span>Payment per Visitor</span>
             {activeTab === 'payment-per-visitor' && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#28D17C] rounded-t-full" />
             )}
           </button>
 
           <button
-            onClick={() => setActiveTab('checkin-details')}
-            className={`py-3.5 px-1 sm:px-2 text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors relative ${
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'checkin-details'}
+            onClick={() => handleTabChange('checkin-details')}
+            className={`py-3.5 px-3 sm:px-4 text-xs sm:text-sm font-bold tracking-wide transition-all cursor-pointer relative flex items-center gap-2 ${
               activeTab === 'checkin-details'
-                ? 'text-[#0B1F33]'
+                ? 'text-[#0B1F33] font-extrabold'
                 : 'text-[#8491A3] hover:text-[#0B1F33]'
             }`}
           >
-            <span>Check-ins details</span>
+            <FileSpreadsheet className={`w-4 h-4 ${activeTab === 'checkin-details' ? 'text-[#28D17C]' : 'text-[#8491A3]'}`} />
+            <span>Check-in Details &amp; Logs</span>
             {activeTab === 'checkin-details' && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#28D17C] rounded-t-full" />
             )}
           </button>
 
           <button
-            onClick={() => setActiveTab('location-summary')}
-            className={`py-3.5 px-1 sm:px-2 text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors relative ${
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'location-summary'}
+            onClick={() => handleTabChange('location-summary')}
+            className={`py-3.5 px-3 sm:px-4 text-xs sm:text-sm font-bold tracking-wide transition-all cursor-pointer relative flex items-center gap-2 ${
               activeTab === 'location-summary'
-                ? 'text-[#0B1F33]'
+                ? 'text-[#0B1F33] font-extrabold'
                 : 'text-[#8491A3] hover:text-[#0B1F33]'
             }`}
           >
-            <span>Location summary</span>
+            <Building2 className={`w-4 h-4 ${activeTab === 'location-summary' ? 'text-[#28D17C]' : 'text-[#8491A3]'}`} />
+            <span>Branch Summary</span>
             {activeTab === 'location-summary' && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#28D17C] rounded-t-full" />
             )}
@@ -521,7 +533,7 @@ export default function PartnerReportsPage() {
             </div>
 
             <div className="bg-white p-4 rounded-xl border border-[#E2E8F0] shadow-xs">
-              <span className="text-xs text-[#8491A3] font-semibold">Unique Corporate Beneficiaries</span>
+              <span className="text-xs text-[#8491A3] font-semibold">Unique Corporate Members</span>
               <div className="text-2xl font-extrabold text-[#0B1F33] font-mono mt-1">
                 {filteredVisitorPayments.length}
               </div>
@@ -550,26 +562,36 @@ export default function PartnerReportsPage() {
             <h3 className="text-sm font-bold text-[#0B1F33] mb-4 uppercase tracking-wider">
               Top Corporate Clients by Check-in Volume
             </h3>
-            <div className="space-y-3">
-              {[
-                { name: 'Bank of Kigali Plc', visits: 205, share: 42, color: 'bg-[#28D17C]' },
-                { name: 'MTN Rwandacell', visits: 155, share: 31, color: 'bg-[#00D2B4]' },
-                { name: 'TechCorp Rwanda', visits: 90, share: 18, color: 'bg-[#3B82F6]' },
-                { name: 'I&M Bank Rwanda', visits: 40, share: 9, color: 'bg-[#F59E0B]' }
-              ].map((c) => (
-                <div key={c.name} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-[#0B1F33]">{c.name}</span>
-                    <span className="font-mono text-[#526173]">
-                      {c.visits} visits ({c.share}%)
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-[#F1F4F8] rounded-full overflow-hidden">
-                    <div className={`h-full ${c.color} rounded-full`} style={{ width: `${c.share}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
+            {(!liveReportData?.visitsByOrganization || liveReportData.visitsByOrganization.length === 0) ? (
+              <div className="py-8 text-center">
+                <Building2 className="w-8 h-8 text-[#A0AEC0] mx-auto mb-2 opacity-40" />
+                <p className="text-xs font-semibold text-[#526173]">No corporate client visits recorded for this period yet.</p>
+                <p className="text-[11px] text-[#8491A3] mt-0.5">Visits from corporate employees will appear here in real-time as check-ins are verified.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {liveReportData.visitsByOrganization.slice(0, 5).map((c: any, idx: number) => {
+                  const colors = ['bg-[#28D17C]', 'bg-[#00D2B4]', 'bg-[#3B82F6]', 'bg-[#F59E0B]', 'bg-[#8B5CF6]'];
+                  const color = colors[idx % colors.length];
+                  return (
+                    <div key={c.orgId || c.orgName} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-[#0B1F33]">{c.orgName}</span>
+                        <span className="font-mono text-[#526173]">
+                          {c.visitCount} visits ({c.percentageOfVisits}%)
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-[#F1F4F8] rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${color} rounded-full`}
+                          style={{ width: `${Math.min(100, Math.max(2, c.percentageOfVisits))}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -579,7 +601,7 @@ export default function PartnerReportsPage() {
         <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
           <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between">
             <span className="text-xs font-bold text-[#8491A3] uppercase tracking-wider">
-              Report Data ({filteredVisitorPayments.length} Corporate Visitors)
+              Member Attendance &amp; Earnings ({filteredVisitorPayments.length} Corporate Members)
             </span>
             <span className="text-[11px] font-mono text-[#526173]">
               Period: {selectedMonth}
@@ -590,32 +612,46 @@ export default function PartnerReportsPage() {
             <table className="w-full text-left text-xs">
               <thead className="bg-[#F7F9FC] text-[#526173] font-semibold border-b border-[#E2E8F0]">
                 <tr>
-                  <th className="py-3 px-4">Location ID</th>
-                  <th className="py-3 px-4">Location</th>
-                  <th className="py-3 px-4">Visitor</th>
-                  <th className="py-3 px-4">PolyFit ID</th>
+                  <th className="py-3 px-4">Branch Code</th>
+                  <th className="py-3 px-4">Facility Location</th>
+                  <th className="py-3 px-4">Corporate Member</th>
+                  <th className="py-3 px-4">Member ID</th>
                   <th className="py-3 px-4 text-right">Total Check-ins</th>
-                  <th className="py-3 px-4 text-right">Total Payment</th>
+                  <th className="py-3 px-4 text-right">Guaranteed Payout</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E2E8F0]">
-                {filteredVisitorPayments.map((v, i) => (
-                  <tr key={i} className="hover:bg-[#F7F9FC]/70 transition-colors">
-                    <td className="py-3 px-4 font-mono text-[#8491A3]">{v.location_id}...</td>
-                    <td className="py-3 px-4 font-semibold text-[#0B1F33]">{v.location_name}</td>
-                    <td className="py-3 px-4">
-                      <p className="font-semibold text-[#0B1F33]">{v.visitor_name}</p>
-                      <p className="text-[10px] text-[#8491A3]">{v.employer_name}</p>
-                    </td>
-                    <td className="py-3 px-4 font-mono text-[#526173]">{v.polyfit_id}</td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-[#0B1F33]">
-                      {v.total_checkins}
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-[#008A4B]">
-                      {formatRwf(v.total_payment)}
+                {filteredVisitorPayments.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center">
+                      <div className="max-w-xs mx-auto text-center space-y-2">
+                        <Users className="w-8 h-8 text-[#A0AEC0] mx-auto opacity-50" />
+                        <p className="text-sm font-bold text-[#0B1F33]">No Member Visits Recorded</p>
+                        <p className="text-xs text-[#8491A3]">
+                          No corporate employees have checked in at this location for {selectedMonth}.
+                        </p>
+                      </div>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredVisitorPayments.map((v, i) => (
+                    <tr key={i} className="hover:bg-[#F7F9FC]/70 transition-colors">
+                      <td className="py-3 px-4 font-mono font-semibold text-[#526173]">{v.location_id}</td>
+                      <td className="py-3 px-4 font-semibold text-[#0B1F33]">{v.location_name}</td>
+                      <td className="py-3 px-4">
+                        <p className="font-semibold text-[#0B1F33]">{v.visitor_name}</p>
+                        <p className="text-[10px] text-[#8491A3]">{v.employer_name}</p>
+                      </td>
+                      <td className="py-3 px-4 font-mono text-[#526173]">{v.polyfit_id}</td>
+                      <td className="py-3 px-4 text-right font-mono font-bold text-[#0B1F33]">
+                        {v.total_checkins}
+                      </td>
+                      <td className="py-3 px-4 text-right font-mono font-bold text-[#008A4B]">
+                        {formatRwf(v.total_payment)}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -627,7 +663,7 @@ export default function PartnerReportsPage() {
         <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
           <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between">
             <span className="text-xs font-bold text-[#8491A3] uppercase tracking-wider">
-              Chronological Audit Trail
+              Chronological Visit Log
             </span>
             <span className="text-[11px] font-mono text-[#526173]">
               Period: {selectedMonth}
@@ -640,45 +676,61 @@ export default function PartnerReportsPage() {
                 <tr>
                   <th className="py-3 px-4">Date</th>
                   <th className="py-3 px-4">Time</th>
-                  <th className="py-3 px-4">Location</th>
-                  <th className="py-3 px-4">Visitor</th>
-                  <th className="py-3 px-4">PolyFit ID</th>
-                  <th className="py-3 px-4">Product / Activity</th>
+                  <th className="py-3 px-4">Branch Code</th>
+                  <th className="py-3 px-4">Facility Location</th>
+                  <th className="py-3 px-4">Corporate Member</th>
+                  <th className="py-3 px-4">Member ID</th>
+                  <th className="py-3 px-4">Activity</th>
                   <th className="py-3 px-4">Period</th>
-                  <th className="py-3 px-4">Type</th>
-                  <th className="py-3 px-4 text-right">Payment</th>
+                  <th className="py-3 px-4">Check-in Method</th>
+                  <th className="py-3 px-4 text-right">Visit Payout</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E2E8F0]">
-                {filteredCheckins.map((c) => (
-                  <tr key={c.id} className="hover:bg-[#F7F9FC]/70 transition-colors">
-                    <td className="py-3 px-4 text-[#0B1F33] font-semibold">{c.date_formatted}</td>
-                    <td className="py-3 px-4 font-mono text-[#526173]">{c.time}</td>
-                    <td className="py-3 px-4 text-[#0B1F33]">{c.location_name}</td>
-                    <td className="py-3 px-4 font-semibold text-[#0B1F33]">{c.visitor_name}</td>
-                    <td className="py-3 px-4 font-mono text-[#8491A3]">{c.polyfit_id}</td>
-                    <td className="py-3 px-4 text-[#526173]">{c.product}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                          c.checkin_period === 'Off-peak'
-                            ? 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]'
-                            : 'bg-[#F7F9FC] text-[#526173] border-[#E2E8F0]'
-                        }`}
-                      >
-                        {c.checkin_period}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E9FAF2] text-[#008A4B] border border-[#B7F1D2]">
-                        {c.checkin_type}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-[#008A4B]">
-                      {formatRwf(c.payment)}
+                {filteredCheckins.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="py-12 text-center">
+                      <div className="max-w-xs mx-auto text-center space-y-2">
+                        <FileSpreadsheet className="w-8 h-8 text-[#A0AEC0] mx-auto opacity-50" />
+                        <p className="text-sm font-bold text-[#0B1F33]">No Check-in Log Entries</p>
+                        <p className="text-xs text-[#8491A3]">
+                          Verified visits will populate this chronological ledger in real-time.
+                        </p>
+                      </div>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredCheckins.map((c) => (
+                    <tr key={c.id} className="hover:bg-[#F7F9FC]/70 transition-colors">
+                      <td className="py-3 px-4 text-[#0B1F33] font-semibold">{c.date_formatted}</td>
+                      <td className="py-3 px-4 font-mono text-[#526173]">{c.time}</td>
+                      <td className="py-3 px-4 font-mono font-semibold text-[#526173]">{c.location_id}</td>
+                      <td className="py-3 px-4 text-[#0B1F33]">{c.location_name}</td>
+                      <td className="py-3 px-4 font-semibold text-[#0B1F33]">{c.visitor_name}</td>
+                      <td className="py-3 px-4 font-mono text-[#8491A3]">{c.polyfit_id}</td>
+                      <td className="py-3 px-4 text-[#526173]">{c.product}</td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            c.checkin_period === 'Off-peak'
+                              ? 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]'
+                              : 'bg-[#F7F9FC] text-[#526173] border-[#E2E8F0]'
+                          }`}
+                        >
+                          {c.checkin_period}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E9FAF2] text-[#008A4B] border border-[#B7F1D2]">
+                          {c.checkin_type}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right font-mono font-bold text-[#008A4B]">
+                        {formatRwf(c.payment)}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -690,7 +742,7 @@ export default function PartnerReportsPage() {
         <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
           <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between">
             <span className="text-xs font-bold text-[#8491A3] uppercase tracking-wider">
-              Facility Multi-Location Financial Rollup
+              Branch Performance &amp; Payout Summary
             </span>
             <span className="text-[11px] font-mono text-[#526173]">
               Period: {selectedMonth}
@@ -701,44 +753,58 @@ export default function PartnerReportsPage() {
             <table className="w-full text-left text-xs">
               <thead className="bg-[#F7F9FC] text-[#526173] font-semibold border-b border-[#E2E8F0]">
                 <tr>
-                  <th className="py-3 px-4">Location ID</th>
-                  <th className="py-3 px-4">Location</th>
-                  <th className="py-3 px-4 text-right">Check-ins</th>
-                  <th className="py-3 px-4 text-right">Check-in Amount</th>
+                  <th className="py-3 px-4">Branch Code</th>
+                  <th className="py-3 px-4">Facility Location</th>
+                  <th className="py-3 px-4 text-right">Total Check-ins</th>
+                  <th className="py-3 px-4 text-right">Gross Visit Value</th>
                   <th className="py-3 px-4 text-right">Adjustments</th>
-                  <th className="py-3 px-4 text-right">Platform Share</th>
-                  <th className="py-3 px-4 text-right">Total Net Payout</th>
+                  <th className="py-3 px-4 text-right">PolyFit Service Share</th>
+                  <th className="py-3 px-4 text-right">Net Facility Payout</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E2E8F0]">
-                {filteredLocationSummaries.map((l) => (
-                  <tr key={l.location_id} className="hover:bg-[#F7F9FC]/70 transition-colors">
-                    <td className="py-3.5 px-4 font-mono text-[#8491A3]">
-                      {l.location_id.substring(0, 12)}...
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-[#0B1F33]">{l.location_name}</td>
-                    <td className="py-3.5 px-4 text-right font-mono font-medium text-[#0B1F33]">
-                      {l.checkins}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-mono text-[#526173]">
-                      {formatRwf(l.checkin_amount)}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-mono text-[#EF4444]">
-                      {formatRwf(l.adjustments)}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-mono text-[#8491A3]">
-                      {formatRwf(l.platform_fee)}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-mono font-bold text-[#008A4B]">
-                      {formatRwf(l.total_net_payout)}
+                {filteredLocationSummaries.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center">
+                      <div className="max-w-xs mx-auto text-center space-y-2">
+                        <Building2 className="w-8 h-8 text-[#A0AEC0] mx-auto opacity-50" />
+                        <p className="text-sm font-bold text-[#0B1F33]">No Branch Activity Recorded</p>
+                        <p className="text-xs text-[#8491A3]">
+                          Branch totals will display once facility locations process member visits.
+                        </p>
+                      </div>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredLocationSummaries.map((l) => (
+                    <tr key={l.location_id} className="hover:bg-[#F7F9FC]/70 transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-semibold text-[#526173]">
+                        {l.location_id}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-[#0B1F33]">{l.location_name}</td>
+                      <td className="py-3.5 px-4 text-right font-mono font-medium text-[#0B1F33]">
+                        {l.checkins}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono text-[#526173]">
+                        {formatRwf(l.checkin_amount)}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono text-[#EF4444]">
+                        {formatRwf(l.adjustments)}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono text-[#8491A3]">
+                        {formatRwf(l.platform_fee)}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-[#008A4B]">
+                        {formatRwf(l.total_net_payout)}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
               <tfoot className="bg-[#F7F9FC] border-t-2 border-[#E2E8F0] font-bold">
                 <tr>
                   <td colSpan={2} className="py-3.5 px-4 text-[#0B1F33] uppercase tracking-wider">
-                    Total Network Rollup
+                    Total Network Summary
                   </td>
                   <td className="py-3.5 px-4 text-right font-mono text-[#0B1F33]">
                     {totals.checkins}

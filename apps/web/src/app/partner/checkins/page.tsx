@@ -26,58 +26,6 @@ import { RetroactiveClaimsList } from '@/components/partner/RetroactiveClaimsLis
 import { MisuseDisputeModal } from '@/components/partner/MisuseDisputeModal';
 import { RejectReasonModal } from '@/components/partner/RejectReasonModal';
 
-// Fallback pending items to demonstrate the live 20-minute countdown immediately
-const DEFAULT_PENDING_QUEUE: PendingVisit[] = [
-  {
-    id: 'vis-pend-001',
-    check_in_at: new Date(Date.now() - 3 * 60 * 1000).toISOString(), // 3 mins ago
-    seconds_remaining: 17 * 60, // 17 mins left of 20
-    expires_at: new Date(Date.now() + 17 * 60 * 1000).toISOString(),
-    employee_id: 'emp-201',
-    verification_method: 'totp_qr',
-    employees: {
-      id: 'emp-201',
-      full_name: 'Eric Kwizera',
-      email: 'e.kwizera@bk.rw',
-      tier: 'Executive',
-      department: 'Technology Infrastructure',
-      employee_id_external: 'BK-1082'
-    },
-    organizations: {
-      id: 'org-bk',
-      name: 'Bank of Kigali Plc'
-    },
-    provider_locations: {
-      id: '447f4bf2-ff66-48c5-851e-460cba17bfe4',
-      name: 'Kigali Central Facility'
-    }
-  },
-  {
-    id: 'vis-pend-002',
-    check_in_at: new Date(Date.now() - 11 * 60 * 1000).toISOString(), // 11 mins ago
-    seconds_remaining: 9 * 60, // 9 mins left of 20
-    expires_at: new Date(Date.now() + 9 * 60 * 1000).toISOString(),
-    employee_id: 'emp-202',
-    verification_method: 'turnstile',
-    employees: {
-      id: 'emp-202',
-      full_name: 'Solange Uwase',
-      email: 's.uwase@mtn.rw',
-      tier: 'Standard',
-      department: 'Corporate Accounts',
-      employee_id_external: 'MTN-9114'
-    },
-    organizations: {
-      id: 'org-mtn',
-      name: 'MTN Rwandacell'
-    },
-    provider_locations: {
-      id: '447f4bf2-ff66-48c5-851e-460cba17bfe4',
-      name: 'Kigali Central Facility'
-    }
-  }
-];
-
 export default function PartnerCheckinsPage() {
   const {
     provider,
@@ -93,7 +41,7 @@ export default function PartnerCheckinsPage() {
 
   // State
   const [activeTab, setActiveTab] = useState<'today' | 'history' | 'claims'>('today');
-  const [pendingVisits, setPendingVisits] = useState<PendingVisit[]>(DEFAULT_PENDING_QUEUE);
+  const [pendingVisits, setPendingVisits] = useState<PendingVisit[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -117,11 +65,14 @@ export default function PartnerCheckinsPage() {
         `/api/visits/pending${locParam}`
       );
 
-      if (res?.pending_visits && res.pending_visits.length > 0) {
+      if (res?.pending_visits && Array.isArray(res.pending_visits)) {
         setPendingVisits(res.pending_visits);
+      } else {
+        setPendingVisits([]);
       }
     } catch (err) {
-      console.warn('[PartnerCheckins] Pending queue network fallback:', err);
+      console.warn('[PartnerCheckins] Pending queue network notice:', err);
+      setPendingVisits([]);
     }
   }, [selectedLocationId]);
 
@@ -143,14 +94,14 @@ export default function PartnerCheckinsPage() {
     setPendingVisits((prev) => prev.filter((v) => v.id !== visitId));
     notifyCheckinAction('approved');
     setRefreshTrigger((prev) => prev + 1);
-    showToast('Check-in approved! Gate relay triggered and visit verified for settlement.');
+    showToast('Check-in approved! Visit verified for monthly payout.');
   };
 
   const handleRejectSuccess = (visitId: string) => {
     setPendingVisits((prev) => prev.filter((v) => v.id !== visitId));
     notifyCheckinAction('rejected');
     setRefreshTrigger((prev) => prev + 1);
-    showToast('Check-in declined. Operational rejection reason recorded in audit log.', 'info');
+    showToast('Check-in declined. Reason recorded in attendance log.', 'info');
   };
 
   const handleDisputeSuccess = (visitId: string, reason?: string) => {
@@ -175,7 +126,7 @@ export default function PartnerCheckinsPage() {
       } catch {}
     }
     setRefreshTrigger((prev) => prev + 1);
-    showToast('Check-in flagged for PolyFit Ops dispute investigation.', 'info');
+    showToast('Check-in flagged for PolyFit dispute review.', 'info');
   };
 
   return (
@@ -211,10 +162,10 @@ export default function PartnerCheckinsPage() {
             )}
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-[#0B1F33] tracking-tight mt-1">
-            Reception & Access Verification
+            Reception &amp; Access Verification
           </h1>
           <p className="text-xs sm:text-sm text-[#526173] mt-0.5">
-            Manage beneficiary entrance verification, real-time 20-minute approval queue, and settlement tracking.
+            Manage corporate member entrance verification, real-time 20-minute approval queue, and payout tracking.
           </p>
         </div>
 
@@ -223,7 +174,7 @@ export default function PartnerCheckinsPage() {
           <button
             onClick={openManualCheckin}
             className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] font-bold text-xs sm:text-sm transition-colors shadow-xs"
-            title="Manual check-in backup by Beneficiary ID or 6-digit TOTP code"
+            title="Manual check-in backup by Member ID or 6-digit passcode"
           >
             <UserCheck className="w-4 h-4" />
             <span>Manual Check-in</span>
@@ -232,7 +183,7 @@ export default function PartnerCheckinsPage() {
           <button
             onClick={openRetroactiveClaim}
             className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-[#F1F4F8] text-[#0B1F33] font-semibold text-xs sm:text-sm border border-[#E2E8F0] transition-colors shadow-xs"
-            title="Submit a missed check-in technical exception claim"
+            title="Submit a missed check-in or offline entry claim"
           >
             <ClockAlert className="w-4 h-4 text-[#F59E0B]" />
             <span>Missed Check-in Claim</span>
@@ -260,7 +211,7 @@ export default function PartnerCheckinsPage() {
             {todaySummary?.total_visits_today ?? 18}
           </div>
           <div className="text-[11px] text-[#28D17C] font-semibold mt-1 flex items-center gap-1">
-            <span>Corporate Beneficiaries</span>
+            <span>Corporate Members</span>
           </div>
         </div>
 
@@ -301,7 +252,7 @@ export default function PartnerCheckinsPage() {
         {/* Metric 4: Disputed / Flagged */}
         <div className="bg-white rounded-xl border border-[#E2E8F0] p-4 shadow-xs">
           <div className="flex items-center justify-between text-[#8491A3] text-xs font-semibold">
-            <span>Flagged Misuse</span>
+            <span>Flagged Entries</span>
             <AlertTriangle className="w-4 h-4 text-[#EF4444]" />
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-[#0B1F33] mt-2">
@@ -348,7 +299,7 @@ export default function PartnerCheckinsPage() {
             }`}
           >
             <FileSpreadsheet className="w-4 h-4 text-[#00D2B4]" />
-            <span>Historical Log & CSV Export</span>
+            <span>Attendance Log &amp; CSV</span>
           </button>
 
           <button
@@ -360,7 +311,7 @@ export default function PartnerCheckinsPage() {
             }`}
           >
             <ClockAlert className="w-4 h-4 text-[#F59E0B]" />
-            <span>Technical Claims</span>
+            <span>Missed &amp; Offline Claims</span>
           </button>
         </div>
       </div>

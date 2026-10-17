@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Building2, 
   Search, 
@@ -49,12 +49,30 @@ export function CompanySponsorLookup() {
   const [isPassModalOpen, setIsPassModalOpen] = useState(false);
   const openLeadModal = useLeadModal((s) => s.open);
 
-  const sampleCompanies = [
+  const [sampleCompanies, setSampleCompanies] = useState([
     { label: "Bank of Kigali", domain: "bk.rw" },
     { label: "TechCorp Rwanda", domain: "techcorp.rw" },
     { label: "Equity Bank", domain: "equitybank.co.ke" },
-    { label: "Acme East Africa", domain: "acme.rw" },
-  ];
+  ]);
+
+  useEffect(() => {
+    async function fetchEnrolledCompanies() {
+      try {
+        const res = await apiFetch<any>('/api/organizations?limit=4');
+        const list = res?.organizations || res?.data || (Array.isArray(res) ? res : []);
+        if (Array.isArray(list) && list.length > 0) {
+          const mapped = list.map((org: any) => ({
+            label: org.name,
+            domain: (Array.isArray(org.allowed_domains) && org.allowed_domains[0]) || org.domain || `${org.slug || 'company'}.rw`,
+          }));
+          setSampleCompanies(mapped);
+        }
+      } catch {
+        // Resilient fallback
+      }
+    }
+    fetchEnrolledCompanies();
+  }, []);
 
   const handleVerify = async (searchTarget?: string) => {
     const target = (searchTarget || query).trim();

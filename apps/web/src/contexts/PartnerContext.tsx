@@ -367,99 +367,29 @@ const DEFAULT_DASHBOARD_OVERVIEW: DashboardOverview = {
     ]
   },
   kpis: {
-    today_visits: 18,
-    yesterday_visits: 15,
-    vs_yesterday_delta_pct: 20,
-    unique_corporate_visitors_mtd: 84,
-    mtd_total_visits: 340,
-    estimated_mtd_revenue_rwf: 1700000,
-    estimated_net_payout_rwf: 1530000,
+    today_visits: 0,
+    yesterday_visits: 0,
+    vs_yesterday_delta_pct: 0,
+    unique_corporate_visitors_mtd: 0,
+    mtd_total_visits: 0,
+    estimated_mtd_revenue_rwf: 0,
+    estimated_net_payout_rwf: 0,
     currency: 'RWF',
-    active_contracts_count: 4,
+    active_contracts_count: 0,
     per_visit_rate: 5000
   },
   peak_hours_heatmap: {
-    hours_24: [0, 0, 0, 0, 0, 2, 14, 26, 20, 11, 8, 9, 16, 12, 7, 9, 18, 32, 41, 24, 13, 6, 1, 0],
-    weekday_hours_24: [0, 0, 0, 0, 0, 2, 12, 22, 17, 8, 6, 7, 14, 10, 5, 8, 16, 29, 36, 20, 10, 5, 1, 0],
-    weekend_hours_24: [0, 0, 0, 0, 0, 0, 2, 4, 3, 3, 2, 2, 2, 2, 2, 1, 2, 3, 5, 4, 3, 1, 0, 0],
+    hours_24: Array(24).fill(0),
+    weekday_hours_24: Array(24).fill(0),
+    weekend_hours_24: Array(24).fill(0),
     rush_hours: {
-      morning_rush_count: 60,
-      lunch_rush_count: 28,
-      evening_rush_count: 97
+      morning_rush_count: 0,
+      lunch_rush_count: 0,
+      evening_rush_count: 0
     }
   },
-  top_organizations: [
-    {
-      org_id: 'org-bk',
-      org_name: 'Bank of Kigali Plc',
-      logo_url: null,
-      visit_count: 124,
-      unique_employees_count: 38,
-      gross_earnings: 620000,
-      visit_share_pct: 36
-    },
-    {
-      org_id: 'org-mtn',
-      org_name: 'MTN Rwandacell',
-      logo_url: null,
-      visit_count: 98,
-      unique_employees_count: 29,
-      gross_earnings: 490000,
-      visit_share_pct: 29
-    },
-    {
-      org_id: 'c79a9982-4477-4336-a24b-561419f6c43b',
-      org_name: 'TechCorp Rwanda',
-      logo_url: null,
-      visit_count: 68,
-      unique_employees_count: 21,
-      gross_earnings: 340000,
-      visit_share_pct: 20
-    },
-    {
-      org_id: 'org-im',
-      org_name: 'I&M Bank Rwanda',
-      logo_url: null,
-      visit_count: 50,
-      unique_employees_count: 16,
-      gross_earnings: 250000,
-      visit_share_pct: 15
-    }
-  ],
-  recent_activity: [
-    {
-      id: 'act-1',
-      check_in_at: '2026-09-30T07:42:10Z',
-      employee_masked: 'PF-EMP-1082',
-      activity_name: 'Gym & Cardio Access',
-      verification_method: 'totp_qr',
-      location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4'
-    },
-    {
-      id: 'act-2',
-      check_in_at: '2026-09-30T07:15:30Z',
-      employee_masked: 'PF-EMP-9114',
-      activity_name: 'Aquatics & Pool Access',
-      verification_method: 'totp_qr',
-      location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4'
-    },
-    {
-      id: 'act-3',
-      check_in_at: '2026-09-30T06:55:00Z',
-      employee_masked: 'PF-EMP-3045',
-      activity_name: 'Gym & Cardio Access',
-      verification_method: 'turnstile',
-      location_id: '189e7cb8-155e-419a-8b83-bd9e3eb021da'
-    },
-    {
-      id: 'act-4',
-      check_in_at: '2026-09-30T06:30:15Z',
-      employee_masked: 'PF-EMP-7712',
-      activity_name: 'Yoga & Studio Class',
-      verification_method: 'totp_qr',
-      location_id: '447f4bf2-ff66-48c5-851e-460cba17bfe4'
-    }
-  ]
+  top_organizations: [],
+  recent_activity: []
 };
 
 const DEFAULT_COMMERCIAL_CONDITIONS: CommercialConditions = {
@@ -534,10 +464,10 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
   const [locations, setLocations] = useState<ProviderLocation[]>(DEFAULT_LOCATIONS);
   const [selectedLocationId, setSelectedLocationIdState] = useState<string>('all');
   const [todaySummary, setTodaySummary] = useState<TodaySummary | null>({
-    total_visits_today: 18,
-    settlement_earned_today: 90000,
+    total_visits_today: 0,
+    settlement_earned_today: 0,
     currency: 'RWF',
-    pending_queue_count: 2,
+    pending_queue_count: 0,
     disputed_count: 0,
     per_visit_rate: 5000
   });

@@ -124,7 +124,7 @@ export function SettlementDetailDrawer({ statement, isOpen, onClose }: Settlemen
             <div className="flex items-center gap-3 text-xs text-primary-foreground/50 mt-2 pt-2 border-t border-primary-foreground/20">
               <span>Total Visits: <strong className="text-primary-foreground font-mono">{statement.total_visits}</strong></span>
               <span>•</span>
-              <span>Trace: <strong className="text-primary-foreground font-mono">{statement.payment_reference || 'BK-FT-20260915-082'}</strong></span>
+              <span>Trace: <strong className="text-primary-foreground font-mono">{statement.payment_reference || 'Pending Disbursement Batch'}</strong></span>
             </div>
           </div>
 
@@ -140,14 +140,16 @@ export function SettlementDetailDrawer({ statement, isOpen, onClose }: Settlemen
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Disbursement Rail:</span>
               <span className="font-mono font-medium text-primary">
-                {statement.provider.bank_details?.bank_name || 'Bank of Kigali (BK)'} ••••140-19
+                {statement.provider.bank_details?.bank_name
+                  ? `${statement.provider.bank_details.bank_name} ••••${statement.provider.bank_details.account_number?.slice(-4) || ''}`
+                  : 'Pending Rail Setup'}
               </span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Rwanda Revenue TIN:</span>
               <span className="font-mono text-success font-bold flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-accent" />
-                {statement.provider.tax_id || '108392019'}
+                {statement.provider.tax_id || 'Not Registered'}
               </span>
             </div>
           </div>
@@ -159,7 +161,7 @@ export function SettlementDetailDrawer({ statement, isOpen, onClose }: Settlemen
                 Employer Client Visit Breakdown
               </h3>
               <span className="text-[11px] text-subdued">
-                Contract Rate: 5,000 RWF / visit
+                Aggregator Verified Reconciliations
               </span>
             </div>
 
@@ -173,28 +175,28 @@ export function SettlementDetailDrawer({ statement, isOpen, onClose }: Settlemen
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {(statement.line_items && statement.line_items.length > 0
-                    ? statement.line_items
-                    : [
-                        { org_name: 'Bank of Kigali Plc', visit_count: 205, per_visit_rate: 5000, subtotal: 1025000 },
-                        { org_name: 'MTN Rwandacell', visit_count: 155, per_visit_rate: 5000, subtotal: 775000 },
-                        { org_name: 'TechCorp Rwanda', visit_count: 90, per_visit_rate: 5000, subtotal: 450000 },
-                        { org_name: 'I&M Bank Rwanda', visit_count: 40, per_visit_rate: 5000, subtotal: 200000 }
-                      ]
-                  ).map((item, idx) => (
-                    <tr key={idx} className="hover:bg-muted/60 transition-colors">
-                      <td className="py-2.5 px-3">
-                        <p className="font-semibold text-primary">{item.org_name}</p>
-                        <p className="text-[10px] text-subdued">{item.category || 'Executive Fitness'}</p>
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-medium text-primary">
-                        {item.visit_count}
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold text-primary">
-                        {formatRwf(item.subtotal)}
+                  {statement.line_items && statement.line_items.length > 0 ? (
+                    statement.line_items.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-muted/60 transition-colors">
+                        <td className="py-2.5 px-3">
+                          <p className="font-semibold text-primary">{item.org_name}</p>
+                          <p className="text-[10px] text-subdued">{item.category || 'Wellness Access'}</p>
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono font-medium text-primary">
+                          {item.visit_count}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono font-bold text-primary">
+                          {formatRwf(item.subtotal)}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="py-6 text-center text-xs text-subdued">
+                        No employer-specific line items found for this cycle.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

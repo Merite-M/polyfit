@@ -77,62 +77,37 @@ interface OperationsOverviewData {
   }>;
 }
 
-// Resilient default baseline for immediate instantaneous render
+// Clean initial zero state for immediate instantaneous render
 const DEFAULT_OVERVIEW: OperationsOverviewData = {
   network: {
-    employers: { total: 3, active: 3, onboarding: 0 },
-    providers: { total: 55, active: 52, inReview: 3, byCategory: { gym: 32, pool: 10, studio: 8, wellness_center: 5 } },
-    facilities: { total: 108, withCoordinates: 106 },
+    employers: { total: 0, active: 0, onboarding: 0 },
+    providers: { total: 0, active: 0, inReview: 0, byCategory: { gym: 0, pool: 0, studio: 0, wellness_center: 0 } },
+    facilities: { total: 0, withCoordinates: 0 },
   },
   beneficiaries: {
-    totalEligible: 7,
-    activeRoster: 7,
-    monthlyActiveBeneficiaries: 5,
-    utilizationRate: 71.4,
+    totalEligible: 0,
+    activeRoster: 0,
+    monthlyActiveBeneficiaries: 0,
+    utilizationRate: 0,
   },
   visits: {
-    today: 12,
-    todayVerified: 12,
-    thisWeek: 48,
-    thisMonth: 185,
-    hourlyTrend24h: [0, 0, 0, 1, 2, 5, 8, 12, 14, 9, 8, 11, 15, 18, 22, 19, 14, 11, 8, 5, 3, 2, 1, 1],
-    verificationSuccessRate: 98.6,
+    today: 0,
+    todayVerified: 0,
+    thisWeek: 0,
+    thisMonth: 0,
+    hourlyTrend24h: Array(24).fill(0),
+    verificationSuccessRate: 100,
     activeDisputes: 0,
     velocityAlerts: 0,
   },
   financials: {
     currency: "RWF",
-    invoicedMtd: 18500000,
-    providerSettlementsMtd: 13875000,
-    grossMarginSpread: 4625000,
-    grossMarginPercentage: 25.0,
+    invoicedMtd: 0,
+    providerSettlementsMtd: 0,
+    grossMarginSpread: 0,
+    grossMarginPercentage: 0,
   },
-  recentLiveFeed: [
-    {
-      id: "v-81204891-231a",
-      checkInAt: new Date(Date.now() - 4 * 60 * 1000).toISOString(),
-      method: "totp_qr",
-      status: "verified",
-      employee: { fullName: "Aline Uwase", email: "a.uwase@bk.rw", tier: "executive", department: "Treasury" },
-      location: { name: "Nyarutarama Health Branch", city: "Kigali", providerName: "Nyarutarama Sports Club", category: "pool" },
-    },
-    {
-      id: "v-81204892-442b",
-      checkInAt: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-      method: "turnstile_iot",
-      status: "verified",
-      employee: { fullName: "Patrick Habimana", email: "p.habimana@techcorp.rw", tier: "standard", department: "Engineering" },
-      location: { name: "CrossFit Gishushu Facility", city: "Kigali", providerName: "CrossFit Kigali", category: "gym" },
-    },
-    {
-      id: "v-81204893-983c",
-      checkInAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
-      method: "totp_qr",
-      status: "verified",
-      employee: { fullName: "Grace Mutoni", email: "g.mutoni@equity.co.ke", tier: "premium", department: "Operations" },
-      location: { name: "Kigali Serena Spa Center", city: "Kigali", providerName: "Serena Wellness", category: "wellness_center" },
-    },
-  ],
+  recentLiveFeed: [],
 };
 
 export default function OperationsCommandCenterPage() {
@@ -231,41 +206,49 @@ export default function OperationsCommandCenterPage() {
             </div>
 
             <div className="divide-y divide-slate-100">
-              {overview.recentLiveFeed.map((visit) => (
-                <div
-                  key={visit.id}
-                  onClick={() => openDrawer("visit", visit.id, visit, `Visit ${visit.id.substring(0, 8)}`)}
-                  className="py-3 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-xl cursor-pointer transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs shrink-0 border border-emerald-100">
-                      <CheckCircle2 className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-xs text-[#0B1F33] truncate">
-                          {visit.employee.fullName}
-                        </span>
-                        <span className="text-[10px] font-mono uppercase px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600">
-                          {visit.employee.tier}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                        {visit.location.name} • {visit.location.providerName}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="text-right shrink-0 pl-3">
-                    <div className="font-mono text-[10px] text-slate-400">
-                      {new Date(visit.checkInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                    <span className="text-[9px] font-mono uppercase text-emerald-600 font-semibold">
-                      {visit.method}
-                    </span>
-                  </div>
+              {overview.recentLiveFeed.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400">
+                  <Activity className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="font-semibold text-slate-600">No Check-in Events Recorded Today</p>
+                  <p className="text-[11px] mt-0.5">Live check-ins will stream here in real time as beneficiaries visit venues.</p>
                 </div>
-              ))}
+              ) : (
+                overview.recentLiveFeed.map((visit) => (
+                  <div
+                    key={visit.id}
+                    onClick={() => openDrawer("visit", visit.id, visit, `Visit ${visit.id.substring(0, 8)}`)}
+                    className="py-3 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-xl cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs shrink-0 border border-emerald-100">
+                        <CheckCircle2 className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-xs text-[#0B1F33] truncate">
+                            {visit.employee.fullName}
+                          </span>
+                          <span className="text-[10px] font-mono uppercase px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600">
+                            {visit.employee.tier}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                          {visit.location.name} • {visit.location.providerName}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0 pl-3">
+                      <div className="font-mono text-[10px] text-slate-400">
+                        {new Date(visit.checkInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                      <span className="text-[9px] font-mono uppercase text-emerald-600 font-semibold">
+                        {visit.method}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
