@@ -126,10 +126,10 @@ export const INITIAL_WIZARD_STATE: WizardLocationState = {
   ],
 
   payout_method: 'bank',
-  bank_name: 'Bank of Kigali (BK)',
+  bank_name: '',
   account_name: '',
   account_number: '',
-  swift_code: 'BKIGRWRW',
+  swift_code: '',
   momo_provider: 'mtn',
   momo_code: '',
   momo_phone: '',
