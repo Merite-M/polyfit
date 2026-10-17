@@ -108,7 +108,7 @@ const DEFAULT_TIER_FEATURES: Record<string, { features: string[]; notIncluded: s
   basic: {
     features: [
       "4 verified visits per month",
-      "Access to 30+ vetted gyms & strength centers",
+      "Access to 30+ vetted wellness providers & facilities",
       "Consolidated monthly RRA EBM 18% VAT invoice",
       "Dynamic anti-passback mobile passes",
       "Standard monthly employee utilization report",
@@ -124,7 +124,7 @@ const DEFAULT_TIER_FEATURES: Record<string, { features: string[]; notIncluded: s
   starter: {
     features: [
       "8 verified visits per month",
-      "Access to 50+ network gyms & Olympic lap pools",
+      "Access to 50+ network facilities & Olympic lap pools",
       "Single consolidated RRA EBM monthly invoice",
       "Dual check-in modality (turnstile QR & desk plaque)",
       "Live department utilization telemetry",
@@ -140,7 +140,7 @@ const DEFAULT_TIER_FEATURES: Record<string, { features: string[]; notIncluded: s
   premium: {
     features: [
       "12 verified visits per month",
-      "Full multi-category access: Gyms, Pools, Yoga & Pilates",
+      "Full multi-category access: Fitness, Pools, Yoga & Pilates",
       "Access to 80+ top partner facilities across Kigali",
       "Instant anti-passback biometric & geo lock",
       "Live check-in telemetry & department heatmaps",
@@ -155,7 +155,7 @@ const DEFAULT_TIER_FEATURES: Record<string, { features: string[]; notIncluded: s
     features: [
       "16 verified visits per month",
       "Unrestricted all-category access across entire network",
-      "Gyms, Olympic Pools, Reformer Pilates, Physio Clinics & Spas",
+      "Fitness Facilities, Olympic Pools, Reformer Pilates, Physio Clinics & Spas",
       "Zero employee co-pay (100% employer sponsored)",
       "Dedicated PolyFit VIP wellness concierge",
       "Custom corporate health challenges & executive reviews",

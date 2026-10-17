@@ -162,7 +162,7 @@ export default function PartnerCheckinsPage() {
             )}
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-[#0B1F33] tracking-tight mt-1">
-            Reception &amp; Access Verification
+            Front Desk &amp; Access Verification
           </h1>
           <p className="text-xs sm:text-sm text-[#526173] mt-0.5">
             Manage corporate member entrance verification, real-time 20-minute approval queue, and payout tracking.

@@ -517,7 +517,7 @@ export function EmployeeDetailDrawer({
                   No Visits Recorded This Month
                 </p>
                 <p className="text-[11px] text-[var(--text-secondary,#526173)] mt-0.5">
-                  Verified visits at partner gyms and studios will populate here in real-time.
+                  Verified visits at partner facilities and studios will populate here in real-time.
                 </p>
               </div>
             )}

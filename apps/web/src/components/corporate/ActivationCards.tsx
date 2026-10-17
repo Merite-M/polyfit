@@ -55,9 +55,9 @@ export function ActivationCards({
 
   const handleCopyTemplate = (channel: "whatsapp" | "email" | "sms") => {
     const textTemplates = {
-      whatsapp: `*PolyFit Corporate Wellness is Live!* 🏃‍♂️🏊‍♀️\n\nHi team, *${organizationName}* has partnered with PolyFit to provide employer-funded wellness access across Rwanda.\n\nAll staff can now access premier gyms, Olympic swimming pools, and yoga studios across Kigali paid by the company.\n\n👉 *Activate your pass on your mobile phone:* ${inviteUrl}\n\nDownload the PolyFit app or activate using your Staff ID / work email.`,
+      whatsapp: `*PolyFit Corporate Wellness is Live!* 🏃‍♂️🏊‍♀️\n\nHi team, *${organizationName}* has partnered with PolyFit to provide employer-funded wellness access across Rwanda.\n\nAll staff can now access premier wellness facilities, Olympic swimming pools, and yoga studios across Kigali paid by the company.\n\n👉 *Activate your pass on your mobile phone:* ${inviteUrl}\n\nDownload the PolyFit app or activate using your Staff ID / work email.`,
       email: `Subject: Launch of ${organizationName} Corporate Wellness Pass (PolyFit)\n\nDear Staff,\n\nWe are pleased to introduce our new company wellness benefit in partnership with PolyFit Corporate Wellness Network.\n\nAs an employee of ${organizationName}, you are entitled to verified visits each month across participating facilities in Kigali.\n\nTo activate your benefit and link your mobile pass, click the link below using your company email or Staff ID:\n${inviteUrl}\n\nKind regards,\nPeople & Culture / HR Team`,
-      sms: `${organizationName} Wellness Benefit: Activate your corporate fitness pass for gyms and pools across Kigali. Register now: ${inviteUrl}`,
+      sms: `${organizationName} Wellness Benefit: Activate your corporate fitness pass for partner facilities and pools across Kigali. Register now: ${inviteUrl}`,
     };
 
     if (navigator?.clipboard) {

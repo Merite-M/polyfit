@@ -400,7 +400,7 @@ Claude,Ndayishimiye,claude@example.com,EMP-888,Engineering,standard`;
         max_monthly_visits: 8,
         co_pay_percentage: 15,
         allowed_provider_categories: ['gym', 'pool', 'studio'],
-        description: 'Covers gyms, swimming, and studio classes with 15% co-pay'
+        description: 'Covers fitness facilities, swimming, and studio classes with 15% co-pay'
       });
 
       assert.ok(plan.id);

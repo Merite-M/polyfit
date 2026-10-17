@@ -67,7 +67,7 @@ export function SettingsSection({
           <View style={styles.settingRow}>
             <View style={styles.settingTextCol}>
               <Text style={styles.settingLabel}>Visit Check-In Confirmations</Text>
-              <Text style={styles.settingSub}>Instant alerts when facility receptionist scans pass</Text>
+              <Text style={styles.settingSub}>Instant alerts when facility front-desk scans pass</Text>
             </View>
             <Switch
               value={settings.checkInAlerts}
@@ -95,7 +95,7 @@ export function SettingsSection({
           <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
             <View style={styles.settingTextCol}>
               <Text style={styles.settingLabel}>New Partner Additions</Text>
-              <Text style={styles.settingSub}>Updates when new gyms or pools join Kigali network</Text>
+              <Text style={styles.settingSub}>Updates when new partner facilities or pools join Kigali network</Text>
             </View>
             <Switch
               value={settings.networkAdditionsAlerts}

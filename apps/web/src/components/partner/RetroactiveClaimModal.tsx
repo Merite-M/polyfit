@@ -235,7 +235,7 @@ export function RetroactiveClaimModal({ isOpen, onClose, onSuccess }: Retroactiv
               <div>
                 <strong className="font-semibold block text-[#1E3A8A]">Reconciliation Proof Standards:</strong>
                 To protect against false claims, providers must provide either a utility outage reference (REG / ISP
-                ticket) or a physical reception sign-in ledger log reference. PolyFit Ops audits all claims before
+                ticket) or a physical front-desk sign-in ledger log reference. PolyFit Ops audits all claims before
                 releasing payment on the 15th.
               </div>
             </div>

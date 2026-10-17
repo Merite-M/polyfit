@@ -23,7 +23,7 @@ const PRESET_ENTRANCES = [
     url: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=800',
   },
   {
-    name: 'Revolving Doors & Reception Atrium',
+    name: 'Revolving Doors & Front Desk Atrium',
     url: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&q=80&w=800',
   },
   {

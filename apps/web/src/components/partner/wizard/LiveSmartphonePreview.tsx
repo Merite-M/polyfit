@@ -334,7 +334,7 @@ export function LiveSmartphonePreview({ state, currentStep }: LiveSmartphonePrev
                 <div className="bg-amber-950/40 border border-amber-800/60 p-2 rounded-xl text-amber-200 space-y-0.5">
                   <span className="text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 text-amber-300">
                     <AlertCircle className="w-2.5 h-2.5" />
-                    Reception Notice
+                    Front Desk Notice
                   </span>
                   <p className="text-[8.5px] line-clamp-2 leading-tight">
                     {state.important_notice}
@@ -462,7 +462,7 @@ export function LiveSmartphonePreview({ state, currentStep }: LiveSmartphonePrev
               </div>
 
               <p className="text-[9px] text-[#8491A3]">
-                Hold this pass against the front-desk scanner or present to the reception desk.
+                Hold this pass against the front-desk scanner or present to the front desk.
               </p>
             </div>
           )}

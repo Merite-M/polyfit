@@ -924,7 +924,7 @@ function LiveVisitMonitorContent() {
                 <span>Central Dispute Adjudication Queue</span>
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Review disputed visits raised by reception staff or employees. Tri-action overrides honor provider settlement, void visits, or execute split goodwill resolutions.
+                Review disputed visits raised by front-desk staff or employees. Tri-action overrides honor provider settlement, void visits, or execute split goodwill resolutions.
               </p>
             </div>
             <span className="font-mono text-xs px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">

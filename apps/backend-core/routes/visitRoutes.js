@@ -204,7 +204,7 @@ router.post('/generate-pass', requireAuth, async (req, res) => {
   }
 });
 
-// ─── 2. Verify TOTP Visit (Provider-Side Scanner / Reception) ─────────────────
+// ─── 2. Verify TOTP Visit (Provider-Side Scanner / Front Desk) ─────────────────
 router.post('/verify', requireAuth, requireRole('super_admin', 'polyfit_ops', 'provider_admin'), async (req, res) => {
   try {
     const {
