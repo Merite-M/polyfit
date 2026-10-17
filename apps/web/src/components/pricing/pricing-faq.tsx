@@ -23,7 +23,7 @@ export default function PricingFaq({ onOpenLeadForm }: PricingFaqProps = {}) {
     {
       question: "How does PolyFit's consolidated billing and RRA EBM 18% VAT invoicing work?",
       answer:
-        "Instead of your accounting department managing dozens of vendor agreements, receipts, and invoices with individual gyms, swimming pools, and yoga studios, PolyFit consolidates all network activity into a single monthly statement. We issue a certified Rwanda Revenue Authority (RRA) Electronic Billing Machine (EBM) invoice with 18% VAT itemized, making your corporate wellness expenditure 100% compliant and tax-deductible as an allowable business expense.",
+        "Instead of your accounting department managing dozens of vendor agreements, receipts, and invoices with individual wellness providers, swimming pools, and yoga studios, PolyFit consolidates all network activity into a single monthly statement. We issue a certified Rwanda Revenue Authority (RRA) Electronic Billing Machine (EBM) invoice with 18% VAT itemized, making your corporate wellness expenditure 100% compliant and tax-deductible as an allowable business expense.",
     },
     {
       question: "What is PolyFit's anti-passback technology and how does it prevent pass sharing?",

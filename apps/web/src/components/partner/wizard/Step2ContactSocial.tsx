@@ -62,7 +62,7 @@ export function Step2ContactSocial({ state, onChange }: Step2Props) {
           How Corporate Employees Reach Your Front Desk
         </h2>
         <p className="text-xs sm:text-sm text-[#526173] mt-1">
-          Use the contact channels where your reception is most responsive. In East Africa, WhatsApp Business and Instagram ensure rapid visitor answers.
+          Use the contact channels where your front-desk team is most responsive. In East Africa, WhatsApp Business and Instagram ensure rapid visitor answers.
         </p>
       </div>
 
@@ -74,7 +74,7 @@ export function Step2ContactSocial({ state, onChange }: Step2Props) {
               <Phone className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-[#0B1F33]">Reception Counter Phone</h3>
+              <h3 className="text-xs font-bold text-[#0B1F33]">Front-Desk Counter Phone</h3>
               <p className="text-[11px] text-[#526173]">Direct phone for entry questions</p>
             </div>
           </div>

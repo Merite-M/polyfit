@@ -71,7 +71,7 @@ export function OperationalActionCards({ onOpenPayoutModal }: OperationalActionC
     {
       id: 'integrations',
       title: 'Front Desk & Member Entry',
-      description: 'Set up your printable QR desk plaque, reception scanner phones, or automated turnstiles.',
+      description: 'Set up your printable QR desk plaque, front-desk scanner phones, or automated turnstiles.',
       icon: Smartphone,
       iconColor: 'text-[#06B6D4]',
       iconBg: 'bg-[#06B6D4]/15',

@@ -353,7 +353,7 @@ export default function OperationsCommandCenterPage() {
               <h4 className="font-bold text-xs text-[#0B1F33]">Emergency Operations Desk</h4>
             </div>
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              When an employee is stuck at facility reception or turnstile firmware encounters an outage, issue an instant bypass.
+              When an employee is stuck at facility front desk or turnstile firmware encounters an outage, issue an instant bypass.
             </p>
             <a
               href="/operations/visits"

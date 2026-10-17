@@ -1,6 +1,6 @@
 /**
  * PolyFit Corporate Employee App - In-App Counter Scanner (Modality B)
- * Camera Viewfinder for scanning official PolyFit Reception Desk QR Plaques
+ * Camera Viewfinder for scanning official PolyFit Front Desk QR Plaques
  * Features cross-platform camera preview, scanning reticle, torch toggle, and partner simulation chips
  */
 
@@ -112,7 +112,7 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
           </Pressable>
           <View style={styles.headerTitleBlock}>
             <Text style={styles.headerTitle}>Scan Desk Plaque</Text>
-            <Text style={styles.headerSub}>Modality B • Reception Check-In</Text>
+            <Text style={styles.headerSub}>Modality B • Front Desk Check-In</Text>
           </View>
           <Pressable
             style={[styles.torchBtn, torchEnabled && styles.torchBtnActive]}
@@ -146,7 +146,7 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
           </View>
 
           <Text style={styles.instructionText}>
-            Align the PolyFit reception QR plaque within the frame
+            Align the PolyFit front-desk QR plaque within the frame
           </Text>
         </View>
 
@@ -157,7 +157,7 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
             <Text style={styles.drawerTitle}>Instant Plaque Simulator (Demo & Testing)</Text>
           </View>
           <Text style={styles.drawerSub}>
-            Tap any official reception plaque to simulate instant counter scan:
+            Tap any official front-desk plaque to simulate instant counter scan:
           </Text>
 
           <View style={styles.plaqueList}>

@@ -871,7 +871,7 @@ export default function SupportOperationsPage() {
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400">
-                  Maximum allowable spatial distance between the scanning receptionist device and the beneficiary phone GPS coordinates at verified check-in.
+                  Maximum allowable spatial distance between the scanning front-desk staff device and the beneficiary phone GPS coordinates at verified check-in.
                 </p>
                 <div className="space-y-2">
                   <input
