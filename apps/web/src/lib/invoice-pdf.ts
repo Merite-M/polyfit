@@ -34,7 +34,7 @@ export interface InvoicePdfData {
  * Formats Rwandan Francs as currency string (e.g., 2,271,500 RWF)
  */
 export function formatRwf(amount: number): string {
-  return `${Math.round(amount).toLocaleString("en-US")} RWF`;
+  return `RWF ${Math.round(amount).toLocaleString("en-US")}`;
 }
 
 /**

@@ -11,9 +11,16 @@ const INVOICE_NUMBER_PREFIX = 'PF-INV';
  * Format: PF-INV-YYYY-MM-XXXX (e.g. PF-INV-2026-09-0001)
  */
 async function generateInvoiceNumber(billingPeriodEnd) {
-  const date = new Date(billingPeriodEnd);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
+  let year, month;
+  if (typeof billingPeriodEnd === 'string' && /^\d{4}-\d{2}/.test(billingPeriodEnd)) {
+    const parts = billingPeriodEnd.split('-');
+    year = parts[0];
+    month = parts[1];
+  } else {
+    const date = new Date(billingPeriodEnd);
+    year = date.getFullYear();
+    month = String(date.getMonth() + 1).padStart(2, '0');
+  }
   const prefix = `${INVOICE_NUMBER_PREFIX}-${year}-${month}`;
 
   // Count existing invoices for this month to generate sequence
@@ -155,7 +162,7 @@ async function generateInvoice(orgId, periodStart, periodEnd) {
   for (const [providerId, group] of Object.entries(visitsByProvider)) {
     const visitCount = group.visits.length;
     const rate = rateByProvider[providerId];
-    const subtotal = parseFloat((visitCount * rate).toFixed(2));
+    const subtotal = Math.round(visitCount * rate);
 
     lineItems.push({
       provider_id: providerId,
@@ -169,8 +176,8 @@ async function generateInvoice(orgId, periodStart, periodEnd) {
   }
 
   // ── Calculate tax and total ──
-  const taxAmount = parseFloat((subtotalBeforeTax * VAT_RATE).toFixed(2));
-  const totalAmount = parseFloat((subtotalBeforeTax + taxAmount).toFixed(2));
+  const taxAmount = Math.round(subtotalBeforeTax * VAT_RATE);
+  const totalAmount = subtotalBeforeTax + taxAmount;
 
   // ── Generate invoice number ──
   const invoiceNumber = await generateInvoiceNumber(periodEnd);
@@ -739,7 +746,7 @@ async function exportInvoiceAuditCsv(invoiceId) {
     ].join(',');
   });
 
-  return [headers.map(escapeCell).join(','), ...rows].join('\r\n');
+  return '\uFEFF' + [headers.map(escapeCell).join(','), ...rows].join('\r\n');
 }
 
 // ─── Create Invoice Adjustment / Credit Note ──────────────────────────────────
@@ -789,8 +796,8 @@ async function createInvoiceAdjustment(invoiceId, { type = 'credit', amount, rea
     newSubtotal = currentSubtotal + adjAmount;
   }
 
-  const newTaxAmount = parseFloat((newSubtotal * VAT_RATE).toFixed(2));
-  const newTotalAmount = parseFloat((newSubtotal + newTaxAmount).toFixed(2));
+  const newTaxAmount = Math.round(newSubtotal * VAT_RATE);
+  const newTotalAmount = newSubtotal + newTaxAmount;
 
   const noteEntry = `[${new Date().toISOString()}] ${type.toUpperCase()} ADJUSTMENT: RWF ${adjAmount.toLocaleString()} - Reason: ${reason}${notes ? ` - Notes: ${notes}` : ''}`;
   const updatedNotes = invoice.dispute_notes 

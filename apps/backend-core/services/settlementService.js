@@ -7,6 +7,30 @@ const SETTLEMENT_STATUS_TRANSITIONS = {
   failed: ['processing']  // Allow retry
 };
 
+// ─── Helper: Net-15 Disbursement Date Calculator ─────────────────────────────
+/**
+ * Computes Net-15 disbursement date based on settlement period end date.
+ * Net-15 terms: payout is due on the 15th of the month following the settlement period end.
+ * E.g., period end 2026-01-31 -> payout due 2026-02-15.
+ */
+function calculateNet15DisbursementDate(periodEndStr) {
+  if (!periodEndStr || typeof periodEndStr !== "string") return null;
+  const parts = periodEndStr.split("-");
+  if (parts.length < 2) return null;
+  let year = parseInt(parts[0], 10);
+  let month = parseInt(parts[1], 10);
+
+  // Next month
+  month += 1;
+  if (month > 12) {
+    month = 1;
+    year += 1;
+  }
+
+  const mStr = String(month).padStart(2, "0");
+  return `${year}-${mStr}-15`;
+}
+
 // ─── Generate Settlement ──────────────────────────────────────────────────────
 /**
  * Generates a settlement for a specific provider and period.
@@ -395,8 +419,12 @@ async function getSettlementDetail(settlementId) {
     visitBreakdown = visits || [];
   }
 
+  const net15PayoutDate = calculateNet15DisbursementDate(settlement.settlement_period_end);
+
   return {
     ...settlement,
+    net15_disbursement_date: net15PayoutDate,
+    payout_due_date: net15PayoutDate,
     visit_breakdown: visitBreakdown,
     visit_count_verified: visitBreakdown.length
   };
@@ -574,7 +602,7 @@ async function generateDisbursementCsv(type = 'momo', { status = 'processing', p
       ].join(',');
     });
 
-    const csvContent = [headers.map(escapeCell).join(','), ...rows].join('\r\n');
+    const csvContent = '\uFEFF' + [headers.map(escapeCell).join(','), ...rows].join('\r\n');
     return {
       type: 'momo',
       filename: `polyfit-momo-disbursement-${new Date().toISOString().split('T')[0]}.csv`,
@@ -618,7 +646,7 @@ async function generateDisbursementCsv(type = 'momo', { status = 'processing', p
     ].join(',');
   });
 
-  const csvContent = [headers.map(escapeCell).join(','), ...rows].join('\r\n');
+  const csvContent = '\uFEFF' + [headers.map(escapeCell).join(','), ...rows].join('\r\n');
   return {
     type: 'bank',
     filename: `polyfit-bank-eft-disbursement-${new Date().toISOString().split('T')[0]}.csv`,
