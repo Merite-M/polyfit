@@ -150,7 +150,7 @@ export function MarketingToolkitModal({
     doc.setFontSize(12);
     doc.text('1. Open your PolyFit Mobile App', 40, 225);
     doc.text('2. Tap "Check-in Pass" to generate your dynamic TOTP QR', 40, 237);
-    doc.text('3. Present pass to reception staff for verified entry', 40, 249);
+    doc.text('3. Present pass to front-desk staff for verified entry', 40, 249);
 
     // Footer Help Line
     doc.setFontSize(9);
@@ -228,7 +228,7 @@ Together, we are building a healthier, more active workforce across East Africa.
           }`}
         >
           <Printer className="w-3.5 h-3.5" />
-          <span>Printable Reception Signage (PDF)</span>
+          <span>Printable Front-Desk Signage (PDF)</span>
         </button>
 
         <button
@@ -266,10 +266,10 @@ Together, we are building a healthier, more active workforce across East Africa.
             <div className="bg-muted border border-border rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="space-y-1">
                 <h3 className="text-sm font-bold text-primary">
-                  Official Reception Desk Standee (A4 Format)
+                  Official Front-Desk Standee (A4 Format)
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Ready-to-print PDF designed for acrylic front desk standees at your reception counter. Guides employees on scanning their TOTP pass.
+                  Ready-to-print PDF designed for acrylic front desk standees at your front-desk counter. Guides employees on scanning their TOTP pass.
                 </p>
               </div>
 

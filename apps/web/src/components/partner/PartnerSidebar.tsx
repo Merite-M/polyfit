@@ -167,7 +167,7 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
         </div>
 
         <div className="px-2 py-1 flex items-center justify-between text-[11px] text-subdued">
-          <span>Reception Station #1</span>
+          <span>Front Desk Station #1</span>
           <Link href="/terms" className="hover:text-white transition-colors flex items-center gap-1">
             Partner Terms <ExternalLink className="w-2.5 h-2.5" />
           </Link>

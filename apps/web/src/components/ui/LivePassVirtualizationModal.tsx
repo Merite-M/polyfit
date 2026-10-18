@@ -216,7 +216,7 @@ export function LivePassVirtualizationModal({
     }
   };
 
-  // Simulate scanning a plaque at reception desk
+  // Simulate scanning a plaque at the front desk
   const handleSimulateScan = (facilityName: string, neighborhood: string) => {
     setIsScannerOpen(false);
     setCurrentVisitsLeft((prev) => Math.max(0, prev - 1));
@@ -388,7 +388,7 @@ export function LivePassVirtualizationModal({
                       </div>
                     </div>
 
-                    {/* Rotating TOTP Window & Reception Code */}
+                    {/* Rotating TOTP Window & Front Desk Code */}
                     <div className="bg-[#071521]/80 rounded-xl p-2 border border-white/5 space-y-1.5 text-center">
                       <div className="flex items-center justify-between px-1">
                         <div className="flex items-center gap-1 text-[8.5px] text-[#28D17C] font-mono font-bold">
@@ -396,7 +396,7 @@ export function LivePassVirtualizationModal({
                           <span>{secondsRemaining}s window</span>
                         </div>
                         <div className="text-right">
-                          <div className="text-[7.5px] font-bold uppercase text-slate-400">RECEPTION CODE</div>
+                          <div className="text-[7.5px] font-bold uppercase text-slate-400">FRONT DESK CODE</div>
                         </div>
                       </div>
 
@@ -644,7 +644,7 @@ export function LivePassVirtualizationModal({
                   {/* Quick partner plaque simulator buttons */}
                   <div className="space-y-1.5 text-center">
                     <div className="text-[9px] text-slate-400 uppercase font-semibold">
-                      Simulate Official Reception QR:
+                      Simulate Official Front Desk QR:
                     </div>
                     <div className="space-y-1">
                       {PARTNER_FACILITIES.slice(0, 3).map((f) => (

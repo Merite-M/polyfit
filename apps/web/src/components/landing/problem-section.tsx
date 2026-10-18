@@ -74,7 +74,7 @@ export default function ProblemSection() {
             </div>
             <h3 className="text-xl font-bold text-[#0B1F33] mb-3">Fitness Providers</h3>
             <p className="text-gray-600 text-sm leading-relaxed mb-6">
-              Local gyms have capacity that could be filled by employees from organizations nearby.
+              Local wellness providers have capacity that could be filled by employees from organizations nearby.
             </p>
             <ul className="space-y-2 text-sm text-gray-600 border-t border-gray-100 pt-4">
               <li className="flex items-center gap-2">

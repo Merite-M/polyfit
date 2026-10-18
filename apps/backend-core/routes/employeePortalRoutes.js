@@ -769,7 +769,7 @@ router.post(['/benefit/activate', '/benefit/activation'], async (req, res) => {
 /**
  * POST /api/employee/scan-plaque
  * In-App Counter Scanner for Desk Plaques (PF-101 Modality B)
- * Verifies employee scan of partner reception desk QR plaque.
+ * Verifies employee scan of partner front desk QR plaque.
  * Validates GPS geofence (200m), anti-passback cooldown (30 min), monthly quota,
  * records verified visit, and returns celebration receipt payload.
  */

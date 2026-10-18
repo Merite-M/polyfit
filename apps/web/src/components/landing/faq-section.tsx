@@ -21,11 +21,11 @@ export default function FAQSection({ onOpenLeadForm }: FAQSectionProps = {}) {
       answer: "Employees whose organizations participate in a PolyFit plan can access participating providers according to their company's plan."
     },
     {
-      question: "Can employees choose different gyms?",
+      question: "Can employees choose different wellness facilities?",
       answer: "That's the core idea. PolyFit enables eligible employees to access multiple participating providers rather than being limited to a single facility, subject to their employer's plan."
     },
     {
-      question: "How do gyms get paid?",
+      question: "How do wellness providers get paid?",
       answer: "PolyFit is developing a verified usage and settlement system that enables transparent reconciliation and prompt disbursements between participating providers and organizations."
     },
     {

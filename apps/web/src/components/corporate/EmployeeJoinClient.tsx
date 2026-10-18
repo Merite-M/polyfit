@@ -170,7 +170,7 @@ export function EmployeeJoinClient({ orgConfig }: EmployeeJoinClientProps) {
               Activate Your {orgConfig.name} Pass
             </h1>
             <p className="text-xs sm:text-sm text-[#526173] max-w-sm mx-auto">
-              Access 50+ gyms, swimming pools, yoga studios, and clinics across Rwanda paid by your employer.
+              Access 50+ wellness facilities, swimming pools, yoga studios, and clinics across Rwanda paid by your employer.
             </p>
           </div>
 

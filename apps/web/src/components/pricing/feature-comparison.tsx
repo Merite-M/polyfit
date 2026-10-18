@@ -26,7 +26,7 @@ export default function FeatureComparison() {
         {
           name: "Vetted Fitness & Wellness Locations",
           tooltip: "All facilities meet strict sanitation, equipment, and staff accreditation standards.",
-          starter: "25+ Core Gyms",
+          starter: "25+ Partner Facilities",
           pro: "50+ Multi-Category Venues",
           enterprise: "50+ & Custom Commissioning",
         },
@@ -112,7 +112,7 @@ export default function FeatureComparison() {
         },
         {
           name: "Automated Provider Settlement",
-          tooltip: "PolyFit verifies check-ins and executes payouts to gyms directly. Zero admin work for your finance team.",
+          tooltip: "PolyFit verifies check-ins and executes payouts to wellness providers directly. Zero admin work for your finance team.",
           starter: true,
           pro: true,
           enterprise: "Full Settlement Audit Trail",
