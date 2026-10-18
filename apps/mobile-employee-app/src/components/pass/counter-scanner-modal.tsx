@@ -1,6 +1,6 @@
 /**
  * PolyFit Corporate Employee App - Front-Desk Plaque Scanner & Manual Bypass (Modality B)
- * Camera Viewfinder for scanning official PolyFit Reception Desk QR Plaques
+ * Camera Viewfinder for scanning official PolyFit Front Desk QR Plaques
  * Features permission recovery prompts, fallback manual code entry, and test simulation chips.
  */
 
@@ -221,7 +221,7 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
                   </View>
                   <Text style={styles.permissionTitle}>Camera Access Required</Text>
                   <Text style={styles.permissionSub}>
-                    PolyFit needs camera permission to scan front-desk QR plaques at partner gyms and fitness studios.
+                    PolyFit needs camera permission to scan front-desk QR plaques at partner wellness providers and fitness facilities.
                   </Text>
 
                   <Pressable
@@ -255,7 +255,7 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
                   </View>
 
                   <Text style={styles.instructionText}>
-                    Align the PolyFit reception QR plaque within the frame
+                    Align the PolyFit front-desk QR plaque within the frame
                   </Text>
                 </View>
               )
@@ -266,7 +266,7 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
                   <Keyboard size={24} color={Palette.green} />
                   <Text style={styles.manualTitle}>Enter Plaque ID Manually</Text>
                   <Text style={styles.manualSub}>
-                    Located at the bottom right corner of the desk plaque or receptionist badge.
+                    Located at the bottom right corner of the desk plaque or provider staff badge.
                   </Text>
                 </View>
 
@@ -327,7 +327,7 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
                 <Text style={styles.drawerTitle}>Instant Plaque Simulator (Demo & Testing)</Text>
               </View>
               <Text style={styles.drawerSub}>
-                Tap any official reception plaque to simulate instant counter scan:
+                Tap any official front-desk plaque to simulate instant counter scan:
               </Text>
 
               <View style={styles.plaqueList}>

@@ -524,7 +524,7 @@ router.get('/platform-config', async (req, res) => {
           tier: 'basic',
           name: 'Basic',
           badge: 'Essential',
-          description: 'Essential corporate fitness benefit covering verified network gyms and strength centers.',
+          description: 'Essential corporate fitness benefit covering verified partner facilities and wellness centers.',
           target: 'Field staff & shift teams',
           visits: 4,
           pricing: {
@@ -536,7 +536,7 @@ router.get('/platform-config', async (req, res) => {
           ctaVariant: 'secondary',
           features: [
             '4 verified visits per month',
-            'Access to 30+ vetted gyms & strength centers',
+            'Access to 30+ vetted wellness providers & facilities',
             'Consolidated monthly RRA EBM 18% VAT invoice',
             'Dynamic anti-passback mobile web passes',
             'Monthly aggregated utilization report (PDF/CSV)',
@@ -555,7 +555,7 @@ router.get('/platform-config', async (req, res) => {
           tier: 'starter',
           name: 'Starter',
           badge: 'Growing Teams',
-          description: 'Active lifestyle plan combining fitness gyms and Olympic lap swimming pools across Kigali and East Africa.',
+          description: 'Active lifestyle plan combining fitness facilities and Olympic lap swimming pools across Kigali and East Africa.',
           target: 'Up to 50 employees',
           visits: 8,
           pricing: {
@@ -567,7 +567,7 @@ router.get('/platform-config', async (req, res) => {
           ctaVariant: 'secondary',
           features: [
             '8 verified visits per month',
-            'Access to 50+ network gyms & Olympic lap pools',
+            'Access to 50+ network facilities & Olympic lap pools',
             'Single consolidated RRA EBM monthly invoice',
             'Dual check-in modality (turnstile QR & desk plaque)',
             'Live department utilization telemetry',
@@ -585,7 +585,7 @@ router.get('/platform-config', async (req, res) => {
           tier: 'premium',
           name: 'Premium',
           badge: 'Most Popular',
-          description: 'Comprehensive multi-category package covering gyms, Olympic pools, hot yoga, and reformer pilates studios.',
+          description: 'Comprehensive multi-category package covering fitness facilities, Olympic pools, hot yoga, and reformer pilates studios.',
           target: '50 to 500 employees',
           visits: 12,
           pricing: {
@@ -598,7 +598,7 @@ router.get('/platform-config', async (req, res) => {
           features: [
             '12 verified visits per month',
             'Full Multi-Category Network (80+ venues)',
-            'Gyms, Olympic Pools, Yoga, Pilates & Studios',
+            'Fitness Facilities, Olympic Pools, Yoga, Pilates & Studios',
             'Automated RRA EBM 18% VAT compliant invoicing',
             'Instant Anti-Passback biometric & geo lock',
             'Live check-in telemetry & department heatmaps',
@@ -628,7 +628,7 @@ router.get('/platform-config', async (req, res) => {
           features: [
             '16 verified visits per month',
             'Unrestricted all-category access across entire network',
-            'Gyms, Olympic Pools, Reformer Pilates, Physio Clinics & Spas',
+            'Fitness Facilities, Olympic Pools, Reformer Pilates, Physio Clinics & Spas',
             'Zero employee co-pay (100% employer sponsored)',
             'Dedicated PolyFit VIP wellness concierge',
             'Custom corporate health challenges & executive reviews',

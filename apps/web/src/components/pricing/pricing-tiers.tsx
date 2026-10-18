@@ -76,7 +76,7 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
       tier: "basic",
       name: basicData?.name || "Basic",
       badge: basicData?.badge || "Essential",
-      description: basicData?.description || "Essential fitness benefit for shift and operations teams covering vetted gyms & strength centers.",
+      description: basicData?.description || "Essential fitness benefit for shift and operations teams covering vetted fitness & wellness facilities.",
       target: basicData?.target || "Field & shift teams",
       visits: basicData?.visits || 4,
       pricing: {
@@ -96,7 +96,7 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
       ctaVariant: "secondary",
       features: basicData?.features || [
         "4 verified visits per month",
-        "Access to 30+ vetted gyms & strength centers",
+        "Access to 30+ vetted fitness & wellness facilities",
         "Single consolidated RRA EBM monthly invoice",
         "Dynamic anti-passback mobile web passes",
         "Monthly aggregated utilization report (PDF/CSV)",
@@ -114,7 +114,7 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
       tier: "starter",
       name: starterData?.name || "Starter",
       badge: starterData?.badge || "Growing Teams",
-      description: starterData?.description || "Active lifestyle wellness benefit combining fitness gyms and Olympic lap swimming pools.",
+      description: starterData?.description || "Active lifestyle wellness benefit combining fitness facilities and Olympic lap swimming pools.",
       target: starterData?.target || "Up to 50 employees",
       visits: starterData?.visits || 8,
       pricing: {
@@ -134,7 +134,7 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
       ctaVariant: "secondary",
       features: starterData?.features || [
         "8 verified visits per month",
-        "Access to 50+ network gyms & Olympic lap pools",
+        "Access to 50+ network facilities & Olympic lap pools",
         "Single consolidated RRA EBM monthly invoice",
         "Dual check-in modality (turnstile QR & desk plaque)",
         "Live department utilization telemetry",
@@ -151,7 +151,7 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
       tier: "premium",
       name: premiumData?.name || "Premium",
       badge: premiumData?.badge || "Most Popular",
-      description: premiumData?.description || "Comprehensive corporate wellness infrastructure covering gyms, Olympic pools, hot yoga & reformer pilates.",
+      description: premiumData?.description || "Comprehensive corporate wellness infrastructure covering fitness facilities, Olympic pools, hot yoga & reformer pilates.",
       target: premiumData?.target || "50 to 500 employees",
       visits: premiumData?.visits || 12,
       pricing: {
@@ -172,7 +172,7 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
       features: premiumData?.features || [
         "12 verified visits per month",
         "Full Multi-Category Network (80+ venues)",
-        "Gyms, Olympic Pools, Yoga, Pilates & Studios",
+        "Fitness Facilities, Olympic Pools, Yoga, Pilates & Studios",
         "Automated RRA EBM 18% VAT compliant invoicing",
         "Instant Anti-Passback biometric & geo lock",
         "Live check-in telemetry & department heatmaps",
@@ -210,7 +210,7 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
       features: execData?.features || [
         "16 verified visits per month",
         "Unrestricted all-category access across entire network",
-        "Gyms, Olympic Pools, Reformer Pilates, Physio Clinics & Spas",
+        "Fitness Facilities, Olympic Pools, Reformer Pilates, Physio Clinics & Spas",
         "Zero employee co-pay baseline option",
         "Dedicated PolyFit VIP wellness concierge",
         "Custom corporate wellness challenges & executive reviews",

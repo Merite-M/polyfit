@@ -108,7 +108,7 @@ export const DeviceBindingStep: React.FC<DeviceBindingStepProps> = ({ onFinish }
             <View style={styles.optionTextContainer}>
               <Text style={styles.optionTitle}>Biometric Quick-Unlock</Text>
               <Text style={styles.optionDesc}>
-                Open pass instantly with FaceID / fingerprint at reception.
+                Open pass instantly with FaceID / fingerprint at the front desk.
               </Text>
             </View>
             <Switch
@@ -143,7 +143,7 @@ export const DeviceBindingStep: React.FC<DeviceBindingStepProps> = ({ onFinish }
         <View style={styles.privacyNote}>
           <Lock size={14} color={Palette.teal} />
           <Text style={styles.privacyText}>
-            PolyFit never tracks or sells personal movement data. Location is strictly used for reception check-in verification.
+            PolyFit never tracks or sells personal movement data. Location is strictly used for front-desk check-in verification.
           </Text>
         </View>
       </View>

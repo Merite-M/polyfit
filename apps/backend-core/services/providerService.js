@@ -410,10 +410,6 @@ async function rejectProvider(providerId, reason) {
  * @returns {Promise<Object>}
  */
 async function addLocation(providerId, locData = {}) {
-  if (!supabase) {
-    throw new Error('Database service unavailable');
-  }
-
   if (!locData.name || typeof locData.name !== 'string' || !locData.name.trim()) {
     const error = new Error('Location name is required');
     error.code = 'LOCATION_MISSING_NAME';
@@ -428,6 +424,10 @@ async function addLocation(providerId, locData = {}) {
     error.code = 'LOCATION_RETAIL_PRICE_FORBIDDEN';
     error.statusCode = 400;
     throw error;
+  }
+
+  if (!supabase) {
+    throw new Error('Database service unavailable');
   }
 
   // Ensure provider exists
@@ -880,8 +880,8 @@ async function getMarketingAssets(providerId) {
   <text x="120" y="138" font-family="Inter, sans-serif" font-weight="500" font-size="12" fill="#94A3B8">${categoryLabel} • VERIFIED FACILITY</text>
 </svg>`.trim();
 
-  // Printable Reception Desk Signage Template
-  const receptionSignageSvg = `
+  // Printable Front Desk Signage Template
+  const frontDeskSignageSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" width="600" height="800">
   <rect width="600" height="800" rx="24" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="4"/>
   <rect width="600" height="120" rx="24" fill="#0B1F33" />
@@ -899,7 +899,7 @@ async function getMarketingAssets(providerId) {
   <!-- Steps -->
   <text x="100" y="580" font-family="Inter, sans-serif" font-weight="700" font-size="16" fill="#0B1F33">1. Open your PolyFit app on mobile</text>
   <text x="100" y="620" font-family="Inter, sans-serif" font-weight="700" font-size="16" fill="#0B1F33">2. Tap 'Access Pass' to generate dynamic QR</text>
-  <text x="100" y="660" font-family="Inter, sans-serif" font-weight="700" font-size="16" fill="#0B1F33">3. Present QR to reception for seamless verified entry</text>
+  <text x="100" y="660" font-family="Inter, sans-serif" font-weight="700" font-size="16" fill="#0B1F33">3. Present QR to front desk for seamless verified entry</text>
   
   <text x="300" y="740" font-family="Inter, sans-serif" font-weight="500" font-size="13" fill="#94A3B8" text-anchor="middle">Need assistance? Contact support@polyfit.africa</text>
 </svg>`.trim();
@@ -918,11 +918,11 @@ async function getMarketingAssets(providerId) {
         download_filename: `polyfit-partner-badge-${provider.id}.svg`
       },
       counter_card_signage: {
-        title: 'In-Facility Reception Check-In Signage',
+        title: 'In-Facility Front Desk Check-In Signage',
         format: 'svg',
-        svg: receptionSignageSvg,
+        svg: frontDeskSignageSvg,
         recommended_dimensions: 'A4 or 8.5x11 Standee',
-        download_filename: `polyfit-reception-sign-${provider.id}.svg`
+        download_filename: `polyfit-front-desk-sign-${provider.id}.svg`
       },
       social_media_kit: {
         title: 'Network Launch Social Media Kit',
@@ -938,7 +938,7 @@ async function getMarketingAssets(providerId) {
           polyfit_mint: '#28D17C',
           neutral_slate: '#F8FAFC'
         },
-        badge_usage_policy: 'Display the PolyFit Partner Badge on your website header/footer and front reception desk. Do not modify brand aspect ratios or remove the PolyFit hex logo.'
+        badge_usage_policy: 'Display the PolyFit Partner Badge on your website header/footer and front desk counter. Do not modify brand aspect ratios or remove the PolyFit hex logo.'
       }
     }
   };
@@ -1242,7 +1242,7 @@ async function getProviderCommercialConditions(providerId) {
     {
       tier: 'basic',
       name: 'PolyFit Basic Tier',
-      description: 'Entry-level employee wellness tier for standard fitness and basic gym access.',
+      description: 'Entry-level employee wellness tier for standard fitness and basic facility access.',
       co_pay_percentage: 20,
       allowed_provider_categories: ['gym', 'pool']
     },
@@ -1355,8 +1355,6 @@ async function getProviderCommercialConditions(providerId) {
  * @returns {Promise<Object>}
  */
 async function createAmendmentRequest(providerId, data) {
-  if (!supabase) throw new Error('Database service unavailable');
-
   const {
     contract_id = null,
     request_type,
@@ -1365,7 +1363,7 @@ async function createAmendmentRequest(providerId, data) {
     justification,
     contact_phone = null,
     contact_email = null
-  } = data;
+  } = data || {};
 
   if (!request_type) {
     const error = new Error('request_type is required (rate_review, capacity_expansion, tier_upgrade, terms_inquiry)');
@@ -1373,6 +1371,15 @@ async function createAmendmentRequest(providerId, data) {
     error.statusCode = 400;
     throw error;
   }
+
+  if (!justification || typeof justification !== 'string' || !justification.trim()) {
+    const error = new Error('Justification / proposal description is required');
+    error.code = 'AMENDMENT_MISSING_JUSTIFICATION';
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!supabase) throw new Error('Database service unavailable');
 
   if (!justification || typeof justification !== 'string' || !justification.trim()) {
     const error = new Error('Justification / proposal description is required');

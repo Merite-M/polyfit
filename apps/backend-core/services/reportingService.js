@@ -944,7 +944,7 @@ async function getProviderAnalyticsReport(providerId, options = {}) {
       visitor_name: v.employees?.full_name || 'Corporate Member',
       polyfit_id: v.employees?.employee_id_external || `PF-${String(v.employee_id || v.id).slice(0, 8).toUpperCase()}`,
       employer_name: v.organizations?.name || 'Corporate Client',
-      product: 'Gym & Facility Access',
+      product: 'Fitness & Facility Access',
       checkin_period: isOffPeak ? 'Off-peak' : 'Default',
       checkin_type: checkinType,
       payment: rate

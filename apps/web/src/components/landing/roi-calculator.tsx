@@ -41,7 +41,7 @@ const CANONICAL_PRESETS: TierPreset[] = [
     monthlyRwf: 10000,
     annualRwf: 8500,
     features: [
-      "4 verified visits per month across 30+ gyms & strength centers",
+      "4 verified visits per month across 30+ wellness providers & facilities",
       "Dynamic anti-passback mobile web passes",
       "Single consolidated monthly RRA EBM 18% VAT invoice"
     ]
@@ -55,7 +55,7 @@ const CANONICAL_PRESETS: TierPreset[] = [
     monthlyRwf: 18000,
     annualRwf: 15300,
     features: [
-      "8 verified visits per month across 50+ gyms & Olympic lap pools",
+      "8 verified visits per month across 50+ wellness facilities & Olympic lap pools",
       "Dual check-in modality (turnstile QR & desk plaque)",
       "Single consolidated monthly RRA EBM 18% VAT invoice"
     ]
@@ -71,7 +71,7 @@ const CANONICAL_PRESETS: TierPreset[] = [
     popular: true,
     features: [
       "12 verified visits per month across 80+ top partner facilities",
-      "Full multi-category access: Gyms, Pools, Yoga & Reformer Pilates",
+      "Full multi-category access: Fitness, Pools, Yoga & Reformer Pilates",
       "Live check-in telemetry and department heatmaps"
     ]
   },
@@ -85,7 +85,7 @@ const CANONICAL_PRESETS: TierPreset[] = [
     annualRwf: 42500,
     features: [
       "16 verified visits per month with all-network access",
-      "Gyms, Olympic Pools, Reformer Pilates, Physio Clinics & Thermal Spas",
+      "Fitness Facilities, Olympic Pools, Reformer Pilates, Physio Clinics & Thermal Spas",
       "Dedicated PolyFit VIP wellness concierge & HRIS sync"
     ]
   }
