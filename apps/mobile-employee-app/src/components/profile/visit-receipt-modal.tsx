@@ -28,7 +28,7 @@ interface VisitReceiptModalProps {
 export function VisitReceiptModal({
   visible,
   visit,
-  organizationName = 'Bank of Kigali',
+  organizationName = 'Corporate Partner',
   onClose,
 }: VisitReceiptModalProps) {
   if (!visit) return null;

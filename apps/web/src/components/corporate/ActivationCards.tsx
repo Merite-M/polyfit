@@ -30,11 +30,11 @@ interface ActivationCardsProps {
 }
 
 export function ActivationCards({
-  organizationSlug = "techcorp-rwanda",
-  organizationName = "TechCorp Rwanda",
-  currentInvoiceAmount = 1892000,
+  organizationSlug = "",
+  organizationName = "Corporate Organization",
+  currentInvoiceAmount = 0,
   invoiceStatus = "paid",
-  pmpmSpend = 4592,
+  pmpmSpend = 0,
   className,
   onDownloadInvoice,
 }: ActivationCardsProps) {

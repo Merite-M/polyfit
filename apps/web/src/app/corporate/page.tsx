@@ -438,7 +438,7 @@ export default function CorporateDashboardPage() {
             <section aria-label="Engagement & Category Analytics">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
                 <div className="lg:col-span-7">
-                  <EngagementTrendChart className="h-full" />
+                  <EngagementTrendChart data={reportingData.monthlyTrends} className="h-full" />
                 </div>
                 <div className="lg:col-span-5">
                   <CategoryDistribution

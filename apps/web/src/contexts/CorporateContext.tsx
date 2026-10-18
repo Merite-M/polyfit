@@ -15,6 +15,7 @@ import type { CorporateEmployee } from "@/components/corporate/EmployeeDetailDra
 import type { BenefitPlan } from "@/components/corporate/PlanCard";
 import type { InvoiceRecord } from "@/components/corporate/billing/InvoiceTable";
 import type { AdoptionFunnelData } from "@/components/corporate/AdoptionFunnelRow";
+import type { MonthDataPoint } from "@/components/corporate/EngagementTrendChart";
 
 export interface CorporateOrganization {
   id: string;
@@ -103,6 +104,7 @@ export interface CorporateReportingData {
     peakDay?: string;
     timeOfDayBuckets?: Record<string, number>;
   };
+  monthlyTrends?: MonthDataPoint[];
   roi?: any;
 }
 
@@ -122,6 +124,15 @@ export interface CorporateEconomics {
   avgCostPerVisit: number;
   citTaxShieldRwf: number;
 }
+
+const DEMO_MONTHLY_TRENDS: MonthDataPoint[] = [
+  { month: "Apr", eligible: 1150, members: 320, active: 160, visits: 540 },
+  { month: "May", eligible: 1180, members: 480, active: 250, visits: 890 },
+  { month: "Jun", eligible: 1200, members: 590, active: 310, visits: 1120 },
+  { month: "Jul", eligible: 1200, members: 670, active: 360, visits: 1280 },
+  { month: "Aug", eligible: 1210, members: 735, active: 384, visits: 1390 },
+  { month: "Sep", eligible: 1217, members: 789, active: 412, visits: 1480 },
+];
 
 const ZERO_ECONOMICS: CorporateEconomics = {
   currentBalance: 0,
@@ -288,6 +299,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
           wellnessHour: TECHCORP_CANONICAL_DATA.wellness.wellnessHour,
           peakDay: TECHCORP_CANONICAL_DATA.wellness.peakDay,
         },
+        monthlyTrends: DEMO_MONTHLY_TRENDS,
       };
     }
     return {

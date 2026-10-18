@@ -19,7 +19,7 @@ export function BeneficiaryHeader({ employee, organization }: BeneficiaryHeaderP
   const employeeEmail = employee?.email || 'jean.mugisha@bk.rw';
   const department = employee?.department || 'Commercial Banking';
   const externalId = (employee as any)?.employee_id_external || 'BK-EMP-4091';
-  const orgName = organization?.name || 'Bank of Kigali';
+  const orgName = organization?.name || 'Corporate Wellness';
 
   // Initials for avatar
   const initials = employeeName

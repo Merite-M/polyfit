@@ -24,9 +24,9 @@ interface CorporateHeaderProps {
 
 const DATE_RANGES = [
   { id: "30d", label: "Last 30 Days" },
-  { id: "month", label: "This Month (Oct 2026)" },
+  { id: "month", label: "This Month" },
   { id: "90d", label: "Last 90 Days" },
-  { id: "ytd", label: "Year to Date (2026)" },
+  { id: "ytd", label: "Year to Date" },
 ];
 
 export function CorporateHeader({
@@ -55,7 +55,7 @@ export function CorporateHeader({
     if (pathname === "/corporate/employees") {
       return {
         defaultTitle: "Employee Census & Roster",
-        defaultSubtitle: `Managing ${funnelData.totalEligible || 1200} covered staff members for ${organization.name}`,
+        defaultSubtitle: `Managing ${funnelData.totalEligible || 0} covered staff members for ${organization.name}`,
         badge: "Roster Management",
       };
     }
