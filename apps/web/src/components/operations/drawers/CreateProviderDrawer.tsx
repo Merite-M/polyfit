@@ -184,8 +184,12 @@ export function CreateProviderDrawer({
 
   const validateStep3 = () => {
     if (!perVisitPayoutRate || perVisitPayoutRate <= 0) return "A valid per-visit negotiated payout rate is required.";
-    if (!accountNumber.trim() && !momoCode.trim() && !momoPhone.trim()) {
-      return "Either bank account or MTN MoMo merchant rail details are required for disbursement.";
+    if (accountNumber.trim()) {
+      if (!bankName.trim()) return "Bank name is required when specifying a bank payout account.";
+      if (!accountName.trim()) return "Account holder name is required when specifying a bank payout account.";
+      if (!swiftCode.trim()) return "SWIFT/Branch code is required when specifying a bank payout account.";
+    } else if (!momoCode.trim() && !momoPhone.trim()) {
+      return "Either complete bank account rails or Mobile Money merchant details are required for disbursement.";
     }
     return null;
   };
@@ -303,7 +307,7 @@ export function CreateProviderDrawer({
                   </span>
                   <span className="text-xs text-slate-400 font-mono">Step {currentStep} of 3</span>
                 </div>
-                <h2 className="text-base font-bold text-[#0B1F33] mt-0.5">
+                <h2 className="text-base font-bold text-slate-900 mt-0.5">
                   Onboard Wellness Provider Network
                 </h2>
               </div>
@@ -600,10 +604,10 @@ export function CreateProviderDrawer({
                 <div className="p-4 rounded-xl border border-slate-200 bg-slate-900 text-white space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Radio className="w-4 h-4 text-[#28D17C] animate-pulse" />
+                      <Radio className="w-4 h-4 text-emerald-600 animate-pulse" />
                       <span className="text-xs font-semibold">Proximity Geofence Radar</span>
                     </div>
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-[#28D17C] border border-[#28D17C]/30">
+                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 border border-emerald-500/30">
                       {geofenceRadiusMeters} meters
                     </span>
                   </div>
@@ -652,7 +656,7 @@ export function CreateProviderDrawer({
                   <div>
                     <div className="flex justify-between text-xs text-slate-300 mb-1">
                       <span>Threshold Range</span>
-                      <span className="font-mono text-[#28D17C]">50m - 500m</span>
+                      <span className="font-mono text-emerald-600">50m - 500m</span>
                     </div>
                     <input
                       type="range"
@@ -884,7 +888,7 @@ export function CreateProviderDrawer({
               <button
                 type="button"
                 onClick={handleNext}
-                className="px-5 py-2 rounded-lg bg-[#0B1F33] hover:bg-slate-800 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm"
+                className="px-5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm"
               >
                 <span>Continue</span>
                 <ArrowRight className="w-3.5 h-3.5" />
