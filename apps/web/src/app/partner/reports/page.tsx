@@ -215,7 +215,7 @@ export default function PartnerReportsPage() {
         [
           { header: 'Branch Code', accessor: (r) => r.location_id },
           { header: 'Facility Location', accessor: (r) => r.location_name },
-          { header: 'Corporate Member', accessor: (r) => r.visitor_name },
+          { header: 'Employee / Beneficiary', accessor: (r) => r.visitor_name },
           { header: 'Member ID', accessor: (r) => r.polyfit_id },
           { header: 'Employer Organization', accessor: (r) => r.employer_name },
           { header: 'Total Check-ins', accessor: (r) => r.total_checkins },
@@ -231,7 +231,7 @@ export default function PartnerReportsPage() {
           { header: 'Time', accessor: (r) => r.time },
           { header: 'Branch Code', accessor: (r) => r.location_id },
           { header: 'Facility Location', accessor: (r) => r.location_name },
-          { header: 'Corporate Member', accessor: (r) => r.visitor_name },
+          { header: 'Employee / Beneficiary', accessor: (r) => r.visitor_name },
           { header: 'Member ID', accessor: (r) => r.polyfit_id },
           { header: 'Employer Organization', accessor: (r) => r.employer_name },
           { header: 'Activity', accessor: (r) => r.product },
@@ -298,7 +298,7 @@ export default function PartnerReportsPage() {
           title: 'Earnings per Member / Employee',
           desc: 'Visit count and payout totals grouped by individual corporate employee.',
           q: 'What is the Payment per Visitor report?',
-          a: 'This report groups check-in volume by individual corporate member. It lets you see repeat employee check-in volume and exact earnings per employee under corporate wellness plans.'
+          a: 'This report groups check-in volume by individual employee. It lets you see repeat employee check-in volume and exact earnings per employee under corporate wellness plans.'
         };
       case 'checkin-details':
         return {
@@ -333,7 +333,7 @@ export default function PartnerReportsPage() {
             Reports &amp; Visit Analytics
           </h1>
           <p className="text-xs sm:text-sm text-[#526173] mt-0.5">
-            Track your verified visits, corporate member arrivals, and monthly payout statements in one place.
+            Track your verified visits, employee arrivals, and monthly payout statements in one place.
           </p>
         </div>
 
@@ -533,7 +533,7 @@ export default function PartnerReportsPage() {
             </div>
 
             <div className="bg-white p-4 rounded-xl border border-[#E2E8F0] shadow-xs">
-              <span className="text-xs text-[#8491A3] font-semibold">Unique Corporate Members</span>
+              <span className="text-xs text-[#8491A3] font-semibold">Unique Employees / Beneficiaries</span>
               <div className="text-2xl font-extrabold text-[#0B1F33] font-mono mt-1">
                 {filteredVisitorPayments.length}
               </div>
@@ -601,7 +601,7 @@ export default function PartnerReportsPage() {
         <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
           <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between">
             <span className="text-xs font-bold text-[#8491A3] uppercase tracking-wider">
-              Verified Visits &amp; Earnings ({filteredVisitorPayments.length} Corporate Members)
+              Verified Visits &amp; Earnings ({filteredVisitorPayments.length} Employees)
             </span>
             <span className="text-[11px] font-mono text-[#526173]">
               Period: {selectedMonth}
@@ -614,7 +614,7 @@ export default function PartnerReportsPage() {
                 <tr>
                   <th className="py-3 px-4">Branch Code</th>
                   <th className="py-3 px-4">Facility Location</th>
-                  <th className="py-3 px-4">Corporate Member</th>
+                  <th className="py-3 px-4">Employee / Beneficiary</th>
                   <th className="py-3 px-4">Member ID</th>
                   <th className="py-3 px-4 text-right">Total Check-ins</th>
                   <th className="py-3 px-4 text-right">Guaranteed Payout</th>
@@ -678,7 +678,7 @@ export default function PartnerReportsPage() {
                   <th className="py-3 px-4">Time</th>
                   <th className="py-3 px-4">Branch Code</th>
                   <th className="py-3 px-4">Facility Location</th>
-                  <th className="py-3 px-4">Corporate Member</th>
+                  <th className="py-3 px-4">Employee / Beneficiary</th>
                   <th className="py-3 px-4">Member ID</th>
                   <th className="py-3 px-4">Activity</th>
                   <th className="py-3 px-4">Period</th>

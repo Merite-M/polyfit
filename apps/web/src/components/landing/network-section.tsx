@@ -104,7 +104,7 @@ export default function NetworkSection() {
 
                   {/* Flow labels */}
                   <g transform="translate(130, 175)">
-                    <rect x="-60" y="-12" width="120" height="24" rx="6" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" />
+                    <rect x="-115" y="-12" width="230" height="24" rx="6" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" />
                     <text x="0" y="4" textAnchor="middle" fill="white" fontSize="10" fontWeight="500">Company → PolyFit → Wellness Providers</text>
                   </g>
                 </svg>
