@@ -221,7 +221,7 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
 
             {/* Large 6-Digit TOTP Code in Mono Font */}
             <View style={styles.codeBlock}>
-              <Text style={styles.totpLabel}>RECEPTION ENTRY CODE</Text>
+              <Text style={styles.totpLabel}>FRONT DESK ENTRY CODE</Text>
               <Text style={styles.totpCodeText}>{totpCode}</Text>
             </View>
           </View>
@@ -254,7 +254,7 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
         </View>
       </View>
 
-      {/* Primary Modality B Action: Scan Partner Reception Plaque */}
+      {/* Primary Modality B Action: Scan Partner Front Desk Plaque */}
       <Pressable
         style={({ pressed }) => [
           styles.scanPlaqueBtn,

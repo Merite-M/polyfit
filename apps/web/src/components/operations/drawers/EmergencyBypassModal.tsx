@@ -262,7 +262,7 @@ export function EmergencyBypassModal({
                 </span>
               </div>
               <p className="text-xs text-slate-300 mt-0.5">
-                Front-desk escalation: instantly unblock an employee at reception.
+                Front-desk escalation: instantly unblock an employee at the front desk.
               </p>
             </div>
           </div>
@@ -421,7 +421,7 @@ export function EmergencyBypassModal({
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="e.g. Front desk receptionist verified national ID #11998... Employee approved for workout."
+                  placeholder="e.g. Front-desk staff verified national ID #11998... Employee approved for workout."
                   rows={2}
                   className="w-full px-3.5 py-2 rounded-xl bg-[#142C44] border border-[#21405A] text-white text-xs focus:outline-none focus:border-[#28D17C] placeholder:text-slate-500"
                 />

@@ -298,7 +298,7 @@ export default function AccessPassScreen() {
                 Targeting: {targetFacility.location_name}
               </Text>
               <Text style={styles.selectedFacilitySub}>
-                {targetFacility.neighborhood} • Present dynamic QR to receptionist
+                {targetFacility.neighborhood} • Present dynamic QR to front desk
               </Text>
             </View>
             <Pressable

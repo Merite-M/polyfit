@@ -62,7 +62,7 @@ export function Step5MultiCategoryAmenities({ state, onChange }: Step5Props) {
           Facility Features & Wellness Amenities
         </h2>
         <p className="text-xs sm:text-sm text-[#526173] mt-1">
-          PolyFit supports gyms, Olympic pools, yoga & pilates studios, padel courts, and thermal recovery clinics. Selected tags appear on your discovery card.
+          PolyFit supports fitness facilities, Olympic pools, yoga & pilates studios, padel courts, and thermal recovery clinics. Selected tags appear on your discovery card.
         </p>
       </div>
 

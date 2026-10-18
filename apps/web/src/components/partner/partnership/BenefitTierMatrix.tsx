@@ -119,7 +119,7 @@ export function BenefitTierMatrix() {
           <thead>
             <tr className="border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-wider bg-muted/40">
               <th className="py-3 px-4 rounded-l-xl">Service Scope & Area</th>
-              <th className="py-3 px-4">Reception Admission Rule</th>
+              <th className="py-3 px-4">Front Desk Admission Rule</th>
               <th className="py-3 px-4">Network Status</th>
               <th className="py-3 px-4 rounded-r-xl text-right">Provider Settlement</th>
             </tr>
