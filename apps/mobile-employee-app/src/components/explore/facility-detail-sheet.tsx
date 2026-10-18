@@ -12,6 +12,7 @@ import {
   Pressable,
   ScrollView,
   Platform,
+  Alert,
   useWindowDimensions,
 } from 'react-native';
 import { AppModal } from '@/components/common/app-modal';
@@ -76,6 +77,7 @@ export function FacilityDetailSheet({
 
   if (!facility) return null;
 
+  const isIncluded = facility.isIncludedInPlan !== false;
   const categoryColor = getCategoryColor(facility.provider.category);
   const categoryLabel = getCategoryLabel(facility.provider.category);
   const operatingStatus = getFacilityOperatingStatus(facility.operating_hours);
@@ -106,18 +108,25 @@ export function FacilityDetailSheet({
 
   // 2. 1-Tap Bridge to Tab 1: Access Pass (PF-101)
   const handleCheckInHere = () => {
-    // Fire haptic feedback on supported platforms
+    if (!isIncluded) {
+      const msg = `Upgrade Required: ${facility.location_name} is excluded from your current corporate plan tier. Please contact your HR administrator to upgrade your plan.`;
+      if (Platform.OS === 'web') {
+        alert(msg);
+      } else {
+        Alert.alert('Upgrade Required', msg);
+      }
+      return;
+    }
+
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       } catch (e) {}
     }
 
-    // Pass selected facility to global tab store and switch active tab to 'pass'
     navigateToPassWithFacility(facility);
     onClose();
 
-    // Seamlessly navigate to Tab 1 (Pass) with target facility context
     router.push({
       pathname: '/(tabs)',
       params: {
@@ -137,7 +146,7 @@ export function FacilityDetailSheet({
       <View style={styles.backdrop}>
         <View style={styles.sheetContainer}>
           {/* Close Floating Button */}
-          <Pressable style={styles.floatingCloseBtn} onPress={onClose}>
+          <Pressable style={styles.floatingCloseBtn} onPress={onClose} hitSlop={8}>
             <X size={18} color="#FFFFFF" />
           </Pressable>
 
@@ -196,14 +205,15 @@ export function FacilityDetailSheet({
                   </Text>
                 </View>
 
-                {facility.isIncludedInPlan !== false ? (
+                {isIncluded ? (
                   <View style={styles.planBadge}>
                     <ShieldCheck size={12} color="#0B1F33" strokeWidth={2.5} />
                     <Text style={styles.planBadgeText}>INCLUDED IN YOUR PLAN</Text>
                   </View>
                 ) : (
                   <View style={styles.upgradeBadge}>
-                    <Text style={styles.upgradeBadgeText}>TIER 2 ONLY</Text>
+                    <Lock size={12} color="#0B1F33" strokeWidth={2.5} />
+                    <Text style={styles.upgradeBadgeText}>EXCLUDED FROM PLAN</Text>
                   </View>
                 )}
               </View>
@@ -357,9 +367,21 @@ export function FacilityDetailSheet({
             </Pressable>
 
             {/* Check In Here CTA -> Tab 1 Pass */}
-            <Pressable style={styles.checkInCtaBtn} onPress={handleCheckInHere}>
-              <QrCode size={18} color="#0B1F33" />
-              <Text style={styles.checkInCtaText}>Check In Here</Text>
+            <Pressable
+              style={[
+                styles.checkInCtaBtn,
+                !isIncluded && styles.checkInCtaBtnDisabled,
+              ]}
+              onPress={handleCheckInHere}
+            >
+              {isIncluded ? (
+                <QrCode size={18} color="#0B1F33" />
+              ) : (
+                <Lock size={18} color="#0B1F33" />
+              )}
+              <Text style={styles.checkInCtaText}>
+                {isIncluded ? 'Check In Here' : 'Upgrade Required'}
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -388,18 +410,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
     overflow: 'hidden',
     position: 'relative',
-    ...Platform.select({
-      web: {
-        boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.7)',
-      },
-      default: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -10 },
-        shadowOpacity: 0.5,
-        shadowRadius: 20,
-        elevation: 16,
-      },
-    }),
   },
   floatingCloseBtn: {
     position: 'absolute',
@@ -414,22 +424,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...Platform.select({
-      web: {
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
-      },
-      default: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.4,
-        shadowRadius: 4,
-        elevation: 3,
-      },
-    }),
   },
 
   scrollContent: {
-    paddingBottom: 90, // Room for floating footer bar
+    paddingBottom: 90,
   },
 
   carouselContainer: {
@@ -505,6 +503,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   upgradeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: '#F59E0B',
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -726,18 +727,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     alignItems: 'center',
-    ...Platform.select({
-      web: {
-        boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.5)',
-      },
-      default: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 10,
-        elevation: 8,
-      },
-    }),
   },
   directionsBtn: {
     flex: 1,
@@ -765,23 +754,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    ...Platform.select({
-      web: {
-        boxShadow: '0 4px 14px rgba(40, 209, 124, 0.35)',
-      },
-      default: {
-        shadowColor: Palette.green,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 8,
-        elevation: 6,
-      },
-    }),
+  },
+  checkInCtaBtnDisabled: {
+    backgroundColor: '#F59E0B',
   },
   checkInCtaText: {
     fontSize: 14,
     fontWeight: '900',
-    color: '#0B1F33', // Strictly Midnight Navy on Green!
+    color: '#0B1F33',
     letterSpacing: 0.2,
   },
 });
