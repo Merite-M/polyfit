@@ -40,7 +40,7 @@ const CATEGORY_MAP: Record<string, { label: string; icon: any }> = {
 export function ActiveBenefitCard({
   benefit,
   telemetry,
-  organizationName = 'Bank of Kigali',
+  organizationName = 'Corporate Partner',
   onSelectCategory,
 }: ActiveBenefitCardProps) {
   const planTitle = telemetry?.name || benefit?.name || 'Standard Corporate Tier';

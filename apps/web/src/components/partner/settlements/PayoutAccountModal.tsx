@@ -26,10 +26,10 @@ export function PayoutAccountModal({ isOpen, onClose, onSuccess }: PayoutAccount
   const { provider, updatePayoutDetails } = usePartner();
 
   const [payoutMethod, setPayoutMethod] = React.useState<'bank' | 'momo'>('bank');
-  const [bankName, setBankName] = React.useState('Bank of Kigali (BK)');
+  const [bankName, setBankName] = React.useState('');
   const [accountName, setAccountName] = React.useState('');
   const [accountNumber, setAccountNumber] = React.useState('');
-  const [swiftCode, setSwiftCode] = React.useState('BOKRRWRW');
+  const [swiftCode, setSwiftCode] = React.useState('');
   const [momoProvider, setMomoProvider] = React.useState<'mtn' | 'airtel'>('mtn');
   const [momoCode, setMomoCode] = React.useState('');
   const [momoPhone, setMomoPhone] = React.useState('');
@@ -74,9 +74,15 @@ export function PayoutAccountModal({ isOpen, onClose, onSuccess }: PayoutAccount
     e.preventDefault();
     setErrorMsg(null);
 
-    if (payoutMethod === 'bank' && (!accountNumber || !accountName)) {
-      setErrorMsg('Please provide a valid account name and account number.');
-      return;
+    if (payoutMethod === 'bank') {
+      if (!bankName || !bankName.trim()) {
+        setErrorMsg('Please select a valid Rwandan bank.');
+        return;
+      }
+      if (!accountName || !accountName.trim() || !accountNumber || !accountNumber.trim()) {
+        setErrorMsg('Please provide a valid account name and account number.');
+        return;
+      }
     }
 
     if (payoutMethod === 'momo' && !momoCode && !momoPhone) {
@@ -218,6 +224,7 @@ export function PayoutAccountModal({ isOpen, onClose, onSuccess }: PayoutAccount
                 onChange={(e) => handleBankChange(e.target.value)}
                 className="w-full text-xs font-semibold text-primary bg-card border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
               >
+                <option value="">-- Select Rwandan Bank --</option>
                 {RWANDAN_BANKS.map((b) => (
                   <option key={b.name} value={b.name}>
                     {b.name}

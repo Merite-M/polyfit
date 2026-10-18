@@ -246,7 +246,7 @@ export default function AccessPassScreen() {
     setSuccessModalVisible(true);
   };
 
-  const orgName = organization?.name || 'Bank of Kigali';
+  const orgName = organization?.name || 'Corporate Wellness';
   const orgDomain = organization?.domain || 'bk.rw';
   const employeeName = employee?.full_name || 'Jean Mugisha';
   const department = employee?.department || 'Commercial Banking';
