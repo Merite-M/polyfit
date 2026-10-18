@@ -419,7 +419,7 @@ export function CreateProviderDrawer({
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Kigali Athletic Club, Waka Fitness, Nyarutarama Tennis & Pool"
+                    placeholder="e.g. Kigali Athletic Club, Highland Strength Hub, Nyarutarama Tennis & Pool"
                     className="w-full px-3.5 py-2 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-800"
                   />
                 </div>

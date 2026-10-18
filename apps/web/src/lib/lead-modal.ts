@@ -8,6 +8,9 @@ interface LeadModalState {
   open: (type?: LeadFormType) => void;
   close: () => void;
   setType: (type: LeadFormType) => void;
+  isIntentOpen: boolean;
+  openIntent: () => void;
+  closeIntent: () => void;
 }
 
 export const useLeadModal = create<LeadModalState>((set) => ({
@@ -16,4 +19,8 @@ export const useLeadModal = create<LeadModalState>((set) => ({
   open: (type = "employer") => set({ isOpen: true, defaultType: type }),
   close: () => set({ isOpen: false }),
   setType: (type: LeadFormType) => set({ defaultType: type }),
+  isIntentOpen: false,
+  openIntent: () => set({ isIntentOpen: true }),
+  closeIntent: () => set({ isIntentOpen: false }),
 }));
+

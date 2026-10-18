@@ -49,7 +49,7 @@ const apiLimiter = rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: { error: 'Too many requests from this IP, please try again later', code: 'RATE_LIMIT_EXCEEDED' },
-  skip: (req) => req.path.includes('/webhook') || req.path.includes('/cron') || req.path === '/health'
+  skip: (req) => process.env.NODE_ENV === 'test' || req.path.includes('/webhook') || req.path.includes('/cron') || req.path === '/health'
 });
 
 app.use('/api/', apiLimiter);

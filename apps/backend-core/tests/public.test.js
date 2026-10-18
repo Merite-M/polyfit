@@ -1,3 +1,4 @@
+process.env.NODE_ENV = 'test';
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
@@ -203,6 +204,80 @@ describe('Public Lead & Demo Pipeline Test Suite (PF-88)', () => {
       assert.equal(res.status, 200);
       assert.equal(res.body.enrolled, false);
       assert.match(res.body.message, /not yet enrolled/i);
+    });
+  });
+
+  describe('Self-Service Onboarding Pipelines (Wellhub Model)', () => {
+    test('POST /api/public/partner/register validates required fields & terms', async () => {
+      const res = await request(app)
+        .post('/api/public/partner/register')
+        .send({ business_name: 'Test Gym' });
+      assert.equal(res.status, 400);
+      assert.ok(res.body.error);
+    });
+
+    test('POST /api/public/partner/register onboards facility with Rwandan categories', async () => {
+      const uniqueSuffix = Date.now();
+      const res = await request(app)
+        .post('/api/public/partner/register')
+        .send({
+          business_name: `Kigali Fitness Hub ${uniqueSuffix}`,
+          contact_name: 'Test Manager',
+          contact_email: `testpartner${uniqueSuffix}@partner.rw`,
+          phone: '+250 788 111 222',
+          location: 'Gasabo - Kimihurura',
+          categories: ['gym', 'pool', 'sauna'],
+          facility_count: '1',
+          standard_rack_rate_rwf: 45000,
+          payout_method: 'bank',
+          bank_name: 'Bank of Kigali',
+          account_number: '00040-0692841-29',
+          terms_accepted: true
+        });
+
+      assert.equal(res.status, 201);
+      assert.equal(res.body.success, true);
+      assert.ok(res.body.provider?.id);
+      assert.ok(res.body.redirect_url);
+    });
+
+    test('POST /api/public/corporate/register blocks generic freemail domains', async () => {
+      const res = await request(app)
+        .post('/api/public/corporate/register')
+        .send({
+          company_name: 'Test Org',
+          contact_name: 'Test HR',
+          work_email: 'test@gmail.com',
+          phone: '+250 788 222 333',
+          terms_accepted: true
+        });
+
+      assert.equal(res.status, 400);
+      assert.equal(res.body.code, 'CORPORATE_DOMAIN_REQUIRED');
+    });
+
+    test('POST /api/public/corporate/register creates employer organization & benefit plan', async () => {
+      const uniqueSuffix = Date.now();
+      const res = await request(app)
+        .post('/api/public/corporate/register')
+        .send({
+          company_name: `Apex Logistics ${uniqueSuffix}`,
+          contact_name: 'HR Lead',
+          work_email: `hr@apexlogistics${uniqueSuffix}.rw`,
+          phone: '+250 788 333 444',
+          industry: 'Manufacturing & Logistics',
+          headcount: 50,
+          selected_plan_tier: 'starter',
+          subsidy_percentage: 100,
+          terms_accepted: true
+        });
+
+      assert.equal(res.status, 201);
+      assert.equal(res.body.success, true);
+      assert.ok(res.body.organization?.slug);
+      assert.ok(res.body.benefit?.id);
+      assert.ok(res.body.employee_join_link);
+      assert.ok(res.body.redirect_url);
     });
   });
 });

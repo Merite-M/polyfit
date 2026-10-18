@@ -146,7 +146,7 @@ export const KIGALI_DISTRICT_PRESETS = [
   { name: 'Gishushu (RDB / Parliament Corridor)', lat: -1.948, lng: 30.088 },
   { name: 'Remera (BK Arena & Sports Hub)', lat: -1.9615, lng: 30.113 },
   { name: 'Kacyiru (Ministries / Embassy Heights)', lat: -1.9385, lng: 30.076 },
-  { name: 'Rugunga (Cercle Sportif District)', lat: -1.968, lng: 30.065 },
+  { name: 'Rugunga (Sports & Aquatic District)', lat: -1.968, lng: 30.065 },
   { name: 'Musanze (Northern Tourism Hub)', lat: -1.498, lng: 29.634 },
   { name: 'Rubavu (Lake Kivu Waterfront)', lat: -1.702, lng: 29.256 },
 ];

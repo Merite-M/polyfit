@@ -32,7 +32,7 @@ export default function FeatureComparison() {
         },
         {
           name: "Olympic Swimming Pools & Aquatics",
-          tooltip: "Full access to partner pools including Cercle Sportif and luxury aquatic facilities.",
+          tooltip: "Full access to verified partner lap pools and luxury aquatic facilities across Kigali.",
           starter: false,
           pro: true,
           enterprise: true,

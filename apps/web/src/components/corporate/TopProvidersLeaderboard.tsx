@@ -42,7 +42,7 @@ const DEFAULT_PROVIDERS: ProviderItem[] = [
   },
   {
     id: "p2",
-    name: "Cercle Sportif Olympic Pool",
+    name: "Olympic Aquatic Center",
     category: "pool",
     location: "Rugunga, Kigali",
     visits: 355,
@@ -51,7 +51,7 @@ const DEFAULT_PROVIDERS: ProviderItem[] = [
   },
   {
     id: "p3",
-    name: "Waka Fitness Studio",
+    name: "Highland Fitness Hub",
     category: "studio",
     location: "Downtown Oasis, Kigali",
     visits: 236,

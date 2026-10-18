@@ -83,7 +83,7 @@ function IsometricHexMark({ size = 26 }: { size?: number }) {
 const PARTNER_FACILITIES = [
   {
     id: "f1",
-    name: "Cercle Sportif Olympic Pool",
+    name: "Olympic Aquatic Center",
     category: "Aquatic Pool",
     neighborhood: "Kiyovu, Kigali",
     distance: "450m away",
@@ -99,7 +99,7 @@ const PARTNER_FACILITIES = [
   },
   {
     id: "f3",
-    name: "Waka Fitness & Performance",
+    name: "Kigali Strength & Performance",
     category: "Cardio & Strength",
     neighborhood: "Downtown Kigali",
     distance: "2.1 km away",
@@ -595,7 +595,7 @@ export function LivePassVirtualizationModal({
                       Recent Activity
                     </div>
                     {[
-                      { fac: "Cercle Sportif Olympic Pool", date: "Yesterday, 17:35", method: "Desk Plaque Scan" },
+                      { fac: "Olympic Aquatic Center", date: "Yesterday, 17:35", method: "Desk Plaque Scan" },
                       { fac: "Kigali Heights Fitness Club", date: "Oct 10, 06:45", method: "Turnstile QR" },
                     ].map((v, i) => (
                       <div

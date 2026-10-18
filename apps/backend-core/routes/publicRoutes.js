@@ -4,10 +4,11 @@ const { rateLimit } = require('express-rate-limit');
 
 const router = express.Router();
 
-// Strict anti-spam rate limiter for public lead forms (10 submissions per IP per hour)
+// Strict anti-spam rate limiter for public lead forms (10 submissions per IP per hour in production)
 const leadFormLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  limit: 10,
+  limit: process.env.NODE_ENV === 'test' ? 10000 : 10,
+  skip: () => process.env.NODE_ENV === 'test',
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: { error: 'Too many submissions from this connection. Please try again later.', code: 'RATE_LIMIT_EXCEEDED' }
@@ -753,4 +754,431 @@ router.get('/verify-company', async (req, res) => {
   }
 });
 
+/**
+ * Helper to slugify company/business names safely
+ */
+function slugify(text) {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+}
+
+/**
+ * POST /api/public/partner/register
+ * Dedicated, multi-step self-service onboarding for wellness providers & facilities.
+ * Captures Rwandan fitness categories, rack rates, commercial acceptance, and creates initial location.
+ */
+router.post('/partner/register', leadFormLimiter, async (req, res) => {
+  try {
+    const {
+      business_name,
+      legal_name,
+      contact_name,
+      contact_email,
+      phone,
+      location = 'Kigali',
+      categories = ['gym'],
+      facility_count = '1',
+      standard_rack_rate_rwf = 40000,
+      payout_method = 'bank',
+      bank_name,
+      account_number,
+      momo_number,
+      terms_accepted,
+      source = 'partner_self_onboarding'
+    } = req.body;
+
+    if (!business_name || !business_name.trim()) {
+      return res.status(400).json({ error: 'Wellness facility business name is required', code: 'VALIDATION_ERROR' });
+    }
+    if (!contact_name || !contact_name.trim()) {
+      return res.status(400).json({ error: 'Contact person full name is required', code: 'VALIDATION_ERROR' });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!contact_email || !emailRegex.test(contact_email.trim())) {
+      return res.status(400).json({ error: 'A valid contact email address is required', code: 'VALIDATION_ERROR' });
+    }
+    const digitsOnly = (phone || '').replace(/\D/g, '');
+    if (!phone || digitsOnly.length < 8) {
+      return res.status(400).json({ error: 'A valid contact phone number is required (at least 8 digits)', code: 'VALIDATION_ERROR' });
+    }
+    if (!terms_accepted) {
+      return res.status(400).json({ error: 'You must review and agree to the PolyFit Partner Agreement & Terms to proceed', code: 'TERMS_NOT_ACCEPTED' });
+    }
+
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    const cleanEmail = contact_email.trim().toLowerCase();
+    const cleanBusinessName = business_name.trim();
+
+    // Determine primary category enum for PostgreSQL enum: 'gym' | 'pool' | 'studio' | 'clinic' | 'wellness_center'
+    const categoryList = Array.isArray(categories) ? categories : [categories];
+    let primaryCategory = 'gym';
+    if (categoryList.some(c => c.toLowerCase().includes('pool') || c.toLowerCase().includes('swimming'))) {
+      primaryCategory = 'pool';
+    } else if (categoryList.some(c => c.toLowerCase().includes('yoga') || c.toLowerCase().includes('pilates') || c.toLowerCase().includes('studio'))) {
+      primaryCategory = 'studio';
+    } else if (categoryList.some(c => c.toLowerCase().includes('physio') || c.toLowerCase().includes('clinic'))) {
+      primaryCategory = 'clinic';
+    } else if (categoryList.some(c => c.toLowerCase().includes('sauna') || c.toLowerCase().includes('spa') || c.toLowerCase().includes('wellness'))) {
+      primaryCategory = 'wellness_center';
+    }
+
+    // Check if provider already exists
+    const { data: existingProvider } = await supabase
+      .from('providers')
+      .select('id, name, status')
+      .or(`contact_email.eq.${cleanEmail},name.ilike.${cleanBusinessName}`)
+      .maybeSingle();
+
+    let provider = existingProvider;
+
+    if (!provider) {
+      const { data: newProvider, error: provError } = await supabase
+        .from('providers')
+        .insert({
+          name: cleanBusinessName,
+          category: primaryCategory,
+          status: 'active',
+          contact_email: cleanEmail,
+          settlement_email: cleanEmail,
+          pricing_expectations: {
+            standard_rack_rate_rwf: Number(standard_rack_rate_rwf) || 40000,
+            guaranteed_reimbursement_rate_rwf: 5000,
+            settlement_cycle: 'Net-15',
+            zero_cash_policy: true
+          },
+          onboarding_details: {
+            contact_name: contact_name.trim(),
+            legal_name: legal_name ? legal_name.trim() : cleanBusinessName,
+            phone: phone.trim(),
+            location: location.trim(),
+            categories: categoryList,
+            facility_count,
+            payout_method,
+            terms_accepted_at: new Date().toISOString(),
+            source
+          },
+          bank_details: payout_method === 'bank' ? {
+            bank_name: bank_name || 'Bank of Kigali',
+            account_number: account_number || '',
+            account_name: cleanBusinessName
+          } : {
+            provider: 'MTN Mobile Money Rwanda',
+            momo_number: momo_number || phone.trim()
+          }
+        })
+        .select()
+        .single();
+
+      if (provError) {
+        console.error('[PartnerRegister] Error creating provider:', provError);
+        throw provError;
+      }
+      provider = newProvider;
+    }
+
+    // Create or retrieve initial location branch
+    const { data: existingLocations } = await supabase
+      .from('provider_locations')
+      .select('id, name')
+      .eq('provider_id', provider.id);
+
+    let locationRecord = existingLocations && existingLocations[0];
+
+    if (!locationRecord) {
+      const { data: newLocation, error: locError } = await supabase
+        .from('provider_locations')
+        .insert({
+          provider_id: provider.id,
+          name: `${cleanBusinessName} - ${location.trim() || 'Central Branch'}`,
+          address: `${location.trim() || 'Kigali'}, Rwanda`,
+          city: location.trim() || 'Kigali',
+          country: 'Rwanda',
+          status: 'active',
+          amenities: categoryList,
+          metadata: {
+            contact_person: contact_name.trim(),
+            contact_phone: phone.trim(),
+            onboarding_wizard_step: 1
+          }
+        })
+        .select()
+        .single();
+
+      if (!locError && newLocation) {
+        locationRecord = newLocation;
+      }
+    }
+
+    // Also register lead entry in demo_requests for super admin cross-visibility
+    try {
+      await supabase.from('demo_requests').insert({
+        company_name: cleanBusinessName,
+        contact_name: contact_name.trim(),
+        work_email: cleanEmail,
+        phone: phone.trim(),
+        country: 'Rwanda',
+        company_size: `${facility_count} location(s)`,
+        interest_tier: 'Provider Network Onboarded',
+        message: `Registered as ${primaryCategory} in ${location}. Accepted Net-15 commercial agreement.`,
+        source: 'partner_register_flow',
+        status: 'approved'
+      });
+    } catch (leadErr) {
+      console.warn('[PartnerRegister] Lead sync notice:', leadErr.message);
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: 'Wellness provider facility onboarded successfully! Welcome to the PolyFit Network.',
+      provider: {
+        id: provider.id,
+        name: provider.name,
+        category: provider.category,
+        contact_email: provider.contact_email,
+        status: provider.status
+      },
+      location: locationRecord ? {
+        id: locationRecord.id,
+        name: locationRecord.name
+      } : null,
+      redirect_url: locationRecord ? `/partner/setup?locationId=${locationRecord.id}&welcome=true` : '/partner/locations'
+    });
+  } catch (error) {
+    console.error('[PartnerRegister] Unexpected error:', error);
+    return res.status(500).json({
+      error: error.message || 'Failed to complete partner facility registration',
+      code: 'REGISTRATION_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/public/corporate/register
+ * Dedicated, multi-step self-service onboarding for corporate employers & HR leaders.
+ * Configures corporate organization profile, auto-generates slug, creates benefit tier, and enables employee self-join.
+ */
+router.post('/corporate/register', leadFormLimiter, async (req, res) => {
+  try {
+    const {
+      company_name,
+      contact_name,
+      work_email,
+      phone,
+      industry = 'Corporate & Professional Services',
+      headcount = '25-50',
+      selected_plan_tier = 'standard',
+      subsidy_percentage = 100,
+      billing_currency = 'RWF',
+      terms_accepted,
+      source = 'corporate_self_onboarding'
+    } = req.body;
+
+    if (!company_name || !company_name.trim()) {
+      return res.status(400).json({ error: 'Company or organization name is required', code: 'VALIDATION_ERROR' });
+    }
+    if (!contact_name || !contact_name.trim()) {
+      return res.status(400).json({ error: 'Contact person full name is required', code: 'VALIDATION_ERROR' });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!work_email || !emailRegex.test(work_email.trim())) {
+      return res.status(400).json({ error: 'A valid work email address is required', code: 'VALIDATION_ERROR' });
+    }
+    const digitsOnly = (phone || '').replace(/\D/g, '');
+    if (!phone || digitsOnly.length < 8) {
+      return res.status(400).json({ error: 'A valid contact phone number is required (at least 8 digits)', code: 'VALIDATION_ERROR' });
+    }
+    if (!terms_accepted) {
+      return res.status(400).json({ error: 'You must review and agree to the Corporate Wellness Agreement to proceed', code: 'TERMS_NOT_ACCEPTED' });
+    }
+
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    const cleanCompanyName = company_name.trim();
+    const cleanEmail = work_email.trim().toLowerCase();
+    const emailDomain = cleanEmail.split('@')[1];
+
+    // Block common generic freemail domains for employer onboarding
+    const freemailDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'];
+    if (freemailDomains.includes(emailDomain)) {
+      return res.status(400).json({
+        error: 'Corporate employer registration requires an official company domain email (e.g. name@company.rw), not a personal free email.',
+        code: 'CORPORATE_DOMAIN_REQUIRED'
+      });
+    }
+
+    let baseSlug = slugify(cleanCompanyName);
+    if (!baseSlug) baseSlug = slugify(emailDomain.split('.')[0]) || 'corporate';
+
+    // Parse contracted seats numeric estimate
+    let numericSeats = 30;
+    if (typeof headcount === 'number') {
+      numericSeats = headcount;
+    } else if (typeof headcount === 'string') {
+      const match = headcount.match(/\d+/);
+      if (match) numericSeats = parseInt(match[0], 10);
+      if (headcount.includes('500+')) numericSeats = 500;
+      else if (headcount.includes('200')) numericSeats = 200;
+    }
+
+    // Check if organization already exists
+    const { data: existingOrg } = await supabase
+      .from('organizations')
+      .select('id, name, slug, allowed_domains, status')
+      .or(`slug.eq.${baseSlug},contact_email.eq.${cleanEmail}`)
+      .maybeSingle();
+
+    let organization = existingOrg;
+
+    if (!organization) {
+      // Ensure unique slug
+      let finalSlug = baseSlug;
+      const { data: slugConflict } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('slug', finalSlug)
+        .maybeSingle();
+
+      if (slugConflict) {
+        finalSlug = `${baseSlug}-${Math.floor(100 + Math.random() * 900)}`;
+      }
+
+      const { data: newOrg, error: orgError } = await supabase
+        .from('organizations')
+        .insert({
+          name: cleanCompanyName,
+          slug: finalSlug,
+          industry: industry.trim(),
+          allowed_domains: [emailDomain],
+          contact_email: cleanEmail,
+          billing_email: cleanEmail,
+          status: 'active',
+          contracted_seats: numericSeats,
+          headcount_tier: typeof headcount === 'string' ? headcount : `${numericSeats} employees`,
+          country: 'Rwanda'
+        })
+        .select()
+        .single();
+
+      if (orgError) {
+        console.error('[CorporateRegister] Error creating organization:', orgError);
+        throw orgError;
+      }
+      organization = newOrg;
+    }
+
+    // Configure corporate benefit plan
+    const tierNameMap = {
+      basic: 'Basic Corporate Pass',
+      starter: 'Starter Active Pass',
+      premium: 'Premium Multi-Category Pass',
+      executive: 'Executive VIP All-Access Pass'
+    };
+
+    const tierVisitsMap = {
+      basic: 4,
+      starter: 8,
+      premium: 12,
+      executive: 16
+    };
+
+    const tierCategoriesMap = {
+      basic: ['gym'],
+      starter: ['gym', 'pool'],
+      premium: ['gym', 'pool', 'studio', 'sauna'],
+      executive: ['gym', 'pool', 'studio', 'sauna', 'clinic', 'wellness']
+    };
+
+    const resolvedTier = selected_plan_tier in tierNameMap ? selected_plan_tier : 'standard';
+    const planVisits = tierVisitsMap[resolvedTier] || 8;
+    const planName = `${cleanCompanyName} - ${tierNameMap[resolvedTier] || 'Corporate Wellness Plan'}`;
+    const coPayPercent = Math.max(0, 100 - (Number(subsidy_percentage) || 100));
+
+    // Check if benefit plan already created
+    const { data: existingBenefits } = await supabase
+      .from('benefits')
+      .select('id, name, tier')
+      .eq('org_id', organization.id);
+
+    let benefit = existingBenefits && existingBenefits[0];
+
+    if (!benefit) {
+      const { data: newBenefit, error: benError } = await supabase
+        .from('benefits')
+        .insert({
+          org_id: organization.id,
+          name: planName,
+          tier: resolvedTier,
+          max_monthly_visits: planVisits,
+          co_pay_percentage: coPayPercent,
+          allowed_provider_categories: tierCategoriesMap[resolvedTier] || ['gym', 'pool', 'studio'],
+          status: 'active'
+        })
+        .select()
+        .single();
+
+      if (!benError && newBenefit) {
+        benefit = newBenefit;
+      }
+    }
+
+    // Lead capture in demo_requests for Super Admin pipeline
+    try {
+      await supabase.from('demo_requests').insert({
+        company_name: cleanCompanyName,
+        contact_name: contact_name.trim(),
+        work_email: cleanEmail,
+        phone: phone.trim(),
+        country: 'Rwanda',
+        company_size: typeof headcount === 'string' ? headcount : `${numericSeats} employees`,
+        interest_tier: resolvedTier,
+        message: `Self-registered corporate client with ${numericSeats} seats on ${resolvedTier} tier (${subsidy_percentage}% subsidized). Join link: /join/${organization.slug}`,
+        source: 'corporate_register_flow',
+        status: 'approved'
+      });
+    } catch (leadErr) {
+      console.warn('[CorporateRegister] Lead sync notice:', leadErr.message);
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: 'Corporate wellness program created successfully! Your employee enrollment link is active.',
+      organization: {
+        id: organization.id,
+        name: organization.name,
+        slug: organization.slug,
+        allowed_domains: organization.allowed_domains,
+        contracted_seats: organization.contracted_seats
+      },
+      benefit: benefit ? {
+        id: benefit.id,
+        tier: benefit.tier,
+        name: benefit.name,
+        max_visits: planVisits,
+        subsidy_percentage: Number(subsidy_percentage) || 100
+      } : null,
+      employee_join_link: `/join/${organization.slug}`,
+      redirect_url: `/corporate?org=${organization.slug}&welcome=true`
+    });
+  } catch (error) {
+    console.error('[CorporateRegister] Unexpected error:', error);
+    return res.status(500).json({
+      error: error.message || 'Failed to complete corporate client registration',
+      code: 'REGISTRATION_FAILED'
+    });
+  }
+});
+
 module.exports = router;
+
