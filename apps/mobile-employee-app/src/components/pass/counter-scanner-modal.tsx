@@ -26,7 +26,6 @@ import {
   MapPin,
   Sparkles,
   ShieldAlert,
-  Keypad,
   Keyboard,
   ArrowRight,
   CheckCircle2,
