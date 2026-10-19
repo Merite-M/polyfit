@@ -187,7 +187,7 @@ Together, we are building a healthier, more active workforce across East Africa.
        cannot use Tailwind utilities. All JSX-level tokens use design system vars. */
     <dialog
       ref={dialogRef}
-      className="pf-native-dialog pf-dialog-lg w-full flex flex-col max-h-[90dvh] overflow-hidden bg-white dark:bg-card text-card-foreground shadow-2xl"
+      className="pf-native-dialog pf-dialog-lg w-full open:flex open:flex-col max-h-[90dvh] overflow-hidden bg-white dark:bg-card text-card-foreground shadow-2xl"
       aria-labelledby="toolkit-modal-title"
       onClose={onClose}
     >

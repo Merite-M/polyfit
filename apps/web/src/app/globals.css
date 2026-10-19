@@ -208,6 +208,12 @@
 }
 
 /* Native HTML <dialog> Styling & Modern Web Guidance transitions */
+dialog:not([open]),
+dialog.pf-native-dialog:not([open]) {
+  display: none !important;
+  pointer-events: none !important;
+}
+
 dialog.pf-native-dialog {
   position: fixed;
   inset: 0;

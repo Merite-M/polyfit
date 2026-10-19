@@ -70,7 +70,7 @@ export function Step11LaunchReview({ state, onLaunch, isLaunching, onGoToStep, i
       step: 10,
       summary:
         state.payout_method === 'bank'
-          ? `${state.bank_name} (${state.account_number || 'Pending'})`
+          ? `${state.bank_name || 'Bank of Kigali (BK)'} (${state.account_number || 'Pending'})`
           : `${state.momo_provider.toUpperCase()} MoMo (${state.momo_code || 'Pending'})`,
     },
   ];

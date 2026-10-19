@@ -25,7 +25,16 @@ import {
   Award,
   Layers,
   Banknote,
-  Smartphone
+  Smartphone,
+  Plus,
+  Trophy,
+  Coffee,
+  Zap,
+  Droplets,
+  Car,
+  Lock,
+  Wifi,
+  ScanLine
 } from "lucide-react";
 import { PolyFitLogo } from "@/components/ui/polyfit-logo";
 import { apiFetch } from "@/lib/api-client";
@@ -38,14 +47,24 @@ interface ActivityOption {
 }
 
 const RWANDA_ACTIVITIES: ActivityOption[] = [
-  { id: "gym", name: "Gym Floor & Free Weights", icon: Dumbbell, category: "Fitness" },
-  { id: "functional", name: "HIIT & Functional Circuits", icon: Activity, category: "Fitness" },
-  { id: "pool", name: "Olympic Swimming & Lap Pool", icon: Waves, category: "Aquatics" },
-  { id: "sauna", name: "Steam Room & Finnish Sauna", icon: Flame, category: "Wellness" },
-  { id: "yoga", name: "Yoga & Reformer Pilates", icon: Sparkles, category: "Mind & Body" },
-  { id: "aerobics", name: "Group Aerobics & Zumba", icon: Layers, category: "Group Fitness" },
-  { id: "combat", name: "Boxing & Combat Sports", icon: Award, category: "Combat" },
-  { id: "physio", name: "Sports Physiotherapy & Rehab", icon: HeartPulse, category: "Clinical" },
+  { id: "gym", name: "Gym Floor & Free Weights (Eleiko Barbells, Squat Racks, Dumbbells)", icon: Dumbbell, category: "Strength & Fitness" },
+  { id: "functional", name: "HIIT & Functional Turf Circuits (Sleds, Rowers, AirBikes)", icon: Activity, category: "Conditioning" },
+  { id: "pool", name: "25m Semi-Olympic Heated Lap Pool & Towels", icon: Waves, category: "Aquatics" },
+  { id: "sauna", name: "Finnish Dry Sauna & Eucalyptus Steam Room", icon: Flame, category: "Thermal Wellness" },
+  { id: "cold_plunge", name: "Ice Bath & Cold Plunge Tub", icon: Waves, category: "Thermal Wellness" },
+  { id: "yoga", name: "Yoga & Reformer Pilates (Mats & Props)", icon: Sparkles, category: "Mind & Body" },
+  { id: "aerobics", name: "Group Aerobics & Afro-Beats Dance Fitness", icon: Layers, category: "Group Fitness" },
+  { id: "spinning", name: "Indoor Cycling & Spinning Studio", icon: Activity, category: "Cardio" },
+  { id: "tennis_padel", name: "Clay Tennis & Padel Courts (Floodlit)", icon: Trophy, category: "Racquet Sports" },
+  { id: "combat", name: "Boxing & Combat Sports Heavy Bags", icon: Award, category: "Combat" },
+  { id: "physio", name: "Sports Physiotherapy & Recovery Clinic", icon: HeartPulse, category: "Clinical Recovery" },
+  { id: "generator", name: "24/7 Backup Generator (Zero Outage Guarantee)", icon: Zap, category: "Facility Infrastructure" },
+  { id: "water_reserve", name: "Dedicated Water Reserves & Solar Hot Showers", icon: Droplets, category: "Facility Infrastructure" },
+  { id: "parking", name: "Guarded Secure Parking with 24/7 Security", icon: Car, category: "Hospitality & Access" },
+  { id: "lockers", name: "Digital Lockers & Private Dressing Suites", icon: Lock, category: "Hospitality & Access" },
+  { id: "wifi", name: "High-Speed Fiber Wi-Fi", icon: Wifi, category: "Connectivity" },
+  { id: "inbody", name: "InBody Bioimpedance Health Scan", icon: ScanLine, category: "Health & Assessment" },
+  { id: "cafe", name: "Protein Shake & Rwandan Specialty Coffee Bar", icon: Coffee, category: "Hospitality" },
 ];
 
 const RWANDA_DISTRICTS = [
@@ -82,6 +101,7 @@ export default function PartnerRegistrationPage() {
   const [accountNumber, setAccountNumber] = useState("");
   const [momoNumber, setMomoNumber] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [customActivity, setCustomActivity] = useState("");
 
   const toggleActivity = (id: string) => {
     setSelectedActivities((prev) =>
@@ -91,6 +111,15 @@ export default function PartnerRegistrationPage() {
           : prev
         : [...prev, id]
     );
+  };
+
+  const handleAddCustomActivity = () => {
+    if (!customActivity.trim()) return;
+    const clean = customActivity.trim();
+    if (!selectedActivities.includes(clean)) {
+      setSelectedActivities((prev) => [...prev, clean]);
+    }
+    setCustomActivity("");
   };
 
   const validateStep1 = () => {
@@ -162,6 +191,7 @@ export default function PartnerRegistrationPage() {
             if (res.location) {
               localStorage.setItem("polyfit_partner_location", JSON.stringify(res.location));
             }
+            localStorage.setItem("polyfit_partner_registered_amenities", JSON.stringify(selectedActivities));
           } catch (e) {
             console.warn("[PartnerRegister] Storage notice:", e);
           }
@@ -437,6 +467,41 @@ export default function PartnerRegistrationPage() {
                       </button>
                     );
                   })}
+                </div>
+
+                {/* Custom unlisted activity or service input */}
+                <div className="p-3.5 rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#0B1F33]">
+                      Offering other wellness or sports services?
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      Add any unlisted specialty
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g. Ice Plunge, Padel Clinics, Recovery Saunas..."
+                      value={customActivity}
+                      onChange={(e) => setCustomActivity(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddCustomActivity();
+                        }
+                      }}
+                      className="flex-1 px-3.5 py-2 bg-white border border-[#CBD5E1] rounded-xl text-xs text-[#0B1F33] placeholder:text-slate-400 focus:outline-none focus:border-indigo-600"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCustomActivity}
+                      className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center gap-2">

@@ -10,7 +10,8 @@ import {
   Waves,
   HeartHandshake,
   Trophy,
-  Stethoscope
+  Stethoscope,
+  ShieldCheck
 } from 'lucide-react';
 import { WizardLocationState, AMENITY_CATEGORIES } from './types';
 
@@ -20,11 +21,12 @@ interface Step5Props {
 }
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
+  'Fitness & Strength Floor': Dumbbell,
+  'Aquatics & Thermal Wellness': Waves,
+  'Group Studios & Mind-Body': HeartHandshake,
+  'Sports & Racket Courts': Trophy,
+  'Hospitality, Power & Health': ShieldCheck,
   'General & Comfort': Dumbbell,
-  'Aquatic & Thermal': Waves,
-  'Studio & Mind-Body': HeartHandshake,
-  'Racquet & Court Sports': Trophy,
-  'Health & Assessment': Stethoscope,
 };
 
 export function Step5MultiCategoryAmenities({ state, onChange }: Step5Props) {
@@ -64,6 +66,12 @@ export function Step5MultiCategoryAmenities({ state, onChange }: Step5Props) {
         <p className="text-xs sm:text-sm text-[#526173] mt-1">
           PolyFit supports fitness facilities, Olympic pools, yoga & pilates studios, padel courts, and thermal recovery clinics. Selected tags appear on your discovery card.
         </p>
+        {selectedAmenities.length > 0 && (
+          <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E9FAF2] text-[#008A4B] text-[11px] font-bold border border-[#B7F1D2]">
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#28D17C]" />
+            <span>{selectedAmenities.length} authentic amenities preloaded from your registration profile</span>
+          </div>
+        )}
       </div>
 
       {/* Search & Custom Amenity Bar */}

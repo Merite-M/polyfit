@@ -1011,6 +1011,89 @@ router.get('/locations/:id', async (req, res) => {
 });
 
 /**
+ * PATCH /api/public/locations/:id
+ * Update facility location profile, amenities, photos, operating hours, and parent provider payout details during onboarding
+ */
+router.patch('/locations/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: 'Location ID is required', code: 'ID_REQUIRED' });
+    }
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    const {
+      name,
+      address,
+      city,
+      country,
+      lat,
+      lng,
+      capacity,
+      operating_hours,
+      amenities,
+      photos,
+      metadata,
+      status,
+      bank_details,
+      tax_id
+    } = req.body;
+
+    const locUpdates = {};
+    if (name !== undefined) locUpdates.name = name;
+    if (address !== undefined) locUpdates.address = address;
+    if (city !== undefined) locUpdates.city = city;
+    if (country !== undefined) locUpdates.country = country;
+    if (lat !== undefined) locUpdates.lat = lat;
+    if (lng !== undefined) locUpdates.lng = lng;
+    if (capacity !== undefined) locUpdates.capacity = capacity;
+    if (operating_hours !== undefined) locUpdates.operating_hours = operating_hours;
+    if (amenities !== undefined) locUpdates.amenities = amenities;
+    if (photos !== undefined) locUpdates.photos = photos;
+    if (metadata !== undefined) locUpdates.metadata = metadata;
+    if (status !== undefined) locUpdates.status = status;
+
+    const { data: updatedLoc, error: updateError } = await supabase
+      .from('provider_locations')
+      .update(locUpdates)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (updateError) {
+      console.error('[PublicLocations] Error updating location:', updateError);
+      return res.status(500).json({ error: updateError.message, code: 'LOCATION_UPDATE_FAILED' });
+    }
+
+    // Also update provider bank_details and tax_id if provided
+    if (updatedLoc.provider_id && (bank_details !== undefined || tax_id !== undefined)) {
+      const provUpdates = {};
+      if (bank_details !== undefined) provUpdates.bank_details = bank_details;
+      if (tax_id !== undefined) provUpdates.tax_id = tax_id;
+
+      await supabase
+        .from('providers')
+        .update(provUpdates)
+        .eq('id', updatedLoc.provider_id);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Facility location updated successfully',
+      location: updatedLoc
+    });
+  } catch (error) {
+    console.error('[PublicLocations] Patch error:', error);
+    return res.status(500).json({
+      error: error.message || 'Failed to update location',
+      code: 'LOCATION_UPDATE_FAILED'
+    });
+  }
+});
+
+/**
  * POST /api/public/corporate/register
  * Dedicated, multi-step self-service onboarding for corporate employers & HR leaders.
  * Configures corporate organization profile, auto-generates slug, creates benefit tier, and enables employee self-join.

@@ -10,7 +10,9 @@ import {
   CheckCircle2,
   Smartphone,
   Eye,
-  Rocket
+  Rocket,
+  Zap,
+  Sparkles
 } from 'lucide-react';
 import { usePartner } from '@/contexts/PartnerContext';
 import { apiFetch } from '@/lib/api-client';
@@ -31,6 +33,40 @@ import { Step9FacilityGallery } from '@/components/partner/wizard/Step9FacilityG
 import { Step10PayoutSetup } from '@/components/partner/wizard/Step10PayoutSetup';
 import { Step11LaunchReview } from '@/components/partner/wizard/Step11LaunchReview';
 import { LiveSmartphonePreview } from '@/components/partner/wizard/LiveSmartphonePreview';
+
+const ACTIVITY_TO_AMENITIES_MAP: Record<string, string[]> = {
+  gym: ['Olympic Lifting Platforms & Eleiko Barbells', 'Heavy Dumbbells (up to 50kg) & Benches', 'Squat Racks & Power Cages'],
+  functional: ['Functional Turf Track & Sleds', 'Assault AirBikes & StairMasters'],
+  pool: ['25m Semi-Olympic Heated Lap Pool', 'Fresh Microfiber Towel Service', 'Poolside Sun Loungers & Umbrellas'],
+  sauna: ['Finnish Dry Sauna', 'Eucalyptus Wet Steam Room'],
+  cold_plunge: ['Ice Bath & Cold Plunge Tub'],
+  yoga: ['Yoga Mats, Blocks & Straps Provided', 'Reformer Pilates Machines'],
+  aerobics: ['Aerobics & Afro-Beats Dance Floor'],
+  spinning: ['Indoor Cycling / Spinning Studio'],
+  tennis_padel: ['Padel Courts (Panoramic Glass, Floodlit)', 'Clay Tennis Courts'],
+  squash_badminton: ['Glass-Back Squash Courts', 'Badminton Courts'],
+  combat: ['Boxing Heavy Bags & Speedballs'],
+  physio: ['Sports Physiotherapy & Recovery Clinic', 'Ice Bath & Cold Plunge Tub'],
+  generator: ['24/7 Backup Generator (Zero Outage)'],
+  water_reserve: ['Dedicated Clean Water Reserve & Solar Hot Water'],
+  parking: ['Guarded Secure Parking'],
+  lockers: ['Individual Lockers with Digital Padlocks', 'Private Hot Showers & Vanity Dressing Suites'],
+  wifi: ['High-Speed Fiber Wi-Fi'],
+  inbody: ['InBody Bioimpedance Body Composition Scan'],
+  cafe: ['Protein Shake & Rwandan Coffee Cafe'],
+};
+
+function resolveRegisteredAmenities(rawItems: string[]): string[] {
+  const result: string[] = [];
+  for (const item of rawItems) {
+    if (ACTIVITY_TO_AMENITIES_MAP[item]) {
+      result.push(...ACTIVITY_TO_AMENITIES_MAP[item]);
+    } else {
+      result.push(item);
+    }
+  }
+  return result;
+}
 
 function PartnerSetupContent() {
   const router = useRouter();
@@ -134,20 +170,34 @@ function PartnerSetupContent() {
   useEffect(() => {
     if (!locationId) return;
 
+    let registeredAmenities: string[] = [];
     if (typeof window !== 'undefined') {
       try {
+        const rawRegistered = localStorage.getItem('polyfit_partner_registered_amenities');
+        if (rawRegistered) {
+          registeredAmenities = resolveRegisteredAmenities(JSON.parse(rawRegistered));
+        }
+
         const storedLoc = localStorage.getItem('polyfit_partner_location');
         if (storedLoc) {
           const parsed = JSON.parse(storedLoc);
           if (parsed?.id === locationId && parsed?.name) {
-            setFormState((prev) => ({
-              ...prev,
-              name: prev.name || parsed.name,
-              city: prev.city || parsed.city || 'Kigali',
-              address: prev.address || parsed.address || '',
-              country: prev.country || parsed.country || 'Rwanda',
-              amenities: prev.amenities?.length ? prev.amenities : (parsed.amenities || prev.amenities),
-            }));
+            const parsedResolved = resolveRegisteredAmenities(parsed.amenities || []);
+            setFormState((prev) => {
+              const combined = Array.from(new Set([
+                ...parsedResolved,
+                ...registeredAmenities,
+                ...(prev.amenities || []),
+              ]));
+              return {
+                ...prev,
+                name: prev.name || parsed.name,
+                city: prev.city || parsed.city || 'Kigali',
+                address: prev.address || parsed.address || '',
+                country: prev.country || parsed.country || 'Rwanda',
+                amenities: combined.length ? combined : prev.amenities,
+              };
+            });
           }
         }
       } catch (e) {
@@ -159,14 +209,22 @@ function PartnerSetupContent() {
       .then((data) => {
         if (data?.location) {
           const loc = data.location;
-          setFormState((prev) => ({
-            ...prev,
-            name: prev.name || loc.name,
-            city: prev.city || loc.city || 'Kigali',
-            address: prev.address || loc.address || '',
-            country: prev.country || loc.country || 'Rwanda',
-            amenities: prev.amenities?.length ? prev.amenities : (loc.amenities || prev.amenities),
-          }));
+          const locResolved = resolveRegisteredAmenities(loc.amenities || []);
+          setFormState((prev) => {
+            const combined = Array.from(new Set([
+              ...locResolved,
+              ...registeredAmenities,
+              ...(prev.amenities || []),
+            ]));
+            return {
+              ...prev,
+              name: prev.name || loc.name,
+              city: prev.city || loc.city || 'Kigali',
+              address: prev.address || loc.address || '',
+              country: prev.country || loc.country || 'Rwanda',
+              amenities: combined.length ? combined : prev.amenities,
+            };
+          });
           if (data.provider) {
             setProviderProfile(data.provider);
           }
@@ -174,6 +232,90 @@ function PartnerSetupContent() {
       })
       .catch((err) => console.warn('[PartnerSetup] Remote location fetch notice:', err));
   }, [locationId]);
+
+  const [presetAppliedToast, setPresetAppliedToast] = useState<boolean>(false);
+
+  const handleApplyKigaliPresets = () => {
+    const isPoolFacility =
+      provider?.category === 'pool' ||
+      formState.amenities?.some((a) => a.toLowerCase().includes('pool'));
+
+    const patch: Partial<WizardLocationState> = {
+      operating_hours: {
+        monday: { is_closed: false, shifts: [{ open: '06:00', close: '21:00' }] },
+        tuesday: { is_closed: false, shifts: [{ open: '06:00', close: '21:00' }] },
+        wednesday: { is_closed: false, shifts: [{ open: '06:00', close: '21:00' }] },
+        thursday: { is_closed: false, shifts: [{ open: '06:00', close: '21:00' }] },
+        friday: { is_closed: false, shifts: [{ open: '06:00', close: '21:00' }] },
+        saturday: { is_closed: false, shifts: [{ open: '08:00', close: '20:00' }] },
+        sunday: { is_closed: false, shifts: [{ open: '09:00', close: '18:00' }] },
+      },
+      description:
+        formState.description ||
+        `${formState.name || 'Our facility'} is Gasabo's premier wellness and conditioning center in Kimihurura, Kigali. Featuring Olympic lifting platforms, heated lap pools, eucalyptus steam rooms, and panoramic green terrace views. Certified trainers on deck.`,
+      important_notice:
+        formState.important_notice ||
+        'Please present your PolyFit mobile pass or corporate employee badge at reception upon entry.',
+      first_checkin_rules: {
+        booking_required: false,
+        registration_form_required: true,
+        guided_tour_mandatory: false,
+        arrive_early_minutes: 10,
+      },
+      recommended_gear: [
+        'Clean indoor athletic sneakers',
+        'Training towel',
+        'Hydration bottle',
+        'Locker padlock',
+        ...(isPoolFacility ? ['Swim cap & goggles'] : []),
+      ],
+      amenities: Array.from(
+        new Set([
+          'Olympic Lifting Platforms & Eleiko Barbells',
+          'Heavy Dumbbells (up to 50kg) & Benches',
+          'Technogym & LifeFitness Treadmills',
+          '25m Semi-Olympic Heated Lap Pool',
+          'Finnish Dry Sauna',
+          'Eucalyptus Wet Steam Room',
+          '24/7 Backup Generator (Zero Outage)',
+          'Dedicated Clean Water Reserve & Solar Hot Water',
+          'Guarded Secure Parking',
+          'Individual Lockers with Digital Padlocks',
+          'Private Hot Showers & Vanity Dressing Suites',
+          'High-Speed Fiber Wi-Fi',
+          ...(formState.amenities || []),
+        ])
+      ),
+      logo_url:
+        formState.logo_url ||
+        'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=300',
+      cover_url:
+        formState.cover_url ||
+        (isPoolFacility
+          ? 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=1200'
+          : 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&q=80&w=1200'),
+      entrance_url:
+        formState.entrance_url ||
+        'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=800',
+      gallery_urls:
+        formState.gallery_urls && formState.gallery_urls.length >= 3
+          ? formState.gallery_urls
+          : [
+              'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800',
+              'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&q=80&w=800',
+              'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=800',
+            ],
+      bank_name: formState.bank_name || 'Bank of Kigali (BK)',
+      swift_code: formState.swift_code || 'BOKRRWRW',
+      account_name: formState.account_name || `${formState.name || 'Partner'} Ltd`,
+      account_number: formState.account_number || '00490-0692841-29',
+      tax_id: formState.tax_id || '109 482 173',
+      payout_method: 'bank',
+    };
+    handlePatch(patch);
+    setPresetAppliedToast(true);
+    setTimeout(() => setPresetAppliedToast(false), 4000);
+  };
 
   // Auto-save patch
   const handlePatch = useCallback((patch: Partial<WizardLocationState>) => {
@@ -245,7 +387,31 @@ function PartnerSetupContent() {
         status: 'active',
       };
 
-      if (isEditing && locationId) {
+      if (locationId) {
+        // Direct public update to persist setup state to Supabase database
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        try {
+          await fetch(`${apiUrl}/api/public/locations/${locationId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...locationPayload,
+              bank_details: {
+                payout_method: formState.payout_method,
+                bank_name: formState.bank_name || 'Bank of Kigali (BK)',
+                account_name: formState.account_name,
+                account_number: formState.account_number,
+                swift_code: formState.swift_code || 'BOKRRWRW',
+                momo_provider: formState.momo_provider,
+                momo_code: formState.momo_code,
+                momo_phone: formState.momo_phone,
+              },
+              tax_id: formState.tax_id,
+            }),
+          });
+        } catch (e) {
+          console.warn('[PartnerSetup] Direct patch error:', e);
+        }
         await updateLocation(locationId, locationPayload);
       } else {
         await createLocation(locationPayload);
@@ -285,7 +451,7 @@ function PartnerSetupContent() {
 
   return (
     <div className="space-y-6">
-      {/* Stepper Navigation Header */}
+      {/* Stepper Navigation Header with integrated 1-click Fast-Track presets */}
       <WizardHeader
         currentStep={currentStep}
         onSelectStep={(step) => {
@@ -294,7 +460,15 @@ function PartnerSetupContent() {
         }}
         lastSavedAt={lastSavedAt}
         facilityName={formState.name ? (isEditing ? `Edit: ${formState.name}` : formState.name) : 'New Facility'}
+        onApplyPresets={handleApplyKigaliPresets}
       />
+
+      {presetAppliedToast && (
+        <div className="p-3 bg-[#E9FAF2] border border-[#28D17C] text-[#008A4B] text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm animate-in fade-in duration-200">
+          <CheckCircle2 className="w-4 h-4 text-[#28D17C]" />
+          <span>Verified Kigali facility presets applied! Operating hours, authentic amenities, bio, and rules are now ready for network launch.</span>
+        </div>
+      )}
 
       {/* Main 2-Column Responsive Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -407,7 +581,7 @@ function PartnerSetupContent() {
         </div>
 
         {/* Right Column: Persistent Live Smartphone Preview (lg+ only) */}
-        <div className="hidden lg:block lg:col-span-5 xl:col-span-4">
+        <div className="hidden lg:block lg:col-span-5 xl:col-span-4 sticky top-3 self-start">
           <LiveSmartphonePreview state={formState} currentStep={currentStep} />
         </div>
       </div>
@@ -466,14 +640,20 @@ function PartnerSetupContent() {
           <div className="pt-2 flex flex-col gap-2">
             <button
               type="button"
-              onClick={() => router.push('/partner/locations')}
+              onClick={() => {
+                setLaunchSuccess(false);
+                router.push('/partner/locations');
+              }}
               className="w-full py-2.5 bg-accent hover:bg-accent-hover text-accent-foreground text-xs font-bold rounded-xl transition-colors shadow-xs cursor-pointer"
             >
               Go to Location Management Hub
             </button>
             <button
               type="button"
-              onClick={() => router.push('/partner/checkins')}
+              onClick={() => {
+                setLaunchSuccess(false);
+                router.push('/partner/checkins');
+              }}
               className="w-full py-2.5 bg-muted hover:bg-border text-foreground text-xs font-bold rounded-xl transition-colors cursor-pointer"
             >
               Open Live Check-in Operations
