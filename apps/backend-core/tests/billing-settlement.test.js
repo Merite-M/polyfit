@@ -210,9 +210,10 @@ describe('Health Check', () => {
 describe('PF-121: Operations Marketplace Finance Endpoints', () => {
   const request = require('supertest');
   const app = require('../index');
+  const authHeader = 'Bearer demo-super-admin-token';
 
   it('GET /api/operations/finance/overview should return financial ticker metrics', async () => {
-    const res = await request(app).get('/api/operations/finance/overview');
+    const res = await request(app).get('/api/operations/finance/overview').set('Authorization', authHeader);
     assert.strictEqual(res.status, 200);
     assert.ok(res.body.success);
     assert.strictEqual(res.body.currency, 'RWF');
@@ -224,7 +225,7 @@ describe('PF-121: Operations Marketplace Finance Endpoints', () => {
   });
 
   it('GET /api/operations/finance/invoices should return paginated invoices list', async () => {
-    const res = await request(app).get('/api/operations/finance/invoices?page=1&limit=10');
+    const res = await request(app).get('/api/operations/finance/invoices?page=1&limit=10').set('Authorization', authHeader);
     assert.strictEqual(res.status, 200);
     assert.ok(res.body.success);
     assert.ok(Array.isArray(res.body.invoices));
@@ -232,7 +233,7 @@ describe('PF-121: Operations Marketplace Finance Endpoints', () => {
   });
 
   it('GET /api/operations/finance/settlements should return settlements list', async () => {
-    const res = await request(app).get('/api/operations/finance/settlements?page=1&limit=10');
+    const res = await request(app).get('/api/operations/finance/settlements?page=1&limit=10').set('Authorization', authHeader);
     assert.strictEqual(res.status, 200);
     assert.ok(res.body.success);
     assert.ok(Array.isArray(res.body.settlements));
@@ -240,7 +241,7 @@ describe('PF-121: Operations Marketplace Finance Endpoints', () => {
   });
 
   it('GET /api/operations/finance/ledger should return margin ledger by employer and category', async () => {
-    const res = await request(app).get('/api/operations/finance/ledger');
+    const res = await request(app).get('/api/operations/finance/ledger').set('Authorization', authHeader);
     assert.strictEqual(res.status, 200);
     assert.ok(res.body.success);
     assert.ok(Array.isArray(res.body.employerLedger));
@@ -248,7 +249,7 @@ describe('PF-121: Operations Marketplace Finance Endpoints', () => {
   });
 
   it('GET /api/operations/finance/disbursements?type=momo should return valid CSV', async () => {
-    const res = await request(app).get('/api/operations/finance/disbursements?type=momo');
+    const res = await request(app).get('/api/operations/finance/disbursements?type=momo').set('Authorization', authHeader);
     assert.strictEqual(res.status, 200);
     assert.ok(res.headers['content-type'].includes('text/csv'));
     assert.ok(res.text.includes('Phone Number'));
@@ -256,7 +257,7 @@ describe('PF-121: Operations Marketplace Finance Endpoints', () => {
   });
 
   it('GET /api/operations/finance/disbursements?type=bank should return valid CSV', async () => {
-    const res = await request(app).get('/api/operations/finance/disbursements?type=bank');
+    const res = await request(app).get('/api/operations/finance/disbursements?type=bank').set('Authorization', authHeader);
     assert.strictEqual(res.status, 200);
     assert.ok(res.headers['content-type'].includes('text/csv'));
     assert.ok(res.text.includes('Beneficiary Account Number'));
@@ -266,6 +267,7 @@ describe('PF-121: Operations Marketplace Finance Endpoints', () => {
   it('POST /api/operations/finance/billing-run should require date period', async () => {
     const res = await request(app)
       .post('/api/operations/finance/billing-run')
+      .set('Authorization', authHeader)
       .send({});
     assert.strictEqual(res.status, 400);
     assert.strictEqual(res.body.code, 'OPERATIONS_BILLING_RUN_FAILED');
@@ -274,6 +276,7 @@ describe('PF-121: Operations Marketplace Finance Endpoints', () => {
   it('POST /api/operations/finance/settlement-run should require date period', async () => {
     const res = await request(app)
       .post('/api/operations/finance/settlement-run')
+      .set('Authorization', authHeader)
       .send({});
     assert.strictEqual(res.status, 400);
     assert.strictEqual(res.body.code, 'OPERATIONS_SETTLEMENT_RUN_FAILED');

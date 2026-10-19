@@ -49,7 +49,12 @@ const {
   deleteOperationsPlan
 } = require('../services/operationsService');
 
+const { requireAuth, requireRole } = require('../middleware/authMiddleware');
+
 const router = express.Router();
+
+// Enforce strict authentication and super_admin / polyfit_ops authorization across all operational endpoints
+router.use(requireAuth, requireRole('super_admin', 'polyfit_ops'));
 
 /**
  * GET /api/operations/overview
