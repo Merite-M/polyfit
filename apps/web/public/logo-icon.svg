@@ -12,32 +12,23 @@
       <stop offset="0%" stop-color="#10B981" />
       <stop offset="100%" stop-color="#059669" />
     </linearGradient>
-    <linearGradient id="pf-facet-inner" x1="36" y1="36" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0B1F33" />
+    <linearGradient id="pf-facet-teal-wall" x1="32" y1="36" x2="50" y2="94" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0B6B4F" />
+      <stop offset="100%" stop-color="#074835" />
+    </linearGradient>
+    <linearGradient id="pf-facet-navy-wall" x1="36" y1="26" x2="68" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0F2840" />
       <stop offset="100%" stop-color="#08131F" />
     </linearGradient>
   </defs>
 
   <g stroke="#08131F" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
-    <!-- Outer Hexagon Letter 'P' Top Plane -->
     <path d="M50 10L82 28.5L68 36.5L50 26L32 36.5L18 28.5L50 10Z" fill="url(#pf-facet-top)" />
-
-    <!-- Upper Loop Outer Right Facet -->
     <path d="M82 28.5V56.5L68 64.5V36.5L82 28.5Z" fill="url(#pf-facet-right)" />
-
-    <!-- Loop Bottom Horizontal Plane -->
-    <path d="M68 64.5L50 54V46L68 36.5V64.5Z" fill="url(#pf-facet-inner)" />
-
-    <!-- Main Left Vertical Stem -->
+    <path d="M50 26L68 36.5V64.5L50 54V26Z" fill="url(#pf-facet-navy-wall)" />
     <path d="M18 28.5V75.5L32 83.5V36.5L18 28.5Z" fill="url(#pf-facet-left)" />
-
-    <!-- Stem Bottom Base & Inner Return -->
+    <path d="M32 36.5V83.5L50 94V66L32 55.5V36.5Z" fill="url(#pf-facet-teal-wall)" />
     <path d="M18 75.5L50 94V86L32 75.5L18 75.5Z" fill="url(#pf-facet-left)" />
-
-    <!-- Lower Stem Face Facing Right -->
-    <path d="M32 83.5L50 94V66L32 55.5V83.5Z" fill="url(#pf-facet-right)" />
-
-    <!-- Middle Loop Crossbar -->
     <path d="M32 55.5L50 66L68 55.5L50 45L32 55.5Z" fill="url(#pf-facet-top)" />
   </g>
 </svg>

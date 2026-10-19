@@ -10,9 +10,16 @@ export interface PolyFitLogoProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 /**
- * Clean 3D Isometric Hexagonal 'P' Logo Mark
- * Exact pixel-precision matching 'logo Partner.jpg', 'logo.jpg', and 'image.png'
- * Features dark navy outer strokes (#08131F) & vibrant emerald facets
+ * 3D Isometric Hexagonal 'P' Logo Mark
+ * Precise 6-Facet Axonometric Projection matching logo Partner.jpg, logo.jpg, and image.png
+ *
+ * Facet Breakdown:
+ * 1. Top Roof Planes: Vibrant Emerald (#34E58C -> #28D17C)
+ * 2. Front Left Stem & Loop Planes: Radiant Emerald (#28D17C -> #10B981)
+ * 3. Front Right Outer Loop Facet: Medium Emerald (#10B981 -> #059669)
+ * 4. Inner Stem Vertical Wall: Deep Teal (#0A5C43 -> #084331) [Dark Block 1]
+ * 5. Upper Loop Inner Ceiling & Wall: Midnight Navy (#0B1F33 -> #08131F) [Dark Block 2]
+ * 6. Outer Contour: Dark Tech Navy Stroke (#08131F)
  */
 export function IsometricHexMark({ size = 36, className }: { size?: number; className?: string }) {
   return (
@@ -26,62 +33,75 @@ export function IsometricHexMark({ size = 36, className }: { size?: number; clas
       aria-label="PolyFit 3D Isometric Hexagonal Logo"
     >
       <defs>
+        {/* Roof Facet Gradient */}
         <linearGradient id="pf-facet-top" x1="20" y1="12" x2="80" y2="46" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#34E58C" />
           <stop offset="100%" stopColor="#28D17C" />
         </linearGradient>
+
+        {/* Front Left Facet Gradient */}
         <linearGradient id="pf-facet-left" x1="16" y1="28" x2="52" y2="90" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#28D17C" />
           <stop offset="100%" stopColor="#10B981" />
         </linearGradient>
+
+        {/* Outer Right Facet Gradient */}
         <linearGradient id="pf-facet-right" x1="48" y1="28" x2="84" y2="70" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#10B981" />
           <stop offset="100%" stopColor="#059669" />
         </linearGradient>
-        <linearGradient id="pf-facet-inner" x1="36" y1="36" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#0B1F33" />
+
+        {/* Dark Teal Inner Stem Shadow Wall [Dark Block 1] */}
+        <linearGradient id="pf-facet-teal-wall" x1="32" y1="36" x2="50" y2="94" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#0B6B4F" />
+          <stop offset="100%" stopColor="#074835" />
+        </linearGradient>
+
+        {/* Midnight Navy Inner Ceiling & Wall [Dark Block 2] */}
+        <linearGradient id="pf-facet-navy-wall" x1="36" y1="26" x2="68" y2="64" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#0F2840" />
           <stop offset="100%" stopColor="#08131F" />
         </linearGradient>
       </defs>
 
-      <g stroke="#08131F" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
-        {/* Outer Hexagon Letter 'P' Top Plane */}
+      <g stroke="#08131F" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round">
+        {/* 1. Outer Hexagon Roof Plane */}
         <path
           d="M50 10L82 28.5L68 36.5L50 26L32 36.5L18 28.5L50 10Z"
           fill="url(#pf-facet-top)"
         />
 
-        {/* Upper Loop Outer Right Facet */}
+        {/* 2. Upper Loop Outer Right Facet */}
         <path
           d="M82 28.5V56.5L68 64.5V36.5L82 28.5Z"
           fill="url(#pf-facet-right)"
         />
 
-        {/* Loop Bottom Horizontal Plane */}
+        {/* 3. Midnight Navy Loop Inner Ceiling & Wall [Dark Block 2] */}
         <path
-          d="M68 64.5L50 54V46L68 36.5V64.5Z"
-          fill="url(#pf-facet-inner)"
+          d="M50 26L68 36.5V64.5L50 54V26Z"
+          fill="url(#pf-facet-navy-wall)"
         />
 
-        {/* Main Left Vertical Stem */}
+        {/* 4. Main Left Vertical Stem Front Face */}
         <path
           d="M18 28.5V75.5L32 83.5V36.5L18 28.5Z"
           fill="url(#pf-facet-left)"
         />
 
-        {/* Stem Bottom Base & Inner Return */}
+        {/* 5. Deep Teal Inner Stem Vertical Wall [Dark Block 1] */}
+        <path
+          d="M32 36.5V83.5L50 94V66L32 55.5V36.5Z"
+          fill="url(#pf-facet-teal-wall)"
+        />
+
+        {/* 6. Stem Bottom Base Return */}
         <path
           d="M18 75.5L50 94V86L32 75.5L18 75.5Z"
           fill="url(#pf-facet-left)"
         />
 
-        {/* Lower Stem Face Facing Right */}
-        <path
-          d="M32 83.5L50 94V66L32 55.5V83.5Z"
-          fill="url(#pf-facet-right)"
-        />
-
-        {/* Middle Loop Crossbar */}
+        {/* 7. Middle Loop Return Crossbar */}
         <path
           d="M32 55.5L50 66L68 55.5L50 45L32 55.5Z"
           fill="url(#pf-facet-top)"

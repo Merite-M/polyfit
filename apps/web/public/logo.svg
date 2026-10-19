@@ -12,8 +12,12 @@
       <stop offset="0%" stop-color="#10B981" />
       <stop offset="100%" stop-color="#059669" />
     </linearGradient>
-    <linearGradient id="pf-facet-inner" x1="28" y1="28" x2="52" y2="52" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0B1F33" />
+    <linearGradient id="pf-facet-teal-wall" x1="25" y1="28" x2="40" y2="75" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0B6B4F" />
+      <stop offset="100%" stop-color="#074835" />
+    </linearGradient>
+    <linearGradient id="pf-facet-navy-wall" x1="28" y1="20" x2="54" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0F2840" />
       <stop offset="100%" stop-color="#08131F" />
     </linearGradient>
   </defs>
@@ -22,10 +26,10 @@
   <g transform="translate(10, 0)" stroke="#08131F" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round">
     <path d="M40 8L65.6 22.8L54.4 29.2L40 20.8L25.6 29.2L14.4 22.8L40 8Z" fill="url(#pf-facet-top)" />
     <path d="M65.6 22.8V45.2L54.4 51.6V29.2L65.6 22.8Z" fill="url(#pf-facet-right)" />
-    <path d="M54.4 51.6L40 43.2V36.8L54.4 29.2V51.6Z" fill="url(#pf-facet-inner)" />
+    <path d="M40 20.8L54.4 29.2V51.6L40 43.2V20.8Z" fill="url(#pf-facet-navy-wall)" />
     <path d="M14.4 22.8V60.4L25.6 66.8V29.2L14.4 22.8Z" fill="url(#pf-facet-left)" />
+    <path d="M25.6 29.2V66.8L40 75.2V52.8L25.6 44.4V29.2Z" fill="url(#pf-facet-teal-wall)" />
     <path d="M14.4 60.4L40 75.2V68.8L25.6 60.4L14.4 60.4Z" fill="url(#pf-facet-left)" />
-    <path d="M25.6 66.8L40 75.2V52.8L25.6 44.4V66.8Z" fill="url(#pf-facet-right)" />
     <path d="M25.6 44.4L40 52.8L54.4 44.4L40 36L25.6 44.4Z" fill="url(#pf-facet-top)" />
   </g>
 
