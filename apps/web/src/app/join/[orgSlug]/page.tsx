@@ -1,12 +1,17 @@
 import React from "react";
 import Link from "next/link";
 import { ShieldCheck, AlertTriangle } from "lucide-react";
+import { PolyFitLogo } from "@/components/ui/polyfit-logo";
 import { EmployeeJoinClient } from "@/components/corporate/EmployeeJoinClient";
 
 export function generateStaticParams() {
   return [
     { orgSlug: "techcorp-rwanda" },
     { orgSlug: "bank-of-kigali" },
+    { orgSlug: "irembo" },
+    { orgSlug: "equity-bank" },
+    { orgSlug: "mtn-rwanda" },
+    { orgSlug: "airtel-rwanda" },
   ];
 }
 
@@ -64,17 +69,10 @@ export default async function EmployeeJoinPage({ params }: PageProps) {
       {/* Top Simple Brand Navbar */}
       <header className="h-16 px-6 bg-white border-b border-[#E2E8F0] flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#0B1F33] text-white flex items-center justify-center font-bold text-sm">
-            <span className="text-[#28D17C]">P</span>F
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-[#0B1F33] text-base tracking-tight">
-              PolyFit
-            </span>
-            <span className="text-[10px] font-semibold bg-[#E9FAF2] text-[#28D17C] px-2 py-0.5 rounded-full border border-[#28D17C]/20">
-              Wellness Pass
-            </span>
-          </div>
+          <PolyFitLogo theme="light" iconSize={28} />
+          <span className="text-[10px] font-semibold bg-[#E9FAF2] text-[#28D17C] px-2 py-0.5 rounded-full border border-[#28D17C]/20">
+            Wellness Pass
+          </span>
         </Link>
 
         <div className="flex items-center gap-2 text-xs text-[#526173]">

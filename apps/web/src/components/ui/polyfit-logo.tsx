@@ -177,8 +177,17 @@ export function PolyFitLogo({
   ...props
 }: PolyFitLogoProps) {
   const isDark = theme === "dark";
-  const wordmarkTextColor = isDark ? "text-white" : "text-[#0B1F33]";
-  const subtitleColor = isDark ? "text-slate-400" : "text-[#526173]";
+  const isAuto = theme === "auto";
+  const wordmarkTextColor = isDark 
+    ? "text-white" 
+    : isAuto 
+    ? "text-[#0B1F33] dark:text-white" 
+    : "text-[#0B1F33]";
+  const subtitleColor = isDark 
+    ? "text-slate-400" 
+    : isAuto 
+    ? "text-[#526173] dark:text-slate-400" 
+    : "text-[#526173]";
 
   return (
     <div

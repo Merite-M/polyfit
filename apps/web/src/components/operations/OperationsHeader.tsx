@@ -68,18 +68,18 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
       </div>
 
       {/* Center: Universal Omnibar Trigger (Keyboard First) */}
-      <div className="hidden md:flex items-center flex-1 max-w-md mx-6">
+      <div className="hidden md:flex items-center flex-1 max-w-md mx-2 sm:mx-4 lg:mx-6 min-w-0">
         <button
           onClick={onOpenOmnibar}
-          className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 hover:border-slate-300 text-xs text-slate-500 transition-all shadow-2xs group cursor-pointer"
+          className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 hover:border-slate-300 text-xs text-slate-500 transition-all shadow-2xs group cursor-pointer min-w-0 overflow-hidden"
         >
-          <div className="flex items-center gap-2.5">
-            <Search className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" />
-            <span className="text-slate-600 font-medium">
+          <div className="flex items-center gap-2.5 min-w-0 overflow-hidden">
+            <Search className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors shrink-0" />
+            <span className="text-slate-600 font-medium truncate">
               Search employers, providers, visits, invoices...
             </span>
           </div>
-          <div className="flex items-center gap-1 font-mono text-[10px] text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded-md shadow-2xs">
+          <div className="flex items-center gap-1 font-mono text-[10px] text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded-md shadow-2xs shrink-0 ml-2">
             <kbd className="font-sans">⌘</kbd>
             <span>K</span>
           </div>
