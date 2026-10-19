@@ -105,28 +105,28 @@ export default function Footer({ onOpenLeadForm }: FooterProps = {}) {
             </ul>
           </div>
 
-          {/* Access */}
+          {/* Trust & Coverage */}
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-300 mb-3 sm:mb-4">Portal Access</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-300 mb-3 sm:mb-4">Network & Trust</h3>
             <ul className="space-y-2 sm:space-y-2.5 text-xs sm:text-sm text-gray-400">
               <li>
-                <Link href="/corporate" className="hover:text-accent transition-colors font-medium">
-                  Employer HR Portal
+                <Link href="/network" className="hover:text-white transition-colors">
+                  Kigali Venue Directory
                 </Link>
               </li>
               <li>
-                <Link href="/partner" className="hover:text-accent transition-colors font-medium">
-                  Wellness Partner Portal
+                <Link href="/join" className="hover:text-white transition-colors">
+                  Activate Employee Pass
                 </Link>
               </li>
               <li>
-                <Link href="/operations" className="hover:text-accent transition-colors font-medium">
-                  Operations Console
+                <Link href="/privacy" className="hover:text-white transition-colors">
+                  Data Privacy & Security
                 </Link>
               </li>
               <li>
-                <Link href="/join" className="hover:text-accent transition-colors text-xs text-gray-400">
-                  Beneficiary Pass Claim
+                <Link href="/terms" className="hover:text-white transition-colors">
+                  Corporate Terms
                 </Link>
               </li>
             </ul>
