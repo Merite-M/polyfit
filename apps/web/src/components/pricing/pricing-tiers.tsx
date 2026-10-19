@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Check, Sparkles, Building2, ShieldCheck, Zap, ArrowRight } from "lucide-react";
 import { useLeadModal } from "@/lib/lead-modal";
 import { apiFetch } from "@/lib/api-client";
@@ -314,7 +315,7 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
                 >
                   {/* Popular Ribbon */}
                   {tier.popular && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-xs font-bold uppercase tracking-wider px-4 py-1 rounded-full shadow-sm flex items-center gap-1.5">
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-xs font-bold uppercase tracking-wider px-4 py-1 rounded-full shadow-sm flex items-center gap-1.5 whitespace-nowrap z-20">
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>Most Popular Choice</span>
                     </div>
@@ -324,9 +325,11 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
                     {/* Header */}
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="pf-fluid-heading font-bold text-foreground tracking-tight">{tier.name}</h3>
-                      <span className="pf-fluid-badge font-semibold text-muted-foreground bg-muted px-2.5 py-1 rounded-[6px]">
-                        {tier.badge}
-                      </span>
+                      {!tier.popular && (
+                        <span className="pf-fluid-badge font-semibold text-muted-foreground bg-muted px-2.5 py-1 rounded-[6px]">
+                          {tier.badge}
+                        </span>
+                      )}
                     </div>
 
                     <p className="text-sm text-muted-foreground min-h-[40px] mb-6 leading-relaxed">
@@ -392,9 +395,8 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
 
                   {/* Card CTA */}
                   <div>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenLead('employer')}
+                    <Link
+                      href={`/corporate/register?plan=${tier.id}`}
                       className={`w-full py-3.5 px-6 rounded-[10px] text-sm font-bold transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer ${
                         tier.popular
                           ? "bg-accent hover:bg-emerald-400 text-accent-foreground shadow-md hover:shadow-lg hover:shadow-accent/20"
@@ -405,7 +407,7 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
                     >
                       <span>{tier.ctaText}</span>
                       <ArrowRight className="w-4 h-4" />
-                    </button>
+                    </Link>
                     <p className="text-[11px] text-center text-muted-foreground mt-2.5">
                       {tier.id === "enterprise" ? "Custom enterprise SLA" : "Includes full RRA EBM tax compliance"}
                     </p>
