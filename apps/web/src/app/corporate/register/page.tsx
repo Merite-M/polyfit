@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Building2,
   Users,
@@ -76,8 +76,10 @@ const PLAN_TIERS: PlanTier[] = [
   }
 ];
 
-export default function CorporateRegistrationPage() {
+function CorporateRegistrationContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const planQuery = searchParams.get("plan");
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -89,7 +91,12 @@ export default function CorporateRegistrationPage() {
   const [phone, setPhone] = useState("");
   const [headcount, setHeadcount] = useState<number>(30);
   const [industry, setIndustry] = useState("Technology & Financial Services");
-  const [selectedTier, setSelectedTier] = useState<string>("starter");
+  const [selectedTier, setSelectedTier] = useState<string>(() => {
+    if (planQuery && PLAN_TIERS.some((p) => p.id === planQuery.toLowerCase())) {
+      return planQuery.toLowerCase();
+    }
+    return "starter";
+  });
   const [subsidyPercentage, setSubsidyPercentage] = useState<number>(100);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
@@ -625,5 +632,19 @@ export default function CorporateRegistrationPage() {
         PolyFit Corporate Wellness Network &bull; Employer Onboarding &bull; Kigali, Rwanda
       </footer>
     </div>
+  );
+}
+
+export default function CorporateRegistrationPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F7F9FC] flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <CorporateRegistrationContent />
+    </Suspense>
   );
 }
