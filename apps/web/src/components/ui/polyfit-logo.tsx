@@ -11,7 +11,7 @@ export interface PolyFitLogoProps extends React.HTMLAttributes<HTMLDivElement> {
 
 /**
  * Clean 3D Isometric Hexagonal 'P' Logo Mark
- * Exact pixel-precision matching 'logo Partner.jpg' and 'logo.jpg'
+ * Exact pixel-precision matching 'logo Partner.jpg', 'logo.jpg', and 'image.png'
  * Features dark navy outer strokes (#08131F) & vibrant emerald facets
  */
 export function IsometricHexMark({ size = 36, className }: { size?: number; className?: string }) {
@@ -44,7 +44,7 @@ export function IsometricHexMark({ size = 36, className }: { size?: number; clas
         </linearGradient>
       </defs>
 
-      <g stroke="#08131F" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round">
+      <g stroke="#08131F" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
         {/* Outer Hexagon Letter 'P' Top Plane */}
         <path
           d="M50 10L82 28.5L68 36.5L50 26L32 36.5L18 28.5L50 10Z"
@@ -93,7 +93,6 @@ export function IsometricHexMark({ size = 36, className }: { size?: number; clas
 
 /**
  * Constellation Connected Nodes 'P' Mark
- * Digital network motif from "PolyFit Primary Logo"
  */
 export function ConstellationNetworkMark({ size = 36, className }: { size?: number; className?: string }) {
   return (
@@ -113,7 +112,6 @@ export function ConstellationNetworkMark({ size = 36, className }: { size?: numb
         </filter>
       </defs>
 
-      {/* Constellation Network Edges */}
       <g stroke="#28D17C" strokeWidth="2" strokeOpacity="0.85" strokeLinecap="round">
         <line x1="22" y1="22" x2="22" y2="48" />
         <line x1="22" y1="48" x2="22" y2="78" />
@@ -138,7 +136,6 @@ export function ConstellationNetworkMark({ size = 36, className }: { size?: numb
         <line x1="22" y1="48" x2="58" y2="68" />
       </g>
 
-      {/* Constellation Nodes */}
       <g fill="#28D17C" filter="url(#pf-node-glow)">
         <circle cx="22" cy="22" r="4.5" />
         <circle cx="22" cy="48" r="4.5" />
@@ -158,6 +155,7 @@ export function ConstellationNetworkMark({ size = 36, className }: { size?: numb
 
 /**
  * Master PolyFit Logo Component with theme, sizing, and lockup options
+ * Explicitly matches image.png ('Poly' in dark navy / white, 'Fit' in vibrant emerald green)
  */
 export function PolyFitLogo({
   variant = "full",
@@ -170,7 +168,7 @@ export function PolyFitLogo({
 }: PolyFitLogoProps) {
   const isDark = theme === "dark";
   const isAuto = theme === "auto";
-  const wordmarkTextColor = isDark 
+  const polyTextColor = isDark
     ? "text-white" 
     : isAuto 
     ? "text-navy dark:text-white"
@@ -183,7 +181,7 @@ export function PolyFitLogo({
 
   return (
     <div
-      className={cn("inline-flex items-center gap-3 select-none group", className)}
+      className={cn("inline-flex items-center gap-2.5 select-none group", className)}
       {...props}
     >
       {/* Icon Marks */}
@@ -195,17 +193,15 @@ export function PolyFitLogo({
         <ConstellationNetworkMark size={iconSize} />
       )}
 
-      {/* Typography Lockup */}
+      {/* Typography Lockup matching image.png */}
       {(variant === "full" || variant === "wordmark") && showWordmark && (
         <div className="flex flex-col justify-center">
           <span
-            className={cn(
-              "font-extrabold tracking-tight font-sans flex items-center leading-none",
-              wordmarkTextColor
-            )}
-            style={{ fontSize: `${Math.max(20, Math.round(iconSize * 0.7))}px` }}
+            className="font-extrabold tracking-tight font-sans flex items-center leading-none"
+            style={{ fontSize: `${Math.max(20, Math.round(iconSize * 0.72))}px` }}
           >
-            Poly<span className="text-accent ml-[1px]">Fit</span>
+            <span className={polyTextColor}>Poly</span>
+            <span className="text-accent ml-[0.5px]">Fit</span>
           </span>
 
           {showSubtitle && (
