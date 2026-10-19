@@ -1,19 +1,34 @@
-<svg width="200" height="240" viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- PolyFit 3D Isometric Hexagonal 'P' Symbol -->
-  <g id="logo-icon-mark">
-    <!-- Top Isometric Hex Loop (Vibrant Emerald #28D17C) -->
-    <path d="M70 20 L130 20 L160 71.96 L130 123.92 L70 123.92 L40 71.96 Z" fill="#28D17C" />
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pf-facet-top" x1="20" y1="12" x2="80" y2="46" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34E58C" />
+      <stop offset="100%" stop-color="#28D17C" />
+    </linearGradient>
+    <linearGradient id="pf-facet-left" x1="16" y1="28" x2="52" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#28D17C" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+    <linearGradient id="pf-facet-right" x1="48" y1="28" x2="84" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="pf-facet-teal-wall" x1="32" y1="36" x2="50" y2="94" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0B6B4F" />
+      <stop offset="100%" stop-color="#074835" />
+    </linearGradient>
+    <linearGradient id="pf-facet-navy-wall" x1="36" y1="26" x2="68" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0F2840" />
+      <stop offset="100%" stop-color="#08131F" />
+    </linearGradient>
+  </defs>
 
-    <!-- Outer Right & Bottom Facets (Dark Emerald #10B981) -->
-    <path d="M130 20 L160 71.96 L130 123.92 L100 123.92 L130 71.96 L100 20 Z" fill="#10B981" />
-
-    <!-- Stem of the P (Deep Tech Navy #0B1F33) -->
-    <path d="M40 71.96 L70 123.92 L70 220 L40 168.04 Z" fill="#0B1F33" />
-
-    <!-- Outer Left Plane (Dark Navy Accent #06121E) -->
-    <path d="M40 71.96 L70 20 L70 123.92 L40 71.96 Z" fill="#06121E" />
-
-    <!-- Open Hexagonal Cutout / Counter in Center Loop -->
-    <polygon points="85,52.5 115,52.5 130,78.48 115,104.46 85,104.46 70,78.48" fill="none" />
+  <g stroke="#08131F" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M50 10L82 28.5L68 36.5L50 26L32 36.5L18 28.5L50 10Z" fill="url(#pf-facet-top)" />
+    <path d="M82 28.5V56.5L68 64.5V36.5L82 28.5Z" fill="url(#pf-facet-right)" />
+    <path d="M50 26L68 36.5V64.5L50 54V26Z" fill="url(#pf-facet-navy-wall)" />
+    <path d="M18 28.5V75.5L32 83.5V36.5L18 28.5Z" fill="url(#pf-facet-left)" />
+    <path d="M32 36.5V83.5L50 94V66L32 55.5V36.5Z" fill="url(#pf-facet-teal-wall)" />
+    <path d="M18 75.5L50 94V86L32 75.5L18 75.5Z" fill="url(#pf-facet-left)" />
+    <path d="M32 55.5L50 66L68 55.5L50 45L32 55.5Z" fill="url(#pf-facet-top)" />
   </g>
 </svg>

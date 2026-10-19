@@ -1,13 +1,7 @@
-/**
- * PolyFit Official Brand Logo Component (Mobile Edition)
- * True 3D Isometric Hexagonal 'P' Mark from PolyFit Stitch Design System v1.0
- * Cross-platform vector on Web & retina-optimized asset on iOS/Android.
- */
-
 import React from 'react';
-import { View, Text, StyleSheet, Platform, StyleProp, ViewStyle, TextStyle } from 'react-native';
+import { View, Text, StyleSheet, Platform, StyleProp, ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
-import { Palette, Radius, Spacing } from '@/constants/theme';
+import { Palette } from '@/constants/theme';
 
 interface PolyFitLogoProps {
   size?: number;
@@ -19,11 +13,10 @@ interface PolyFitLogoProps {
 
 /**
  * 3D Isometric Hexagonal 'P' Logo Mark
- * True 30° axonometric projection with facet gradients
+ * Precise 6-Facet Axonometric Projection matching logo Partner.jpg, logo.jpg, and image.png
  */
 export function IsometricHexMark({ size = 36 }: { size?: number }) {
   if (Platform.OS === 'web') {
-    // Crisp inline SVG for Web Virtualization & Chrome DevTools
     return (
       <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
         <svg
@@ -47,59 +40,43 @@ export function IsometricHexMark({ size = 36 }: { size?: number }) {
               <stop offset="0%" stopColor="#10B981" />
               <stop offset="100%" stopColor="#059669" />
             </linearGradient>
-            <linearGradient id="m-pf-facet-inner" x1="36" y1="36" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#0B1F33" />
-              <stop offset="100%" stopColor="#142C44" />
+            <linearGradient id="m-pf-facet-teal-wall" x1="32" y1="36" x2="50" y2="94" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#0B6B4F" />
+              <stop offset="100%" stopColor="#074835" />
+            </linearGradient>
+            <linearGradient id="m-pf-facet-navy-wall" x1="36" y1="26" x2="68" y2="64" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#0F2840" />
+              <stop offset="100%" stopColor="#08131F" />
             </linearGradient>
           </defs>
 
-          {/* Outer Hexagon Letter 'P' Top Plane */}
-          <path
-            d="M50 10L82 28.5L68 36.5L50 26L32 36.5L18 28.5L50 10Z"
-            fill="url(#m-pf-facet-top)"
-          />
+          <g stroke="#08131F" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round">
+            {/* 1. Outer Hexagon Roof Plane */}
+            <path d="M50 10L82 28.5L68 36.5L50 26L32 36.5L18 28.5L50 10Z" fill="url(#m-pf-facet-top)" />
 
-          {/* Upper Loop Outer Right Facet */}
-          <path
-            d="M82 28.5V56.5L68 64.5V36.5L82 28.5Z"
-            fill="url(#m-pf-facet-right)"
-          />
+            {/* 2. Upper Loop Outer Right Facet */}
+            <path d="M82 28.5V56.5L68 64.5V36.5L82 28.5Z" fill="url(#m-pf-facet-right)" />
 
-          {/* Loop Bottom Horizontal Plane */}
-          <path
-            d="M68 64.5L50 54V46L68 36.5V64.5Z"
-            fill="url(#m-pf-facet-inner)"
-          />
+            {/* 3. Midnight Navy Loop Inner Ceiling & Wall [Dark Block 2] */}
+            <path d="M50 26L68 36.5V64.5L50 54V26Z" fill="url(#m-pf-facet-navy-wall)" />
 
-          {/* Main Left Vertical Stem */}
-          <path
-            d="M18 28.5V75.5L32 83.5V36.5L18 28.5Z"
-            fill="url(#m-pf-facet-left)"
-          />
+            {/* 4. Main Left Vertical Stem Front Face */}
+            <path d="M18 28.5V75.5L32 83.5V36.5L18 28.5Z" fill="url(#m-pf-facet-left)" />
 
-          {/* Stem Bottom Base & Inner Return */}
-          <path
-            d="M18 75.5L50 94V86L32 75.5L18 75.5Z"
-            fill="url(#m-pf-facet-left)"
-          />
+            {/* 5. Deep Teal Inner Stem Vertical Wall [Dark Block 1] */}
+            <path d="M32 36.5V83.5L50 94V66L32 55.5V36.5Z" fill="url(#m-pf-facet-teal-wall)" />
 
-          {/* Lower Stem Face Facing Right */}
-          <path
-            d="M32 83.5L50 94V66L32 55.5V83.5Z"
-            fill="url(#m-pf-facet-right)"
-          />
+            {/* 6. Stem Bottom Base Return */}
+            <path d="M18 75.5L50 94V86L32 75.5L18 75.5Z" fill="url(#m-pf-facet-left)" />
 
-          {/* Middle Loop Crossbar */}
-          <path
-            d="M32 55.5L50 66L68 55.5L50 45L32 55.5Z"
-            fill="url(#m-pf-facet-top)"
-          />
+            {/* 7. Middle Loop Return Crossbar */}
+            <path d="M32 55.5L50 66L68 55.5L50 45L32 55.5Z" fill="url(#m-pf-facet-top)" />
+          </g>
         </svg>
       </View>
     );
   }
 
-  // Native iOS / Android retina raster fallback
   return (
     <Image
       source={require('@/assets/images/polyfit-logo-stitch.png')}
@@ -128,7 +105,7 @@ export function PolyFitLogo({
       {showWordmark && (
         <View style={styles.textContainer}>
           <Text style={[styles.wordmark, isDark ? styles.textDark : styles.textLight]}>
-            POLY<Text style={{ color: Palette.green }}>FIT</Text>
+            Poly<Text style={{ color: Palette.green }}>Fit</Text>
           </Text>
 
           {showSubtitle && (
@@ -151,8 +128,8 @@ const styles = StyleSheet.create({
   },
   wordmark: {
     fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: 0.5,
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
   textDark: {
     color: '#FFFFFF',
@@ -161,10 +138,11 @@ const styles = StyleSheet.create({
     color: '#0B1F33',
   },
   subtitle: {
-    fontSize: 10,
+    fontSize: 9,
     color: Palette.textSecondary,
     fontWeight: '600',
     marginTop: 1,
-    letterSpacing: 0.3,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
 });

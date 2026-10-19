@@ -10,13 +10,16 @@ export interface PolyFitLogoProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 /**
- * Clean 3D Isometric Hexagonal 'P' Logo Mark
- * True 30° axonometric projection with the clean open counter (no internal clutter)
- * Facet mapping:
- * - Top planes: Radiant PolyFit Green (#28D17C)
- * - Front-left outer planes: Dynamic Emerald (#22C55E / #10B981)
- * - Front-right outer planes: Deep Emerald (#00A86B)
- * - Inner drop plane: Midnight Navy (#0B1F33)
+ * 3D Isometric Hexagonal 'P' Logo Mark
+ * Precise 6-Facet Axonometric Projection matching logo Partner.jpg, logo.jpg, and image.png
+ *
+ * Facet Breakdown:
+ * 1. Top Roof Planes: Vibrant Emerald (#34E58C -> #28D17C)
+ * 2. Front Left Stem & Loop Planes: Radiant Emerald (#28D17C -> #10B981)
+ * 3. Front Right Outer Loop Facet: Medium Emerald (#10B981 -> #059669)
+ * 4. Inner Stem Vertical Wall: Deep Teal (#0A5C43 -> #084331) [Dark Block 1]
+ * 5. Upper Loop Inner Ceiling & Wall: Midnight Navy (#0B1F33 -> #08131F) [Dark Block 2]
+ * 6. Outer Contour: Dark Tech Navy Stroke (#08131F)
  */
 export function IsometricHexMark({ size = 36, className }: { size?: number; className?: string }) {
   return (
@@ -30,75 +33,86 @@ export function IsometricHexMark({ size = 36, className }: { size?: number; clas
       aria-label="PolyFit 3D Isometric Hexagonal Logo"
     >
       <defs>
+        {/* Roof Facet Gradient */}
         <linearGradient id="pf-facet-top" x1="20" y1="12" x2="80" y2="46" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#34E58C" />
           <stop offset="100%" stopColor="#28D17C" />
         </linearGradient>
+
+        {/* Front Left Facet Gradient */}
         <linearGradient id="pf-facet-left" x1="16" y1="28" x2="52" y2="90" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#28D17C" />
           <stop offset="100%" stopColor="#10B981" />
         </linearGradient>
+
+        {/* Outer Right Facet Gradient */}
         <linearGradient id="pf-facet-right" x1="48" y1="28" x2="84" y2="70" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#10B981" />
           <stop offset="100%" stopColor="#059669" />
         </linearGradient>
-        <linearGradient id="pf-facet-inner" x1="36" y1="36" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#0B1F33" />
-          <stop offset="100%" stopColor="#142C44" />
+
+        {/* Dark Teal Inner Stem Shadow Wall [Dark Block 1] */}
+        <linearGradient id="pf-facet-teal-wall" x1="32" y1="36" x2="50" y2="94" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#0B6B4F" />
+          <stop offset="100%" stopColor="#074835" />
+        </linearGradient>
+
+        {/* Midnight Navy Inner Ceiling & Wall [Dark Block 2] */}
+        <linearGradient id="pf-facet-navy-wall" x1="36" y1="26" x2="68" y2="64" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#0F2840" />
+          <stop offset="100%" stopColor="#08131F" />
         </linearGradient>
       </defs>
 
-      {/* Outer Hexagon Letter 'P' Top Plane */}
-      <path
-        d="M50 10L82 28.5L68 36.5L50 26L32 36.5L18 28.5L50 10Z"
-        fill="url(#pf-facet-top)"
-      />
+      <g stroke="#08131F" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round">
+        {/* 1. Outer Hexagon Roof Plane */}
+        <path
+          d="M50 10L82 28.5L68 36.5L50 26L32 36.5L18 28.5L50 10Z"
+          fill="url(#pf-facet-top)"
+        />
 
-      {/* Upper Loop Outer Right Facet */}
-      <path
-        d="M82 28.5V56.5L68 64.5V36.5L82 28.5Z"
-        fill="url(#pf-facet-right)"
-      />
+        {/* 2. Upper Loop Outer Right Facet */}
+        <path
+          d="M82 28.5V56.5L68 64.5V36.5L82 28.5Z"
+          fill="url(#pf-facet-right)"
+        />
 
-      {/* Loop Bottom Horizontal Plane */}
-      <path
-        d="M68 64.5L50 54V46L68 36.5V64.5Z"
-        fill="url(#pf-facet-inner)"
-      />
+        {/* 3. Midnight Navy Loop Inner Ceiling & Wall [Dark Block 2] */}
+        <path
+          d="M50 26L68 36.5V64.5L50 54V26Z"
+          fill="url(#pf-facet-navy-wall)"
+        />
 
-      {/* Main Left Vertical Stem (Full height down to base) */}
-      <path
-        d="M18 28.5V75.5L32 83.5V36.5L18 28.5Z"
-        fill="url(#pf-facet-left)"
-      />
+        {/* 4. Main Left Vertical Stem Front Face */}
+        <path
+          d="M18 28.5V75.5L32 83.5V36.5L18 28.5Z"
+          fill="url(#pf-facet-left)"
+        />
 
-      {/* Stem Bottom Base & Inner Return */}
-      <path
-        d="M18 75.5L50 94V86L32 75.5L18 75.5Z"
-        fill="url(#pf-facet-left)"
-      />
+        {/* 5. Deep Teal Inner Stem Vertical Wall [Dark Block 1] */}
+        <path
+          d="M32 36.5V83.5L50 94V66L32 55.5V36.5Z"
+          fill="url(#pf-facet-teal-wall)"
+        />
 
-      {/* Lower Stem Face Facing Right */}
-      <path
-        d="M32 83.5L50 94V66L32 55.5V83.5Z"
-        fill="url(#pf-facet-right)"
-      />
+        {/* 6. Stem Bottom Base Return */}
+        <path
+          d="M18 75.5L50 94V86L32 75.5L18 75.5Z"
+          fill="url(#pf-facet-left)"
+        />
 
-      {/* Middle Loop Crossbar (connecting to left stem) */}
-      <path
-        d="M32 55.5L50 66L68 55.5L50 45L32 55.5Z"
-        fill="url(#pf-facet-top)"
-      />
-
-      {/* Clean Hexagonal Center Counter (Hole of 'P') */}
-      {/* Defined inherently by the spatial negative cutout formed by planes at (50, 26), (68, 36.5), (68, 55.5), (50, 45), (32, 36.5) */}
+        {/* 7. Middle Loop Return Crossbar */}
+        <path
+          d="M32 55.5L50 66L68 55.5L50 45L32 55.5Z"
+          fill="url(#pf-facet-top)"
+        />
+      </g>
     </svg>
   );
 }
 
 /**
  * Constellation Connected Nodes 'P' Mark
- * Digital network motif from "PolyFit Primary Logo" (14 connected vertices)
  */
 export function ConstellationNetworkMark({ size = 36, className }: { size?: number; className?: string }) {
   return (
@@ -118,9 +132,7 @@ export function ConstellationNetworkMark({ size = 36, className }: { size?: numb
         </filter>
       </defs>
 
-      {/* Constellation Network Edges */}
       <g stroke="#28D17C" strokeWidth="2" strokeOpacity="0.85" strokeLinecap="round">
-        {/* Stem Lines */}
         <line x1="22" y1="22" x2="22" y2="48" />
         <line x1="22" y1="48" x2="22" y2="78" />
         <line x1="22" y1="22" x2="42" y2="35" />
@@ -129,14 +141,12 @@ export function ConstellationNetworkMark({ size = 36, className }: { size?: numb
         <line x1="22" y1="78" x2="38" y2="70" />
         <line x1="38" y1="60" x2="38" y2="70" />
 
-        {/* Top Loop Outer Lines */}
         <line x1="22" y1="22" x2="58" y2="22" />
         <line x1="58" y1="22" x2="78" y2="35" />
         <line x1="78" y1="35" x2="78" y2="55" />
         <line x1="78" y1="55" x2="58" y2="68" />
         <line x1="58" y1="68" x2="38" y2="60" />
 
-        {/* Diagonal Cross-braces (Network Mesh) */}
         <line x1="42" y1="35" x2="58" y2="22" />
         <line x1="42" y1="35" x2="62" y2="45" />
         <line x1="62" y1="45" x2="78" y2="35" />
@@ -146,7 +156,6 @@ export function ConstellationNetworkMark({ size = 36, className }: { size?: numb
         <line x1="22" y1="48" x2="58" y2="68" />
       </g>
 
-      {/* Constellation Nodes (14 Glowing Vertices) */}
       <g fill="#28D17C" filter="url(#pf-node-glow)">
         <circle cx="22" cy="22" r="4.5" />
         <circle cx="22" cy="48" r="4.5" />
@@ -166,6 +175,7 @@ export function ConstellationNetworkMark({ size = 36, className }: { size?: numb
 
 /**
  * Master PolyFit Logo Component with theme, sizing, and lockup options
+ * Explicitly matches image.png ('Poly' in dark navy / white, 'Fit' in vibrant emerald green)
  */
 export function PolyFitLogo({
   variant = "full",
@@ -178,20 +188,20 @@ export function PolyFitLogo({
 }: PolyFitLogoProps) {
   const isDark = theme === "dark";
   const isAuto = theme === "auto";
-  const wordmarkTextColor = isDark 
+  const polyTextColor = isDark
     ? "text-white" 
     : isAuto 
-    ? "text-[#0B1F33] dark:text-white" 
-    : "text-[#0B1F33]";
+    ? "text-navy dark:text-white"
+    : "text-navy";
   const subtitleColor = isDark 
     ? "text-slate-400" 
     : isAuto 
-    ? "text-[#526173] dark:text-slate-400" 
-    : "text-[#526173]";
+    ? "text-subdued dark:text-slate-400"
+    : "text-subdued";
 
   return (
     <div
-      className={cn("inline-flex items-center gap-3 select-none group", className)}
+      className={cn("inline-flex items-center gap-2.5 select-none group", className)}
       {...props}
     >
       {/* Icon Marks */}
@@ -203,22 +213,20 @@ export function PolyFitLogo({
         <ConstellationNetworkMark size={iconSize} />
       )}
 
-      {/* Typography Lockup */}
+      {/* Typography Lockup matching image.png */}
       {(variant === "full" || variant === "wordmark") && showWordmark && (
         <div className="flex flex-col justify-center">
           <span
-            className={cn(
-              "font-bold tracking-tight font-sans flex items-center leading-none",
-              wordmarkTextColor
-            )}
-            style={{ fontSize: `${Math.max(20, Math.round(iconSize * 0.7))}px` }}
+            className="font-extrabold tracking-tight font-sans flex items-center leading-none"
+            style={{ fontSize: `${Math.max(20, Math.round(iconSize * 0.72))}px` }}
           >
-            Poly<span className="text-[#28D17C] ml-[1px]">Fit</span>
+            <span className={polyTextColor}>Poly</span>
+            <span className="text-accent ml-[0.5px]">Fit</span>
           </span>
 
           {showSubtitle && (
             <div className="flex items-center gap-1.5 mt-1">
-              <span className="h-[1px] w-3 bg-[#28D17C]/40" />
+              <span className="h-[1px] w-3 bg-accent/40" />
               <span
                 className={cn(
                   "font-semibold tracking-[0.14em] uppercase text-[9px] leading-none",
@@ -227,7 +235,7 @@ export function PolyFitLogo({
               >
                 Corporate Wellness Network
               </span>
-              <span className="h-[1px] w-3 bg-[#28D17C]/40" />
+              <span className="h-[1px] w-3 bg-accent/40" />
             </div>
           )}
         </div>
