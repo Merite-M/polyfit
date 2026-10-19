@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, Sparkles, LogIn, ChevronDown } from "lucide-react";
+import { Menu, X, Sparkles } from "lucide-react";
 import { PolyFitLogo } from "@/components/ui/polyfit-logo";
 import { useLeadModal } from "@/lib/lead-modal";
 import { VisitorIntentModal } from "@/components/ui/VisitorIntentModal";
@@ -13,7 +13,6 @@ interface PublicNavigationProps {
 
 export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoginDropdownOpen, setIsLoginDropdownOpen] = useState(false);
 
   const openLeadModal = useLeadModal((s) => s.open);
   const isIntentOpen = useLeadModal((s) => s.isIntentOpen);
@@ -60,45 +59,6 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
                 <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Activate Benefit</span>
               </Link>
-
-              {/* Portal Login Dropdown */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsLoginDropdownOpen(!isLoginDropdownOpen)}
-                  onBlur={() => setTimeout(() => setIsLoginDropdownOpen(false), 200)}
-                  className="flex items-center gap-1 text-xs font-semibold text-gray-300 hover:text-white transition-colors py-1 cursor-pointer"
-                  aria-expanded={isLoginDropdownOpen}
-                >
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span>Portals</span>
-                  <ChevronDown className="w-3 h-3 text-gray-400" />
-                </button>
-
-                {isLoginDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 rounded-2xl bg-slate-800 border border-slate-700 shadow-xl py-2 z-50 text-xs animate-in fade-in-50 zoom-in-95">
-                    <Link
-                      href="/corporate"
-                      className="block px-4 py-2 text-gray-200 hover:bg-slate-700/60 hover:text-white transition-colors font-medium"
-                    >
-                      Corporate HR Portal
-                    </Link>
-                    <Link
-                      href="/partner"
-                      className="block px-4 py-2 text-gray-200 hover:bg-slate-700/60 hover:text-white transition-colors font-medium"
-                    >
-                      Provider Check-in Desk
-                    </Link>
-                    <div className="my-1 border-t border-slate-700" />
-                    <Link
-                      href="/operations"
-                      className="block px-4 py-2 text-slate-400 hover:bg-slate-700/60 hover:text-white transition-colors text-[11px]"
-                    >
-                      Operations Console
-                    </Link>
-                  </div>
-                )}
-              </div>
 
               {/* Primary Get Started CTA Button */}
               <button 
@@ -155,26 +115,6 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
               </Link>
             </div>
 
-            <div className="pt-2 border-t border-white/10 space-y-2">
-              <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3">
-                Portals
-              </div>
-              <Link
-                href="/corporate"
-                className="block px-3 py-2 text-xs text-gray-300 hover:text-white"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Corporate HR Portal
-              </Link>
-              <Link
-                href="/partner"
-                className="block px-3 py-2 text-xs text-gray-300 hover:text-white"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Provider Check-in Desk
-              </Link>
-            </div>
-
             <div className="pt-2">
               <button 
                 type="button"
@@ -197,4 +137,3 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
     </>
   );
 }
-
