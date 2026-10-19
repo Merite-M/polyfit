@@ -151,6 +151,21 @@ export default function PartnerRegistrationPage() {
       });
 
       if (res?.success) {
+        if (typeof window !== "undefined") {
+          try {
+            if (res.provider) {
+              localStorage.setItem("polyfit_partner_provider", JSON.stringify(res.provider));
+            }
+            if (res.location?.id) {
+              localStorage.setItem("polyfit_partner_location_id", res.location.id);
+            }
+            if (res.location) {
+              localStorage.setItem("polyfit_partner_location", JSON.stringify(res.location));
+            }
+          } catch (e) {
+            console.warn("[PartnerRegister] Storage notice:", e);
+          }
+        }
         // Redirect to partner setup wizard with new location ID
         const redirect = res?.redirect_url || "/partner/setup";
         router.push(redirect);

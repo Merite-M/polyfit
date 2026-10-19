@@ -963,6 +963,54 @@ router.post('/partner/register', leadFormLimiter, async (req, res) => {
 });
 
 /**
+ * GET /api/public/locations/:id
+ * Retrieve location & parent provider profile for onboarding wizard and public facility lookup
+ */
+router.get('/locations/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: 'Location ID is required', code: 'ID_REQUIRED' });
+    }
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    const { data: location, error: locError } = await supabase
+      .from('provider_locations')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (locError || !location) {
+      return res.status(404).json({ error: 'Facility location not found', code: 'LOCATION_NOT_FOUND' });
+    }
+
+    let provider = null;
+    if (location.provider_id) {
+      const { data: provData } = await supabase
+        .from('providers')
+        .select('id, name, category, contact_email, settlement_email, tax_id, bank_details, status')
+        .eq('id', location.provider_id)
+        .maybeSingle();
+      provider = provData;
+    }
+
+    return res.status(200).json({
+      success: true,
+      location,
+      provider
+    });
+  } catch (error) {
+    console.error('[PublicLocations] Error fetching location:', error);
+    return res.status(500).json({
+      error: error.message || 'Failed to retrieve location details',
+      code: 'LOCATION_FETCH_FAILED'
+    });
+  }
+});
+
+/**
  * POST /api/public/corporate/register
  * Dedicated, multi-step self-service onboarding for corporate employers & HR leaders.
  * Configures corporate organization profile, auto-generates slug, creates benefit tier, and enables employee self-join.

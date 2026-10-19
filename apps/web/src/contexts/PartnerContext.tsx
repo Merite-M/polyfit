@@ -213,6 +213,7 @@ export interface AmendmentRequestPayload {
 
 interface PartnerContextType {
   provider: ProviderProfile | null;
+  setProviderProfile: (profile: ProviderProfile) => void;
   locations: ProviderLocation[];
   selectedLocationId: string;
   setSelectedLocationId: (id: string) => void;
@@ -488,12 +489,41 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
   const openPayoutModal = useCallback(() => setPayoutModalOpen(true), []);
   const closePayoutModal = useCallback(() => setPayoutModalOpen(false), []);
 
-  // Load saved location from localStorage on client mount
+  // Hydrate saved provider and location from localStorage on client mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('polyfit_partner_location_id');
-      if (saved) {
-        setSelectedLocationIdState(saved);
+      try {
+        const savedProvider = localStorage.getItem('polyfit_partner_provider');
+        if (savedProvider) {
+          const parsed = JSON.parse(savedProvider);
+          if (parsed?.id && parsed?.name) {
+            setProvider((prev) => ({
+              ...DEFAULT_PROVIDER,
+              ...prev,
+              ...parsed
+            }));
+            setDashboardData((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    provider: {
+                      ...prev.provider,
+                      id: parsed.id,
+                      name: parsed.name,
+                      category: parsed.category || prev.provider.category
+                    }
+                  }
+                : null
+            );
+          }
+        }
+      } catch (e) {
+        console.warn('[PartnerContext] Provider hydration notice:', e);
+      }
+
+      const savedLoc = localStorage.getItem('polyfit_partner_location_id');
+      if (savedLoc) {
+        setSelectedLocationIdState(savedLoc);
       }
     }
   }, []);
@@ -503,6 +533,28 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== 'undefined') {
       localStorage.setItem('polyfit_partner_location_id', id);
     }
+  }, []);
+
+  const setProviderProfile = useCallback((profile: ProviderProfile) => {
+    setProvider(profile);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('polyfit_partner_provider', JSON.stringify(profile));
+      } catch (e) {}
+    }
+    setDashboardData((prev) =>
+      prev
+        ? {
+            ...prev,
+            provider: {
+              ...prev.provider,
+              id: profile.id,
+              name: profile.name,
+              category: profile.category || prev.provider.category
+            }
+          }
+        : null
+    );
   }, []);
 
   const refreshLocations = useCallback(async () => {
@@ -785,6 +837,7 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
     <PartnerContext.Provider
       value={{
         provider,
+        setProviderProfile,
         locations,
         selectedLocationId,
         setSelectedLocationId,

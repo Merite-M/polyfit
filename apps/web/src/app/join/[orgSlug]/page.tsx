@@ -47,16 +47,17 @@ export default async function EmployeeJoinPage({ params }: PageProps) {
     if (res.ok) {
       const data = await res.json();
       if (data?.organization) {
+        const defaultPlan = data.defaultPlan || data.default_plan;
         orgConfig = {
           id: data.organization.id,
           name: data.organization.name,
           slug: data.organization.slug || slug,
           domains: data.organization.allowed_domains || [],
           domain: (data.organization.allowed_domains || [])[0] || `${slug}.rw`,
-          tierName: data.default_plan?.name || "Standard Corporate Wellness Pass",
-          maxVisits: data.default_plan?.max_visits_per_month || 8,
-          coPayPercent: data.default_plan?.co_pay_percentage || 0,
-          venuesCount: data.default_plan?.venues_count || 52,
+          tierName: defaultPlan?.name || "Standard Corporate Wellness Pass",
+          maxVisits: defaultPlan?.max_monthly_visits || defaultPlan?.max_visits_per_month || 8,
+          coPayPercent: defaultPlan?.co_pay_percentage ? Number(defaultPlan.co_pay_percentage) : 0,
+          venuesCount: defaultPlan?.venues_count || 52,
         };
       }
     }

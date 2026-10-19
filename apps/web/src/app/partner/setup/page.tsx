@@ -13,6 +13,7 @@ import {
   Rocket
 } from 'lucide-react';
 import { usePartner } from '@/contexts/PartnerContext';
+import { apiFetch } from '@/lib/api-client';
 import {
   WizardLocationState,
   INITIAL_WIZARD_STATE,
@@ -37,7 +38,7 @@ function PartnerSetupContent() {
   const locationId = searchParams?.get('locationId') || null;
   const isEditing = Boolean(locationId);
 
-  const { provider, locations, createLocation, updateLocation, updatePayoutDetails } = usePartner();
+  const { provider, setProviderProfile, locations, createLocation, updateLocation, updatePayoutDetails } = usePartner();
 
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [formState, setFormState] = useState<WizardLocationState>(INITIAL_WIZARD_STATE);
@@ -128,6 +129,51 @@ function PartnerSetupContent() {
       }
     }
   }, [draftKey, existingLoc]);
+
+  // Fetch newly registered or remote location details if locationId is provided
+  useEffect(() => {
+    if (!locationId) return;
+
+    if (typeof window !== 'undefined') {
+      try {
+        const storedLoc = localStorage.getItem('polyfit_partner_location');
+        if (storedLoc) {
+          const parsed = JSON.parse(storedLoc);
+          if (parsed?.id === locationId && parsed?.name) {
+            setFormState((prev) => ({
+              ...prev,
+              name: prev.name || parsed.name,
+              city: prev.city || parsed.city || 'Kigali',
+              address: prev.address || parsed.address || '',
+              country: prev.country || parsed.country || 'Rwanda',
+              amenities: prev.amenities?.length ? prev.amenities : (parsed.amenities || prev.amenities),
+            }));
+          }
+        }
+      } catch (e) {
+        console.warn('[PartnerSetup] Stored location parse notice:', e);
+      }
+    }
+
+    apiFetch<{ success: boolean; location: any; provider: any }>(`/api/public/locations/${locationId}`)
+      .then((data) => {
+        if (data?.location) {
+          const loc = data.location;
+          setFormState((prev) => ({
+            ...prev,
+            name: prev.name || loc.name,
+            city: prev.city || loc.city || 'Kigali',
+            address: prev.address || loc.address || '',
+            country: prev.country || loc.country || 'Rwanda',
+            amenities: prev.amenities?.length ? prev.amenities : (loc.amenities || prev.amenities),
+          }));
+          if (data.provider) {
+            setProviderProfile(data.provider);
+          }
+        }
+      })
+      .catch((err) => console.warn('[PartnerSetup] Remote location fetch notice:', err));
+  }, [locationId]);
 
   // Auto-save patch
   const handlePatch = useCallback((patch: Partial<WizardLocationState>) => {

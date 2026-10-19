@@ -239,6 +239,14 @@ describe('Public Lead & Demo Pipeline Test Suite (PF-88)', () => {
       assert.equal(res.body.success, true);
       assert.ok(res.body.provider?.id);
       assert.ok(res.body.redirect_url);
+
+      if (res.body.location?.id) {
+        const locRes = await request(app).get(`/api/public/locations/${res.body.location.id}`);
+        assert.equal(locRes.status, 200);
+        assert.equal(locRes.body.success, true);
+        assert.equal(locRes.body.location?.id, res.body.location.id);
+        assert.equal(locRes.body.provider?.id, res.body.provider.id);
+      }
     });
 
     test('POST /api/public/corporate/register blocks generic freemail domains', async () => {
