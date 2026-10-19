@@ -26,14 +26,6 @@ const requireAuth = async (req, res, next) => {
       });
     }
 
-    if (!supabase) {
-      console.error('[authMiddleware] Supabase client is not configured');
-      return res.status(503).json({
-        error: 'Authentication service temporarily unavailable',
-        code: 'AUTH_SERVICE_UNAVAILABLE'
-      });
-    }
-
     if (!authHeader.toLowerCase().startsWith('bearer ')) {
       return res.status(401).json({
         error: 'Invalid Authorization header format. Expected "Bearer <token>"',
@@ -46,6 +38,34 @@ const requireAuth = async (req, res, next) => {
       return res.status(401).json({
         error: 'Invalid Authorization header format. Token is empty',
         code: 'AUTH_INVALID_TOKEN_FORMAT'
+      });
+    }
+
+    // Support deterministic mock/test bearer tokens strictly in non-production environments
+    if (process.env.NODE_ENV !== 'production') {
+      const demoRoleMap = {
+        'demo-super-admin-token': { role: 'super_admin', roles: ['super_admin'], email: 'superadmin@polyfit.africa', id: '00000000-0000-0000-0000-000000000001' },
+        'demo-ops-token': { role: 'polyfit_ops', roles: ['polyfit_ops'], email: 'ops@polyfit.africa', id: '00000000-0000-0000-0000-000000000002' },
+        'demo-org-admin-token': { role: 'org_admin', roles: ['org_admin'], email: 'orgadmin@bankofkigali.rw', id: '00000000-0000-0000-0000-000000000003', orgId: 'c79a9982-4477-4336-a24b-561419f6c43b' },
+        'demo-provider-admin-token': { role: 'provider_admin', roles: ['provider_admin'], email: 'provider@serena.co.rw', id: '00000000-0000-0000-0000-000000000004', providerId: '90d06d31-999c-42c0-a0c6-fc31ec818ced' },
+        'demo-employee-token': { role: 'employee', roles: ['employee'], email: 'employee@bankofkigali.rw', id: '00000000-0000-0000-0000-000000000005', orgId: 'c79a9982-4477-4336-a24b-561419f6c43b' }
+      };
+      if (demoRoleMap[token]) {
+        const info = demoRoleMap[token];
+        req.user = { id: info.id, email: info.email, user_metadata: { role: info.role } };
+        req.roles = info.roles;
+        req.primaryRole = info.role;
+        req.orgId = info.orgId || null;
+        req.providerId = info.providerId || null;
+        return next();
+      }
+    }
+
+    if (!supabase) {
+      console.error('[authMiddleware] Supabase client is not configured');
+      return res.status(503).json({
+        error: 'Authentication service temporarily unavailable',
+        code: 'AUTH_SERVICE_UNAVAILABLE'
       });
     }
 
