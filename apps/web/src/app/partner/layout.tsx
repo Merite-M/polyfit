@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { PartnerProvider, usePartner } from '@/contexts/PartnerContext';
 import { PartnerSidebar } from '@/components/partner/PartnerSidebar';
 import { PartnerHeader } from '@/components/partner/PartnerHeader';
@@ -9,6 +10,8 @@ import { RetroactiveClaimModal } from '@/components/partner/RetroactiveClaimModa
 import { PayoutAccountModal } from '@/components/partner/settlements/PayoutAccountModal';
 
 function PartnerLayoutShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isRegisterPage = pathname?.startsWith("/partner/register");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileDrawerRef = useRef<HTMLDialogElement>(null);
 
@@ -34,6 +37,14 @@ function PartnerLayoutShell({ children }: { children: React.ReactNode }) {
       if (dialog.open) dialog.close();
     }
   }, [mobileMenuOpen]);
+
+  if (isRegisterPage) {
+    return (
+      <main className="min-h-screen bg-background text-foreground antialiased">
+        {children}
+      </main>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50/80 dark:bg-background flex flex-col antialiased text-foreground">
