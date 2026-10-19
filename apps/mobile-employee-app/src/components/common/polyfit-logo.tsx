@@ -1,13 +1,7 @@
-/**
- * PolyFit Official Brand Logo Component (Mobile Edition)
- * True 3D Isometric Hexagonal 'P' Mark from PolyFit Stitch Design System v1.0
- * Cross-platform vector on Web & retina-optimized asset on iOS/Android.
- */
-
 import React from 'react';
-import { View, Text, StyleSheet, Platform, StyleProp, ViewStyle, TextStyle } from 'react-native';
+import { View, Text, StyleSheet, Platform, StyleProp, ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
-import { Palette, Radius, Spacing } from '@/constants/theme';
+import { Palette } from '@/constants/theme';
 
 interface PolyFitLogoProps {
   size?: number;
@@ -19,11 +13,10 @@ interface PolyFitLogoProps {
 
 /**
  * 3D Isometric Hexagonal 'P' Logo Mark
- * True 30° axonometric projection with facet gradients
+ * Precision 30° axonometric projection matching Stitch PolyFit Design Center
  */
 export function IsometricHexMark({ size = 36 }: { size?: number }) {
   if (Platform.OS === 'web') {
-    // Crisp inline SVG for Web Virtualization & Chrome DevTools
     return (
       <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
         <svg
@@ -99,7 +92,6 @@ export function IsometricHexMark({ size = 36 }: { size?: number }) {
     );
   }
 
-  // Native iOS / Android retina raster fallback
   return (
     <Image
       source={require('@/assets/images/polyfit-logo-stitch.png')}
@@ -128,7 +120,7 @@ export function PolyFitLogo({
       {showWordmark && (
         <View style={styles.textContainer}>
           <Text style={[styles.wordmark, isDark ? styles.textDark : styles.textLight]}>
-            POLY<Text style={{ color: Palette.green }}>FIT</Text>
+            Poly<Text style={{ color: Palette.green }}>Fit</Text>
           </Text>
 
           {showSubtitle && (
@@ -151,8 +143,8 @@ const styles = StyleSheet.create({
   },
   wordmark: {
     fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: 0.5,
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
   textDark: {
     color: '#FFFFFF',
@@ -161,10 +153,11 @@ const styles = StyleSheet.create({
     color: '#0B1F33',
   },
   subtitle: {
-    fontSize: 10,
+    fontSize: 9,
     color: Palette.textSecondary,
     fontWeight: '600',
     marginTop: 1,
-    letterSpacing: 0.3,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
 });

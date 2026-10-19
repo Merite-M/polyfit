@@ -1,26 +1,36 @@
-<svg width="800" height="240" viewBox="0 0 800 240" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- PolyFit 3D Isometric Hexagonal 'P' Logo Mark -->
-  <g id="logo-mark">
-    <!-- Top Horizontal Hex/Isometric Plane (Vibrant Emerald) -->
-    <path d="M70 30 L130 30 L160 81.96 L130 133.92 L70 133.92 L40 81.96 Z" fill="#28D17C" />
+<svg width="320" height="80" viewBox="0 0 320 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pf-facet-top" x1="10" y1="6" x2="65" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34E58C" />
+      <stop offset="100%" stop-color="#28D17C" />
+    </linearGradient>
+    <linearGradient id="pf-facet-left" x1="8" y1="20" x2="40" y2="72" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#28D17C" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+    <linearGradient id="pf-facet-right" x1="38" y1="20" x2="68" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="pf-facet-inner" x1="28" y1="28" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0B1F33" />
+      <stop offset="100%" stop-color="#08131F" />
+    </linearGradient>
+  </defs>
 
-    <!-- Outer Right & Bottom Facets of P Loop (Medium Emerald) -->
-    <path d="M130 30 L160 81.96 L130 133.92 L100 133.92 L130 81.96 L100 30 Z" fill="#10B981" />
-
-    <!-- Left Vertical Stem (Deep Tech Navy) -->
-    <path d="M40 81.96 L70 133.92 L70 210 L40 158.04 Z" fill="#0B1F33" />
-
-    <!-- Outer Left Plane (Dark Navy Accent) -->
-    <path d="M40 81.96 L70 30 L70 133.92 L40 81.96 Z" fill="#06121E" />
-
-    <!-- Center Counter: Open Cutout Shape (Using Path Masking / Composite) -->
-    <polygon points="85,62.5 115,62.5 130,88.48 115,114.46 85,114.46 70,88.48" fill="#0B1F33" />
+  <!-- PolyFit 3D Isometric Logo Icon with dark navy outlines -->
+  <g transform="translate(10, 0)" stroke="#08131F" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M40 8L65.6 22.8L54.4 29.2L40 20.8L25.6 29.2L14.4 22.8L40 8Z" fill="url(#pf-facet-top)" />
+    <path d="M65.6 22.8V45.2L54.4 51.6V29.2L65.6 22.8Z" fill="url(#pf-facet-right)" />
+    <path d="M54.4 51.6L40 43.2V36.8L54.4 29.2V51.6Z" fill="url(#pf-facet-inner)" />
+    <path d="M14.4 22.8V60.4L25.6 66.8V29.2L14.4 22.8Z" fill="url(#pf-facet-left)" />
+    <path d="M14.4 60.4L40 75.2V68.8L25.6 60.4L14.4 60.4Z" fill="url(#pf-facet-left)" />
+    <path d="M25.6 66.8L40 75.2V52.8L25.6 44.4V66.8Z" fill="url(#pf-facet-right)" />
+    <path d="M25.6 44.4L40 52.8L54.4 44.4L40 36L25.6 44.4Z" fill="url(#pf-facet-top)" />
   </g>
 
   <!-- Wordmark 'PolyFit' -->
-  <g id="wordmark">
-    <text x="200" y="145" font-family="System-UI, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="96" font-weight="800" letter-spacing="-2" fill="#0B1F33">
-      Poly<tspan fill="#28D17C">Fit</tspan>
-    </text>
-  </g>
+  <text x="95" y="52" font-family="System-UI, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="44" font-weight="800" letter-spacing="-1" fill="#0B1F33">
+    Poly<tspan fill="#28D17C">Fit</tspan>
+  </text>
 </svg>
