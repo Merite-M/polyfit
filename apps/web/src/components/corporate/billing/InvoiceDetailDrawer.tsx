@@ -120,87 +120,39 @@ export function InvoiceDetailDrawer({
         })
         .catch((err) => {
           console.warn("[InvoiceDetailDrawer] Using fallback audit visits:", err.message);
-          // High-quality fallback visits for seamless demo & offline resilience
-          setAuditVisits([
-            {
-              id: "v-001",
-              check_in_at: "2026-09-02T06:45:00Z",
-              verification_method: "totp_qr",
-              status: "verified",
-              employee_id: "e-01",
-              employee_name: "Jean Mugabo",
-              employee_email: "jean.mugabo@techcorp.rw",
-              department: "Engineering",
-              location_name: "Nyarutarama Health Branch",
-              provider_name: "FitLife Gym Kigali",
-              provider_category: "gym",
-            },
-            {
-              id: "v-002",
-              check_in_at: "2026-09-03T17:30:00Z",
-              verification_method: "totp_qr",
-              status: "verified",
-              employee_id: "e-02",
-              employee_name: "Marie Uwimana",
-              employee_email: "marie.uwimana@techcorp.rw",
-              department: "Marketing",
-              location_name: "Serenity Yoga Studio - Kimihurura",
-              provider_name: "Serenity Yoga Studio",
-              provider_category: "studio",
-            },
-            {
-              id: "v-003",
-              check_in_at: "2026-09-05T06:30:00Z",
-              verification_method: "totp_qr",
-              status: "verified",
-              employee_id: "e-03",
-              employee_name: "Patrick Niyonzima",
-              employee_email: "patrick.niyonzima@techcorp.rw",
-              department: "Finance",
-              location_name: "Nyarutarama Health Branch",
-              provider_name: "FitLife Gym Kigali",
-              provider_category: "gym",
-            },
-            {
-              id: "v-004",
-              check_in_at: "2026-09-07T18:20:00Z",
-              verification_method: "totp_qr",
-              status: "verified",
-              employee_id: "e-01",
-              employee_name: "Jean Mugabo",
-              employee_email: "jean.mugabo@techcorp.rw",
-              department: "Engineering",
-              location_name: "Nyarutarama Health Branch",
-              provider_name: "FitLife Gym Kigali",
-              provider_category: "gym",
-            },
-            {
-              id: "v-005",
-              check_in_at: "2026-09-09T17:45:00Z",
-              verification_method: "totp_qr",
-              status: "verified",
-              employee_id: "e-04",
-              employee_name: "Claudine Mukandekeza",
-              employee_email: "claudine.mukandekeza@techcorp.rw",
-              department: "HR",
-              location_name: "Serenity Yoga Studio - Kimihurura",
-              provider_name: "Serenity Yoga Studio",
-              provider_category: "studio",
-            },
-            {
-              id: "v-006",
-              check_in_at: "2026-09-14T06:50:00Z",
-              verification_method: "totp_qr",
-              status: "verified",
-              employee_id: "e-05",
-              employee_name: "Eric Habimana",
-              employee_email: "eric.habimana@techcorp.rw",
-              department: "Operations",
-              location_name: "Nyarutarama Health Branch",
-              provider_name: "FitLife Gym Kigali",
-              provider_category: "gym",
-            },
-          ]);
+          // Only show canonical demo visits if this invoice is explicitly for TechCorp
+          if (invoice.organizations?.name?.toLowerCase().includes("techcorp") || invoice.invoice_number?.includes("0045")) {
+            setAuditVisits([
+              {
+                id: "v-001",
+                check_in_at: "2026-09-02T06:45:00Z",
+                verification_method: "totp_qr",
+                status: "verified",
+                employee_id: "e-01",
+                employee_name: "Jean Mugabo",
+                employee_email: "jean.mugabo@techcorp.rw",
+                department: "Engineering",
+                location_name: "Nyarutarama Health Branch",
+                provider_name: "FitLife Gym Kigali",
+                provider_category: "gym",
+              },
+              {
+                id: "v-002",
+                check_in_at: "2026-09-03T17:30:00Z",
+                verification_method: "totp_qr",
+                status: "verified",
+                employee_id: "e-02",
+                employee_name: "Marie Uwimana",
+                employee_email: "marie.uwimana@techcorp.rw",
+                department: "Marketing",
+                location_name: "Serenity Yoga Studio - Kimihurura",
+                provider_name: "Serenity Yoga Studio",
+                provider_category: "studio",
+              },
+            ]);
+          } else {
+            setAuditVisits([]);
+          }
         })
         .finally(() => setIsLoadingAudit(false));
     }
@@ -383,10 +335,10 @@ export function InvoiceDetailDrawer({
                 Billed Employer
               </span>
               <h4 className="text-sm font-bold text-[#0B1F33] mt-0.5">
-                {invoice.organizations?.name || "TechCorp Rwanda"}
+                {invoice.organizations?.name || "Corporate Employer"}
               </h4>
-              <p className="text-xs text-[#526173]">TIN: {invoice.organizations?.tax_id || "108392019"}</p>
-              <p className="text-xs text-[#526173]">{invoice.organizations?.billing_email || "finance@techcorp.rw"}</p>
+              <p className="text-xs text-[#526173]">TIN: {invoice.organizations?.tax_id || "100000000"}</p>
+              <p className="text-xs text-[#526173]">{invoice.organizations?.billing_email || "billing@polyfit.rw"}</p>
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#8491A3]">

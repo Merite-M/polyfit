@@ -170,6 +170,7 @@ interface CorporateContextType {
   bulkAddEmployees: (newEmps: Partial<CorporateEmployee>[]) => Promise<{ created: number; updated: number }>;
   updateEmployeeStatus: (id: string, newStatus: "active" | "frozen" | "terminated") => Promise<void>;
   updateEmployeeTier: (id: string, newTier: string) => Promise<void>;
+  deleteEmployee: (id: string) => Promise<void>;
   refreshEmployees: () => Promise<void>;
 
   // Benefit Plans state & mutations
@@ -261,10 +262,17 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // 3. Dynamic Portal State (initialized cleanly; populated via loadPortalData)
-  const isDefaultTechCorp = initialOrg.slug === "techcorp-rwanda";
+  const isExplicitTechCorp = useMemo(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const s = params.get("org") || params.get("slug");
+      if (s) return s.toLowerCase().includes("techcorp");
+    }
+    return false;
+  }, []);
 
   const [funnelData, setFunnelData] = useState<AdoptionFunnelData>(() => {
-    if (isDefaultTechCorp && isDemoMode) {
+    if (isExplicitTechCorp && isDemoMode) {
       return TECHCORP_CANONICAL_DATA.funnel;
     }
     return {
@@ -279,7 +287,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
   });
 
   const [reportingData, setReportingData] = useState<CorporateReportingData>(() => {
-    if (isDefaultTechCorp && isDemoMode) {
+    if (isExplicitTechCorp && isDemoMode) {
       return {
         categories: TECHCORP_CANONICAL_DATA.wellness.categories,
         temporal: {
@@ -297,17 +305,18 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
         wellnessHour: "No activity yet",
         peakDay: "No activity yet",
       },
+      monthlyTrends: [],
     };
   });
 
   const [economics, setEconomics] = useState<CorporateEconomics>(() => {
-    if (isDefaultTechCorp && isDemoMode) return TECHCORP_CANONICAL_DATA.economics;
+    if (isExplicitTechCorp && isDemoMode) return TECHCORP_CANONICAL_DATA.economics;
     return ZERO_ECONOMICS;
   });
 
   // 4. Employee Roster State
   const [employees, setEmployees] = useState<CorporateEmployee[]>(() => {
-    if (isDefaultTechCorp && isDemoMode) {
+    if (isExplicitTechCorp && isDemoMode) {
       return TECHCORP_CANONICAL_DATA.employees as CorporateEmployee[];
     }
     return [];
@@ -316,7 +325,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
 
   // 5. Benefit Plans State
   const [plans, setPlans] = useState<BenefitPlan[]>(() => {
-    if (isDefaultTechCorp && isDemoMode) {
+    if (isExplicitTechCorp && isDemoMode) {
       return TECHCORP_CANONICAL_DATA.plans as unknown as BenefitPlan[];
     }
     return [];
@@ -325,7 +334,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
 
   // 6. Invoices State
   const [invoices, setInvoices] = useState<InvoiceRecord[]>(() => {
-    if (isDefaultTechCorp && isDemoMode) return TECHCORP_CANONICAL_DATA.invoices as unknown as InvoiceRecord[];
+    if (isExplicitTechCorp && isDemoMode) return TECHCORP_CANONICAL_DATA.invoices as unknown as InvoiceRecord[];
     return [];
   });
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
@@ -351,6 +360,12 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
         if (res.economics) {
           setEconomics(res.economics);
         }
+        if (Array.isArray(res.invoices)) {
+          setInvoices(res.invoices);
+        }
+        if (res.reportingData) {
+          setReportingData(res.reportingData);
+        }
         return;
       }
     } catch (err) {
@@ -366,6 +381,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       setEmployees(TECHCORP_CANONICAL_DATA.employees as CorporateEmployee[]);
       setFunnelData(TECHCORP_CANONICAL_DATA.funnel);
       setEconomics(TECHCORP_CANONICAL_DATA.economics);
+      setInvoices(TECHCORP_CANONICAL_DATA.invoices as unknown as InvoiceRecord[]);
     }
   }, []);
 
@@ -459,51 +475,8 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     showToast("Corporate employee census downloaded as RFC 4180 CSV.");
   }, [employees, organization.slug, showToast]);
 
-  // Data fetching functions
-  const refreshFunnelData = useCallback(async () => {
-    if (!user || isDemoMode) return;
-    try {
-      const utilRes = await apiFetch<any>(
-        `/api/reporting/employer/${organization.id}/utilization`
-      );
-      if (utilRes) {
-        if (utilRes.summary) {
-          setFunnelData({
-            totalEligible: utilRes.summary.total_eligible ?? 0,
-            registeredEmployees: utilRes.summary.registered_employees ?? 0,
-            activeBeneficiaries: utilRes.summary.active_beneficiaries ?? 0,
-            totalVisits: utilRes.summary.total_visits ?? 0,
-            newEmployees30d: utilRes.summary.new_employees_30d ?? 0,
-            newBeneficiaries30d: utilRes.summary.new_beneficiaries_30d ?? 0,
-            avgVisitsPerActive: (utilRes.summary.active_beneficiaries && utilRes.summary.active_beneficiaries > 0)
-              ? Number((utilRes.summary.total_visits / utilRes.summary.active_beneficiaries).toFixed(1))
-              : 0,
-          });
-        }
-
-        const catMap: Record<string, number> = {};
-        if (Array.isArray(utilRes.categories)) {
-          utilRes.categories.forEach((c: any) => {
-            if (c.category) catMap[c.category] = c.visits ?? c.visitCount ?? 0;
-          });
-        } else if (utilRes.categories && typeof utilRes.categories === 'object') {
-          Object.assign(catMap, utilRes.categories);
-        }
-
-        setReportingData({
-          categories: catMap,
-          topProviders: utilRes.topProviders || [],
-          departments: utilRes.departments || [],
-          temporal: utilRes.temporal || { wellnessHour: 'No activity yet', peakDay: 'No activity yet' },
-          roi: utilRes.roi || null,
-        });
-      }
-    } catch {
-      // Keep resilient state
-    }
-  }, [organization.id, user, isDemoMode]);
-
   // Data refresh functions backed by live database loader
+
   const refreshFunnelData = useCallback(async () => {
     await loadPortalData(organization.slug || organization.id);
   }, [organization.slug, organization.id, loadPortalData]);
@@ -547,18 +520,22 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
   const updateOrganizationProfile = useCallback(
     async (data: Partial<CorporateOrganization>) => {
       try {
-        await apiFetch(`/api/organizations/${organization.id}`, {
+        await apiFetch(`/api/public/corporate/organization`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
+          body: JSON.stringify({
+            id: organization.id,
+            slug: organization.slug,
+            ...data
+          }),
         });
-      } catch {
-        // Fallback demo update
+      } catch (err) {
+        console.warn("[CorporateContext] Error updating org profile:", err);
       }
       setOrganization((prev) => ({ ...prev, ...data }));
       showToast("Organization profile and domain settings updated!");
     },
-    [organization.id, showToast]
+    [organization.id, organization.slug, showToast]
   );
 
   // Mutators that persist to Supabase database and update state reactively
@@ -629,31 +606,23 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
 
   const bulkAddEmployees = useCallback(
     async (newEmps: Partial<CorporateEmployee>[]) => {
-      let createdCount = newEmps.length;
-      let updatedCount = 0;
-
-      for (const emp of newEmps) {
-        try {
-          await apiFetch(`/api/public/corporate/employees`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              org_id: organization.id,
-              org_slug: organization.slug,
-              full_name: emp.full_name,
-              email: emp.email,
-              employee_id_external: emp.employee_id_external,
-              department: emp.department,
-              tier: emp.tier,
-              status: emp.status || "active"
-            }),
-          });
-        } catch {}
+      try {
+        await apiFetch(`/api/public/corporate/employees/bulk`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            org_id: organization.id,
+            org_slug: organization.slug,
+            employees: newEmps
+          }),
+        });
+      } catch (err) {
+        console.warn("[CorporateContext] Error in bulk employees:", err);
       }
 
       await loadPortalData(organization.slug || organization.id);
-      showToast(`Bulk imported ${createdCount} employees. Roster & Funnel synchronized!`);
-      return { created: createdCount, updated: updatedCount };
+      showToast(`Bulk imported ${newEmps.length} employees. Roster & Funnel synchronized!`);
+      return { created: newEmps.length, updated: 0 };
     },
     [organization.id, organization.slug, loadPortalData, showToast]
   );
@@ -726,6 +695,30 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       );
 
       showToast(`Reassigned employee to ${newTier.toUpperCase()} tier.`);
+    },
+    [employees, showToast]
+  );
+
+  const deleteEmployee = useCallback(
+    async (id: string) => {
+      const targetEmp = employees.find((e) => e.id === id);
+      try {
+        await apiFetch(`/api/public/corporate/employees/${id}`, {
+          method: "DELETE",
+        });
+      } catch (err) {
+        console.warn("[CorporateContext] Error deleting employee in DB:", err);
+      }
+
+      setEmployees((prev) => prev.filter((e) => e.id !== id));
+      setFunnelData((prev) => ({
+        ...prev,
+        totalEligible: Math.max(0, prev.totalEligible - 1),
+        registeredEmployees: Math.max(0, prev.registeredEmployees - 1),
+        activeBeneficiaries:
+          targetEmp?.status === "active" ? Math.max(0, prev.activeBeneficiaries - 1) : prev.activeBeneficiaries,
+      }));
+      showToast(`Removed ${targetEmp?.full_name || "employee"} from organization roster.`);
     },
     [employees, showToast]
   );
@@ -827,6 +820,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       bulkAddEmployees,
       updateEmployeeStatus,
       updateEmployeeTier,
+      deleteEmployee,
       refreshEmployees,
       plans,
       isLoadingPlans,
@@ -862,6 +856,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       bulkAddEmployees,
       updateEmployeeStatus,
       updateEmployeeTier,
+      deleteEmployee,
       refreshEmployees,
       plans,
       isLoadingPlans,

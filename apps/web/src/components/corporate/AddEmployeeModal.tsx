@@ -11,8 +11,8 @@ import {
   AlertTriangle,
   RefreshCw,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api-client";
+import { useCorporate } from "@/contexts/CorporateContext";
 
 interface AddEmployeeModalProps {
   isOpen: boolean;
@@ -27,9 +27,13 @@ export function AddEmployeeModal({
   onClose,
   orgId,
   onEmployeeAdded,
-  corporateDomain = "techcorp.rw",
+  corporateDomain,
 }: AddEmployeeModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const { addEmployee: ctxAddEmployee, organization } = useCorporate();
+  const effectiveDomain = corporateDomain && !corporateDomain.includes("techcorp")
+    ? corporateDomain
+    : organization.domain || "kigalitech.rw";
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -72,7 +76,7 @@ export function AddEmployeeModal({
   };
 
   const emailDomain = email.includes("@") ? email.split("@")[1].toLowerCase() : "";
-  const isCorporateDomain = emailDomain === corporateDomain.toLowerCase();
+  const isCorporateDomain = emailDomain === effectiveDomain.toLowerCase();
   const isPersonalDomain = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com"].includes(emailDomain);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,22 +86,32 @@ export function AddEmployeeModal({
     setIsSubmitting(true);
     setErrorMessage(null);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://polyfit-backend.onrender.com";
-
     try {
-      await apiFetch(`${apiUrl}/api/organizations/${orgId}/employees`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      if (ctxAddEmployee) {
+        await ctxAddEmployee({
           full_name: fullName.trim(),
           email: email.trim().toLowerCase(),
-          employee_id_external: employeeIdExternal.trim() || null,
-          department: department.trim() || null,
+          employee_id_external: employeeIdExternal.trim() || undefined,
+          department: department.trim() || "General",
           tier,
           status,
-          send_invite: sendInvite,
-        }),
-      });
+        });
+      } else {
+        await apiFetch(`/api/public/corporate/employees`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            org_id: orgId || organization.id,
+            org_slug: organization.slug,
+            full_name: fullName.trim(),
+            email: email.trim().toLowerCase(),
+            employee_id_external: employeeIdExternal.trim() || null,
+            department: department.trim() || "General",
+            tier,
+            status,
+          }),
+        });
+      }
 
       onEmployeeAdded();
       onClose();

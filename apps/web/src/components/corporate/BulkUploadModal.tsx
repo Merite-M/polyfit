@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api-client";
+import { useCorporate } from "@/contexts/CorporateContext";
 
 interface BulkUploadModalProps {
   isOpen: boolean;
@@ -41,10 +42,14 @@ export function BulkUploadModal({
   onClose,
   orgId,
   onImportSuccess,
-  corporateDomain = "techcorp.rw",
+  corporateDomain,
 }: BulkUploadModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { organization } = useCorporate();
+  const effectiveDomain = corporateDomain && !corporateDomain.includes("techcorp")
+    ? corporateDomain
+    : organization.domain || "kigalitech.rw";
 
   const [dragActive, setDragActive] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -98,18 +103,18 @@ export function BulkUploadModal({
   const handleDownloadTemplate = () => {
     const templateContent = [
       "first_name,last_name,email,employee_id,department,tier",
-      "Jean,Mugabo,jean.mugabo@techcorp.rw,EMP-101,Engineering,standard",
-      "Marie,Uwimana,marie.uwimana@techcorp.rw,EMP-102,Marketing,standard",
-      "Patrick,Niyonzima,patrick.n@techcorp.rw,EMP-103,Finance,premium",
-      "Claudine,Mukandekeza,claudine.m@techcorp.rw,EMP-104,HR,standard",
-      "Eric,Habimana,eric.h@techcorp.rw,EMP-105,Operations,basic",
+      `Jean,Mugabo,jean.mugabo@${effectiveDomain},EMP-101,Engineering,standard`,
+      `Marie,Uwimana,marie.uwimana@${effectiveDomain},EMP-102,Marketing,standard`,
+      `Patrick,Niyonzima,patrick.n@${effectiveDomain},EMP-103,Finance,premium`,
+      `Claudine,Mukandekeza,claudine.m@${effectiveDomain},EMP-104,HR,standard`,
+      `Eric,Habimana,eric.h@${effectiveDomain},EMP-105,Operations,basic`,
     ].join("\r\n");
 
     const blob = new Blob([templateContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", "polyfit_census_template.csv");
+    link.setAttribute("download", `polyfit_${effectiveDomain.replace(/[^a-z0-9]/gi, '_')}_census_template.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -267,25 +272,38 @@ export function BulkUploadModal({
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://polyfit-backend.onrender.com";
 
     try {
-      const response = await apiFetch<{
-        success: boolean;
-        message: string;
-        summary: {
-          created: number;
-          updated: number;
-          skipped: number;
-          failed: number;
-        };
-        duration_ms?: number;
-      }>(`${apiUrl}/api/organizations/${orgId}/employees/bulk`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          csv_data: rawCsvText,
-          update_existing: true,
-          send_invites: false,
-        }),
-      });
+      let response: any;
+      try {
+        response = await apiFetch<{
+          success: boolean;
+          message: string;
+          summary: {
+            created: number;
+            updated: number;
+            skipped: number;
+            failed: number;
+          };
+          duration_ms?: number;
+        }>(`${apiUrl}/api/organizations/${orgId}/employees/bulk`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            csv_data: rawCsvText,
+            update_existing: true,
+            send_invites: false,
+          }),
+        });
+      } catch {
+        response = await apiFetch<any>(`/api/public/corporate/employees/bulk`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            org_id: orgId || organization.id,
+            org_slug: organization.slug,
+            csv_data: rawCsvText,
+          }),
+        });
+      }
 
       if (response && response.summary) {
         setImportResult({

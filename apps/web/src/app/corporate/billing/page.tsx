@@ -127,7 +127,7 @@ export default function BillingPage() {
         <OverdueAlertBanner
           overdueCount={economics.hasOverdue ? 1 : 0}
           overdueAmount={economics.overdueAmount}
-          oldestInvoiceNumber="PF-INV-2026-09-0045"
+          oldestInvoiceNumber={economics.overdueInvoiceNumber || economics.invoiceNumber || "PF-INV-CURRENT"}
           onPayNow={handlePayNow}
         />
 

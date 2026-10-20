@@ -151,7 +151,7 @@ export default function CorporateDashboardPage() {
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    September statement <strong>{economics.invoiceNumber}</strong> (RWF {economics.currentInvoiceRwf.toLocaleString()}) was due on Sep 30, 2026. Settle via MoMo or Bank Transfer to keep benefits active.
+                    Statement <strong>{economics.invoiceNumber}</strong> (RWF {economics.currentInvoiceRwf.toLocaleString()}) was due on {economics.dueDateStr || "Sep 30, 2026"}. Settle via MoMo or Bank Transfer to keep benefits active.
                   </p>
                 </div>
               </div>
@@ -189,7 +189,7 @@ export default function CorporateDashboardPage() {
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    September statement is <strong className="text-emerald-600 dark:text-emerald-400">PAID</strong>. 
+                    Current account statement is <strong className="text-emerald-600 dark:text-emerald-400">{economics.invoiceStatus?.toUpperCase() || "ACTIVE"}</strong>. 
                     Your workforce join link is active with <strong>{organization.domain}</strong> email verification.
                   </p>
                 </div>
@@ -269,7 +269,7 @@ export default function CorporateDashboardPage() {
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    September Statement
+                    Monthly Statement
                   </span>
                   <div
                     className={cn(

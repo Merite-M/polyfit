@@ -81,7 +81,7 @@ export function EmployeeDetailDrawer({
   onClose,
   onStatusChange,
   onTierChange,
-  organizationName = "TechCorp Rwanda",
+  organizationName = "Corporate Client",
 }: EmployeeDetailDrawerProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 

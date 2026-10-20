@@ -231,9 +231,11 @@ export function LivePassVirtualizationModal({
 
   const orgDomain = companyName.toLowerCase().includes("techcorp")
     ? "techcorp.rw"
-    : companyName.toLowerCase().includes("bank") || companyName.toLowerCase().includes("kigali")
+    : companyName.toLowerCase().includes("kigali tech") || companyName.toLowerCase().includes("kigalitech")
+    ? "kigalitech.rw"
+    : companyName.toLowerCase().includes("bank of kigali") || companyName.toLowerCase().includes("bk")
     ? "bk.rw"
-    : "corporate.rw";
+    : `${companyName.toLowerCase().replace(/[^a-z0-9]/g, "") || "corporate"}.rw`;
 
   const filteredVenues = PARTNER_FACILITIES.filter((v) => {
     if (exploreCategory === "fitness" && !v.category.toLowerCase().includes("fitness") && !v.category.toLowerCase().includes("strength")) return false;
