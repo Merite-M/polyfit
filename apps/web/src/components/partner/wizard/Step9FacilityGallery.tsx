@@ -109,7 +109,8 @@ export function Step9FacilityGallery({ state, onChange }: Step9Props) {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full sm:w-auto px-4 py-2.5 bg-[#0B1F33] hover:bg-[#132D43] text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            aria-label="Upload facility photos from device"
+            className="w-full sm:w-auto px-4 py-2.5 bg-[#0B1F33] hover:bg-[#132D43] text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <UploadCloud className="w-4 h-4 text-[#28D17C]" />
             <span>Upload Photos from Device</span>
@@ -119,6 +120,7 @@ export function Step9FacilityGallery({ state, onChange }: Step9Props) {
             type="file"
             accept="image/*"
             multiple
+            aria-label="Upload photo files"
             className="hidden"
             onChange={handleFileUpload}
           />
@@ -127,6 +129,7 @@ export function Step9FacilityGallery({ state, onChange }: Step9Props) {
             <input
               type="url"
               placeholder="Or paste image URL..."
+              aria-label="Facility photo image URL"
               value={urlInput}
               onChange={(e) => setUrlInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddUrl()}
@@ -135,7 +138,8 @@ export function Step9FacilityGallery({ state, onChange }: Step9Props) {
             <button
               type="button"
               onClick={handleAddUrl}
-              className="px-3.5 py-2 bg-[#F1F4F8] hover:bg-[#E9FAF2] text-[#0B1F33] rounded-lg text-xs font-bold border border-[#E2E8F0] transition-colors"
+              aria-label="Add photo from URL"
+              className="px-3.5 py-2 bg-[#F1F4F8] hover:bg-[#E9FAF2] text-[#0B1F33] rounded-lg text-xs font-bold border border-[#E2E8F0] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               Add
             </button>
@@ -169,12 +173,13 @@ export function Step9FacilityGallery({ state, onChange }: Step9Props) {
                     alt={`Facility gallery photo ${idx + 1}`}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <button
                       type="button"
                       onClick={() => handleRemovePhoto(idx)}
-                      className="p-1.5 rounded-full bg-[#EF4444] text-white hover:scale-110 transition-transform"
-                      title="Delete photo"
+                      className="p-1.5 rounded-full bg-[#EF4444] text-white hover:scale-110 transition-transform cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                      title={`Delete facility photo #${idx + 1}`}
+                      aria-label={`Delete facility photo #${idx + 1}`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -203,7 +208,8 @@ export function Step9FacilityGallery({ state, onChange }: Step9Props) {
                   type="button"
                   onClick={() => handleAddPreset(preset.url)}
                   disabled={isAdded}
-                  className={`relative rounded-lg overflow-hidden border text-left cursor-pointer group transition-all ${
+                  aria-label={isAdded ? `${preset.name} photo already added` : `Add ${preset.name} preset photo`}
+                  className={`relative rounded-lg overflow-hidden border text-left cursor-pointer group transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                     isAdded ? 'opacity-40 cursor-not-allowed border-[#28D17C]' : 'hover:border-[#28D17C]'
                   }`}
                 >
