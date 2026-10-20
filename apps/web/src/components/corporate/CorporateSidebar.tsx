@@ -13,13 +13,11 @@ import {
   Layers,
   ReceiptText,
   Settings,
-  ChevronDown,
   Building2,
   Sparkles,
   LogOut,
   HelpCircle,
   Share2,
-  Check,
   CheckCircle2,
   X,
 } from "lucide-react";
@@ -71,14 +69,11 @@ export function CorporateSidebar({
   const { user, signOut, isDemoMode } = useAuth();
   const {
     organization,
-    availableOrganizations,
-    switchOrganization,
     copyInviteLink,
     getOrgHref,
   } = useCorporate();
 
   const [copiedLink, setCopiedLink] = useState(false);
-  const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, targetPath: string) => {
     onCloseMobile?.();
@@ -136,82 +131,30 @@ export function CorporateSidebar({
           )}
         </div>
 
-        {/* Dynamic Employer Organization Switcher Card */}
-        <div className="relative">
-          <button
-            onClick={() => setIsOrgDropdownOpen(!isOrgDropdownOpen)}
-            className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 transition-all text-left group"
-            aria-expanded={isOrgDropdownOpen}
-            aria-label="Switch organization"
+        {/* Active Employer Organization Identity Card */}
+        <div className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-left">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-400 flex items-center justify-center text-slate-900 font-bold text-sm shadow-xs flex-shrink-0">
+              {organization.name.substring(0, 2).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white truncate">
+                {organization.name}
+              </p>
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                <Building2 className="w-3 h-3 text-teal-400 flex-shrink-0" />
+                <span className="truncate">@{organization.domain}</span>
+              </div>
+            </div>
+          </div>
+          <Link
+            href={getOrgHref("/corporate/settings")}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/60 transition-colors flex-shrink-0"
+            title="Manage Company Settings"
+            aria-label="Manage Company Settings"
           >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-400 flex items-center justify-center text-slate-900 font-bold text-sm shadow-xs flex-shrink-0">
-                {organization.name.substring(0, 2).toUpperCase()}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-white truncate group-hover:text-emerald-400 transition-colors">
-                  {organization.name}
-                </p>
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                  <Building2 className="w-3 h-3 text-teal-400 flex-shrink-0" />
-                  <span className="truncate">Enterprise Corporate</span>
-                </div>
-              </div>
-            </div>
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-slate-400 transition-transform duration-200 flex-shrink-0",
-                isOrgDropdownOpen && "rotate-180"
-              )}
-            />
-          </button>
-
-          {/* Org Switcher Dropdown (Multi-Org Switcher) */}
-          {isOrgDropdownOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1.5 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-2 z-50 animate-in fade-in-50 zoom-in-95 duration-150">
-              <div className="text-[10px] font-semibold text-slate-400 uppercase px-2 py-1">
-                Select Employer Network
-              </div>
-              <div className="space-y-1 max-h-48 overflow-y-auto">
-                {availableOrganizations.map((org) => {
-                  const isSelected = org.id === organization.id;
-                  return (
-                    <button
-                      key={org.id}
-                      onClick={() => {
-                        switchOrganization(org.id);
-                        setIsOrgDropdownOpen(false);
-                      }}
-                      className={cn(
-                        "w-full flex items-center justify-between p-2 rounded-lg text-left text-xs font-medium transition-colors",
-                        isSelected
-                          ? "bg-slate-800 text-white"
-                          : "hover:bg-slate-800/60 text-slate-400 hover:text-white"
-                      )}
-                    >
-                      <div className="truncate">
-                        <p className={cn("font-semibold", isSelected && "text-emerald-400")}>
-                          {org.name}
-                        </p>
-                        <p className="text-[10px] text-slate-400 truncate">@{org.domain}</p>
-                      </div>
-                      {isSelected && <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="mt-1 pt-1 border-t border-slate-700/60">
-                <Link
-                  href={getOrgHref("/corporate/settings")}
-                  onClick={() => setIsOrgDropdownOpen(false)}
-                  className="flex items-center gap-2 p-2 rounded-lg text-xs text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                  <span>Manage Organization Profile</span>
-                </Link>
-              </div>
-            </div>
-          )}
+            <Settings className="w-4 h-4" />
+          </Link>
         </div>
       </div>
 

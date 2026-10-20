@@ -416,22 +416,10 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Sync live organizations from backend so any created in Super Admin or registration appear immediately
+  // Load active corporate organization data
   useEffect(() => {
-    async function loadLiveOrganizations() {
+    async function initPortalData() {
       try {
-        const res = await apiFetch<any>("/api/public/corporate/organizations");
-        const list = res?.organizations || [];
-        const merged = [...NETWORK_ORGANIZATIONS];
-        if (Array.isArray(list) && list.length > 0) {
-          for (const item of list) {
-            if (!merged.some((m) => m.id === item.id || m.slug === item.slug)) {
-              merged.push(item);
-            }
-          }
-        }
-        setAvailableOrganizations(merged);
-
         let target = initialOrg.slug || initialOrg.id;
         if (typeof window !== "undefined") {
           const params = new URLSearchParams(window.location.search);
@@ -448,10 +436,10 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
 
         await loadPortalData(target);
       } catch (err) {
-        console.warn("[CorporateContext] Error loading organizations:", err);
+        console.warn("[CorporateContext] Error loading portal data:", err);
       }
     }
-    loadLiveOrganizations();
+    initPortalData();
   }, [initialOrg.slug, initialOrg.id, loadPortalData]);
 
   // Invite Link derived from origin
