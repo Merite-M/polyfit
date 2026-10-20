@@ -109,7 +109,7 @@ export default function UniversalJoinPage() {
           },
           claim_url: "/join/bank-of-kigali"
         });
-      } else if (clean.includes("tech") || clean.includes("techcorp")) {
+      } else if (clean.includes("techcorp")) {
         setResult({
           enrolled: true,
           domain: "techcorp.rw",

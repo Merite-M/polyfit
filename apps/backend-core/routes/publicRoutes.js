@@ -1316,5 +1316,343 @@ router.post('/corporate/register', leadFormLimiter, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/public/corporate/organizations
+ * Returns all active corporate organizations for client portal switcher
+ */
+router.get('/corporate/organizations', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    const { data: orgs, error } = await supabase
+      .from('organizations')
+      .select('id, name, slug, allowed_domains, industry, contact_email, billing_email, contracted_seats, headcount_tier, status')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    const formatted = (orgs || []).map((o) => ({
+      id: o.id,
+      name: o.name,
+      slug: o.slug,
+      domain: Array.isArray(o.allowed_domains) && o.allowed_domains[0] ? o.allowed_domains[0] : `${o.slug}.rw`,
+      allowed_domains: Array.isArray(o.allowed_domains) ? o.allowed_domains : [`${o.slug}.rw`],
+      tax_id: '100000000',
+      contact_email: o.contact_email || `hr@${o.slug}.rw`,
+      billing_email: o.billing_email || `finance@${o.slug}.rw`,
+      industry: o.industry || 'Corporate Client',
+      contracted_seats: o.contracted_seats || 30
+    }));
+
+    return res.status(200).json({ success: true, organizations: formatted });
+  } catch (err) {
+    console.error('[PublicCorporate] Error fetching organizations:', err);
+    return res.status(500).json({ error: 'Failed to fetch organizations', code: 'ORGS_FETCH_FAILED' });
+  }
+});
+
+/**
+ * GET /api/public/corporate/portal-data
+ * Returns complete database-backed corporate portal state for an organization (org, benefits, employees, funnel, economics)
+ */
+router.get('/corporate/portal-data', async (req, res) => {
+  try {
+    const rawQuery = (req.query.slug || req.query.org || req.query.id || req.query.query || '').toString().trim();
+    if (!rawQuery) {
+      return res.status(400).json({ error: 'Organization slug or ID is required', code: 'ORG_REQUIRED' });
+    }
+
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    const cleanQuery = rawQuery.toLowerCase();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanQuery);
+
+    let orgQuery = supabase.from('organizations').select('*');
+    if (isUuid) {
+      orgQuery = orgQuery.eq('id', cleanQuery);
+    } else {
+      orgQuery = orgQuery.or(`slug.eq.${sanitizePostgrestFilter(cleanQuery)},name.ilike.${sanitizePostgrestFilter(cleanQuery)}`);
+    }
+
+    const { data: orgs, error: orgError } = await orgQuery;
+    if (orgError) throw orgError;
+
+    const org = orgs && orgs[0];
+    if (!org) {
+      return res.status(404).json({ error: `Organization '${rawQuery}' not found`, code: 'ORG_NOT_FOUND' });
+    }
+
+    // 1. Fetch active benefit plans from database
+    const { data: benefits, error: benError } = await supabase
+      .from('benefits')
+      .select('id, org_id, name, tier, max_monthly_visits, co_pay_percentage, allowed_provider_categories, status, created_at')
+      .eq('org_id', org.id)
+      .order('created_at', { ascending: false });
+
+    // 2. Fetch employee roster from database
+    const { data: employees, error: empError } = await supabase
+      .from('employees')
+      .select('id, org_id, full_name, email, employee_id_external, department, tier, status, created_at')
+      .eq('org_id', org.id)
+      .order('created_at', { ascending: false });
+
+    const empList = employees || [];
+    const benList = benefits || [];
+
+    // 3. Count employee enrollments per plan
+    const plansWithCounts = benList.map((b) => {
+      const count = empList.filter((e) => e.tier && b.tier && e.tier.toLowerCase() === b.tier.toLowerCase()).length;
+      return {
+        ...b,
+        enrolled_count: count
+      };
+    });
+
+    // 4. Calculate live funnel metrics
+    const contractedSeats = org.contracted_seats || 30;
+    const totalRegistered = empList.length;
+    const activeCount = empList.filter((e) => e.status === 'active').length;
+
+    // Check visits for these employees
+    let visitCount = 0;
+    if (empList.length > 0) {
+      const empIds = empList.map((e) => e.id);
+      const { count: vCount } = await supabase
+        .from('visits')
+        .select('id', { count: 'exact', head: true })
+        .in('employee_id', empIds);
+      visitCount = vCount || 0;
+    }
+
+    const funnelData = {
+      totalEligible: Math.max(contractedSeats, totalRegistered),
+      registeredEmployees: totalRegistered,
+      activeBeneficiaries: activeCount,
+      totalVisits: visitCount,
+      newEmployees30d: totalRegistered,
+      newBeneficiaries30d: activeCount,
+      avgVisitsPerActive: activeCount > 0 ? Number((visitCount / activeCount).toFixed(1)) : 0
+    };
+
+    // 5. Calculate monthly economics
+    const avgCostPerVisit = 5000;
+    const monthlySpend = visitCount * avgCostPerVisit;
+    const economics = {
+      currentBalance: 0,
+      currentInvoiceRwf: monthlySpend > 0 ? monthlySpend : (contractedSeats * 18000),
+      invoiceStatus: 'draft',
+      invoiceNumber: `PF-INV-${new Date().toISOString().slice(0, 7)}-${org.slug.slice(0, 4).toUpperCase()}`,
+      overdueAmount: 0,
+      overdueInvoiceNumber: '',
+      hasOverdue: false,
+      overdueDays: 0,
+      dueDateStr: 'End of Month',
+      ytdTotalSpent: monthlySpend,
+      ytdTotalVisits: visitCount,
+      pmpmSpendRwf: activeCount > 0 ? Math.round(monthlySpend / activeCount) : 18000,
+      avgCostPerVisit: avgCostPerVisit,
+      citTaxShieldRwf: Math.round((monthlySpend > 0 ? monthlySpend : (contractedSeats * 18000)) * 0.3)
+    };
+
+    return res.status(200).json({
+      success: true,
+      organization: {
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        domain: Array.isArray(org.allowed_domains) && org.allowed_domains[0] ? org.allowed_domains[0] : `${org.slug}.rw`,
+        allowed_domains: Array.isArray(org.allowed_domains) ? org.allowed_domains : [`${org.slug}.rw`],
+        tax_id: org.tax_id || '100000000',
+        contact_email: org.contact_email || `hr@${org.slug}.rw`,
+        billing_email: org.billing_email || `finance@${org.slug}.rw`,
+        industry: org.industry || 'Corporate Client',
+        contracted_seats: contractedSeats
+      },
+      plans: plansWithCounts,
+      employees: empList,
+      funnel: funnelData,
+      economics
+    });
+  } catch (err) {
+    console.error('[PublicCorporate] Error fetching portal data:', err);
+    return res.status(500).json({ error: 'Failed to fetch corporate portal data', code: 'PORTAL_DATA_FAILED' });
+  }
+});
+
+/**
+ * POST /api/public/corporate/employees
+ * Add a single employee to an organization roster in database
+ */
+router.post('/corporate/employees', async (req, res) => {
+  try {
+    const { org_id, org_slug, full_name, email, employee_id_external, department, tier, status } = req.body;
+
+    if (!full_name || !full_name.trim()) {
+      return res.status(400).json({ error: 'Full name is required', code: 'VALIDATION_ERROR' });
+    }
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: 'Email address is required', code: 'VALIDATION_ERROR' });
+    }
+
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    // Resolve organization
+    let targetOrgId = org_id;
+    if (!targetOrgId && org_slug) {
+      const { data: o } = await supabase.from('organizations').select('id').eq('slug', org_slug).maybeSingle();
+      if (o) targetOrgId = o.id;
+    }
+
+    if (!targetOrgId) {
+      return res.status(400).json({ error: 'Valid organization ID or slug is required', code: 'ORG_REQUIRED' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanStaffId = employee_id_external ? employee_id_external.trim() : `EMP-${Date.now().toString().slice(-4)}`;
+
+    // Check if employee already exists in organization
+    const { data: existing } = await supabase
+      .from('employees')
+      .select('id, full_name, email, status')
+      .eq('org_id', targetOrgId)
+      .eq('email', cleanEmail)
+      .maybeSingle();
+
+    if (existing) {
+      return res.status(409).json({
+        error: `An employee with email ${cleanEmail} already exists in this organization.`,
+        code: 'EMPLOYEE_EXISTS',
+        existingId: existing.id
+      });
+    }
+
+    const { data: newEmp, error: insertError } = await supabase
+      .from('employees')
+      .insert({
+        org_id: targetOrgId,
+        full_name: full_name.trim(),
+        email: cleanEmail,
+        employee_id_external: cleanStaffId,
+        department: department ? department.trim() : 'General',
+        tier: (tier || 'standard').toLowerCase(),
+        status: (status || 'active').toLowerCase()
+      })
+      .select()
+      .single();
+
+    if (insertError) throw insertError;
+
+    return res.status(201).json({
+      success: true,
+      message: 'Employee added successfully to organization roster',
+      employee: newEmp
+    });
+  } catch (err) {
+    console.error('[PublicCorporate] Error adding employee:', err);
+    return res.status(500).json({ error: err.message || 'Failed to add employee', code: 'EMPLOYEE_CREATE_FAILED' });
+  }
+});
+
+/**
+ * PATCH /api/public/corporate/employees/:id
+ * Update employee status or tier in database
+ */
+router.patch('/corporate/employees/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, tier, department, full_name, employee_id_external } = req.body;
+
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    const updates = {};
+    if (status !== undefined) updates.status = status.toLowerCase();
+    if (tier !== undefined) updates.tier = tier.toLowerCase();
+    if (department !== undefined) updates.department = department.trim();
+    if (full_name !== undefined) updates.full_name = full_name.trim();
+    if (employee_id_external !== undefined) updates.employee_id_external = employee_id_external.trim();
+
+    const { data: updatedEmp, error } = await supabase
+      .from('employees')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return res.status(200).json({
+      success: true,
+      message: 'Employee updated successfully',
+      employee: updatedEmp
+    });
+  } catch (err) {
+    console.error('[PublicCorporate] Error updating employee:', err);
+    return res.status(500).json({ error: err.message || 'Failed to update employee', code: 'EMPLOYEE_UPDATE_FAILED' });
+  }
+});
+
+/**
+ * POST /api/public/corporate/benefits
+ * Create a new benefit plan for an organization
+ */
+router.post('/corporate/benefits', async (req, res) => {
+  try {
+    const { org_id, org_slug, name, tier, max_monthly_visits, co_pay_percentage, allowed_categories } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Benefit plan name is required', code: 'VALIDATION_ERROR' });
+    }
+
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    let targetOrgId = org_id;
+    if (!targetOrgId && org_slug) {
+      const { data: o } = await supabase.from('organizations').select('id').eq('slug', org_slug).maybeSingle();
+      if (o) targetOrgId = o.id;
+    }
+
+    if (!targetOrgId) {
+      return res.status(400).json({ error: 'Valid organization ID or slug is required', code: 'ORG_REQUIRED' });
+    }
+
+    const resolvedTier = (tier || 'standard').toLowerCase();
+    const { data: newBenefit, error } = await supabase
+      .from('benefits')
+      .insert({
+        org_id: targetOrgId,
+        name: name.trim(),
+        tier: resolvedTier,
+        max_monthly_visits: Number(max_monthly_visits) || 8,
+        co_pay_percentage: Number(co_pay_percentage) || 0,
+        allowed_provider_categories: Array.isArray(allowed_categories) ? allowed_categories : ['gym', 'pool', 'studio'],
+        status: 'active'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return res.status(201).json({
+      success: true,
+      message: 'Benefit plan created successfully',
+      benefit: newBenefit
+    });
+  } catch (err) {
+    console.error('[PublicCorporate] Error creating benefit plan:', err);
+    return res.status(500).json({ error: err.message || 'Failed to create benefit plan', code: 'BENEFIT_CREATE_FAILED' });
+  }
+});
+
 module.exports = router;
 

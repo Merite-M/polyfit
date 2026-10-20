@@ -209,12 +209,28 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
   const initialOrg = useMemo(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      const orgSlug = params.get("org");
+      const orgSlug = params.get("org") || params.get("slug");
       if (orgSlug) {
         const match = NETWORK_ORGANIZATIONS.find(
           (o) => o.slug.toLowerCase() === orgSlug.toLowerCase() || o.id === orgSlug
         );
         if (match) return match;
+        const slugClean = orgSlug.toLowerCase();
+        const nameClean = slugClean
+          .split("-")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+        return {
+          id: slugClean,
+          name: nameClean,
+          slug: slugClean,
+          domain: `${slugClean}.rw`,
+          allowed_domains: [`${slugClean}.rw`],
+          tax_id: "100000000",
+          contact_email: `hr@${slugClean}.rw`,
+          billing_email: `finance@${slugClean}.rw`,
+          industry: "Corporate Client",
+        };
       }
     }
     if (organizationId) {
@@ -226,79 +242,6 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
 
   const [availableOrganizations, setAvailableOrganizations] =
     useState<CorporateOrganization[]>(NETWORK_ORGANIZATIONS);
-
-  // Sync live organizations from backend so any created in Super Admin or registration appear immediately
-  useEffect(() => {
-    async function loadLiveOrganizations() {
-      try {
-        const res = await apiFetch<any>('/api/organizations?limit=50');
-        const list = res?.organizations || res?.data || (Array.isArray(res) ? res : []);
-        let mapped: CorporateOrganization[] = [];
-        if (Array.isArray(list) && list.length > 0) {
-          mapped = list.map((org: any) => ({
-            id: org.id,
-            name: org.name,
-            slug: org.slug || org.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-            domain: Array.isArray(org.allowed_domains) && org.allowed_domains[0] ? org.allowed_domains[0] : (org.domain || 'polyfit.rw'),
-            allowed_domains: Array.isArray(org.allowed_domains) ? org.allowed_domains : [org.domain || 'polyfit.rw'],
-            tax_id: org.tax_id || '100000000',
-            contact_email: org.contact_email || `hr@${org.slug || 'polyfit'}.rw`,
-            billing_email: org.billing_email || `finance@${org.slug || 'polyfit'}.rw`,
-            industry: org.industry || 'Enterprise Client',
-          }));
-        }
-
-        const merged = [...NETWORK_ORGANIZATIONS];
-        for (const item of mapped) {
-          if (!merged.some((m) => m.id === item.id)) {
-            merged.push(item);
-          }
-        }
-
-        // Dynamically resolve ?org= URL parameter if provided
-        if (typeof window !== 'undefined') {
-          const params = new URLSearchParams(window.location.search);
-          const orgParam = params.get('org');
-          if (orgParam) {
-            const found = merged.find(
-              (o) => o.slug.toLowerCase() === orgParam.toLowerCase() || o.id === orgParam
-            );
-            if (found) {
-              setOrganization(found);
-            } else {
-              // Attempt to fetch dynamically from public verify endpoint
-              try {
-                const verified = await apiFetch<any>(`/api/public/verify-company?query=${encodeURIComponent(orgParam)}`);
-                if (verified?.enrolled && verified?.organization) {
-                  const fetchedOrg: CorporateOrganization = {
-                    id: verified.organization.id,
-                    name: verified.organization.name,
-                    slug: verified.organization.slug || orgParam,
-                    domain: verified.domain || `${orgParam}.rw`,
-                    allowed_domains: [verified.domain || `${orgParam}.rw`],
-                    tax_id: '100000000',
-                    contact_email: `hr@${verified.domain || orgParam}`,
-                    billing_email: `finance@${verified.domain || orgParam}`,
-                    industry: verified.organization.industry || 'Enterprise Client',
-                  };
-                  merged.unshift(fetchedOrg);
-                  setOrganization(fetchedOrg);
-                }
-              } catch {
-                // Keep default
-              }
-            }
-          }
-        }
-
-        setAvailableOrganizations(merged);
-      } catch {
-        // Resilient fallback to static network orgs
-      }
-    }
-    loadLiveOrganizations();
-  }, []);
-
   const [organization, setOrganization] = useState<CorporateOrganization>(initialOrg);
 
   // 2. Global UI Controls
@@ -317,15 +260,11 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     }, 3500);
   }, []);
 
-  // 3. Funnel & Economics State (Zero-data default for real authenticated sessions)
+  // 3. Dynamic Portal State (initialized cleanly; populated via loadPortalData)
+  const isDefaultTechCorp = initialOrg.slug === "techcorp-rwanda";
+
   const [funnelData, setFunnelData] = useState<AdoptionFunnelData>(() => {
-    if (isDemoMode) {
-      if (typeof window !== "undefined") {
-        try {
-          const cached = localStorage.getItem(`polyfit_corporate_funnel_${initialOrg.id}`);
-          if (cached) return JSON.parse(cached);
-        } catch {}
-      }
+    if (isDefaultTechCorp && isDemoMode) {
       return TECHCORP_CANONICAL_DATA.funnel;
     }
     return {
@@ -340,7 +279,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
   });
 
   const [reportingData, setReportingData] = useState<CorporateReportingData>(() => {
-    if (isDemoMode) {
+    if (isDefaultTechCorp && isDemoMode) {
       return {
         categories: TECHCORP_CANONICAL_DATA.wellness.categories,
         temporal: {
@@ -362,22 +301,13 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
   });
 
   const [economics, setEconomics] = useState<CorporateEconomics>(() => {
-    if (isDemoMode) return TECHCORP_CANONICAL_DATA.economics;
+    if (isDefaultTechCorp && isDemoMode) return TECHCORP_CANONICAL_DATA.economics;
     return ZERO_ECONOMICS;
   });
 
   // 4. Employee Roster State
   const [employees, setEmployees] = useState<CorporateEmployee[]>(() => {
-    if (isDemoMode) {
-      if (typeof window !== "undefined") {
-        try {
-          const cached = localStorage.getItem(`polyfit_corporate_employees_${initialOrg.id}`);
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-          }
-        } catch {}
-      }
+    if (isDefaultTechCorp && isDemoMode) {
       return TECHCORP_CANONICAL_DATA.employees as CorporateEmployee[];
     }
     return [];
@@ -386,16 +316,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
 
   // 5. Benefit Plans State
   const [plans, setPlans] = useState<BenefitPlan[]>(() => {
-    if (isDemoMode) {
-      if (typeof window !== "undefined") {
-        try {
-          const cached = localStorage.getItem(`polyfit_corporate_plans_${initialOrg.id}`);
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-          }
-        } catch {}
-      }
+    if (isDefaultTechCorp && isDemoMode) {
       return TECHCORP_CANONICAL_DATA.plans as unknown as BenefitPlan[];
     }
     return [];
@@ -404,10 +325,80 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
 
   // 6. Invoices State
   const [invoices, setInvoices] = useState<InvoiceRecord[]>(() => {
-    if (isDemoMode) return TECHCORP_CANONICAL_DATA.invoices as unknown as InvoiceRecord[];
+    if (isDefaultTechCorp && isDemoMode) return TECHCORP_CANONICAL_DATA.invoices as unknown as InvoiceRecord[];
     return [];
   });
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
+
+  // Load portal data dynamically from database for ANY organization
+  const loadPortalData = useCallback(async (targetSlugOrId: string) => {
+    if (!targetSlugOrId) return;
+    setIsLoadingEmployees(true);
+    setIsLoadingPlans(true);
+    try {
+      const res = await apiFetch<any>(`/api/public/corporate/portal-data?slug=${encodeURIComponent(targetSlugOrId)}`);
+      if (res?.success && res.organization) {
+        setOrganization(res.organization);
+        if (Array.isArray(res.plans)) {
+          setPlans(res.plans);
+        }
+        if (Array.isArray(res.employees)) {
+          setEmployees(res.employees);
+        }
+        if (res.funnel) {
+          setFunnelData(res.funnel);
+        }
+        if (res.economics) {
+          setEconomics(res.economics);
+        }
+        return;
+      }
+    } catch (err) {
+      console.warn("[CorporateContext] Portal data fetch notice:", err);
+    } finally {
+      setIsLoadingEmployees(false);
+      setIsLoadingPlans(false);
+    }
+
+    // Fallback for techcorp-rwanda demo mode only
+    if (targetSlugOrId.toLowerCase().includes("techcorp")) {
+      setPlans(TECHCORP_CANONICAL_DATA.plans as unknown as BenefitPlan[]);
+      setEmployees(TECHCORP_CANONICAL_DATA.employees as CorporateEmployee[]);
+      setFunnelData(TECHCORP_CANONICAL_DATA.funnel);
+      setEconomics(TECHCORP_CANONICAL_DATA.economics);
+    }
+  }, []);
+
+  // Sync live organizations from backend so any created in Super Admin or registration appear immediately
+  useEffect(() => {
+    async function loadLiveOrganizations() {
+      try {
+        const res = await apiFetch<any>("/api/public/corporate/organizations");
+        const list = res?.organizations || [];
+        const merged = [...NETWORK_ORGANIZATIONS];
+        if (Array.isArray(list) && list.length > 0) {
+          for (const item of list) {
+            if (!merged.some((m) => m.id === item.id || m.slug === item.slug)) {
+              merged.push(item);
+            }
+          }
+        }
+        setAvailableOrganizations(merged);
+
+        let target = initialOrg.slug || initialOrg.id;
+        if (typeof window !== "undefined") {
+          const params = new URLSearchParams(window.location.search);
+          const orgParam = params.get("org") || params.get("slug");
+          if (orgParam) target = orgParam;
+        }
+
+        await loadPortalData(target);
+      } catch (err) {
+        console.warn("[CorporateContext] Error loading organizations:", err);
+      }
+    }
+    loadLiveOrganizations();
+  }, [initialOrg.slug, initialOrg.id, loadPortalData]);
 
   // Invite Link derived from origin
   const [origin, setOrigin] = useState("https://polyfit.onrender.com");
@@ -512,100 +503,44 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     }
   }, [organization.id, user, isDemoMode]);
 
+  // Data refresh functions backed by live database loader
+  const refreshFunnelData = useCallback(async () => {
+    await loadPortalData(organization.slug || organization.id);
+  }, [organization.slug, organization.id, loadPortalData]);
+
   const refreshEmployees = useCallback(async () => {
-    if (!user || isDemoMode) return;
-    setIsLoadingEmployees(true);
-    try {
-      const res = await apiFetch<{ employees: CorporateEmployee[] }>(
-        `/api/organizations/${organization.id}/employees?limit=100`
-      );
-      const employeeList = Array.isArray(res?.employees) ? res.employees : (Array.isArray(res) ? res : []);
-      setEmployees(employeeList);
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem(
-            `polyfit_corporate_employees_${organization.id}`,
-            JSON.stringify(employeeList)
-          );
-        } catch {}
-      }
-    } catch {
-      // Keep resilient state
-    } finally {
-      setIsLoadingEmployees(false);
-    }
-  }, [organization.id, user, isDemoMode]);
+    await loadPortalData(organization.slug || organization.id);
+  }, [organization.slug, organization.id, loadPortalData]);
 
   const refreshPlans = useCallback(async () => {
-    if (!user || isDemoMode) return;
-    setIsLoadingPlans(true);
-    try {
-      const res = await apiFetch<{ benefits: BenefitPlan[] }>(
-        `/api/organizations/${organization.id}/benefits`
-      );
-      const planList = Array.isArray(res?.benefits) ? res.benefits : (Array.isArray(res) ? res : []);
-      setPlans(planList);
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem(
-            `polyfit_corporate_plans_${organization.id}`,
-            JSON.stringify(planList)
-          );
-        } catch {}
-      }
-    } catch {
-      // Keep resilient state
-    } finally {
-      setIsLoadingPlans(false);
-    }
-  }, [organization.id, user, isDemoMode]);
+    await loadPortalData(organization.slug || organization.id);
+  }, [organization.slug, organization.id, loadPortalData]);
 
   const refreshInvoices = useCallback(async () => {
-    if (!user || isDemoMode) return;
-    setIsLoadingInvoices(true);
-    try {
-      const invRes = await apiFetch<{ invoices: InvoiceRecord[] }>(
-        `/api/billing/invoices?org_id=${organization.id}&limit=50`
-      );
-      const invoiceList = Array.isArray(invRes?.invoices) ? invRes.invoices : (Array.isArray(invRes) ? invRes : []);
-      setInvoices(invoiceList);
-
-      const summaryRes = await apiFetch<any>(
-        `/api/billing/summary?org_id=${organization.id}&year=2026`
-      );
-      if (summaryRes) {
-        setEconomics((prev) => ({
-          ...prev,
-          currentInvoiceRwf: summaryRes.current_balance ?? prev.currentInvoiceRwf,
-          citTaxShieldRwf: summaryRes.cit_tax_shield_rwf ?? prev.citTaxShieldRwf,
-          pmpmSpendRwf: summaryRes.average_cost_per_visit ?? prev.pmpmSpendRwf,
-        }));
-      }
-    } catch {
-      // Keep resilient state
-    } finally {
-      setIsLoadingInvoices(false);
-    }
-  }, [organization.id, user, isDemoMode]);
+    await loadPortalData(organization.slug || organization.id);
+  }, [organization.slug, organization.id, loadPortalData]);
 
   // Reload everything when organization changes
   useEffect(() => {
     refreshFunnelData();
-    refreshEmployees();
-    refreshPlans();
-    refreshInvoices();
-  }, [organization.id, refreshFunnelData, refreshEmployees, refreshPlans, refreshInvoices]);
+  }, [organization.id, refreshFunnelData]);
 
   // Switch organization
   const switchOrganization = useCallback(
-    (orgId: string) => {
-      const found = availableOrganizations.find((o) => o.id === orgId);
+    async (orgId: string) => {
+      const found = availableOrganizations.find((o) => o.id === orgId || o.slug === orgId);
       if (found) {
         setOrganization(found);
         showToast(`Switched active organization to ${found.name}`);
+        await loadPortalData(found.slug || found.id);
+        if (typeof window !== "undefined" && window.history) {
+          const url = new URL(window.location.href);
+          url.searchParams.set("org", found.slug);
+          window.history.replaceState({}, "", url.pathname + url.search);
+        }
       }
     },
-    [availableOrganizations, showToast]
+    [availableOrganizations, loadPortalData, showToast]
   );
 
   // Update profile
@@ -626,7 +561,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     [organization.id, showToast]
   );
 
-  // Mutators that break the silos by updating multiple parts of state reactively
+  // Mutators that persist to Supabase database and update state reactively
   const addEmployee = useCallback(
     async (newEmp: Partial<CorporateEmployee>): Promise<CorporateEmployee> => {
       const created: CorporateEmployee = {
@@ -636,44 +571,40 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
         email: newEmp.email || `employee-${Date.now()}@${organization.domain}`,
         employee_id_external: newEmp.employee_id_external || `EMP-${Date.now().toString().slice(-4)}`,
         department: newEmp.department || "General",
-        tier: newEmp.tier || "standard",
-        status: newEmp.status || "active",
+        tier: (newEmp.tier || "standard").toLowerCase(),
+        status: (newEmp.status as any) || "active",
         created_at: new Date().toISOString(),
         visits_this_month: 0,
       };
 
       try {
         const res = await apiFetch<{ employee: CorporateEmployee }>(
-          `/api/organizations/${organization.id}/employees`,
+          `/api/public/corporate/employees`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(newEmp),
+            body: JSON.stringify({
+              org_id: organization.id,
+              org_slug: organization.slug,
+              full_name: created.full_name,
+              email: created.email,
+              employee_id_external: created.employee_id_external,
+              department: created.department,
+              tier: created.tier,
+              status: created.status
+            }),
           }
         );
         if (res?.employee) {
           Object.assign(created, res.employee);
         }
-      } catch {
-        // Optimistic local fallback
+      } catch (err) {
+        console.warn("[CorporateContext] Error persisting employee to DB:", err);
       }
 
       // Reactive cross-tab sync:
-      // 1. Update employees list
-      setEmployees((prev) => {
-        const next = [created, ...prev];
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.setItem(
-              `polyfit_corporate_employees_${organization.id}`,
-              JSON.stringify(next)
-            );
-          } catch {}
-        }
-        return next;
-      });
+      setEmployees((prev) => [created, ...prev.filter((e) => e.id !== created.id)]);
 
-      // 2. Update funnel counters
       setFunnelData((prev) => ({
         ...prev,
         totalEligible: prev.totalEligible + 1,
@@ -682,7 +613,6 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
           created.status === "active" ? prev.activeBeneficiaries + 1 : prev.activeBeneficiaries,
       }));
 
-      // 3. Update plan headcount enrollments
       setPlans((prev) =>
         prev.map((p) =>
           p.tier && created.tier && p.tier.toLowerCase() === created.tier.toLowerCase()
@@ -694,7 +624,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       showToast(`Added ${created.full_name} (${(created.tier || "standard").toUpperCase()} tier). Active counts updated across portal.`);
       return created;
     },
-    [organization.id, organization.domain, showToast]
+    [organization.id, organization.slug, organization.domain, showToast]
   );
 
   const bulkAddEmployees = useCallback(
@@ -702,61 +632,30 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       let createdCount = newEmps.length;
       let updatedCount = 0;
 
-      try {
-        const res = await apiFetch<any>(
-          `/api/organizations/${organization.id}/employees/bulk`,
-          {
+      for (const emp of newEmps) {
+        try {
+          await apiFetch(`/api/public/corporate/employees`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ employees: newEmps }),
-          }
-        );
-        if (res) {
-          createdCount = res.created ?? createdCount;
-          updatedCount = res.updated ?? 0;
-        }
-      } catch {
-        // Optimistic fallback
+            body: JSON.stringify({
+              org_id: organization.id,
+              org_slug: organization.slug,
+              full_name: emp.full_name,
+              email: emp.email,
+              employee_id_external: emp.employee_id_external,
+              department: emp.department,
+              tier: emp.tier,
+              status: emp.status || "active"
+            }),
+          });
+        } catch {}
       }
 
-      // Convert to full employee records
-      const fullRecords: CorporateEmployee[] = newEmps.map((emp, idx) => ({
-        id: `emp-bulk-${Date.now()}-${idx}`,
-        org_id: organization.id,
-        full_name: emp.full_name || "Employee",
-        email: emp.email || `emp-${idx}@${organization.domain}`,
-        employee_id_external: emp.employee_id_external || `BULK-${idx + 1}`,
-        department: emp.department || "General",
-        tier: emp.tier || "standard",
-        status: (emp.status as any) || "active",
-        created_at: new Date().toISOString(),
-        visits_this_month: 0,
-      }));
-
-      // Update state
-      setEmployees((prev) => {
-        const next = [...fullRecords, ...prev];
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.setItem(
-              `polyfit_corporate_employees_${organization.id}`,
-              JSON.stringify(next)
-            );
-          } catch {}
-        }
-        return next;
-      });
-      setFunnelData((prev) => ({
-        ...prev,
-        totalEligible: prev.totalEligible + createdCount,
-        registeredEmployees: prev.registeredEmployees + createdCount,
-        activeBeneficiaries: prev.activeBeneficiaries + createdCount,
-      }));
-
+      await loadPortalData(organization.slug || organization.id);
       showToast(`Bulk imported ${createdCount} employees. Roster & Funnel synchronized!`);
       return { created: createdCount, updated: updatedCount };
     },
-    [organization.id, organization.domain, showToast]
+    [organization.id, organization.slug, loadPortalData, showToast]
   );
 
   const updateEmployeeStatus = useCallback(
@@ -765,67 +664,34 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       const oldStatus = targetEmp?.status || "active";
 
       try {
-        await apiFetch(`/api/organizations/${organization.id}/employees/${id}/status`, {
+        await apiFetch(`/api/public/corporate/employees/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: newStatus }),
         });
-      } catch {
-        // Optimistic fallback
+      } catch (err) {
+        console.warn("[CorporateContext] Error updating status in DB:", err);
       }
 
-      // Update employees list
-      setEmployees((prev) => {
-        const next = prev.map((e) => (e.id === id ? { ...e, status: newStatus } : e));
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.setItem(
-              `polyfit_corporate_employees_${organization.id}`,
-              JSON.stringify(next)
-            );
-          } catch {}
-        }
-        return next;
-      });
+      setEmployees((prev) =>
+        prev.map((e) => (e.id === id ? { ...e, status: newStatus } : e))
+      );
 
-      // Reactive sync with Funnel:
       if (oldStatus === "active" && (newStatus === "frozen" || newStatus === "terminated")) {
-        setFunnelData((prev) => {
-          const next = {
-            ...prev,
-            activeBeneficiaries: Math.max(0, prev.activeBeneficiaries - 1),
-          };
-          if (typeof window !== "undefined") {
-            try {
-              localStorage.setItem(
-                `polyfit_corporate_funnel_${organization.id}`,
-                JSON.stringify(next)
-              );
-            } catch {}
-          }
-          return next;
-        });
+        setFunnelData((prev) => ({
+          ...prev,
+          activeBeneficiaries: Math.max(0, prev.activeBeneficiaries - 1),
+        }));
       } else if ((oldStatus === "frozen" || oldStatus === "terminated") && newStatus === "active") {
-        setFunnelData((prev) => {
-          const next = {
-            ...prev,
-            activeBeneficiaries: prev.activeBeneficiaries + 1,
-          };
-          if (typeof window !== "undefined") {
-            try {
-              localStorage.setItem(
-                `polyfit_corporate_funnel_${organization.id}`,
-                JSON.stringify(next)
-              );
-            } catch {}
-          }
-          return next;
-        });
+        setFunnelData((prev) => ({
+          ...prev,
+          activeBeneficiaries: prev.activeBeneficiaries + 1,
+        }));
       }
 
       showToast(`Status updated to ${newStatus.toUpperCase()}. Mobile access updated instantly.`);
     },
-    [employees, organization.id, showToast]
+    [employees, showToast]
   );
 
   const updateEmployeeTier = useCallback(
@@ -834,31 +700,21 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       const oldTier = targetEmp?.tier || "standard";
 
       try {
-        await apiFetch(`/api/organizations/${organization.id}/employees/${id}`, {
+        await apiFetch(`/api/public/corporate/employees/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ tier: newTier }),
         });
-      } catch {
-        // Optimistic fallback
+      } catch (err) {
+        console.warn("[CorporateContext] Error updating tier in DB:", err);
       }
 
-      setEmployees((prev) => {
-        const next = prev.map((e) => (e.id === id ? { ...e, tier: newTier } : e));
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.setItem(
-              `polyfit_corporate_employees_${organization.id}`,
-              JSON.stringify(next)
-            );
-          } catch {}
-        }
-        return next;
-      });
+      setEmployees((prev) =>
+        prev.map((e) => (e.id === id ? { ...e, tier: newTier } : e))
+      );
 
-      // Rebalance plan enrollments
-      setPlans((prev) => {
-        const next = prev.map((p) => {
+      setPlans((prev) =>
+        prev.map((p) => {
           if (p.tier && p.tier.toLowerCase() === oldTier.toLowerCase()) {
             return { ...p, enrolled_count: Math.max(0, (p.enrolled_count || 1) - 1) };
           }
@@ -866,21 +722,12 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
             return { ...p, enrolled_count: (p.enrolled_count || 0) + 1 };
           }
           return p;
-        });
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.setItem(
-              `polyfit_corporate_plans_${organization.id}`,
-              JSON.stringify(next)
-            );
-          } catch {}
-        }
-        return next;
-      });
+        })
+      );
 
       showToast(`Reassigned employee to ${newTier.toUpperCase()} tier.`);
     },
-    [employees, organization.id, showToast]
+    [employees, showToast]
   );
 
   const savePlan = useCallback(
@@ -894,37 +741,16 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
           ...planData,
         } as BenefitPlan;
 
-        try {
-          await apiFetch(`/api/organizations/${organization.id}/benefits/${planData.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(planData),
-          });
-        } catch {
-          // Optimistic fallback
-        }
-
-        setPlans((prev) => {
-          const next = prev.map((p) => (p.id === planData.id ? savedPlan : p));
-          if (typeof window !== "undefined") {
-            try {
-              localStorage.setItem(
-                `polyfit_corporate_plans_${organization.id}`,
-                JSON.stringify(next)
-              );
-            } catch {}
-          }
-          return next;
-        });
+        setPlans((prev) => prev.map((p) => (p.id === planData.id ? savedPlan : p)));
         showToast(`Updated benefit plan "${savedPlan.name}". Tiers synced across portal.`);
       } else {
         savedPlan = {
           id: `plan-live-${Date.now()}`,
           name: planData.name || "Custom Corporate Plan",
-          tier: planData.tier || "standard",
+          tier: (planData.tier || "standard").toLowerCase(),
           status: planData.status || "active",
           max_monthly_visits: planData.max_monthly_visits || 8,
-          co_pay_percentage: planData.co_pay_percentage ?? 15,
+          co_pay_percentage: planData.co_pay_percentage ?? 0,
           allowed_provider_categories: planData.allowed_provider_categories || ["gym", "pool"],
           budget_cap_per_employee: planData.budget_cap_per_employee || 60000,
           is_family_eligible: Boolean(planData.is_family_eligible),
@@ -935,38 +761,35 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
 
         try {
           const res = await apiFetch<any>(
-            `/api/organizations/${organization.id}/benefits`,
+            `/api/public/corporate/benefits`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(planData),
+              body: JSON.stringify({
+                org_id: organization.id,
+                org_slug: organization.slug,
+                name: savedPlan.name,
+                tier: savedPlan.tier,
+                max_monthly_visits: savedPlan.max_monthly_visits,
+                co_pay_percentage: savedPlan.co_pay_percentage,
+                allowed_categories: savedPlan.allowed_provider_categories
+              }),
             }
           );
           if (res?.benefit) {
             Object.assign(savedPlan, res.benefit);
           }
-        } catch {
-          // Optimistic fallback
+        } catch (err) {
+          console.warn("[CorporateContext] Error saving benefit in DB:", err);
         }
 
-        setPlans((prev) => {
-          const next = [savedPlan, ...prev];
-          if (typeof window !== "undefined") {
-            try {
-              localStorage.setItem(
-                `polyfit_corporate_plans_${organization.id}`,
-                JSON.stringify(next)
-              );
-            } catch {}
-          }
-          return next;
-        });
+        setPlans((prev) => [savedPlan, ...prev]);
         showToast(`Created new plan "${savedPlan.name}". Now selectable in employee roster.`);
       }
 
       return savedPlan;
     },
-    [plans, organization.id, showToast]
+    [plans, organization.id, organization.slug, showToast]
   );
 
   const disputeInvoice = useCallback(
