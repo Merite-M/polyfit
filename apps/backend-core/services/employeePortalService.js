@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { supabase } = require('./supabaseService');
+const { sanitizePostgrestFilter } = require('@polyfit/shared-utils');
 const {
   deriveEmployeeSecret,
   signPassPayload,
@@ -674,7 +675,10 @@ async function getEmployeeNetwork(employee, options = {}) {
   }
 
   if (search) {
-    query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%,address.ilike.%${search}%`);
+    const cleanSearch = sanitizePostgrestFilter(search);
+    if (cleanSearch) {
+      query = query.or(`name.ilike.%${cleanSearch}%,city.ilike.%${cleanSearch}%,address.ilike.%${cleanSearch}%`);
+    }
   }
 
   const { data: locations, error } = await query;

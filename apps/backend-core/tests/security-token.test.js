@@ -1,6 +1,7 @@
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("crypto");
+const { sanitizePostgrestFilter } = require("@polyfit/shared-utils");
 
 describe("Security Fix: Cryptographically Secure PRNG for Sensitive Tokens", () => {
   test("invitation token follows inv_<48 hex chars> cryptographically secure format", () => {
@@ -31,5 +32,37 @@ describe("Security Fix: Cryptographically Secure PRNG for Sensitive Tokens", () 
     const baseSlug = "acme-corp";
     const slug = `${baseSlug}-${crypto.randomBytes(2).toString("hex")}`;
     assert.match(slug, /^acme-corp-[0-9a-f]{4}$/);
+  });
+});
+
+describe("Security Fix: PostgREST Filter Injection Prevention", () => {
+  test("strips PostgREST structural syntax control characters from search input", () => {
+    const maliciousInput = "test),status.eq.active,(foo";
+    const cleaned = sanitizePostgrestFilter(maliciousInput);
+    assert.strictEqual(cleaned, "teststatus.eq.activefoo");
+  });
+
+  test("strips parentheses, commas, colons, quotes, and LIKE wildcards while preserving email dots", () => {
+    const input = `Kigali: Gym (Main) 'branch', "VIP" %100_ %20_`;
+    const cleaned = sanitizePostgrestFilter(input);
+    assert.strictEqual(cleaned, "Kigali. Gym Main branch VIP 100 20".replace('.', ''));
+  });
+
+  test("preserves valid work emails with dots and alphanumeric characters", () => {
+    const email = "john.doe@company.rw";
+    const cleaned = sanitizePostgrestFilter(email);
+    assert.strictEqual(cleaned, "john.doe@company.rw");
+  });
+
+  test("preserves alphanumeric search queries cleanly", () => {
+    const safeInput = "Kigali Serena Hotel & Spa 2025";
+    const cleaned = sanitizePostgrestFilter(safeInput);
+    assert.strictEqual(cleaned, "Kigali Serena Hotel & Spa 2025");
+  });
+
+  test("handles empty, null, or non-string inputs safely", () => {
+    assert.strictEqual(sanitizePostgrestFilter(null), "");
+    assert.strictEqual(sanitizePostgrestFilter(undefined), "");
+    assert.strictEqual(sanitizePostgrestFilter(123), "");
   });
 });
