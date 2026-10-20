@@ -1,5 +1,5 @@
 const { supabase } = require('./supabaseService');
-const { getDistanceFromLatLonInM } = require('@polyfit/shared-utils');
+const { getDistanceFromLatLonInM, sanitizePostgrestFilter } = require('@polyfit/shared-utils');
 
 const VALID_PROVIDER_CATEGORIES = ['gym', 'pool', 'studio', 'clinic', 'wellness_center'];
 const VALID_PROVIDER_STATUSES = ['pending_review', 'active', 'inactive', 'suspended', 'rejected'];
@@ -174,8 +174,11 @@ async function listProviders({
   }
 
   if (search && typeof search === 'string' && search.trim()) {
-    const term = `%${search.trim()}%`;
-    query = query.or(`name.ilike.${term},contact_email.ilike.${term}`);
+    const cleanSearch = sanitizePostgrestFilter(search);
+    if (cleanSearch) {
+      const term = `%${cleanSearch}%`;
+      query = query.or(`name.ilike.${term},contact_email.ilike.${term}`);
+    }
   }
 
   const safePage = Math.max(1, parseInt(page, 10) || 1);

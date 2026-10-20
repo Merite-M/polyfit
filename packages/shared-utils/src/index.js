@@ -38,8 +38,21 @@ function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
   return EARTH_RADIUS_METERS * 2 * Math.asin(Math.sqrt(Math.min(1, a)));
 }
 
+/**
+ * Sanitizes user input string before embedding in Supabase PostgREST .or() filter queries.
+ * Strips PostgREST structural syntax control characters (parentheses, commas, dots, colons, quotes, percent/underscore wildcards).
+ *
+ * @param {string} input - Raw user search or filter string
+ * @returns {string} Safe string for PostgREST filter interpolation
+ */
+function sanitizePostgrestFilter(input) {
+  if (!input || typeof input !== 'string') return '';
+  return input.replace(/[\(\),:\\"'\/%_]/g, '').trim();
+}
+
 module.exports = {
   getDistanceFromLatLonInM,
+  sanitizePostgrestFilter,
 };
 
 /**

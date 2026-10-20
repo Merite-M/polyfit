@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const { supabase } = require('@polyfit/supabase-client');
-const { getDistanceFromLatLonInM } = require('@polyfit/shared-utils');
+const { getDistanceFromLatLonInM, sanitizePostgrestFilter } = require('@polyfit/shared-utils');
 const { logAuthEvent } = require('./auditService');
 const {
   deriveEmployeeSecret,
@@ -254,7 +254,7 @@ async function searchOperationsUniversal(rawQuery) {
     };
   }
 
-  const cleanQ = query.replace(/[%_]/g, '');
+  const cleanQ = sanitizePostgrestFilter(query);
 
   // Parallel multi-entity querying
   const [

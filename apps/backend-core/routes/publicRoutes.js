@@ -1,5 +1,6 @@
 const express = require('express');
 const { supabase } = require('@polyfit/supabase-client');
+const { sanitizePostgrestFilter } = require('@polyfit/shared-utils');
 const { rateLimit } = require('express-rate-limit');
 
 const router = express.Router();
@@ -833,10 +834,12 @@ router.post('/partner/register', leadFormLimiter, async (req, res) => {
     }
 
     // Check if provider already exists
+    const safeEmail = sanitizePostgrestFilter(cleanEmail);
+    const safeBusinessName = sanitizePostgrestFilter(cleanBusinessName);
     const { data: existingProvider } = await supabase
       .from('providers')
       .select('id, name, status')
-      .or(`contact_email.eq.${cleanEmail},name.ilike.${cleanBusinessName}`)
+      .or(`contact_email.eq.${safeEmail},name.ilike.${safeBusinessName}`)
       .maybeSingle();
 
     let provider = existingProvider;
@@ -1164,10 +1167,12 @@ router.post('/corporate/register', leadFormLimiter, async (req, res) => {
     }
 
     // Check if organization already exists
+    const safeBaseSlug = sanitizePostgrestFilter(baseSlug);
+    const safeCleanEmail = sanitizePostgrestFilter(cleanEmail);
     const { data: existingOrg } = await supabase
       .from('organizations')
       .select('id, name, slug, allowed_domains, status')
-      .or(`slug.eq.${baseSlug},contact_email.eq.${cleanEmail}`)
+      .or(`slug.eq.${safeBaseSlug},contact_email.eq.${safeCleanEmail}`)
       .maybeSingle();
 
     let organization = existingOrg;
