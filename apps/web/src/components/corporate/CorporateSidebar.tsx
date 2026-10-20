@@ -74,18 +74,20 @@ export function CorporateSidebar({
     availableOrganizations,
     switchOrganization,
     copyInviteLink,
+    getOrgHref,
   } = useCorporate();
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
 
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, targetPath: string) => {
     onCloseMobile?.();
-    if (pathname === href) return;
+    const destination = getOrgHref(targetPath);
+    if (pathname === targetPath) return;
     if (typeof document !== "undefined" && "startViewTransition" in document) {
       e.preventDefault();
       (document as any).startViewTransition(() => {
-        router.push(href);
+        router.push(destination);
       });
     }
   };
@@ -108,7 +110,7 @@ export function CorporateSidebar({
       <div className="p-5 border-b border-[#1B354F]">
         <div className="flex items-center justify-between mb-4">
           <Link
-            href="/corporate"
+            href={getOrgHref("/corporate")}
             className="flex items-center gap-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded-lg"
           >
             <IsometricHexMark size={32} />
@@ -200,7 +202,7 @@ export function CorporateSidebar({
               </div>
               <div className="mt-1 pt-1 border-t border-slate-700/60">
                 <Link
-                  href="/corporate/settings"
+                  href={getOrgHref("/corporate/settings")}
                   onClick={() => setIsOrgDropdownOpen(false)}
                   className="flex items-center gap-2 p-2 rounded-lg text-xs text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
                 >
@@ -228,7 +230,7 @@ export function CorporateSidebar({
           return (
             <Link
               key={item.name}
-              href={item.href}
+              href={getOrgHref(item.href)}
               onClick={(e) => handleNavClick(e, item.href)}
               style={isActive ? { viewTransitionName: "corporate-active-pill" } : undefined}
               className={cn(

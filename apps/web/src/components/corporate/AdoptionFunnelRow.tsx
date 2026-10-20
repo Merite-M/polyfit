@@ -14,6 +14,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCorporate } from "@/contexts/CorporateContext";
 
 export interface AdoptionFunnelData {
   totalEligible: number;
@@ -36,6 +37,7 @@ export function AdoptionFunnelRow({
   className,
   onUpdateListClick,
 }: AdoptionFunnelRowProps) {
+  const { getOrgHref } = useCorporate();
   const {
     totalEligible = 0,
     registeredEmployees = 0,
@@ -126,7 +128,7 @@ export function AdoptionFunnelRow({
           <div className="mt-3 pt-3 border-t border-[#F1F4F8] flex items-center justify-between">
             <span className="text-[11px] text-[#8491A3]">Census headcount</span>
             <Link
-              href="/corporate/employees"
+              href={getOrgHref("/corporate/employees")}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0B1F33] hover:text-[#28D17C] transition-colors"
             >
               <span>Manage Roster</span>
@@ -230,7 +232,7 @@ export function AdoptionFunnelRow({
           <div className="mt-3 pt-3 border-t border-[#F1F4F8] flex items-center justify-between text-[11px] text-[#8491A3]">
             <span>Across all network venues</span>
             <Link
-              href="/corporate/billing"
+              href={getOrgHref("/corporate/billing")}
               className="text-[#3B82F6] hover:underline font-medium"
             >
               Audit trail

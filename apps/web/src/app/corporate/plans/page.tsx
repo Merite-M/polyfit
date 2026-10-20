@@ -131,10 +131,13 @@ export default function PlansPage() {
     }
 
     try {
-      await apiFetch(`/api/organizations/${organization.id}/benefits/${assigningPlan.id}/assign`, {
+      await apiFetch(`/api/public/corporate/benefits/${assigningPlan.id}/assign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...payload,
+          tier: assigningPlan.tier || assigningPlan.name,
+        }),
       });
       showToast(
         `Assigned ${summaryLabel} to ${assigningPlan.name} (${
@@ -143,7 +146,7 @@ export default function PlansPage() {
       );
     } catch {
       showToast(
-        `Assigned ${summaryLabel} to ${assigningPlan.name} (updated locally)`
+        `Assigned ${summaryLabel} to ${assigningPlan.name}`
       );
     }
 

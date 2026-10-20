@@ -39,6 +39,7 @@ export default function CorporateDashboardPage() {
     downloadCensusCsv,
     copyInviteLink,
     inviteUrl,
+    getOrgHref,
   } = useCorporate();
 
   const [activeTab, setActiveTab] = useState<"overview" | "analytics">("overview");
@@ -158,7 +159,7 @@ export default function CorporateDashboardPage() {
 
               <div className="flex items-center gap-2.5">
                 <Link
-                  href="/corporate/billing"
+                  href={getOrgHref("/corporate/billing")}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-xs"
                 >
                   <CreditCard className="w-3.5 h-3.5" />
@@ -166,7 +167,7 @@ export default function CorporateDashboardPage() {
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
                 <Link
-                  href="/corporate/employees"
+                  href={getOrgHref("/corporate/employees")}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-all shadow-2xs"
                 >
                   <span>Manage Roster</span>
@@ -212,7 +213,7 @@ export default function CorporateDashboardPage() {
                   <span>{copiedLink ? "Link Copied" : "Copy Join Link"}</span>
                 </button>
                 <Link
-                  href="/corporate/employees"
+                  href={getOrgHref("/corporate/employees")}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-all shadow-xs"
                 >
                   <span>Add Employee</span>
@@ -255,7 +256,7 @@ export default function CorporateDashboardPage() {
                   {funnelData.totalVisits} verified visits logged
                 </span>
                 <Link
-                  href="/corporate/employees"
+                  href={getOrgHref("/corporate/employees")}
                   className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
                 >
                   <span>Manage Roster</span>
@@ -311,7 +312,7 @@ export default function CorporateDashboardPage() {
                   <span>Download EBM PDF</span>
                 </button>
                 <Link
-                  href="/corporate/billing"
+                  href={getOrgHref("/corporate/billing")}
                   className={cn(
                     "text-xs font-bold",
                     economics.invoiceStatus === "overdue"

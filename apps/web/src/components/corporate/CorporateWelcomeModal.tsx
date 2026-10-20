@@ -153,7 +153,7 @@ export function CorporateWelcomeModal({
             </div>
 
             <Link
-              href="/corporate/employees"
+              href={organization?.slug ? `/corporate/employees?org=${encodeURIComponent(organization.slug)}` : "/corporate/employees"}
               onClick={onClose}
               className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-foreground whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0"
             >
@@ -179,7 +179,7 @@ export function CorporateWelcomeModal({
             </div>
 
             <Link
-              href="/corporate/billing"
+              href={organization?.slug ? `/corporate/billing?org=${encodeURIComponent(organization.slug)}` : "/corporate/billing"}
               onClick={onClose}
               className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-foreground whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0"
             >

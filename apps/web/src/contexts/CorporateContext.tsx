@@ -31,6 +31,17 @@ export interface CorporateOrganization {
 
 export const NETWORK_ORGANIZATIONS: CorporateOrganization[] = [
   {
+    id: "02f13bdc-ce25-4c9d-b712-451c06a63fa2",
+    name: "Kigali Tech Innovations",
+    slug: "kigali-tech-innovations",
+    domain: "kigalitech.rw",
+    allowed_domains: ["kigalitech.rw"],
+    tax_id: "109887766",
+    contact_email: "hr@kigalitech.rw",
+    billing_email: "hr@kigalitech.rw",
+    industry: "Technology & Financial Services",
+  },
+  {
     id: "c79a9982-4477-4336-a24b-561419f6c43b",
     name: "TechCorp Rwanda",
     slug: "techcorp-rwanda",
@@ -199,6 +210,7 @@ interface CorporateContextType {
   inviteUrl: string;
   copyInviteLink: () => void;
   downloadCensusCsv: () => void;
+  getOrgHref: (path: string) => string;
 }
 
 const CorporateContext = createContext<CorporateContextType | undefined>(undefined);
@@ -206,14 +218,23 @@ const CorporateContext = createContext<CorporateContextType | undefined>(undefin
 export function CorporateProvider({ children }: { children: React.ReactNode }) {
   const { organizationId, user, isDemoMode } = useAuth();
 
-  // 1. Organization State
+  // 1. Organization State with URL and localStorage sync
   const initialOrg = useMemo(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      const orgSlug = params.get("org") || params.get("slug");
+      let orgSlug = params.get("org") || params.get("slug");
+      if (!orgSlug) {
+        try {
+          orgSlug = localStorage.getItem("polyfit_corporate_active_org");
+        } catch {}
+      } else {
+        try {
+          localStorage.setItem("polyfit_corporate_active_org", orgSlug);
+        } catch {}
+      }
       if (orgSlug) {
         const match = NETWORK_ORGANIZATIONS.find(
-          (o) => o.slug.toLowerCase() === orgSlug.toLowerCase() || o.id === orgSlug
+          (o) => o.slug.toLowerCase() === orgSlug!.toLowerCase() || o.id === orgSlug
         );
         if (match) return match;
         const slugClean = orgSlug.toLowerCase();
@@ -348,6 +369,16 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       const res = await apiFetch<any>(`/api/public/corporate/portal-data?slug=${encodeURIComponent(targetSlugOrId)}`);
       if (res?.success && res.organization) {
         setOrganization(res.organization);
+        try {
+          localStorage.setItem("polyfit_corporate_active_org", res.organization.slug);
+        } catch {}
+        if (typeof window !== "undefined" && window.history) {
+          const url = new URL(window.location.href);
+          if (url.searchParams.get("org") !== res.organization.slug) {
+            url.searchParams.set("org", res.organization.slug);
+            window.history.replaceState({}, "", url.pathname + url.search);
+          }
+        }
         if (Array.isArray(res.plans)) {
           setPlans(res.plans);
         }
@@ -405,7 +436,14 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
         if (typeof window !== "undefined") {
           const params = new URLSearchParams(window.location.search);
           const orgParam = params.get("org") || params.get("slug");
-          if (orgParam) target = orgParam;
+          if (orgParam) {
+            target = orgParam;
+          } else {
+            try {
+              const saved = localStorage.getItem("polyfit_corporate_active_org");
+              if (saved) target = saved;
+            } catch {}
+          }
         }
 
         await loadPortalData(target);
@@ -504,6 +542,9 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       const found = availableOrganizations.find((o) => o.id === orgId || o.slug === orgId);
       if (found) {
         setOrganization(found);
+        try {
+          localStorage.setItem("polyfit_corporate_active_org", found.slug);
+        } catch {}
         showToast(`Switched active organization to ${found.name}`);
         await loadPortalData(found.slug || found.id);
         if (typeof window !== "undefined" && window.history) {
@@ -734,6 +775,23 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
           ...planData,
         } as BenefitPlan;
 
+        try {
+          await apiFetch(`/api/public/corporate/benefits/${planData.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: savedPlan.name,
+              tier: savedPlan.tier,
+              max_monthly_visits: savedPlan.max_monthly_visits,
+              co_pay_percentage: savedPlan.co_pay_percentage,
+              allowed_categories: savedPlan.allowed_provider_categories,
+              status: savedPlan.status
+            }),
+          });
+        } catch (err) {
+          console.warn("[CorporateContext] Error patching benefit plan in DB:", err);
+        }
+
         setPlans((prev) => prev.map((p) => (p.id === planData.id ? savedPlan : p)));
         showToast(`Updated benefit plan "${savedPlan.name}". Tiers synced across portal.`);
       } else {
@@ -788,13 +846,13 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
   const disputeInvoice = useCallback(
     async (id: string, reason: string, notes: string) => {
       try {
-        await apiFetch(`/api/billing/invoices/${id}/dispute`, {
+        await apiFetch(`/api/public/corporate/invoices/${id}/dispute`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ reason, notes }),
         });
-      } catch {
-        // Optimistic fallback
+      } catch (err) {
+        console.warn("[CorporateContext] Error submitting dispute:", err);
       }
 
       setInvoices((prev) =>
@@ -803,6 +861,17 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       showToast("Invoice marked as disputed. PolyFit Finance will audit within 4 hours.");
     },
     [showToast]
+  );
+
+  // URL helper for maintaining active organization context across portal routes
+  const getOrgHref = useCallback(
+    (path: string) => {
+      const slug = organization?.slug;
+      if (!slug) return path;
+      const delimiter = path.includes("?") ? "&" : "?";
+      return `${path}${delimiter}org=${encodeURIComponent(slug)}`;
+    },
+    [organization?.slug]
   );
 
   const value = useMemo(
@@ -841,6 +910,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       inviteUrl,
       copyInviteLink,
       downloadCensusCsv,
+      getOrgHref,
     }),
     [
       organization,
@@ -868,13 +938,16 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       disputeInvoice,
       refreshInvoices,
       selectedRange,
+      setSelectedRange,
       mobileMenuOpen,
+      setMobileMenuOpen,
       toggleMobileMenu,
       notification,
       showToast,
       inviteUrl,
       copyInviteLink,
       downloadCensusCsv,
+      getOrgHref,
     ]
   );
 

@@ -18,6 +18,7 @@ import {
   Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCorporate } from "@/contexts/CorporateContext";
 
 interface ActivationCardsProps {
   organizationSlug?: string;
@@ -38,6 +39,7 @@ export function ActivationCards({
   className,
   onDownloadInvoice,
 }: ActivationCardsProps) {
+  const { getOrgHref } = useCorporate();
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedChannel, setCopiedChannel] = useState<string | null>(null);
 
@@ -155,7 +157,7 @@ export function ActivationCards({
           </div>
 
           <Link
-            href="/corporate/employees"
+            href={getOrgHref("/corporate/employees")}
             className="text-xs font-semibold text-[#0B1F33] hover:text-[#28D17C] transition-colors flex items-center gap-1"
           >
             <span>View Roster Census</span>
@@ -172,7 +174,7 @@ export function ActivationCards({
               Current Invoice
             </span>
             <Link
-              href="/corporate/billing"
+              href={getOrgHref("/corporate/billing")}
               className="text-xs font-semibold text-[#28D17C] hover:underline"
             >
               View all

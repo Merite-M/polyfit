@@ -1907,6 +1907,72 @@ router.post('/corporate/benefits/:id/assign', async (req, res) => {
 });
 
 /**
+ * PATCH /api/public/corporate/benefits/:id
+ * Update benefit plan co-pay, visits cap, or categories in database
+ */
+router.patch('/corporate/benefits/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, tier, max_monthly_visits, co_pay_percentage, allowed_categories, status } = req.body;
+
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    const updates = {};
+    if (name) updates.name = name.trim();
+    if (tier) updates.tier = tier.toLowerCase();
+    if (max_monthly_visits !== undefined) updates.max_monthly_visits = Number(max_monthly_visits);
+    if (co_pay_percentage !== undefined) updates.co_pay_percentage = Number(co_pay_percentage);
+    if (Array.isArray(allowed_categories)) updates.allowed_provider_categories = allowed_categories;
+    if (status) updates.status = status.toLowerCase();
+
+    const { data: updatedBenefit, error } = await supabase
+      .from('benefits')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return res.status(200).json({
+      success: true,
+      message: 'Benefit plan updated successfully',
+      benefit: updatedBenefit
+    });
+  } catch (err) {
+    console.error('[PublicCorporate] Error updating benefit plan:', err);
+    return res.status(500).json({ error: err.message || 'Failed to update benefit plan', code: 'BENEFIT_UPDATE_FAILED' });
+  }
+});
+
+/**
+ * DELETE /api/public/corporate/benefits/:id
+ * Archive or delete a corporate benefit plan
+ */
+router.delete('/corporate/benefits/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    const { error } = await supabase
+      .from('benefits')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    return res.status(200).json({ success: true, message: 'Benefit plan deleted successfully' });
+  } catch (err) {
+    console.error('[PublicCorporate] Error deleting benefit plan:', err);
+    return res.status(500).json({ error: err.message || 'Failed to delete benefit plan', code: 'BENEFIT_DELETE_FAILED' });
+  }
+});
+
+/**
  * PATCH /api/public/corporate/organization
  * Update organization profile settings in database
  */
