@@ -405,6 +405,25 @@ function CorporateRegistrationContent() {
                     <span>150 staff</span>
                     <span>500+ enterprise</span>
                   </div>
+
+                  {/* Quick Preset Buttons */}
+                  <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase">Quick Select:</span>
+                    {[15, 30, 50, 100, 250].map((count) => (
+                      <button
+                        key={count}
+                        type="button"
+                        onClick={() => setHeadcount(count)}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          headcount === count
+                            ? "bg-blue-600 text-white shadow-xs"
+                            : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                        }`}
+                      >
+                        {count} staff
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Plan Tier Selection Cards */}
@@ -509,7 +528,7 @@ function CorporateRegistrationContent() {
                   </p>
                 </div>
 
-                <div className="pt-4 flex items-center justify-between">
+                <div className="sticky bottom-0 z-10 bg-white/95 backdrop-blur-md pt-4 pb-2 border-t border-slate-200 -mx-6 -mb-6 px-6 sm:-mx-10 sm:-mb-10 sm:px-10 rounded-b-3xl flex items-center justify-between">
                   <button
                     type="button"
                     onClick={() => setCurrentStep(1)}

@@ -207,6 +207,16 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
 
   // 1. Organization State
   const initialOrg = useMemo(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const orgSlug = params.get("org");
+      if (orgSlug) {
+        const match = NETWORK_ORGANIZATIONS.find(
+          (o) => o.slug.toLowerCase() === orgSlug.toLowerCase() || o.id === orgSlug
+        );
+        if (match) return match;
+      }
+    }
     if (organizationId) {
       const match = NETWORK_ORGANIZATIONS.find((o) => o.id === organizationId);
       if (match) return match;
@@ -217,14 +227,15 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
   const [availableOrganizations, setAvailableOrganizations] =
     useState<CorporateOrganization[]>(NETWORK_ORGANIZATIONS);
 
-  // Sync live organizations from backend so any created in Super Admin console appear immediately
+  // Sync live organizations from backend so any created in Super Admin or registration appear immediately
   useEffect(() => {
     async function loadLiveOrganizations() {
       try {
         const res = await apiFetch<any>('/api/organizations?limit=50');
         const list = res?.organizations || res?.data || (Array.isArray(res) ? res : []);
+        let mapped: CorporateOrganization[] = [];
         if (Array.isArray(list) && list.length > 0) {
-          const mapped: CorporateOrganization[] = list.map((org: any) => ({
+          mapped = list.map((org: any) => ({
             id: org.id,
             name: org.name,
             slug: org.slug || org.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
@@ -235,15 +246,52 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
             billing_email: org.billing_email || `finance@${org.slug || 'polyfit'}.rw`,
             industry: org.industry || 'Enterprise Client',
           }));
+        }
 
-          const merged = [...NETWORK_ORGANIZATIONS];
-          for (const item of mapped) {
-            if (!merged.some((m) => m.id === item.id)) {
-              merged.push(item);
+        const merged = [...NETWORK_ORGANIZATIONS];
+        for (const item of mapped) {
+          if (!merged.some((m) => m.id === item.id)) {
+            merged.push(item);
+          }
+        }
+
+        // Dynamically resolve ?org= URL parameter if provided
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const orgParam = params.get('org');
+          if (orgParam) {
+            const found = merged.find(
+              (o) => o.slug.toLowerCase() === orgParam.toLowerCase() || o.id === orgParam
+            );
+            if (found) {
+              setOrganization(found);
+            } else {
+              // Attempt to fetch dynamically from public verify endpoint
+              try {
+                const verified = await apiFetch<any>(`/api/public/verify-company?query=${encodeURIComponent(orgParam)}`);
+                if (verified?.enrolled && verified?.organization) {
+                  const fetchedOrg: CorporateOrganization = {
+                    id: verified.organization.id,
+                    name: verified.organization.name,
+                    slug: verified.organization.slug || orgParam,
+                    domain: verified.domain || `${orgParam}.rw`,
+                    allowed_domains: [verified.domain || `${orgParam}.rw`],
+                    tax_id: '100000000',
+                    contact_email: `hr@${verified.domain || orgParam}`,
+                    billing_email: `finance@${verified.domain || orgParam}`,
+                    industry: verified.organization.industry || 'Enterprise Client',
+                  };
+                  merged.unshift(fetchedOrg);
+                  setOrganization(fetchedOrg);
+                }
+              } catch {
+                // Keep default
+              }
             }
           }
-          setAvailableOrganizations(merged);
         }
+
+        setAvailableOrganizations(merged);
       } catch {
         // Resilient fallback to static network orgs
       }
@@ -369,7 +417,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const inviteUrl = `${origin}/join/${organization.slug}`;
+  const inviteUrl = `${origin}/join?org=${organization.slug}`;
 
   const copyInviteLink = useCallback(() => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {

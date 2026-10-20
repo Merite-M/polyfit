@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { CorporateHeader } from "@/components/corporate/CorporateHeader";
 import { AdoptionFunnelRow } from "@/components/corporate/AdoptionFunnelRow";
@@ -27,6 +27,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CorporateWelcomeModal } from "@/components/corporate/CorporateWelcomeModal";
 
 export default function CorporateDashboardPage() {
   const {
@@ -42,6 +43,26 @@ export default function CorporateDashboardPage() {
 
   const [activeTab, setActiveTab] = useState<"overview" | "analytics">("overview");
   const [copiedLink, setCopiedLink] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+
+  // Check if landing with ?welcome=true from corporate registration flow
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("welcome") === "true") {
+        setShowWelcomeModal(true);
+      }
+    }
+  }, []);
+
+  const handleCloseWelcomeModal = () => {
+    setShowWelcomeModal(false);
+    if (typeof window !== "undefined" && window.history) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("welcome");
+      window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+    }
+  };
 
   const handleCopyLink = () => {
     copyInviteLink();
@@ -175,6 +196,14 @@ export default function CorporateDashboardPage() {
               </div>
 
               <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowWelcomeModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-xs font-semibold text-blue-700 dark:text-blue-300 transition-all cursor-pointer shadow-2xs"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                  <span>Onboarding Checklist</span>
+                </button>
                 <button
                   onClick={handleCopyLink}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-all cursor-pointer shadow-2xs"
@@ -452,6 +481,14 @@ export default function CorporateDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* First-time HR Onboarding Guide Modal */}
+      <CorporateWelcomeModal
+        open={showWelcomeModal}
+        onClose={handleCloseWelcomeModal}
+        organization={organization}
+        inviteUrl={inviteUrl}
+      />
     </div>
   );
 }

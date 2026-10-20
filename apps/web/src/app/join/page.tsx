@@ -20,6 +20,7 @@ import {
 import { PolyFitLogo } from "@/components/ui/polyfit-logo";
 import { apiFetch } from "@/lib/api-client";
 import { useLeadModal } from "@/lib/lead-modal";
+import { EmployeeJoinClient, OrgConfig } from "@/components/corporate/EmployeeJoinClient";
 
 interface CompanyVerification {
   enrolled: boolean;
@@ -52,6 +53,7 @@ export default function UniversalJoinPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<CompanyVerification | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showDirectEnrollment, setShowDirectEnrollment] = useState(false);
   const openLeadModal = useLeadModal((s) => s.open);
 
   const sampleCompanies = [
@@ -60,6 +62,19 @@ export default function UniversalJoinPage() {
     { label: "Irembo", query: "irembo.gov.rw" },
     { label: "Equity Bank", query: "equitybank.co.ke" }
   ];
+
+  // Auto-search if ?org= or ?query= in URL parameter (resolves dynamically registered companies without 404)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const orgParam = params.get("org") || params.get("query");
+      if (orgParam) {
+        setQuery(orgParam);
+        handleSearch(orgParam);
+        setShowDirectEnrollment(true);
+      }
+    }
+  }, []);
 
   const handleSearch = async (targetQuery?: string) => {
     const target = (targetQuery || query).trim();
@@ -291,15 +306,46 @@ export default function UniversalJoinPage() {
                       </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-                      <Link
-                        href={result.claim_url || `/join/${result.organization.slug}`}
-                        className="w-full py-3.5 px-6 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-white font-bold text-sm transition-all text-center shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                      >
-                        <Smartphone className="w-4 h-4" />
-                        <span>Claim Your Pass for {result.organization.name} &rarr;</span>
-                      </Link>
-                    </div>
+                    {showDirectEnrollment ? (
+                      <div className="pt-3 border-t border-[#28D17C]/30 space-y-3">
+                        <div className="flex items-center justify-between pb-1">
+                          <span className="text-xs font-bold text-[#0B1F33] uppercase tracking-wider">
+                            Instant Staff Pass Activation
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowDirectEnrollment(false)}
+                            className="text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer"
+                          >
+                            Collapse Form
+                          </button>
+                        </div>
+                        <EmployeeJoinClient
+                          orgConfig={{
+                            id: result.organization.id,
+                            name: result.organization.name,
+                            slug: result.organization.slug,
+                            domains: [result.domain],
+                            domain: result.domain,
+                            tierName: result.benefit.name,
+                            maxVisits: result.benefit.max_monthly_visits,
+                            coPayPercent: result.benefit.co_pay_percentage,
+                            venuesCount: 52,
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowDirectEnrollment(true)}
+                          className="w-full py-3.5 px-6 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-white font-bold text-sm transition-all text-center shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          <Smartphone className="w-4 h-4" />
+                          <span>Activate Your {result.organization.name} Pass &rarr;</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="p-6 rounded-2xl bg-amber-50 border border-amber-200 space-y-4">
