@@ -627,8 +627,33 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
       if (isMounted) setLoading(false);
     };
     init();
+
+    // Background sync: poll summary every 20s if window is visible
+    const pollInterval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        refreshSummary();
+      }
+    }, 20000);
+
+    // Refresh on tab focus
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        refreshSummary();
+        refreshDashboard();
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('focus', handleVisibilityChange);
+    }
+
     return () => {
       isMounted = false;
+      clearInterval(pollInterval);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('focus', handleVisibilityChange);
+      }
     };
   }, [refreshLocations, refreshSummary, refreshDashboard, refreshCommercialConditions]);
 

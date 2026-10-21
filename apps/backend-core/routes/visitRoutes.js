@@ -494,43 +494,37 @@ router.post('/manual-checkin', requireAuth, requireRole('super_admin', 'polyfit_
       });
     }
 
-    // Anti-passback check
-    const { data: apData, error: apError } = await supabase.rpc('check_anti_passback', {
+    // Record manual visit with atomic concurrency lock & anti-passback
+    const { data: recordRes, error: rpcError } = await supabase.rpc('record_verified_visit', {
       p_employee_id: employee.id,
-      p_provider_location_id: provider_location_id
+      p_org_id: employee.org_id,
+      p_provider_location_id: provider_location_id,
+      p_verification_method: 'manual',
+      p_status: 'verified',
+      p_totp_token_hash: null,
+      p_device_fingerprint: device_fingerprint || null,
+      p_geo_lat: geo_lat ? parseFloat(geo_lat) : null,
+      p_geo_lng: geo_lng ? parseFloat(geo_lng) : null
     });
 
-    if (!apError && apData && apData.length > 0 && !apData[0].allowed) {
-      return res.status(409).json({
-        error: `Anti-passback cooldown active: Re-entry allowed in ${apData[0].minutes_remaining} minutes`,
-        code: 'ANTI_PASSBACK_COOLDOWN',
-        minutes_remaining: apData[0].minutes_remaining
-      });
-    }
-
-    // Record manual visit
-    const { data: newVisit, error: insertError } = await supabase
-      .from('visits')
-      .insert({
-        employee_id: employee.id,
-        org_id: employee.org_id,
-        provider_location_id,
-        verification_method: 'manual',
-        status: 'verified',
-        check_in_at: new Date().toISOString(),
-        device_fingerprint: device_fingerprint || null,
-        geo_lat: geo_lat ? parseFloat(geo_lat) : null,
-        geo_lng: geo_lng ? parseFloat(geo_lng) : null
-      })
-      .select()
-      .single();
-
-    if (insertError) {
+    if (rpcError) {
       return res.status(400).json({
-        error: insertError.message,
+        error: rpcError.message,
         code: 'VISIT_RECORDING_FAILED'
       });
     }
+
+    if (recordRes && !recordRes.success) {
+      return res.status(409).json({
+        error: recordRes.error_message || 'Anti-passback cooldown active',
+        code: recordRes.error_code || 'ANTI_PASSBACK_COOLDOWN',
+        minutes_remaining: recordRes.minutes_remaining,
+        last_visit_at: recordRes.last_visit_at,
+        cooldown_window_minutes: recordRes.cooldown_window_minutes
+      });
+    }
+
+    const newVisit = recordRes.visit;
 
     await logAuthEvent({
       userId: req.user.id,
@@ -1712,8 +1706,22 @@ router.get('/today-summary', requireAuth, requireRole('super_admin', 'polyfit_op
 
     const { count: pendingCount } = await pendingQuery;
 
-    // Rate calculation: default standard rate 5,000 RWF per verified visit
-    const perVisitRate = 5000;
+    // Rate calculation: lookup active provider contract rate or default to 5,000 RWF
+    let perVisitRate = 5000;
+    const targetProviderId = req.providerId || (locIds[0] ? (await supabase.from('provider_locations').select('provider_id').eq('id', locIds[0]).maybeSingle())?.data?.provider_id : null);
+    if (targetProviderId) {
+      const { data: activeContract } = await supabase
+        .from('provider_contracts')
+        .select('per_visit_rate')
+        .eq('provider_id', targetProviderId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (activeContract?.per_visit_rate) {
+        perVisitRate = parseFloat(activeContract.per_visit_rate);
+      }
+    }
     const totalEarned = verified.length * perVisitRate;
 
     return res.status(200).json({

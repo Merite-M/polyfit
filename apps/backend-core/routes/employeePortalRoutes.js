@@ -866,46 +866,39 @@ router.post('/scan-plaque', requireAuth, async (req, res) => {
       }
     }
 
-    // 4. Anti-Passback Cooldown Check (30 minutes)
-    const { data: apData, error: apError } = await supabase.rpc('check_anti_passback', {
+    // 4. Atomically record verified visit with concurrency lock & anti-passback
+    const { data: recordRes, error: rpcError } = await supabase.rpc('record_verified_visit', {
       p_employee_id: employee.id,
-      p_provider_location_id: provider_location_id
+      p_org_id: employee.org_id,
+      p_provider_location_id: provider_location_id,
+      p_verification_method: 'counter_plaque_scan',
+      p_status: 'verified',
+      p_totp_token_hash: null,
+      p_device_fingerprint: null,
+      p_geo_lat: lat ? parseFloat(lat) : null,
+      p_geo_lng: lng ? parseFloat(lng) : null
     });
 
-    if (!apError && apData && apData.length > 0 && !apData[0].allowed) {
-      return res.status(409).json({
-        success: false,
-        error: `Anti-passback cooldown active: Re-entry allowed in ${apData[0].minutes_remaining} minutes`,
-        code: 'ANTI_PASSBACK_COOLDOWN',
-        minutes_remaining: apData[0].minutes_remaining,
-        last_visit_at: apData[0].last_visit_at
-      });
-    }
-
-    // 5. Insert verified visit record
-    const visitTimestamp = scanned_at ? new Date(scanned_at).toISOString() : new Date().toISOString();
-    const { data: newVisit, error: insertError } = await supabase
-      .from('visits')
-      .insert({
-        employee_id: employee.id,
-        org_id: employee.org_id,
-        provider_location_id,
-        verification_method: 'counter_plaque_scan',
-        status: 'verified',
-        check_in_at: visitTimestamp,
-        geo_lat: lat ? parseFloat(lat) : null,
-        geo_lng: lng ? parseFloat(lng) : null
-      })
-      .select()
-      .single();
-
-    if (insertError) {
+    if (rpcError) {
       return res.status(400).json({
         success: false,
-        error: insertError.message,
+        error: rpcError.message,
         code: 'VISIT_RECORDING_FAILED'
       });
     }
+
+    if (recordRes && !recordRes.success) {
+      return res.status(409).json({
+        success: false,
+        error: recordRes.error_message || 'Anti-passback cooldown active',
+        code: recordRes.error_code || 'ANTI_PASSBACK_COOLDOWN',
+        minutes_remaining: recordRes.minutes_remaining,
+        last_visit_at: recordRes.last_visit_at,
+        cooldown_window_minutes: recordRes.cooldown_window_minutes
+      });
+    }
+
+    const newVisit = recordRes.visit;
 
     const { logAuthEvent } = require('../services/auditService');
     await logAuthEvent({
