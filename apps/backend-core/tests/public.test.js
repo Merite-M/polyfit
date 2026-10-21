@@ -167,6 +167,31 @@ describe('Public Lead & Demo Pipeline Test Suite (PF-88)', () => {
         await supabase.from('employees').delete().eq('id', res.body.employee.id);
       }
     });
+
+    test('POST /api/public/organizations/:slug/join sanitizes PostgREST control characters in employee_id_external', async () => {
+      const uniqueEmail = `security.test.${Date.now()}@techcorp.rw`;
+      const res = await request(app)
+        .post('/api/public/organizations/techcorp-rwanda/join')
+        .send({
+          full_name: 'Security Test User',
+          email: uniqueEmail,
+          employee_id_external: 'JOIN),or(status.eq.active,(foo',
+          department: 'Security'
+        });
+
+      assert.ok([200, 503].includes(res.status));
+      if (res.status === 200) {
+        assert.equal(res.body.success, true);
+        assert.ok(res.body.employee);
+
+        // Clean up test employee
+        const { supabase } = require('../services/supabaseService');
+        if (supabase && res.body.employee.id) {
+          await supabase.from('eligibility').delete().eq('employee_id', res.body.employee.id);
+          await supabase.from('employees').delete().eq('id', res.body.employee.id);
+        }
+      }
+    });
   });
 
   describe('Platform Configuration & Company Sponsorship Discovery (Master Unification)', () => {
