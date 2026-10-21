@@ -359,6 +359,27 @@ export function LiveSmartphonePreview({ state, currentStep }: LiveSmartphonePrev
                   </p>
                 </div>
 
+                {/* Included Amenities & Features */}
+                {(state.amenities || []).length > 0 && (
+                  <div className="bg-[#0D2235] p-2.5 rounded-xl border border-[#21405A] space-y-1.5 text-[9px]">
+                    <span className="text-[9px] font-bold text-[#28D17C] uppercase tracking-wider flex items-center gap-1">
+                      <Sparkles className="w-2.5 h-2.5 text-[#28D17C]" />
+                      Included Amenities & Features ({(state.amenities || []).length})
+                    </span>
+                    <div className="flex flex-wrap gap-1 pt-0.5">
+                      {(state.amenities || []).map((item, idx) => (
+                        <span
+                          key={idx}
+                          className="px-1.5 py-0.5 rounded text-[8px] font-semibold bg-[#132D43] text-slate-200 border border-[#21405A] flex items-center gap-1"
+                        >
+                          <span className="w-1 h-1 rounded-full bg-[#28D17C]" />
+                          <span>{item}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Important Notice */}
                 {state.important_notice && (
                   <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 p-2 rounded-xl text-[9px] text-[#F59E0B] space-y-0.5">

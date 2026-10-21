@@ -1836,6 +1836,45 @@ router.patch('/corporate/employees/:id', async (req, res) => {
 
     if (error) throw error;
 
+    // If tier or status changed, synchronize eligibility table in Supabase
+    if (updatedEmp) {
+      if (tier !== undefined) {
+        const cleanTier = updates.tier;
+        const { data: targetBenefit } = await supabase
+          .from('benefits')
+          .select('id')
+          .eq('org_id', updatedEmp.org_id)
+          .eq('status', 'active')
+          .eq('tier', cleanTier)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (targetBenefit) {
+          await supabase
+            .from('eligibility')
+            .update({ status: 'expired' })
+            .eq('employee_id', id)
+            .eq('status', 'active');
+
+          await supabase
+            .from('eligibility')
+            .insert({
+              employee_id: id,
+              benefit_id: targetBenefit.id,
+              status: updatedEmp.status === 'active' ? 'active' : 'suspended',
+              activated_at: new Date().toISOString()
+            });
+        }
+      } else if (status !== undefined) {
+        await supabase
+          .from('eligibility')
+          .update({ status: updates.status === 'active' ? 'active' : 'suspended' })
+          .eq('employee_id', id)
+          .eq('status', updates.status === 'active' ? 'suspended' : 'active');
+      }
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Employee updated successfully',
@@ -1950,7 +1989,9 @@ router.post('/corporate/benefits/:id/assign', async (req, res) => {
       tierToAssign = 'standard';
     }
 
+    let targetEmpIds = [];
     if (Array.isArray(employeeIds) && employeeIds.length > 0) {
+      targetEmpIds = [...employeeIds];
       await supabase
         .from('employees')
         .update({ tier: tierToAssign })
@@ -1958,10 +1999,36 @@ router.post('/corporate/benefits/:id/assign', async (req, res) => {
     }
 
     if (Array.isArray(departments) && departments.length > 0) {
-      await supabase
+      const { data: deptEmps } = await supabase
         .from('employees')
-        .update({ tier: tierToAssign })
+        .select('id')
         .in('department', departments);
+      if (deptEmps && deptEmps.length > 0) {
+        const deptIds = deptEmps.map(e => e.id);
+        targetEmpIds = Array.from(new Set([...targetEmpIds, ...deptIds]));
+        await supabase
+          .from('employees')
+          .update({ tier: tierToAssign })
+          .in('id', deptIds);
+      }
+    }
+
+    // Re-link eligibility to this specific assigned benefit plan id
+    if (targetEmpIds.length > 0) {
+      await supabase
+        .from('eligibility')
+        .update({ status: 'expired' })
+        .in('employee_id', targetEmpIds)
+        .eq('status', 'active');
+
+      const eligibilityInserts = targetEmpIds.map(empId => ({
+        employee_id: empId,
+        benefit_id: id,
+        status: 'active',
+        activated_at: new Date().toISOString()
+      }));
+
+      await supabase.from('eligibility').insert(eligibilityInserts);
     }
 
     return res.status(200).json({ success: true, message: `Assigned benefit plan to specified targets` });
