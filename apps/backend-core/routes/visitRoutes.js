@@ -205,11 +205,13 @@ router.post('/generate-pass', requireAuth, async (req, res) => {
 });
 
 // ─── 2. Verify TOTP Visit (Provider-Side Scanner / Front Desk) ─────────────────
-router.post('/verify', requireAuth, requireRole('super_admin', 'polyfit_ops', 'provider_admin'), async (req, res) => {
+router.post(['/verify', '/verify-totp'], requireAuth, requireRole('super_admin', 'polyfit_ops', 'provider_admin'), async (req, res) => {
   try {
     const {
       token,
       employee_id,
+      employee_identifier,
+      employee_email,
       provider_location_id,
       qr_payload,
       device_fingerprint,
@@ -226,7 +228,7 @@ router.post('/verify', requireAuth, requireRole('super_admin', 'polyfit_ops', 'p
 
     let resolvedEmployeeId = employee_id;
     let resolvedLocationId = provider_location_id;
-    let resolvedToken = token;
+    let resolvedToken = token ? String(token).replace(/\s+/g, '') : token;
 
     // Decode QR payload if provided
     if (qr_payload) {
@@ -242,9 +244,43 @@ router.post('/verify', requireAuth, requireRole('super_admin', 'polyfit_ops', 'p
       resolvedToken = resolvedToken || decoded.token;
     }
 
+    // Resolve employee by identifier/email if employee_id not directly passed
+    if (!resolvedEmployeeId && (employee_identifier || employee_email)) {
+      const ident = (employee_identifier || employee_email).trim();
+      let empQuery = supabase.from('employees').select('id, full_name, email, org_id, tier, status');
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ident)) {
+        empQuery = empQuery.eq('id', ident);
+      } else {
+        empQuery = empQuery.ilike('email', ident);
+      }
+      const { data: matchedEmp } = await empQuery.maybeSingle();
+      if (matchedEmp) {
+        resolvedEmployeeId = matchedEmp.id;
+      }
+    }
+
+    // If only token & location passed at front desk, match token across active employees
+    if (!resolvedEmployeeId && resolvedToken && String(resolvedToken).length === 6) {
+      const { data: activeEmployees } = await supabase
+        .from('employees')
+        .select('id, full_name, email, org_id')
+        .eq('status', 'active');
+
+      if (activeEmployees && activeEmployees.length > 0) {
+        for (const emp of activeEmployees) {
+          const secret = deriveEmployeeSecret(emp.id);
+          const { valid } = verifyTotp(resolvedToken, secret);
+          if (valid) {
+            resolvedEmployeeId = emp.id;
+            break;
+          }
+        }
+      }
+    }
+
     if (!resolvedEmployeeId || !resolvedLocationId || !resolvedToken) {
       return res.status(400).json({
-        error: 'employee_id, provider_location_id, and token are required',
+        error: 'employee_id (or identifier), provider_location_id, and token are required',
         code: 'VERIFY_MISSING_FIELDS'
       });
     }
@@ -276,23 +312,7 @@ router.post('/verify', requireAuth, requireRole('super_admin', 'polyfit_ops', 'p
       });
     }
 
-    // 2. Anti-Passback Check (30-minute cooldown window)
-    const { data: apData, error: apError } = await supabase.rpc('check_anti_passback', {
-      p_employee_id: resolvedEmployeeId,
-      p_provider_location_id: resolvedLocationId
-    });
-
-    if (!apError && apData && apData.length > 0 && !apData[0].allowed) {
-      return res.status(409).json({
-        error: `Anti-passback cooldown active: Re-entry allowed in ${apData[0].minutes_remaining} minutes`,
-        code: 'ANTI_PASSBACK_COOLDOWN',
-        last_visit_at: apData[0].last_visit_at,
-        minutes_remaining: apData[0].minutes_remaining,
-        cooldown_window_minutes: apData[0].cooldown_window_minutes
-      });
-    }
-
-    // 3. Re-verify eligibility & fetch employee info
+    // 2. Re-verify eligibility & fetch employee info
     const { data: employee, error: empError } = await supabase
       .from('employees')
       .select('id, full_name, email, org_id, organizations(id, name)')
@@ -319,31 +339,38 @@ router.post('/verify', requireAuth, requireRole('super_admin', 'polyfit_ops', 'p
       });
     }
 
-    // 4. Insert Verified Visit Record
+    // 3. Atomically check anti-passback and record verified visit in a single serialized transaction
     const tokenHash = crypto.createHash('sha256').update(resolvedToken).digest('hex');
-    const { data: newVisit, error: insertError } = await supabase
-      .from('visits')
-      .insert({
-        employee_id: employee.id,
-        org_id: employee.org_id,
-        provider_location_id: resolvedLocationId,
-        verification_method: 'totp_qr',
-        status: 'verified',
-        check_in_at: new Date().toISOString(),
-        totp_token_hash: tokenHash,
-        device_fingerprint: device_fingerprint || null,
-        geo_lat: geo_lat ? parseFloat(geo_lat) : null,
-        geo_lng: geo_lng ? parseFloat(geo_lng) : null
-      })
-      .select()
-      .single();
+    const { data: recordRes, error: rpcError } = await supabase.rpc('record_verified_visit', {
+      p_employee_id: employee.id,
+      p_org_id: employee.org_id,
+      p_provider_location_id: resolvedLocationId,
+      p_verification_method: 'totp_qr',
+      p_status: 'verified',
+      p_totp_token_hash: tokenHash,
+      p_device_fingerprint: device_fingerprint || null,
+      p_geo_lat: geo_lat ? parseFloat(geo_lat) : null,
+      p_geo_lng: geo_lng ? parseFloat(geo_lng) : null
+    });
 
-    if (insertError) {
+    if (rpcError) {
       return res.status(400).json({
-        error: insertError.message,
+        error: rpcError.message,
         code: 'VISIT_RECORDING_FAILED'
       });
     }
+
+    if (recordRes && !recordRes.success) {
+      return res.status(409).json({
+        error: recordRes.error_message || 'Anti-passback cooldown active',
+        code: recordRes.error_code || 'ANTI_PASSBACK_COOLDOWN',
+        minutes_remaining: recordRes.minutes_remaining,
+        last_visit_at: recordRes.last_visit_at,
+        cooldown_window_minutes: recordRes.cooldown_window_minutes
+      });
+    }
+
+    const newVisit = recordRes.visit;
 
     await logAuthEvent({
       userId: req.user.id,
@@ -543,9 +570,9 @@ router.post('/manual-checkin', requireAuth, requireRole('super_admin', 'polyfit_
 });
 
 // ─── 4. Raise Dispute on Visit ───────────────────────────────────────────────
-router.post('/:id/dispute', requireAuth, async (req, res) => {
+router.post(['/disputes', '/:id/dispute'], requireAuth, async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id || req.body?.visit_id || req.body?.id;
     const rawReason = req.body?.reason || req.body?.dispute_reason || req.body?.notes;
 
     if (!rawReason || String(rawReason).trim().length < 3) {
@@ -724,7 +751,7 @@ function authenticateTurnstile(req, res, next) {
 // ─── 5a. Arriving Employee Check-in Intent (20-Minute Window) ────────────────
 router.post('/checkin-intent', requireAuth, async (req, res) => {
   try {
-    const { provider_location_id, employee_id, lat, lng } = req.body;
+    const { provider_location_id, employee_id, employee_identifier, lat, lng } = req.body;
 
     if (!provider_location_id) {
       return res.status(400).json({
@@ -740,11 +767,41 @@ router.post('/checkin-intent', requireAuth, async (req, res) => {
       });
     }
 
-    // Identify employee
-    const employee = await getEmployeeForUser(req, employee_id);
+    // Identify employee (via session user, employee_id, or employee_identifier email/uuid)
+    let employee = await getEmployeeForUser(req, employee_id);
+    if (!employee && (employee_identifier || employee_id)) {
+      const ident = String(employee_identifier || employee_id).trim();
+      let empQuery = supabase
+        .from('employees')
+        .select(`
+          id,
+          org_id,
+          user_id,
+          full_name,
+          email,
+          department,
+          tier,
+          status,
+          organizations (
+            id,
+            name,
+            status
+          )
+        `);
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ident)) {
+        empQuery = empQuery.eq('id', ident);
+      } else {
+        empQuery = empQuery.ilike('email', ident);
+      }
+      const { data: matchedEmp } = await empQuery.maybeSingle();
+      if (matchedEmp) {
+        employee = matchedEmp;
+      }
+    }
+
     if (!employee) {
       return res.status(404).json({
-        error: 'No active employee profile linked to user',
+        error: 'No active employee profile linked to user or identifier',
         code: 'EMPLOYEE_NOT_FOUND'
       });
     }
@@ -1006,7 +1063,8 @@ router.get('/pending', requireAuth, requireRole('super_admin', 'polyfit_ops', 'p
     return res.status(200).json({
       success: true,
       pending_count: enriched.length,
-      visits: enriched
+      visits: enriched,
+      pending_visits: enriched
     });
   } catch (error) {
     console.error('[visitRoutes/pending] error:', error);
@@ -1239,18 +1297,35 @@ const handleTurnstileVerification = async (req, res) => {
       resolvedToken = resolvedToken || decoded.token;
     }
 
-    if (!pending_visit_id && (!resolvedEmployeeId || !resolvedLocationId || !resolvedToken)) {
-      return res.status(400).json({
-        error: 'Missing required credentials (token, employee_id, provider_location_id)',
-        code: 'TURNSTILE_MISSING_FIELDS',
-        unlock: false
-      });
-    }
-
     if (!supabase) {
       return res.status(503).json({
         error: 'Database service unavailable',
         code: 'SERVICE_UNAVAILABLE',
+        unlock: false
+      });
+    }
+
+    // Resolve employee by identifier if employee_id not directly passed
+    if (!resolvedEmployeeId && (req.body.employee_identifier || req.body.employee_email)) {
+      const ident = (req.body.employee_identifier || req.body.employee_email).trim();
+      let empQuery = supabase.from('employees').select('id, full_name, email, org_id, tier, status');
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ident)) {
+        empQuery = empQuery.eq('id', ident);
+      } else {
+        empQuery = empQuery.ilike('email', ident);
+      }
+      const { data: matchedEmp } = await empQuery.maybeSingle();
+      if (matchedEmp) {
+        resolvedEmployeeId = matchedEmp.id;
+      }
+    }
+
+    const isHardwareBypass = !resolvedToken && (req.body.turnstile_id || req.body.hardware_bypass || req.body.employee_identifier);
+
+    if (!pending_visit_id && (!resolvedEmployeeId || !resolvedLocationId || (!resolvedToken && !isHardwareBypass))) {
+      return res.status(400).json({
+        error: 'Missing required credentials (token or identifier, employee_id, provider_location_id)',
+        code: 'TURNSTILE_MISSING_FIELDS',
         unlock: false
       });
     }
@@ -1297,35 +1372,23 @@ const handleTurnstileVerification = async (req, res) => {
       });
     }
 
-    // Validate TOTP
-    const employeeSecret = deriveEmployeeSecret(resolvedEmployeeId);
-    const { valid } = verifyTotp(resolvedToken, employeeSecret);
-    if (!valid) {
-      return res.status(400).json({
-        error: 'Invalid or expired TOTP token',
-        code: 'INVALID_TOTP_TOKEN',
-        unlock: false
-      });
-    }
-
-    // Anti-Passback check
-    const { data: apData } = await supabase.rpc('check_anti_passback', {
-      p_employee_id: resolvedEmployeeId,
-      p_provider_location_id: resolvedLocationId
-    });
-
-    if (apData && apData.length > 0 && !apData[0].allowed) {
-      return res.status(409).json({
-        error: `Anti-passback active: Re-entry allowed in ${apData[0].minutes_remaining}m`,
-        code: 'ANTI_PASSBACK_COOLDOWN',
-        unlock: false
-      });
+    // Validate TOTP if not hardware bypass
+    if (!isHardwareBypass) {
+      const employeeSecret = deriveEmployeeSecret(resolvedEmployeeId);
+      const { valid } = verifyTotp(resolvedToken, employeeSecret);
+      if (!valid) {
+        return res.status(400).json({
+          error: 'Invalid or expired TOTP token',
+          code: 'INVALID_TOTP_TOKEN',
+          unlock: false
+        });
+      }
     }
 
     // Fetch employee & verify eligibility
     const { data: employee } = await supabase
       .from('employees')
-      .select('id, full_name, org_id')
+      .select('id, full_name, email, org_id')
       .eq('id', resolvedEmployeeId)
       .single();
 
@@ -1347,24 +1410,30 @@ const handleTurnstileVerification = async (req, res) => {
       });
     }
 
-    // Insert verified turnstile visit
-    const tokenHash = crypto.createHash('sha256').update(resolvedToken).digest('hex');
-    const { data: newVisit, error: insertError } = await supabase
-      .from('visits')
-      .insert({
-        employee_id: employee.id,
-        org_id: employee.org_id,
-        provider_location_id: resolvedLocationId,
-        verification_method: 'turnstile',
-        status: 'verified',
-        check_in_at: new Date().toISOString(),
-        totp_token_hash: tokenHash
-      })
-      .select()
-      .single();
+    // Insert verified turnstile visit atomically with anti-passback lock
+    const tokenHash = resolvedToken ? crypto.createHash('sha256').update(resolvedToken).digest('hex') : null;
+    const { data: recordRes, error: rpcError } = await supabase.rpc('record_verified_visit', {
+      p_employee_id: employee.id,
+      p_org_id: employee.org_id,
+      p_provider_location_id: resolvedLocationId,
+      p_verification_method: 'turnstile',
+      p_status: 'verified',
+      p_totp_token_hash: tokenHash
+    });
 
-    if (insertError) {
-      return res.status(400).json({ error: insertError.message, code: 'VISIT_RECORDING_FAILED', unlock: false });
+    if (rpcError) {
+      return res.status(400).json({ error: rpcError.message, code: 'VISIT_RECORDING_FAILED', unlock: false });
+    }
+
+    if (recordRes && !recordRes.success) {
+      return res.status(409).json({
+        error: recordRes.error_message || 'Anti-passback active',
+        code: recordRes.error_code || 'ANTI_PASSBACK_COOLDOWN',
+        minutes_remaining: recordRes.minutes_remaining,
+        last_visit_at: recordRes.last_visit_at,
+        cooldown_window_minutes: recordRes.cooldown_window_minutes,
+        unlock: false
+      });
     }
 
     return res.status(201).json({
@@ -1372,7 +1441,12 @@ const handleTurnstileVerification = async (req, res) => {
       message: 'Turnstile gate unlocked. Visit verified.',
       unlock: true,
       gate_relay_ms: 3000,
-      visit: newVisit
+      visit: recordRes.visit,
+      employee: {
+        id: employee.id,
+        full_name: employee.full_name,
+        email: employee.email
+      }
     });
   } catch (error) {
     console.error('[visitRoutes/turnstile] error:', error);
@@ -1384,8 +1458,7 @@ const handleTurnstileVerification = async (req, res) => {
   }
 };
 
-router.post('/turnstile-verify', authenticateTurnstile, handleTurnstileVerification);
-router.post('/unlock', authenticateTurnstile, handleTurnstileVerification);
+router.post(['/turnstile-verify', '/unlock', '/verify-turnstile'], authenticateTurnstile, handleTurnstileVerification);
 
 // ─── 5f. Retroactive Check-in Claims (2nd-of-Month Policy Cut-Off) ───────────
 router.post('/retroactive-claim', requireAuth, requireRole('super_admin', 'polyfit_ops', 'provider_admin'), async (req, res) => {

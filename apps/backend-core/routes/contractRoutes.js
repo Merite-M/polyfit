@@ -183,5 +183,43 @@ router.patch('/:id/terminate', requireAuth, requireRole('super_admin', 'polyfit_
     });
   }
 });
+/**
+ * POST /api/provider-contracts/:id/amendments
+ * Submit contract amendment or rate review inquiry to PolyFit Operations.
+ */
+router.post(['/:id/amendments', '/:id/amendment-request'], requireAuth, async (req, res) => {
+  try {
+    const contract = await getContractById(req.params.id, {
+      userRoles: req.roles,
+      userOrgId: req.orgId,
+      userProviderId: req.providerId
+    });
+
+    if (!contract) {
+      return res.status(404).json({
+        error: 'Contract not found',
+        code: 'CONTRACT_NOT_FOUND'
+      });
+    }
+
+    const { createAmendmentRequest } = require('../services/providerService');
+    const request = await createAmendmentRequest(contract.provider_id, {
+      ...req.body,
+      contract_id: contract.id
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Contract amendment inquiry submitted successfully to PolyFit Operations.',
+      request
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      error: error.message,
+      code: error.code || 'AMENDMENT_REQUEST_FAILED'
+    });
+  }
+});
 
 module.exports = router;

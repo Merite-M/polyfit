@@ -205,8 +205,21 @@ export function SettlementDetailDrawer({ statement, isOpen, onClose }: Settlemen
           {/* Financial Ledger Calculation */}
           <div className="bg-muted p-4 rounded-xl border border-border space-y-2 text-xs">
             <div className="flex items-center justify-between text-muted-foreground">
-              <span>Gross Verified Visits ({statement.total_visits} @ 5,000 RWF):</span>
+              <span>Gross Verified Visits ({statement.total_visits} visits):</span>
               <span className="font-mono text-primary">{formatRwf(statement.gross_amount)}</span>
+            </div>
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span>Net Services (Exclusive of VAT):</span>
+              <span className="font-mono text-primary font-medium">{formatRwf(Math.round(statement.gross_amount / 1.18))}</span>
+            </div>
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-accent" />
+                <span>Rwanda VAT (18% RRA EBM Itemized):</span>
+              </span>
+              <span className="font-mono text-success font-semibold">
+                {formatRwf(statement.gross_amount - Math.round(statement.gross_amount / 1.18))}
+              </span>
             </div>
             <div className="flex items-center justify-between text-muted-foreground">
               <span>Dispute Deductions / Adjustments:</span>
@@ -221,7 +234,7 @@ export function SettlementDetailDrawer({ statement, isOpen, onClose }: Settlemen
               </span>
             </div>
             <div className="pt-2 border-t border-border flex items-center justify-between font-bold text-sm text-primary">
-              <span>Total Net Payout:</span>
+              <span>Total Net Remittance:</span>
               <span className="font-mono text-success">{formatRwf(statement.net_amount)}</span>
             </div>
           </div>

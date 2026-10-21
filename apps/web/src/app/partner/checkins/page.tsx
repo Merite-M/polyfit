@@ -25,6 +25,7 @@ import { HistoricalCheckinLog } from '@/components/partner/HistoricalCheckinLog'
 import { RetroactiveClaimsList } from '@/components/partner/RetroactiveClaimsList';
 import { MisuseDisputeModal } from '@/components/partner/MisuseDisputeModal';
 import { RejectReasonModal } from '@/components/partner/RejectReasonModal';
+import { FrontDeskAccessTerminal } from '@/components/partner/FrontDeskAccessTerminal';
 
 export default function PartnerCheckinsPage() {
   const {
@@ -198,6 +199,16 @@ export default function PartnerCheckinsPage() {
           </button>
         </div>
       </div>
+
+      {/* Front-Desk Rapid Access Terminal (Peak Rush Hour: sub-200ms verification) */}
+      <FrontDeskAccessTerminal
+        onVerificationSuccess={(visitId) => {
+          handleApproveSuccess(visitId);
+          handleManualRefreshAll();
+        }}
+        onOpenDispute={(fakeVisit) => setDisputeTargetVisit(fakeVisit)}
+        onOpenManualBackup={openManualCheckin}
+      />
 
       {/* KPI Metrics Strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

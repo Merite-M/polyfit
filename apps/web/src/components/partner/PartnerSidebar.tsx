@@ -16,7 +16,9 @@ import {
   LogOut,
   Radio,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Share2,
+  Wand2
 } from 'lucide-react';
 import { usePartner } from '@/contexts/PartnerContext';
 import { IsometricHexMark } from '@/components/ui/polyfit-logo';
@@ -31,52 +33,83 @@ interface NavItem {
   icon: React.ElementType;
   badge?: React.ReactNode;
   subBadge?: string;
+  section?: string;
 }
 
 export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
   const pathname = usePathname();
   const { provider, todaySummary } = usePartner();
 
-  const navItems: NavItem[] = [
+  const navSections = [
     {
-      label: 'Home Overview',
-      href: '/partner/dashboard',
-      icon: LayoutDashboard
+      title: 'Operations',
+      items: [
+        {
+          label: 'Check-in Terminal',
+          href: '/partner/checkins',
+          icon: ScanLine,
+          badge: todaySummary?.pending_queue_count && todaySummary.pending_queue_count > 0 ? (
+            <span className="px-1.5 py-0.5 text-[11px] font-bold bg-warning text-navy rounded-full animate-pulse">
+              {todaySummary.pending_queue_count}
+            </span>
+          ) : null
+        },
+        {
+          label: 'Home Overview',
+          href: '/partner/dashboard',
+          icon: LayoutDashboard
+        }
+      ]
     },
     {
-      label: 'Check-in Operations',
-      href: '/partner/checkins',
-      icon: ScanLine,
-      badge: todaySummary?.pending_queue_count && todaySummary.pending_queue_count > 0 ? (
-        <span className="px-1.5 py-0.5 text-[11px] font-bold bg-warning text-navy rounded-full animate-pulse">
-          {todaySummary.pending_queue_count}
-        </span>
-      ) : null
+      title: 'Facility & Brand',
+      items: [
+        {
+          label: 'Facility & Locations',
+          href: '/partner/locations',
+          icon: Building2
+        },
+        {
+          label: 'Marketing & Signs',
+          href: '/partner/marketing',
+          icon: Share2,
+          badge: (
+            <span className="text-[10px] font-bold bg-accent/20 text-accent px-1.5 py-0.2 rounded border border-accent/30">
+              Plaques
+            </span>
+          )
+        },
+        {
+          label: 'Facility Onboarding',
+          href: '/partner/setup',
+          icon: Wand2
+        }
+      ]
     },
     {
-      label: 'Partnership Hub',
-      href: '/partner/partnership',
-      icon: SlidersHorizontal,
-      badge: (
-        <span className="text-[10px] font-bold bg-accent-subtle text-emerald-700 px-1.5 py-0.5 rounded-full border border-emerald-200">
-          Terms
-        </span>
-      )
-    },
-    {
-      label: 'Finance & Payouts',
-      href: '/partner/settlements',
-      icon: Receipt
-    },
-    {
-      label: 'Reports & Attendance',
-      href: '/partner/reports',
-      icon: BarChart3
-    },
-    {
-      label: 'Facility & Locations',
-      href: '/partner/locations',
-      icon: Building2
+      title: 'Finance & Contracts',
+      items: [
+        {
+          label: 'Finance & Payouts',
+          href: '/partner/settlements',
+          icon: Receipt
+        },
+        {
+          label: 'Commercial Contracts',
+          href: '/partner/partnership',
+          icon: SlidersHorizontal,
+          badge: (
+            <span className="text-[10px] font-bold bg-accent-subtle text-emerald-400 px-1.5 py-0.2 rounded border border-emerald-500/30">
+              Terms
+            </span>
+          )
+        },
+        {
+          label: 'Reports & Attendance',
+          href: '/partner/reports',
+          icon: BarChart3
+        }
+      ]
     }
   ];
 
@@ -124,33 +157,37 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        <div className="px-3 pt-2 pb-1.5 text-[10px] font-semibold text-subdued uppercase tracking-wider">
-          Operations
-        </div>
-        {navItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== '/partner/checkins' && pathname.startsWith(item.href));
-          const Icon = item.icon;
+      <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
+        {navSections.map((section) => (
+          <div key={section.title} className="space-y-1">
+            <div className="px-3 pt-1 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              {section.title}
+            </div>
+            {section.items.map((item) => {
+              const isActive = pathname === item.href || (item.href !== '/partner/dashboard' && pathname.startsWith(item.href));
+              const Icon = item.icon;
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onCloseMobile}
-              className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                isActive
-                  ? 'bg-accent text-navy font-semibold shadow-xs'
-                  : 'text-slate-200 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Icon className={`w-4 h-4 ${isActive ? 'text-navy' : 'text-subdued'}`} />
-                <span>{item.label}</span>
-              </div>
-              {item.badge}
-            </Link>
-          );
-        })}
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onCloseMobile}
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                    isActive
+                      ? 'bg-accent text-navy font-semibold shadow-xs'
+                      : 'text-slate-200 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-navy' : 'text-subdued'}`} />
+                    <span>{item.label}</span>
+                  </div>
+                  {item.badge}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* Footer / Desk Status */}

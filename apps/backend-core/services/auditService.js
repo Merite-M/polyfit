@@ -39,7 +39,18 @@ async function logAuthEvent({ userId = null, eventType, metadata = {}, req = nul
       });
 
     if (error) {
-      console.warn('[auditService] Failed to insert audit log:', error.message);
+      if (error.code === '23503' && validatedUserId) {
+        metaPayload.operator_identifier = String(userId);
+        await supabase.from('auth_audit_logs').insert({
+          user_id: null,
+          event_type: eventType,
+          metadata: metaPayload,
+          ip_address: ipAddress ? String(ipAddress).slice(0, 45) : null,
+          user_agent: userAgent ? String(userAgent).slice(0, 255) : null,
+        });
+      } else {
+        console.warn('[auditService] Failed to insert audit log:', error.message);
+      }
     }
   } catch (err) {
     console.warn('[auditService] Unexpected audit log error:', err.message);

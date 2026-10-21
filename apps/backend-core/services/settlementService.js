@@ -421,10 +421,19 @@ async function getSettlementDetail(settlementId) {
 
   const net15PayoutDate = calculateNet15DisbursementDate(settlement.settlement_period_end);
 
+  const grossAmount = Number(settlement.total_amount) || 0;
+  const netBeforeVat = Math.round((grossAmount / 1.18) * 100) / 100;
+  const vatAmount = Math.round((grossAmount - netBeforeVat) * 100) / 100;
+
   return {
     ...settlement,
     net15_disbursement_date: net15PayoutDate,
     payout_due_date: net15PayoutDate,
+    subtotal_exclusive_vat: netBeforeVat,
+    vat_rate_pct: 18,
+    vat_amount: vatAmount,
+    gross_amount: grossAmount,
+    net_amount: grossAmount,
     visit_breakdown: visitBreakdown,
     visit_count_verified: visitBreakdown.length
   };
