@@ -286,13 +286,11 @@ router.post('/organizations/:slug/join', leadFormLimiter, async (req, res) => {
     let existingEmp = null;
 
     if (cleanStaffId) {
-      const safeEmail = sanitizePostgrestFilter(cleanEmail);
-      const safeStaffId = sanitizePostgrestFilter(cleanStaffId);
       const { data: matchedEmp } = await supabase
         .from('employees')
         .select('*')
         .eq('org_id', org.id)
-        .or(`email.eq.${safeEmail},employee_id_external.ilike.${safeStaffId}`)
+        .or(`email.eq.${sanitizePostgrestFilter(cleanEmail)},employee_id_external.ilike.${sanitizePostgrestFilter(cleanStaffId)}`)
         .maybeSingle();
       existingEmp = matchedEmp;
     } else {
