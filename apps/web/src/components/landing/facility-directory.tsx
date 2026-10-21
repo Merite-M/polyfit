@@ -34,11 +34,25 @@ interface Facility {
   address: string;
   lat: number;
   lng: number;
+  /** Pre-calculated SVG map coordinate X percentage (0-100) to avoid re-computing floating point arithmetic on every render pass */
+  normX: number;
+  /** Pre-calculated SVG map coordinate Y percentage (0-100) to avoid re-computing floating point arithmetic on every render pass */
+  normY: number;
   rating: number;
   reviewsCount: number;
   image: string;
   amenities: string[];
   featured?: boolean;
+}
+
+/**
+ * Pre-computes SVG display percentage coordinates mapped across Kigali & Northern Province.
+ * Optimization: Moves floating-point geographic projection arithmetic out of the render loop.
+ */
+function computeNormalizedCoords(lat: number, lng: number): { normX: number; normY: number } {
+  const normX = ((lng - 29.2) / (30.2 - 29.2)) * 80 + 10;
+  const normY = ((lat - -1.4) / (-1.98 - -1.4)) * 75 + 15;
+  return { normX, normY };
 }
 
 const CATEGORY_COLORS: Record<'gym' | 'pool' | 'studio' | 'spa', string> = {
@@ -79,7 +93,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
   };
 
   // Curated baseline of verified facilities in Rwanda & East Africa
-  const defaultFacilities: Facility[] = [
+  const defaultFacilities: Facility[] = useMemo(() => [
     {
       id: "premier-kimihurura",
       name: "Premier Functional Fitness Hub",
@@ -90,6 +104,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
       address: "KG 674 St, Kimihurura",
       lat: -1.9536,
       lng: 30.0924,
+      ...computeNormalizedCoords(-1.9536, 30.0924),
       rating: 4.9,
       reviewsCount: 142,
       image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800",
@@ -106,6 +121,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
       address: "KN 3 Ave, Rugunga",
       lat: -1.9680,
       lng: 30.0650,
+      ...computeNormalizedCoords(-1.9680, 30.0650),
       rating: 4.8,
       reviewsCount: 210,
       image: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=800",
@@ -122,6 +138,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
       address: "KG 15 Ave, Nyarutarama",
       lat: -1.9351,
       lng: 30.1035,
+      ...computeNormalizedCoords(-1.9351, 30.1035),
       rating: 4.85,
       reviewsCount: 98,
       image: "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?auto=format&fit=crop&q=80&w=800",
@@ -138,6 +155,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
       address: "KN 29 St, Kiyovu",
       lat: -1.9560,
       lng: 30.0600,
+      ...computeNormalizedCoords(-1.9560, 30.0600),
       rating: 4.95,
       reviewsCount: 164,
       image: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=800",
@@ -154,6 +172,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
       address: "NM 21 St, Musanze Central",
       lat: -1.4980,
       lng: 29.6340,
+      ...computeNormalizedCoords(-1.4980, 29.6340),
       rating: 4.75,
       reviewsCount: 52,
       image: "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&q=80&w=800",
@@ -170,6 +189,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
       address: "Kinigi Road, Musanze",
       lat: -1.4420,
       lng: 29.5910,
+      ...computeNormalizedCoords(-1.4420, 29.5910),
       rating: 4.9,
       reviewsCount: 88,
       image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=800",
@@ -186,6 +206,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
       address: "Boulevard de la Kivu, Gisenyi",
       lat: -1.7020,
       lng: 29.2560,
+      ...computeNormalizedCoords(-1.7020, 29.2560),
       rating: 4.8,
       reviewsCount: 76,
       image: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=800",
@@ -202,13 +223,14 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
       address: "KG 9 Ave, Gishushu",
       lat: -1.9480,
       lng: 30.0880,
+      ...computeNormalizedCoords(-1.9480, 30.0880),
       rating: 4.92,
       reviewsCount: 110,
       image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&q=80&w=800",
       amenities: ["Balanced Body Reformers", "Clinical Instructors", "Private Rooms"],
       featured: false,
     },
-  ];
+  ], []);
 
   const [facilities, setFacilities] = useState<Facility[]>(defaultFacilities);
 
@@ -223,6 +245,9 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
             const mapped: Facility[] = rawList.map((p: any, idx: number) => {
               const providerObj = p.provider || {};
               const validCategory = resolveCategory(p.category || providerObj.category);
+              const lat = p.lat ? parseFloat(p.lat) : -1.9536 + (idx * 0.008);
+              const lng = p.lng ? parseFloat(p.lng) : 30.0924 + (idx * 0.007);
+              const { normX, normY } = computeNormalizedCoords(lat, lng);
 
               return {
                 id: p.id || p.location_id || `live-${idx}`,
@@ -233,8 +258,10 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
                 category: validCategory,
                 categoryLabel: validCategory.toUpperCase(),
                 address: p.address || "Verified Facility Location",
-                lat: p.lat ? parseFloat(p.lat) : -1.9536 + (idx * 0.008),
-                lng: p.lng ? parseFloat(p.lng) : 30.0924 + (idx * 0.007),
+                lat,
+                lng,
+                normX,
+                normY,
                 rating: providerObj.rating ? parseFloat(providerObj.rating) : (p.rating ? parseFloat(p.rating) : 4.8),
                 reviewsCount: 40 + (idx * 7),
                 image: (p.photos && p.photos[0]) || defaultFacilities[idx % defaultFacilities.length].image,
@@ -521,20 +548,14 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
               </svg>
 
               {/* Dynamic Interactive Facility Markers Over Map */}
-              {filteredFacilities.map((facility, index) => {
+              {filteredFacilities.map((facility) => {
                 const isSelected = facility.id === selectedFacility.id;
-                // Calculate display coordinates mapped across Kigali & Northern Province
-                // Latitude roughly -1.4 (Musanze) to -1.97 (Kigali)
-                // Longitude roughly 29.2 (Rubavu) to 30.12 (Kigali East)
-                const normX = ((facility.lng - 29.2) / (30.2 - 29.2)) * 80 + 10;
-                const normY = ((facility.lat - -1.4) / (-1.98 - -1.4)) * 75 + 15;
-
                 const pinColor = CATEGORY_COLORS[facility.category];
 
                 return (
                   <div
                     key={facility.id}
-                    style={{ left: `${normX}%`, top: `${normY}%` }}
+                    style={{ left: `${facility.normX}%`, top: `${facility.normY}%` }}
                     className="absolute -translate-x-1/2 -translate-y-1/2 z-20 group cursor-pointer"
                     onClick={() => setSelectedFacilityId(facility.id)}
                   >

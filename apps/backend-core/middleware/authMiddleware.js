@@ -140,39 +140,52 @@ const requireAuth = async (req, res, next) => {
 /**
  * Middleware: Optional authentication.
  * If a valid token is present, resolves user and role.
- * If no token or demo token, defaults safely to provider_admin role.
+ * If no token or invalid token, sets req.user = null and req.roles = [] safely without defaulting to privileged roles.
  */
 const optionalAuth = async (req, res, next) => {
   const supabase = supabaseService.supabase;
+  req.user = null;
+  req.roles = [];
+  req.primaryRole = null;
+  req.orgId = null;
+  req.providerId = null;
+
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
-      req.user = { id: 'front-desk-staff', email: 'reception@provider.rw' };
-      req.roles = ['provider_admin'];
-      req.primaryRole = 'provider_admin';
       return next();
     }
 
     const token = authHeader.slice(7).trim();
-    if (!token || token === 'demo-token' || token.startsWith('demo-')) {
-      req.user = { id: 'demo-user', email: 'demo@polyfit.rw' };
-      req.roles = ['provider_admin'];
-      req.primaryRole = 'provider_admin';
+    if (!token) {
       return next();
     }
 
+    if (process.env.NODE_ENV !== 'production') {
+      const demoRoleMap = {
+        'demo-super-admin-token': { role: 'super_admin', roles: ['super_admin'], email: 'superadmin@polyfit.africa', id: '00000000-0000-0000-0000-000000000001' },
+        'demo-ops-token': { role: 'polyfit_ops', roles: ['polyfit_ops'], email: 'ops@polyfit.africa', id: '00000000-0000-0000-0000-000000000002' },
+        'demo-org-admin-token': { role: 'org_admin', roles: ['org_admin'], email: 'orgadmin@bankofkigali.rw', id: '00000000-0000-0000-0000-000000000003', orgId: 'c79a9982-4477-4336-a24b-561419f6c43b' },
+        'demo-provider-admin-token': { role: 'provider_admin', roles: ['provider_admin'], email: 'provider@serena.co.rw', id: '00000000-0000-0000-0000-000000000004', providerId: '90d06d31-999c-42c0-a0c6-fc31ec818ced' },
+        'demo-employee-token': { role: 'employee', roles: ['employee'], email: 'employee@bankofkigali.rw', id: '00000000-0000-0000-0000-000000000005', orgId: 'c79a9982-4477-4336-a24b-561419f6c43b' }
+      };
+      if (demoRoleMap[token]) {
+        const info = demoRoleMap[token];
+        req.user = { id: info.id, email: info.email, user_metadata: { role: info.role } };
+        req.roles = info.roles;
+        req.primaryRole = info.role;
+        req.orgId = info.orgId || null;
+        req.providerId = info.providerId || null;
+        return next();
+      }
+    }
+
     if (!supabase) {
-      req.user = { id: 'front-desk-staff', email: 'reception@provider.rw' };
-      req.roles = ['provider_admin'];
-      req.primaryRole = 'provider_admin';
       return next();
     }
 
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
-      req.user = { id: 'front-desk-staff', email: 'reception@provider.rw' };
-      req.roles = ['provider_admin'];
-      req.primaryRole = 'provider_admin';
       return next();
     }
 
@@ -181,7 +194,7 @@ const optionalAuth = async (req, res, next) => {
       .select('role, org_id, provider_id')
       .eq('user_id', user.id);
 
-    let roles = ['provider_admin'];
+    let roles = ['employee'];
     let orgId = null;
     let providerId = null;
 
@@ -200,23 +213,15 @@ const optionalAuth = async (req, res, next) => {
     req.user = user;
     req.token = token;
     req.roles = roles;
-    req.primaryRole = sortedRoles[0] || 'provider_admin';
+    req.primaryRole = sortedRoles[0] || 'employee';
     req.orgId = orgId;
     req.providerId = providerId;
     next();
   } catch {
-    req.user = { id: 'front-desk-staff', email: 'reception@provider.rw' };
-    req.roles = ['provider_admin'];
-    req.primaryRole = 'provider_admin';
     next();
   }
 };
 
-/**
- * Middleware factory: Requires user to have at least one of the specified roles.
- * super_admin automatically bypasses role restrictions.
- * @param  {...string} allowedRoles
- */
 const requireRole = (...allowedRoles) => {
   const flattened = allowedRoles.flat();
   return (req, res, next) => {
