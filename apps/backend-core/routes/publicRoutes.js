@@ -1623,6 +1623,43 @@ router.post('/corporate/employees', async (req, res) => {
 
     if (insertError) throw insertError;
 
+    // Auto-assign eligibility to matching benefit plan
+    try {
+      let benefitQuery = supabase
+        .from('benefits')
+        .select('id, name, tier')
+        .eq('org_id', targetOrgId)
+        .eq('status', 'active');
+
+      if (newEmp.tier) {
+        benefitQuery = benefitQuery.eq('tier', newEmp.tier);
+      }
+      let { data: matchedBenefit } = await benefitQuery.limit(1).maybeSingle();
+      if (!matchedBenefit) {
+        const { data: defaultBenefit } = await supabase
+          .from('benefits')
+          .select('id, name, tier')
+          .eq('org_id', targetOrgId)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle();
+        matchedBenefit = defaultBenefit;
+      }
+
+      if (matchedBenefit) {
+        await supabase
+          .from('eligibility')
+          .upsert({
+            employee_id: newEmp.id,
+            benefit_id: matchedBenefit.id,
+            status: newEmp.status || 'active',
+            activated_at: new Date().toISOString()
+          }, { onConflict: 'employee_id,benefit_id' });
+      }
+    } catch (eligErr) {
+      console.warn('[PublicCorporate] Eligibility provisioning notice:', eligErr.message);
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Employee added successfully to organization roster',
@@ -1724,6 +1761,34 @@ router.post('/corporate/employees/bulk', async (req, res) => {
 
       if (insErr) throw insErr;
       createdCount = inserted ? inserted.length : newRecords.length;
+
+      // Auto-assign eligibility to matching benefit plans
+      if (inserted && inserted.length > 0) {
+        try {
+          const { data: orgBenefits } = await supabase
+            .from('benefits')
+            .select('id, tier')
+            .eq('org_id', targetOrgId)
+            .eq('status', 'active');
+
+          if (orgBenefits && orgBenefits.length > 0) {
+            const eligibilityRows = inserted.map((emp) => {
+              const matched = orgBenefits.find((b) => b.tier === emp.tier) || orgBenefits[0];
+              return {
+                employee_id: emp.id,
+                benefit_id: matched.id,
+                status: emp.status || 'active',
+                activated_at: new Date().toISOString()
+              };
+            });
+            await supabase
+              .from('eligibility')
+              .upsert(eligibilityRows, { onConflict: 'employee_id,benefit_id' });
+          }
+        } catch (bulkEligErr) {
+          console.warn('[PublicCorporate] Bulk eligibility provisioning notice:', bulkEligErr.message);
+        }
+      }
     }
 
     return res.status(200).json({

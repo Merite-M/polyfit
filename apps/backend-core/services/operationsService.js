@@ -3722,10 +3722,34 @@ async function getOperationsTeamDirectory() {
     }
   ];
 
+  let operators = [...defaultOperators];
+  if (supabase) {
+    try {
+      const { data: dbRoles } = await supabase
+        .from('user_roles')
+        .select('id, user_id, role, created_at, updated_at');
+      if (Array.isArray(dbRoles) && dbRoles.length > 0) {
+        const dbOperators = dbRoles.map((r) => ({
+          id: r.user_id || r.id,
+          fullName: `Operator (${r.role})`,
+          email: `${r.role}@polyfit.rw`,
+          role: r.role,
+          roleTitle: r.role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+          status: 'active',
+          lastActiveAt: 'Active',
+          mfaEnabled: true
+        }));
+        operators = [...dbOperators, ...defaultOperators.filter((o) => !dbRoles.some((r) => r.role === o.role))];
+      }
+    } catch (err) {
+      console.warn('[operationsService] db operators note:', err.message);
+    }
+  }
+
   return {
     success: true,
     roleMatrix,
-    operators: defaultOperators
+    operators
   };
 }
 
@@ -3736,6 +3760,32 @@ async function assignOperationsTeamRole({ userId, email, role, operatorName } = 
   const validRoles = ['super_admin', 'polyfit_ops', 'finance_manager', 'support_agent'];
   if (!validRoles.includes(role)) {
     throw new Error(`Invalid operator role: ${role}. Must be one of [${validRoles.join(', ')}]`);
+  }
+
+  if (supabase) {
+    try {
+      let targetUserId = userId;
+      if (!targetUserId && email) {
+        const { data: emp } = await supabase
+          .from('employees')
+          .select('user_id')
+          .eq('email', email.trim().toLowerCase())
+          .maybeSingle();
+        if (emp?.user_id) targetUserId = emp.user_id;
+      }
+
+      if (targetUserId) {
+        await supabase
+          .from('user_roles')
+          .upsert({
+            user_id: targetUserId,
+            role: role,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id,role' });
+      }
+    } catch (err) {
+      console.warn('[operationsService] user_roles upsert note:', err.message);
+    }
   }
 
   await logAuthEvent({

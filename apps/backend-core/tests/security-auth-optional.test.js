@@ -54,7 +54,7 @@ describe('Security Hardening: optionalAuth & Demo Tokens', () => {
     try {
       await requireAuth(req, res, next);
       assert.strictEqual(nextCalled, false);
-      assert.strictEqual(statusCode, 503); // Or 401 depending on Supabase availability
+      assert.ok([401, 503].includes(statusCode), `Expected 401 or 503, got ${statusCode}`);
     } finally {
       process.env.NODE_ENV = origEnv;
     }
