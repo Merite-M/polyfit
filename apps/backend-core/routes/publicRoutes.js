@@ -290,7 +290,7 @@ router.post('/organizations/:slug/join', leadFormLimiter, async (req, res) => {
         .from('employees')
         .select('*')
         .eq('org_id', org.id)
-        .or(`email.eq.${cleanEmail},employee_id_external.ilike.${cleanStaffId}`)
+        .or(`email.eq.${sanitizePostgrestFilter(cleanEmail)},employee_id_external.ilike.${sanitizePostgrestFilter(cleanStaffId)}`)
         .maybeSingle();
       existingEmp = matchedEmp;
     } else {
