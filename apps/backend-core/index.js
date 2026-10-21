@@ -1,9 +1,9 @@
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const { rateLimit } = require('express-rate-limit');
 const { supabase } = require('@polyfit/supabase-client');
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 const app = express();
 // Enable trust proxy for Render, Cloudflare, and reverse proxies so express-rate-limit correctly resolves client IPs

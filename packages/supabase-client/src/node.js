@@ -1,5 +1,9 @@
 const { createClient } = require('@supabase/supabase-js');
+const path = require('path');
 require('dotenv').config();
+if (!process.env.SUPABASE_URL) {
+  require('dotenv').config({ path: path.resolve(__dirname, '../../../apps/backend-core/.env') });
+}
 
 /**
  * Creates a Supabase client for Node.js backend use with service role key
