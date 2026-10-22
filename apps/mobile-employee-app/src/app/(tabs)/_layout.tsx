@@ -5,12 +5,19 @@
  */
 
 import React from 'react';
-import { Tabs } from 'expo-router';
+import { Tabs, Redirect } from 'expo-router';
 import { Platform, StyleSheet, View, Text } from 'react-native';
 import { QrCode, Compass, User } from 'lucide-react-native';
 import { Palette, Spacing, Radius } from '@/constants/theme';
+import { useAuthStore } from '@/stores/auth-store';
 
 export default function TabLayout() {
+  const isBenefitActivated = useAuthStore((s) => s.isBenefitActivated);
+
+  if (!isBenefitActivated) {
+    return <Redirect href={'/auth' as any} />;
+  }
+
   return (
     <Tabs
       screenOptions={{

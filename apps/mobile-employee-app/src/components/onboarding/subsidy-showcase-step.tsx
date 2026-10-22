@@ -25,10 +25,12 @@ import {
   Dumbbell,
   Waves,
 } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth-store';
 import { Palette, Radius, Spacing, Fonts } from '@/constants/theme';
 
 export const SubsidyShowcaseStep: React.FC = () => {
+  const router = useRouter();
   const {
     organization,
     benefit,
@@ -38,6 +40,13 @@ export const SubsidyShowcaseStep: React.FC = () => {
     setStep,
     submitActivateBenefit,
   } = useAuthStore();
+
+  const handleActivate = async () => {
+    const success = await submitActivateBenefit();
+    if (success) {
+      router.replace('/(tabs)' as any);
+    }
+  };
 
   const orgName = organization?.name || 'Corporate Wellness';
   const orgDomain = organization?.domain || 'bk.rw';
@@ -195,7 +204,7 @@ export const SubsidyShowcaseStep: React.FC = () => {
             isLoading && styles.continueButtonDisabled,
             pressed && !isLoading && { transform: [{ scale: 0.98 }] },
           ]}
-          onPress={submitActivateBenefit}
+          onPress={handleActivate}
           disabled={isLoading}
         >
           {isLoading ? (

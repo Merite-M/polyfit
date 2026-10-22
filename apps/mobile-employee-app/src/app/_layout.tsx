@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme, View, ActivityIndicator, StyleSheet } from 'react-native';
 
@@ -13,26 +13,6 @@ import { Palette } from '@/constants/theme';
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootNavigation() {
-  const isBenefitActivated = useAuthStore((s) => s.isBenefitActivated);
-  const segments = useSegments();
-  const router = useRouter();
-
-  useEffect(() => {
-    const inAuthGroup = segments.length > 0 && segments[0] === '(auth)';
-
-    if (!isBenefitActivated && !inAuthGroup) {
-      const timer = setTimeout(() => {
-        router.replace('/(auth)');
-      }, 0);
-      return () => clearTimeout(timer);
-    } else if (isBenefitActivated && inAuthGroup) {
-      const timer = setTimeout(() => {
-        router.replace('/');
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [isBenefitActivated, segments[0], router]);
-
   return (
     <Stack
       screenOptions={{

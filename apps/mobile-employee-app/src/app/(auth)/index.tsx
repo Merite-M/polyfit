@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth-store';
@@ -7,18 +7,12 @@ import { OtpCodeStep } from '@/components/onboarding/otp-code-step';
 import { SubsidyShowcaseStep } from '@/components/onboarding/subsidy-showcase-step';
 import { DeviceBindingStep } from '@/components/onboarding/device-binding-step';
 
-export default function OnboardingScreen() {
+export default function AuthScreen() {
   const router = useRouter();
-  const { step, isBenefitActivated } = useAuthStore();
-
-  useEffect(() => {
-    if (isBenefitActivated || step === 'completed') {
-      router.replace('/');
-    }
-  }, [isBenefitActivated, step, router]);
+  const { step } = useAuthStore();
 
   const handleFinishOnboarding = () => {
-    router.replace('/');
+    router.replace('/(tabs)' as any);
   };
 
   return (
