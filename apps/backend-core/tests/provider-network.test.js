@@ -37,7 +37,7 @@ describe('Provider & Network Engine Test Suite (PF-83)', () => {
 
   // ─── 1. Domain Constants & Contract Rules ──────────────────────────────────
   describe('Provider Domain Rules & Constants', () => {
-    test('VALID_PROVIDER_CATEGORIES includes gym, pool, studio, clinic, wellness_center', () => {
+    test('VALID_PROVIDER_CATEGORIES includes gym, pool, studio, clinic, wellness_center, sports', () => {
       assert.ok(VALID_PROVIDER_CATEGORIES.includes('gym'));
       assert.ok(VALID_PROVIDER_CATEGORIES.includes('pool'));
       assert.ok(VALID_PROVIDER_CATEGORIES.includes('studio'));

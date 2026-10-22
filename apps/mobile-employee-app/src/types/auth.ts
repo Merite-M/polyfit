@@ -12,7 +12,7 @@ export interface CorporateOrganization {
 
 export interface BenefitPackage {
   id: string | null;
-  tier: 'basic' | 'standard' | 'premium' | 'executive';
+  tier: 'basic' | 'starter' | 'standard' | 'professional' | 'premium' | 'executive';
   name: string;
   max_monthly_visits: number | null;
   subsidy_percentage: number;

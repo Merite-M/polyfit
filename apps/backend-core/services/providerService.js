@@ -1,7 +1,7 @@
 const { supabase } = require('./supabaseService');
 const { getDistanceFromLatLonInM, sanitizePostgrestFilter } = require('@polyfit/shared-utils');
 
-const VALID_PROVIDER_CATEGORIES = ['gym', 'pool', 'studio', 'clinic', 'wellness_center'];
+const VALID_PROVIDER_CATEGORIES = ['gym', 'pool', 'studio', 'clinic', 'wellness_center', 'sports'];
 const VALID_PROVIDER_STATUSES = ['pending_review', 'active', 'inactive', 'suspended', 'rejected'];
 const VALID_LOCATION_STATUSES = ['active', 'inactive', 'maintenance'];
 
@@ -1261,7 +1261,7 @@ async function getProviderCommercialConditions(providerId) {
       name: 'PolyFit Premium / Executive Tier',
       description: 'Executive all-access corporate tier covering all premium facilities, studios, and recovery.',
       co_pay_percentage: 0,
-      allowed_provider_categories: ['gym', 'pool', 'studio', 'clinic', 'wellness_center']
+      allowed_provider_categories: ['gym', 'pool', 'studio', 'clinic', 'wellness_center', 'sports']
     }
   ];
 
