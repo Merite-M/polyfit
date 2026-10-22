@@ -1,7 +1,7 @@
 const { supabase } = require('./supabaseService');
 const { getDistanceFromLatLonInM, sanitizePostgrestFilter } = require('@polyfit/shared-utils');
 
-const VALID_PROVIDER_CATEGORIES = ['gym', 'pool', 'studio', 'clinic', 'wellness_center'];
+const VALID_PROVIDER_CATEGORIES = ['gym', 'pool', 'studio', 'clinic', 'wellness_center', 'sports'];
 const VALID_PROVIDER_STATUSES = ['pending_review', 'active', 'inactive', 'suspended', 'rejected'];
 const VALID_LOCATION_STATUSES = ['active', 'inactive', 'maintenance'];
 

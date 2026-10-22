@@ -37,13 +37,14 @@ describe('Provider & Network Engine Test Suite (PF-83)', () => {
 
   // ─── 1. Domain Constants & Contract Rules ──────────────────────────────────
   describe('Provider Domain Rules & Constants', () => {
-    test('VALID_PROVIDER_CATEGORIES includes gym, pool, studio, clinic, wellness_center', () => {
+    test('VALID_PROVIDER_CATEGORIES includes gym, pool, studio, clinic, wellness_center, sports', () => {
       assert.ok(VALID_PROVIDER_CATEGORIES.includes('gym'));
       assert.ok(VALID_PROVIDER_CATEGORIES.includes('pool'));
       assert.ok(VALID_PROVIDER_CATEGORIES.includes('studio'));
       assert.ok(VALID_PROVIDER_CATEGORIES.includes('clinic'));
       assert.ok(VALID_PROVIDER_CATEGORIES.includes('wellness_center'));
-      assert.equal(VALID_PROVIDER_CATEGORIES.length, 5);
+      assert.ok(VALID_PROVIDER_CATEGORIES.includes('sports'));
+      assert.equal(VALID_PROVIDER_CATEGORIES.length, 6);
     });
 
     test('VALID_PROVIDER_STATUSES includes pending_review and rejected alongside active states', () => {

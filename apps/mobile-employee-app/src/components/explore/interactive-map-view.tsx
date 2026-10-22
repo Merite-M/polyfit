@@ -45,23 +45,17 @@ interface InteractiveMapViewProps {
   selectedFacility: DiscoveredFacility | null;
 }
 
-// Kigali geographic bounds for relative projection
-const KIGALI_BOUNDS = {
-  minLat: -1.975,
-  maxLat: -1.925,
-  minLng: 30.045,
-  maxLng: 30.125,
-};
-
-// Neighborhood anchor labels for map orientation
-const NEIGHBORHOOD_ANCHORS = [
-  { name: 'Kiyovu', lat: -1.959, lng: 30.063 },
+// Rwanda regional anchors for cartographic orientation
+const REGIONAL_ANCHORS = [
+  { name: 'Kigali', lat: -1.954, lng: 30.088 },
   { name: 'Kimihurura', lat: -1.954, lng: 30.088 },
+  { name: 'Kiyovu', lat: -1.959, lng: 30.063 },
   { name: 'Nyarutarama', lat: -1.936, lng: 30.102 },
-  { name: 'Gishushu', lat: -1.951, lng: 30.093 },
-  { name: 'Downtown', lat: -1.946, lng: 30.058 },
   { name: 'Remera', lat: -1.959, lng: 30.116 },
-  { name: 'Kacyiru', lat: -1.938, lng: 30.081 },
+  { name: 'Musanze', lat: -1.498, lng: 29.634 },
+  { name: 'Rubavu', lat: -1.702, lng: 29.256 },
+  { name: 'Huye', lat: -2.601, lng: 29.742 },
+  { name: 'Rwamagana', lat: -1.95, lng: 30.434 },
 ];
 
 export function InteractiveMapView({
@@ -82,6 +76,21 @@ export function InteractiveMapView({
   const panStartRef = useRef({ x: 0, y: 0 });
   const panOffsetRef = useRef({ x: 0, y: 0 });
   panOffsetRef.current = panOffset;
+
+  // Dynamically compute bounding box based on visible facilities or default to nationwide Rwanda
+  const computedBounds = useMemo(() => {
+    const validCoords = facilities.filter((f) => f.lat && f.lng);
+    if (validCoords.length === 0) {
+      return { minLat: -2.65, maxLat: -1.40, minLng: 29.20, maxLng: 30.50 };
+    }
+    const lats = validCoords.map((f) => f.lat!);
+    const lngs = validCoords.map((f) => f.lng!);
+    const minLat = Math.min(...lats) - 0.03;
+    const maxLat = Math.max(...lats) + 0.03;
+    const minLng = Math.min(...lngs) - 0.03;
+    const maxLng = Math.max(...lngs) + 0.03;
+    return { minLat, maxLat, minLng, maxLng };
+  }, [facilities]);
 
   const panResponder = useMemo(
     () =>
@@ -104,7 +113,7 @@ export function InteractiveMapView({
 
   const handleOpenDirections = (fac: DiscoveredFacility) => {
     if (!fac.lat || !fac.lng) {
-      const query = encodeURIComponent(`${fac.location_name}, Kigali, Rwanda`);
+      const query = encodeURIComponent(`${fac.location_name}, Rwanda`);
       Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
       return;
     }
@@ -122,14 +131,14 @@ export function InteractiveMapView({
     navigateToPassWithFacility(fac);
   };
 
-  // Map latitude/longitude to X/Y pixel coordinates
+  // Map latitude/longitude to X/Y pixel coordinates with dynamic bounding box
   const projectCoords = (lat: number, lng: number) => {
-    const latSpan = KIGALI_BOUNDS.maxLat - KIGALI_BOUNDS.minLat;
-    const lngSpan = KIGALI_BOUNDS.maxLng - KIGALI_BOUNDS.minLng;
+    const latSpan = Math.max(0.04, computedBounds.maxLat - computedBounds.minLat);
+    const lngSpan = Math.max(0.04, computedBounds.maxLng - computedBounds.minLng);
 
     // Normalization (0 to 1)
-    const normX = (lng - KIGALI_BOUNDS.minLng) / lngSpan;
-    const normY = (KIGALI_BOUNDS.maxLat - lat) / latSpan; // Invert Y because latitude goes north
+    const normX = Math.max(0, Math.min(1, (lng - computedBounds.minLng) / lngSpan));
+    const normY = Math.max(0, Math.min(1, (computedBounds.maxLat - lat) / latSpan)); // Invert Y because latitude goes north
 
     // Scaled coordinates with zoom and pan
     const centerX = mapWidth / 2;
@@ -157,8 +166,9 @@ export function InteractiveMapView({
         return <Waves size={13} color="#0B1F33" strokeWidth={2.5} />;
       case 'studio':
         return <Sparkles size={13} color="#FFFFFF" strokeWidth={2.5} />;
-      case 'wellness_center':
       case 'clinic':
+        return <ShieldCheck size={13} color="#0B1F33" strokeWidth={2.5} />;
+      case 'wellness_center':
         return <Flame size={13} color="#0B1F33" strokeWidth={2.5} />;
       case 'sports':
         return <Activity size={13} color="#0B1F33" strokeWidth={2.5} />;
@@ -187,8 +197,8 @@ export function InteractiveMapView({
           <View style={styles.lakeWaterBody} />
         </View>
 
-        {/* Neighborhood Ambient Labels */}
-        {NEIGHBORHOOD_ANCHORS.map((anchor) => {
+        {/* Regional Ambient Labels */}
+        {REGIONAL_ANCHORS.map((anchor) => {
           const { x, y } = projectCoords(anchor.lat, anchor.lng);
           return (
             <View key={anchor.name} style={[styles.anchorLabelWrapper, { left: x - 35, top: y - 10 }]}>

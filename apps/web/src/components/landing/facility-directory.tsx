@@ -29,7 +29,7 @@ interface Facility {
   provider_name?: string;
   city: string;
   cityLabel: string;
-  category: 'gym' | 'pool' | 'studio' | 'spa';
+  category: 'gym' | 'pool' | 'studio' | 'clinic' | 'wellness_center' | 'sports';
   categoryLabel: string;
   address: string;
   lat: number;
@@ -46,27 +46,31 @@ interface Facility {
 }
 
 /**
- * Pre-computes SVG display percentage coordinates mapped across Kigali & Northern Province.
- * Optimization: Moves floating-point geographic projection arithmetic out of the render loop.
+ * Pre-computes SVG display percentage coordinates mapped across all 5 provinces of Rwanda.
+ * Bounding box spans Rubavu (29.2°E) to Rwamagana (30.5°E), Kinigi/Musanze (-1.4°S) to Huye (-2.6°S).
  */
 function computeNormalizedCoords(lat: number, lng: number): { normX: number; normY: number } {
-  const normX = ((lng - 29.2) / (30.2 - 29.2)) * 80 + 10;
-  const normY = ((lat - -1.4) / (-1.98 - -1.4)) * 75 + 15;
+  const normX = Math.max(8, Math.min(92, ((lng - 29.1) / (30.6 - 29.1)) * 80 + 10));
+  const normY = Math.max(8, Math.min(92, ((lat - -1.35) / (-2.65 - -1.35)) * 80 + 10));
   return { normX, normY };
 }
 
-const CATEGORY_COLORS: Record<'gym' | 'pool' | 'studio' | 'spa', string> = {
+const CATEGORY_COLORS: Record<'gym' | 'pool' | 'studio' | 'clinic' | 'wellness_center' | 'sports', string> = {
   gym: 'bg-emerald-500',
   pool: 'bg-teal-400',
   studio: 'bg-purple-400',
-  spa: 'bg-amber-400',
+  sports: 'bg-amber-400',
+  clinic: 'bg-blue-400',
+  wellness_center: 'bg-pink-400',
 };
 
-function resolveCategory(rawCategory?: string): 'gym' | 'pool' | 'studio' | 'spa' {
+function resolveCategory(rawCategory?: string): 'gym' | 'pool' | 'studio' | 'clinic' | 'wellness_center' | 'sports' {
   const cat = (rawCategory || "").toLowerCase();
-  if (cat.includes('pool') || cat.includes('aquatic')) return 'pool';
+  if (cat.includes('pool') || cat.includes('aquatic') || cat.includes('swim')) return 'pool';
   if (cat.includes('studio') || cat.includes('yoga') || cat.includes('pilates')) return 'studio';
-  if (cat.includes('spa') || cat.includes('recovery')) return 'spa';
+  if (cat.includes('clinic') || cat.includes('physio') || cat.includes('rehab')) return 'clinic';
+  if (cat.includes('sports') || cat.includes('padel') || cat.includes('tennis') || cat.includes('court') || cat.includes('arena')) return 'sports';
+  if (cat.includes('wellness') || cat.includes('spa') || cat.includes('recovery')) return 'wellness_center';
   return 'gym';
 }
 
@@ -78,7 +82,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [activeCity, setActiveCity] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [selectedFacilityId, setSelectedFacilityId] = useState<string>("premier-kimihurura");
+  const [selectedFacilityId, setSelectedFacilityId] = useState<string>("kigali-heights-fitness");
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [spotlightIndex, setSpotlightIndex] = useState<number>(0);
   const [isLiveLoading, setIsLiveLoading] = useState<boolean>(false);
@@ -92,16 +96,16 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
     }
   };
 
-  // Curated baseline of verified facilities in Rwanda & East Africa
+  // Curated baseline of verified nationwide facilities in Rwanda
   const defaultFacilities: Facility[] = useMemo(() => [
     {
-      id: "premier-kimihurura",
-      name: "Premier Functional Fitness Hub",
+      id: "kigali-heights-fitness",
+      name: "Kigali Heights Fitness Club",
       city: "kigali",
       cityLabel: "Kigali, Kimihurura",
       category: "gym",
-      categoryLabel: "Gym & Functional Training",
-      address: "KG 674 St, Kimihurura",
+      categoryLabel: "Gym & Functional",
+      address: "KG 7 Ave, Kigali Heights 4th Floor",
       lat: -1.9536,
       lng: 30.0924,
       ...computeNormalizedCoords(-1.9536, 30.0924),
@@ -112,16 +116,16 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
       featured: true,
     },
     {
-      id: "olympic-rugunga",
-      name: "Olympic Aquatic & Multi-Sport Club",
+      id: "cercle-sportif-pool",
+      name: "Cercle Sportif de Kigali",
       city: "kigali",
-      cityLabel: "Kigali, Rugunga",
+      cityLabel: "Kigali, Kiyovu",
       category: "pool",
-      categoryLabel: "Olympic Pool & Multi-Sport",
-      address: "KN 3 Ave, Rugunga",
-      lat: -1.9680,
-      lng: 30.0650,
-      ...computeNormalizedCoords(-1.9680, 30.0650),
+      categoryLabel: "Olympic Pool & Sports",
+      address: "KN 3 Ave, Kiyovu",
+      lat: -1.9612,
+      lng: 30.0658,
+      ...computeNormalizedCoords(-1.9612, 30.0658),
       rating: 4.8,
       reviewsCount: 210,
       image: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=800",
@@ -129,170 +133,225 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
       featured: true,
     },
     {
-      id: "nyarutarama-club",
-      name: "Nyarutarama Tennis & Swim Club",
-      city: "kigali",
-      cityLabel: "Kigali, Nyarutarama",
-      category: "pool",
-      categoryLabel: "Aquatic Center & Tennis",
-      address: "KG 15 Ave, Nyarutarama",
-      lat: -1.9351,
-      lng: 30.1035,
-      ...computeNormalizedCoords(-1.9351, 30.1035),
-      rating: 4.85,
-      reviewsCount: 98,
-      image: "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?auto=format&fit=crop&q=80&w=800",
-      amenities: ["Heated Lap Pool", "Floodlit Courts", "Personal Trainers", "Café"],
-      featured: true,
-    },
-    {
-      id: "kiyovu-spa",
-      name: "Kiyovu Thermal Spa & Recovery Lounge",
-      city: "kigali",
-      cityLabel: "Kigali, Kiyovu",
-      category: "spa",
-      categoryLabel: "Thermal Spa & Recovery",
-      address: "KN 29 St, Kiyovu",
-      lat: -1.9560,
-      lng: 30.0600,
-      ...computeNormalizedCoords(-1.9560, 30.0600),
-      rating: 4.95,
-      reviewsCount: 164,
-      image: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=800",
-      amenities: ["Finnish Sauna", "Cold Plunge", "Deep Tissue", "Yoga Deck"],
-      featured: true,
-    },
-    {
-      id: "altitude-musanze",
-      name: "Northern High-Altitude Fitness Center",
-      city: "musanze",
-      cityLabel: "Musanze, Northern Hub",
-      category: "gym",
-      categoryLabel: "High-Altitude Training Gym",
-      address: "NM 21 St, Musanze Central",
-      lat: -1.4980,
-      lng: 29.6340,
-      ...computeNormalizedCoords(-1.4980, 29.6340),
-      rating: 4.75,
-      reviewsCount: 52,
-      image: "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&q=80&w=800",
-      amenities: ["Cardio Theater", "Free Weights", "Heated Pool", "Recovery Lounge"],
-      featured: false,
-    },
-    {
-      id: "kinigi-yoga",
-      name: "Kinigi Eco Mindfulness & Yoga Shala",
-      city: "musanze",
-      cityLabel: "Musanze, Kinigi Corridor",
-      category: "studio",
-      categoryLabel: "Yoga & Mindfulness Studio",
-      address: "Kinigi Road, Musanze",
-      lat: -1.4420,
-      lng: 29.5910,
-      ...computeNormalizedCoords(-1.4420, 29.5910),
-      rating: 4.9,
-      reviewsCount: 88,
-      image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=800",
-      amenities: ["Open Air Shala", "Vinyasa & Yin", "Sound Baths", "Herbal Tea Bar"],
-      featured: true,
-    },
-    {
-      id: "kivu-marina",
-      name: "Lake Kivu Aquatic & Wellness Center",
-      city: "rubavu",
-      cityLabel: "Rubavu, Gisenyi Waterfront",
-      category: "pool",
-      categoryLabel: "Waterfront Pool & Cross-Training",
-      address: "Boulevard de la Kivu, Gisenyi",
-      lat: -1.7020,
-      lng: 29.2560,
-      ...computeNormalizedCoords(-1.7020, 29.2560),
-      rating: 4.8,
-      reviewsCount: 76,
-      image: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=800",
-      amenities: ["Lake-facing Lap Pool", "Outdoor Gym", "Kayak Workouts", "Steam Bath"],
-      featured: false,
-    },
-    {
-      id: "pilates-kigali",
-      name: "Kigali Reformer Pilates Studio",
+      id: "inzozi-yoga-shala",
+      name: "Inzozi Yoga & Pilates Shala",
       city: "kigali",
       cityLabel: "Kigali, Gishushu",
       category: "studio",
-      categoryLabel: "Reformer & Mat Pilates",
-      address: "KG 9 Ave, Gishushu",
-      lat: -1.9480,
-      lng: 30.0880,
-      ...computeNormalizedCoords(-1.9480, 30.0880),
-      rating: 4.92,
+      categoryLabel: "Yoga & Pilates",
+      address: "KG 9 Ave, Gishushu Boulevard",
+      lat: -1.948,
+      lng: 30.088,
+      ...computeNormalizedCoords(-1.948, 30.088),
+      rating: 4.95,
       reviewsCount: 110,
       image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&q=80&w=800",
-      amenities: ["Balanced Body Reformers", "Clinical Instructors", "Private Rooms"],
+      amenities: ["Reformer Pilates", "Vinyasa Flow", "Meditation Studio", "Herbal Tea Bar"],
+      featured: true,
+    },
+    {
+      id: "amahoro-padel-arena",
+      name: "Amahoro Sports & Padel Arena",
+      city: "kigali",
+      cityLabel: "Kigali, Remera",
+      category: "sports",
+      categoryLabel: "Sports & Padel",
+      address: "KG 11 Ave, Amahoro Stadium Precinct",
+      lat: -1.9585,
+      lng: 30.1142,
+      ...computeNormalizedCoords(-1.9585, 30.1142),
+      rating: 4.85,
+      reviewsCount: 128,
+      image: "https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?auto=format&fit=crop&q=80&w=800",
+      amenities: ["4 Padel Courts", "Athletic Track", "Squash Courts", "Sports Nutrition"],
+      featured: true,
+    },
+    {
+      id: "nyarutarama-wellness-center",
+      name: "Nyarutarama Sports Club & Wellness",
+      city: "kigali",
+      cityLabel: "Kigali, Nyarutarama",
+      category: "wellness_center",
+      categoryLabel: "Thermal Spa & Wellness",
+      address: "KG 15 Ave, Nyarutarama Golf Estate",
+      lat: -1.9351,
+      lng: 30.1035,
+      ...computeNormalizedCoords(-1.9351, 30.1035),
+      rating: 4.9,
+      reviewsCount: 164,
+      image: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=800",
+      amenities: ["Hydrotherapy Pool", "Steam & Sauna", "Deep Tissue Therapy", "Juice Lounge"],
+      featured: false,
+    },
+    {
+      id: "kigali-kinetic-physio",
+      name: "Kigali Kinetic Physio & Sports Clinic",
+      city: "kigali",
+      cityLabel: "Kigali, Downtown",
+      category: "clinic",
+      categoryLabel: "Clinics & Physio",
+      address: "KN 4 Ave, Downtown Commercial Hub",
+      lat: -1.9482,
+      lng: 30.0592,
+      ...computeNormalizedCoords(-1.9482, 30.0592),
+      rating: 4.92,
+      reviewsCount: 95,
+      image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800",
+      amenities: ["Physiotherapy Assessments", "Postural Rehab", "Injury Prevention", "Ergonomics"],
+      featured: false,
+    },
+    {
+      id: "musanze-volcanoes-club",
+      name: "Musanze Volcanoes Athletic Club",
+      city: "musanze",
+      cityLabel: "Musanze, Northern Province",
+      category: "gym",
+      categoryLabel: "Gym & High-Altitude",
+      address: "NM 21 St, Musanze Central",
+      lat: -1.498,
+      lng: 29.634,
+      ...computeNormalizedCoords(-1.498, 29.634),
+      rating: 4.82,
+      reviewsCount: 68,
+      image: "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&q=80&w=800",
+      amenities: ["Altitude Conditioning", "Olympic Free Weights", "Recovery Baths", "Lockers"],
+      featured: true,
+    },
+    {
+      id: "kinigi-highland-yoga",
+      name: "Kinigi Highland Yoga & Wellness Shala",
+      city: "musanze",
+      cityLabel: "Musanze, Kinigi Corridor",
+      category: "studio",
+      categoryLabel: "Yoga & Mindfulness",
+      address: "Kinigi Eco Park Road, Musanze",
+      lat: -1.442,
+      lng: 29.591,
+      ...computeNormalizedCoords(-1.442, 29.591),
+      rating: 4.91,
+      reviewsCount: 84,
+      image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=800",
+      amenities: ["Volcano View Shala", "Mindfulness Sessions", "Yin Yoga", "Herbal Bar"],
+      featured: false,
+    },
+    {
+      id: "kivu-aquatic-club",
+      name: "Lake Kivu Aquatic Club & Watersports",
+      city: "rubavu",
+      cityLabel: "Rubavu, Western Province",
+      category: "pool",
+      categoryLabel: "Waterfront Pool & Cross-Training",
+      address: "Boulevard de la Kivu, Gisenyi Waterfront",
+      lat: -1.702,
+      lng: 29.256,
+      ...computeNormalizedCoords(-1.702, 29.256),
+      rating: 4.88,
+      reviewsCount: 92,
+      image: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=800",
+      amenities: ["Heated Waterfront Pool", "Open-Water Swimming", "Locker Rooms", "Sunset Deck"],
+      featured: true,
+    },
+    {
+      id: "huye-sports-hub",
+      name: "Huye University Sports & Athletic Hub",
+      city: "huye",
+      cityLabel: "Huye, Southern Province",
+      category: "sports",
+      categoryLabel: "Sports & Athletics",
+      address: "Avenue des Sports, Huye Central",
+      lat: -2.601,
+      lng: 29.742,
+      ...computeNormalizedCoords(-2.601, 29.742),
+      rating: 4.79,
+      reviewsCount: 56,
+      image: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&q=80&w=800",
+      amenities: ["Basketball Courts", "Tennis Courts", "Athletic Track", "Strength Gym"],
+      featured: false,
+    },
+    {
+      id: "rwamagana-lakeview-wellness",
+      name: "Rwamagana Lakeview Fitness & Wellness",
+      city: "rwamagana",
+      cityLabel: "Rwamagana, Eastern Province",
+      category: "wellness_center",
+      categoryLabel: "Thermal Spa & Wellness",
+      address: "Rwamagana Lake Muhazi Corridor",
+      lat: -1.95,
+      lng: 30.434,
+      ...computeNormalizedCoords(-1.95, 30.434),
+      rating: 4.86,
+      reviewsCount: 64,
+      image: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=800",
+      amenities: ["Sauna & Steam Lounge", "Lakeside Cardio Deck", "Hydrotherapy", "Smoothie Bar"],
       featured: false,
     },
   ], []);
 
   const [facilities, setFacilities] = useState<Facility[]>(defaultFacilities);
 
-  // Attempt to fetch real provider discovery data from backend on mount
+  // Fetch real provider discovery data from backend on mount
   useEffect(() => {
     async function fetchDiscovery() {
       try {
         setIsLiveLoading(true);
         const data = await apiFetch<any>('/api/providers/discover?limit=50');
         const rawList = data?.results || data?.providers || [];
-          if (Array.isArray(rawList) && rawList.length > 0) {
-            const mapped: Facility[] = rawList.map((p: any, idx: number) => {
-              const providerObj = p.provider || {};
-              const validCategory = resolveCategory(p.category || providerObj.category);
-              const lat = p.lat ? parseFloat(p.lat) : -1.9536 + (idx * 0.008);
-              const lng = p.lng ? parseFloat(p.lng) : 30.0924 + (idx * 0.007);
-              const { normX, normY } = computeNormalizedCoords(lat, lng);
+        if (Array.isArray(rawList) && rawList.length > 0) {
+          const mapped: Facility[] = rawList.map((p: any, idx: number) => {
+            const providerObj = p.provider || {};
+            const validCategory = resolveCategory(p.category || providerObj.category);
+            const lat = p.lat ? parseFloat(p.lat) : -1.9536 + (idx * 0.008);
+            const lng = p.lng ? parseFloat(p.lng) : 30.0924 + (idx * 0.007);
+            const { normX, normY } = computeNormalizedCoords(lat, lng);
 
-              return {
-                id: p.id || p.location_id || `live-${idx}`,
-                name: p.name || p.location_name || providerObj.name || "PolyFit Partner Venue",
-                provider_name: providerObj.name || p.provider_name || p.name,
-                city: (p.city || "kigali").toLowerCase(),
-                cityLabel: `${p.city || "Kigali"}, ${p.address || "Rwanda"}`,
-                category: validCategory,
-                categoryLabel: validCategory.toUpperCase(),
-                address: p.address || "Verified Facility Location",
-                lat,
-                lng,
-                normX,
-                normY,
-                rating: providerObj.rating ? parseFloat(providerObj.rating) : (p.rating ? parseFloat(p.rating) : 4.8),
-                reviewsCount: 40 + (idx * 7),
-                image: (p.photos && p.photos[0]) || defaultFacilities[idx % defaultFacilities.length].image,
-                amenities: Array.isArray(p.amenities) && p.amenities.length > 0 ? p.amenities : ["Cardio", "Strength", "Lockers", "Shower"],
-                featured: idx < 4,
-              };
-            });
-            setFacilities(mapped);
-          }
-        } catch {
-          // Graceful fallback to default curated dataset
-        } finally {
-          setIsLiveLoading(false);
+            return {
+              id: p.id || p.location_id || `live-${idx}`,
+              name: p.name || p.location_name || providerObj.name || "PolyFit Partner Venue",
+              provider_name: providerObj.name || p.provider_name || p.name,
+              city: (p.city || "kigali").toLowerCase(),
+              cityLabel: `${p.city || "Kigali"}, ${p.address || "Rwanda"}`,
+              category: validCategory,
+              categoryLabel: validCategory.replace('_', ' ').toUpperCase(),
+              address: p.address || "Verified Facility Location",
+              lat,
+              lng,
+              normX,
+              normY,
+              rating: providerObj.rating ? parseFloat(providerObj.rating) : (p.rating ? parseFloat(p.rating) : 4.8),
+              reviewsCount: 40 + (idx * 7),
+              image: (p.photos && p.photos[0]) || defaultFacilities[idx % defaultFacilities.length].image,
+              amenities: Array.isArray(p.amenities) && p.amenities.length > 0 ? p.amenities : ["Cardio", "Strength", "Lockers", "Shower"],
+              featured: idx < 4,
+            };
+          });
+          setFacilities(mapped);
         }
+      } catch {
+        // Graceful fallback to default curated dataset
+      } finally {
+        setIsLiveLoading(false);
+      }
     }
     fetchDiscovery();
-  }, []);
+  }, [defaultFacilities]);
 
   const categories = [
-    { id: "all", label: "All Facilities", icon: Dumbbell },
+    { id: "all", label: "All Network", icon: Dumbbell },
     { id: "gym", label: "Gyms & Functional", icon: Dumbbell },
     { id: "pool", label: "Swimming Pools", icon: Waves },
     { id: "studio", label: "Yoga & Pilates", icon: HeartHandshake },
-    { id: "spa", label: "Thermal Spa & Recovery", icon: Sparkles },
+    { id: "sports", label: "Sports & Padel", icon: Compass },
+    { id: "clinic", label: "Clinics & Physio", icon: ShieldCheck },
+    { id: "wellness_center", label: "Thermal Spa & Wellness", icon: Sparkles },
   ];
 
   const cities = [
-    { id: "all", label: "All Cities" },
+    { id: "all", label: "All Rwanda" },
     { id: "kigali", label: "Kigali" },
     { id: "musanze", label: "Musanze" },
     { id: "rubavu", label: "Rubavu" },
+    { id: "huye", label: "Huye" },
+    { id: "rwamagana", label: "Rwamagana" },
   ];
 
   // Filtering
@@ -535,12 +594,18 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
                   KIGALI METROPOLITAN
                 </text>
 
-                {/* Regional City Markers on SVG */}
-                <text x="180" y="105" fill="#94A3B8" fontSize="10" fontFamily="sans-serif">Musanze</text>
-                <circle cx="170" cy="110" r="3" fill="#64748B" />
+                {/* Regional City Markers on SVG across Rwanda */}
+                <text x="175" y="105" fill="#94A3B8" fontSize="10" fontFamily="sans-serif">Musanze (North)</text>
+                <circle cx="165" cy="110" r="3.5" fill="#28D17C" />
 
-                <text x="95" y="150" fill="#94A3B8" fontSize="10" fontFamily="sans-serif">Rubavu</text>
-                <circle cx="110" cy="160" r="3" fill="#64748B" />
+                <text x="90" y="150" fill="#94A3B8" fontSize="10" fontFamily="sans-serif">Rubavu (West)</text>
+                <circle cx="105" cy="160" r="3.5" fill="#00D2B4" />
+
+                <text x="210" y="325" fill="#94A3B8" fontSize="10" fontFamily="sans-serif">Huye (South)</text>
+                <circle cx="200" cy="330" r="3.5" fill="#F59E0B" />
+
+                <text x="415" y="215" fill="#94A3B8" fontSize="10" fontFamily="sans-serif">Rwamagana (East)</text>
+                <circle cx="435" cy="220" r="3.5" fill="#EC4899" />
 
                 {/* Grid Axes Lines */}
                 <line x1="310" y1="40" x2="310" y2="400" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
@@ -573,7 +638,9 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
                       {facility.category === 'gym' && <Dumbbell className="w-4 h-4 stroke-[2.5]" />}
                       {facility.category === 'pool' && <Waves className="w-4 h-4 stroke-[2.5]" />}
                       {facility.category === 'studio' && <HeartHandshake className="w-4 h-4 stroke-[2.5]" />}
-                      {facility.category === 'spa' && <Sparkles className="w-4 h-4 stroke-[2.5]" />}
+                      {facility.category === 'sports' && <Compass className="w-4 h-4 stroke-[2.5]" />}
+                      {facility.category === 'clinic' && <ShieldCheck className="w-4 h-4 stroke-[2.5]" />}
+                      {facility.category === 'wellness_center' && <Sparkles className="w-4 h-4 stroke-[2.5]" />}
                     </div>
 
                     {/* Tooltip on hover */}
@@ -592,22 +659,30 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
 
             {/* Map Bottom Telemetry Legend */}
             <div className="p-4 bg-slate-900/90 backdrop-blur-md border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-300">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#28D17C]" />
-                  <span>Gyms & Cross-fit</span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  <span>Gyms</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#00D2B4]" />
-                  <span>Swimming Pools</span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-teal-400" />
+                  <span>Pools</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-purple-400" />
-                  <span>Yoga / Pilates</span>
+                  <span>Yoga/Pilates</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                  <span>Spas & Sauna</span>
+                  <span>Sports/Padel</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />
+                  <span>Clinics/Physio</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-pink-400" />
+                  <span>Spa & Wellness</span>
                 </div>
               </div>
 

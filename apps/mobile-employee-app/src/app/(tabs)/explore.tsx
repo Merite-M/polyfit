@@ -49,8 +49,9 @@ const CATEGORIES: { id: ProviderCategory | 'all'; label: string }[] = [
   { id: 'gym', label: 'Fitness' },
   { id: 'pool', label: 'Swimming' },
   { id: 'studio', label: 'Yoga & Pilates' },
-  { id: 'wellness_center', label: 'Spa & Sauna' },
   { id: 'sports', label: 'Sports & Padel' },
+  { id: 'clinic', label: 'Physio & Clinic' },
+  { id: 'wellness_center', label: 'Spa & Sauna' },
 ];
 
 const NEIGHBORHOODS = [
@@ -61,6 +62,10 @@ const NEIGHBORHOODS = [
   'Gishushu',
   'Downtown',
   'Remera',
+  'Musanze',
+  'Rubavu',
+  'Huye',
+  'Rwamagana',
 ];
 
 export default function ExploreNetworkScreen() {

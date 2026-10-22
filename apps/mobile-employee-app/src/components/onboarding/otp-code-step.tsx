@@ -16,7 +16,7 @@ import {
   Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { ArrowLeft, ArrowRight, Sparkles, RefreshCw, Smartphone, Mail } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth-store';
 import { Palette, Radius, Spacing, Fonts } from '@/constants/theme';
 
@@ -26,7 +26,6 @@ export const OtpCodeStep: React.FC = () => {
     phone,
     identifier,
     authIdentifierType,
-    demoOtp,
     isLoading,
     error,
     setStep,
@@ -84,16 +83,6 @@ export const OtpCodeStep: React.FC = () => {
     if (e.nativeEvent.key === 'Backspace' && !digits[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
-  };
-
-  const handleFillDemo = () => {
-    const code = demoOtp || '123456';
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    }
-    const split = code.split('').slice(0, 6);
-    setDigits(split);
-    submitVerifyAccess(code);
   };
 
   const handleResend = async () => {
@@ -173,29 +162,13 @@ export const OtpCodeStep: React.FC = () => {
             })}
           </View>
 
-        {/* Demo Auto-Fill Chip */}
-        {demoOtp || __DEV__ ? (
-          <Pressable
-            style={({ pressed }) => [
-              styles.demoChip,
-              pressed && { transform: [{ scale: 0.98 }] },
-            ]}
-            onPress={handleFillDemo}
-          >
-            <Sparkles size={14} color={Palette.green} />
-            <Text style={styles.demoChipText}>
-              Demo Code: <Text style={styles.demoCodeBold}>{demoOtp || '123456'}</Text> (Tap to auto-fill)
-            </Text>
-          </Pressable>
-        ) : null}
-
-        {/* Error Banner */}
-        {error && (
-          <View style={styles.errorBanner}>
-            <Text style={styles.errorBannerText}>{error}</Text>
-          </View>
-        )}
-      </View>
+          {/* Error Banner */}
+          {error && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorBannerText}>{error}</Text>
+            </View>
+          )}
+        </View>
 
       {/* Bottom Pinned Action Bar */}
       <View style={styles.bottomBar}>
@@ -358,30 +331,6 @@ const styles = StyleSheet.create({
         elevation: 3,
       },
     }),
-  },
-
-  demoChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(40, 209, 124, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(40, 209, 124, 0.3)',
-    borderRadius: Radius.btn,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: Spacing.three,
-  },
-  demoChipText: {
-    color: '#E2E8F0',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  demoCodeBold: {
-    color: Palette.green,
-    fontWeight: '800',
-    letterSpacing: 1,
   },
 
   errorBanner: {

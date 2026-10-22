@@ -3,16 +3,12 @@
  * Notification preferences, concierge entry point, multi-tenant demo switcher, and secure logout
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, Switch, Pressable, Alert, Platform } from 'react-native';
 import {
   Bell,
   HelpCircle,
-  Layers,
   LogOut,
-  Building2,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react-native';
 import { Palette, Spacing, Radius } from '@/constants/theme';
 import { EmployeeNotificationSettings } from '@/types/auth';
@@ -22,7 +18,6 @@ interface SettingsSectionProps {
   currentOrgDomain?: string;
   onUpdateSettings: (settings: Partial<EmployeeNotificationSettings>) => void;
   onOpenSupport: () => void;
-  onSwitchTenant: (type: 'bk' | 'techcorp') => void;
   onLogout: () => void;
 }
 
@@ -31,11 +26,8 @@ export function SettingsSection({
   currentOrgDomain = 'bk.rw',
   onUpdateSettings,
   onOpenSupport,
-  onSwitchTenant,
   onLogout,
 }: SettingsSectionProps) {
-  const [showTenantSwitcher, setShowTenantSwitcher] = useState(false);
-
   const confirmLogout = () => {
     if (Platform.OS === 'web') {
       if (window.confirm('Log out from PolyFit? Offline cryptographic pass keys will be cleared from this device.')) {
@@ -124,71 +116,7 @@ export function SettingsSection({
         </View>
       </Pressable>
 
-      {/* 3. Multi-Tenant Demo Switcher (Collapsible for Testing - Dev Only) */}
-      {(__DEV__ || process.env.NODE_ENV !== 'production') && (
-        <View style={styles.card}>
-          <Pressable
-            style={styles.collapsibleHeader}
-            onPress={() => setShowTenantSwitcher(!showTenantSwitcher)}
-          >
-            <View style={styles.cardHeader}>
-              <Layers size={15} color={Palette.teal} />
-              <Text style={styles.cardTitle}>Multi-Tenant Testing Switcher</Text>
-            </View>
-            {showTenantSwitcher ? (
-              <ChevronUp size={16} color={Palette.textMuted} />
-            ) : (
-              <ChevronDown size={16} color={Palette.textMuted} />
-            )}
-          </Pressable>
-
-          {showTenantSwitcher && (
-            <View style={styles.switcherContent}>
-              <Text style={styles.switcherSub}>
-                Switch between enrolled corporate accounts to test different subsidy models:
-              </Text>
-
-              <View style={styles.demoList}>
-                <Pressable
-                  style={[
-                    styles.demoItem,
-                    currentOrgDomain === 'bk.rw' && styles.demoItemActive,
-                  ]}
-                  onPress={() => onSwitchTenant('bk')}
-                >
-                  <Building2
-                    size={16}
-                    color={currentOrgDomain === 'bk.rw' ? Palette.green : Palette.textMuted}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.demoTitle}>Bank of Kigali</Text>
-                    <Text style={styles.demoDesc}>100% Fully Sponsored • 12 Visits/mo</Text>
-                  </View>
-                </Pressable>
-
-                <Pressable
-                  style={[
-                    styles.demoItem,
-                    currentOrgDomain === 'techcorp.rw' && styles.demoItemActive,
-                  ]}
-                  onPress={() => onSwitchTenant('techcorp')}
-                >
-                  <Building2
-                    size={16}
-                    color={currentOrgDomain === 'techcorp.rw' ? Palette.green : Palette.textMuted}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.demoTitle}>TechCorp Rwanda</Text>
-                    <Text style={styles.demoDesc}>85% Corporate Subsidy • 8 Visits/mo</Text>
-                  </View>
-                </Pressable>
-              </View>
-            </View>
-          )}
-        </View>
-      )}
-
-      {/* 4. Secure Sign Out CTA */}
+      {/* 3. Secure Sign Out CTA */}
       <Pressable
         style={({ pressed }) => [
           styles.logoutBtn,
@@ -283,49 +211,6 @@ const styles = StyleSheet.create({
   supportCardSub: {
     fontSize: 11,
     color: Palette.teal,
-    marginTop: 2,
-  },
-
-  // Collapsible Header
-  collapsibleHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  switcherContent: {
-    gap: 8,
-    paddingTop: Spacing.two,
-  },
-  switcherSub: {
-    fontSize: 11,
-    color: Palette.textMuted,
-    marginBottom: 4,
-  },
-  demoList: {
-    gap: 8,
-  },
-  demoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#0D2235',
-    borderRadius: Radius.md,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  demoItemActive: {
-    borderColor: Palette.green,
-    backgroundColor: 'rgba(40, 209, 124, 0.08)',
-  },
-  demoTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  demoDesc: {
-    fontSize: 10,
-    color: Palette.textMuted,
     marginTop: 2,
   },
 

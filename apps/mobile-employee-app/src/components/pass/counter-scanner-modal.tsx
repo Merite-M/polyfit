@@ -24,11 +24,9 @@ import {
   Camera,
   QrCode,
   MapPin,
-  Sparkles,
   ShieldAlert,
   Keyboard,
   ArrowRight,
-  CheckCircle2,
 } from 'lucide-react-native';
 import { Palette, Spacing, Radius } from '@/constants/theme';
 
@@ -296,71 +294,8 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
                   <Text style={styles.submitCodeBtnText}>Verify Plaque Code</Text>
                   <ArrowRight size={16} color="#0B1F33" />
                 </Pressable>
-
-                {/* Quick Sample Chips */}
-                <View style={styles.quickChipsBox}>
-                  <Text style={styles.quickChipsTitle}>Quick Test Plaque Codes:</Text>
-                  <View style={styles.chipRow}>
-                    {PARTNER_DESK_PLAQUES.map((p) => (
-                      <Pressable
-                        key={p.shortCode}
-                        style={styles.quickChipPill}
-                        onPress={() => {
-                          setManualCode(p.shortCode);
-                          setManualError(null);
-                        }}
-                      >
-                        <Text style={styles.quickChipText}>{p.shortCode}</Text>
-                        <Text style={styles.quickChipSub}>{p.facilityName.split(' ')[0]}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
               </View>
             )}
-
-            {/* Bottom Test & Partner Plaque Simulation Bar */}
-            <View style={styles.simulationDrawer}>
-              <View style={styles.drawerHeader}>
-                <Sparkles size={14} color={Palette.teal} />
-                <Text style={styles.drawerTitle}>Instant Plaque Simulator (Demo & Testing)</Text>
-              </View>
-              <Text style={styles.drawerSub}>
-                Tap any official front-desk plaque to simulate instant counter scan:
-              </Text>
-
-              <View style={styles.plaqueList}>
-                {PARTNER_DESK_PLAQUES.map((plaque) => (
-                  <Pressable
-                    key={plaque.providerLocationId}
-                    style={({ pressed }) => [
-                      styles.plaqueItem,
-                      pressed && { opacity: 0.8, backgroundColor: 'rgba(40, 209, 124, 0.15)' },
-                    ]}
-                    onPress={() => handleSimulateScan(plaque)}
-                  >
-                    <View style={styles.plaqueIconBadge}>
-                      <Camera size={16} color={Palette.green} />
-                    </View>
-                    <View style={styles.plaqueInfo}>
-                      <View style={styles.plaqueNameRow}>
-                        <Text style={styles.plaqueName}>{plaque.facilityName}</Text>
-                        <View style={styles.codeTag}>
-                          <Text style={styles.codeTagText}>{plaque.shortCode}</Text>
-                        </View>
-                      </View>
-                      <View style={styles.plaqueLocRow}>
-                        <MapPin size={11} color={Palette.textMuted} />
-                        <Text style={styles.plaqueNeighborhood}>{plaque.neighborhood}</Text>
-                      </View>
-                    </View>
-                    <View style={styles.scanBadge}>
-                      <Text style={styles.scanBadgeText}>SCAN</Text>
-                    </View>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
           </ScrollView>
         </View>
       </View>
@@ -647,129 +582,6 @@ const styles = StyleSheet.create({
   },
   submitCodeBtnText: {
     fontSize: 14,
-    fontWeight: '800',
-    color: '#0B1F33',
-  },
-  quickChipsBox: {
-    marginTop: Spacing.two,
-    gap: 8,
-  },
-  quickChipsTitle: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Palette.textMuted,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  quickChipPill: {
-    flex: 1,
-    backgroundColor: '#0D2235',
-    padding: 8,
-    borderRadius: Radius.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    alignItems: 'center',
-  },
-  quickChipText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: Palette.teal,
-  },
-  quickChipSub: {
-    fontSize: 9,
-    color: Palette.textMuted,
-  },
-
-  /* Simulator Drawer */
-  simulationDrawer: {
-    backgroundColor: '#0B1F33',
-    borderTopLeftRadius: Radius.xl,
-    borderTopRightRadius: Radius.xl,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    padding: Spacing.four,
-  },
-  drawerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
-  },
-  drawerTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  drawerSub: {
-    fontSize: 11,
-    color: Palette.textSecondary,
-    marginBottom: Spacing.three,
-  },
-  plaqueList: {
-    gap: 8,
-  },
-  plaqueItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0D2235',
-    borderRadius: Radius.md,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    gap: 10,
-  },
-  plaqueIconBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(40, 209, 124, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  plaqueInfo: {
-    flex: 1,
-  },
-  plaqueNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 2,
-  },
-  plaqueName: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  codeTag: {
-    backgroundColor: 'rgba(0, 210, 180, 0.12)',
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 4,
-  },
-  codeTagText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: Palette.teal,
-  },
-  plaqueLocRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  plaqueNeighborhood: {
-    fontSize: 11,
-    color: Palette.textMuted,
-  },
-  scanBadge: {
-    backgroundColor: Palette.green,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  scanBadgeText: {
-    fontSize: 10,
     fontWeight: '800',
     color: '#0B1F33',
   },

@@ -42,7 +42,6 @@ export const WelcomeDomainStep: React.FC = () => {
     resolveIdentity,
     resolveInviteToken,
     submitRequestAccess,
-    loadDemoAccount,
   } = useAuthStore();
 
   const [inputVal, setInputVal] = useState(identifier || email || phone || '');
@@ -266,50 +265,6 @@ export const WelcomeDomainStep: React.FC = () => {
 
         {/* Bottom Pinned Action Bar */}
         <View style={styles.bottomBar}>
-          {/* Quick Demo Pre-sets */}
-          <View style={styles.demoPresetContainer}>
-            <Text style={styles.demoLabel}>QUICK TEST ROSTER:</Text>
-            <Pressable
-              style={({ pressed }) => [styles.demoChip, pressed && { opacity: 0.7 }]}
-              onPress={() => {
-                if (Platform.OS !== 'web') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                }
-                setInputVal('+250788123456');
-                setIdentifier('+250788123456');
-                resolveIdentity('+250788123456');
-              }}
-            >
-              <Text style={styles.demoChipText}>BK (Phone)</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.demoChip, pressed && { opacity: 0.7 }]}
-              onPress={() => {
-                if (Platform.OS !== 'web') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                }
-                setInputVal('jean.mugisha@bk.rw');
-                setIdentifier('jean.mugisha@bk.rw');
-                resolveIdentity('jean.mugisha@bk.rw');
-              }}
-            >
-              <Text style={styles.demoChipText}>BK (Email)</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.demoChip, pressed && { opacity: 0.7 }]}
-              onPress={() => {
-                if (Platform.OS !== 'web') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                }
-                setInputVal('diane@techcorp.rw');
-                setIdentifier('diane@techcorp.rw');
-                resolveIdentity('diane@techcorp.rw');
-              }}
-            >
-              <Text style={styles.demoChipText}>TechCorp</Text>
-            </Pressable>
-          </View>
-
           {/* Primary Action Button */}
           <Pressable
             style={({ pressed }) => [

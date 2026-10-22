@@ -45,7 +45,6 @@ export default function ProfileScreen() {
     isRefreshingProfile,
     refreshProfileAndVisits,
     updateNotificationSettings,
-    loadDemoAccount,
     logout,
   } = useAuthStore();
 
@@ -166,7 +165,6 @@ export default function ProfileScreen() {
             }
             setIsSupportModalVisible(true);
           }}
-          onSwitchTenant={loadDemoAccount}
           onLogout={() => {
             if (Platform.OS !== 'web') {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});

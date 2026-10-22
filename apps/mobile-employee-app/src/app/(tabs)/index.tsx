@@ -28,7 +28,6 @@ import { DynamicQrPass } from '@/components/pass/dynamic-qr-pass';
 import { PassVerificationStatus } from '@/components/pass/pass-verification-status';
 import { CounterScannerModal, ScannedPlaqueData } from '@/components/pass/counter-scanner-modal';
 import { CheckinSuccessModal } from '@/components/pass/checkin-success-modal';
-import { DemoSimulationBar } from '@/components/pass/demo-simulation-bar';
 import { OfflineVaultService } from '@/services/offline-vault';
 
 export default function AccessPassScreen() {
@@ -59,16 +58,16 @@ export default function AccessPassScreen() {
     isOfflineSync: boolean;
   } | null>(null);
 
-  // Simulation & Telemetry States (for edge case testing)
+  // Real Verification & Telemetry States
   const [isOutOfGeofence, setIsOutOfGeofence] = useState(false);
   const [inCooldown, setInCooldown] = useState(false);
-  const [cooldownRemainingSeconds, setCooldownRemainingSeconds] = useState(860); // 14m 20s
-  const [isQuotaExhausted, setIsQuotaExhausted] = useState(false);
+  const [cooldownRemainingSeconds, setCooldownRemainingSeconds] = useState(0);
   const [isOffline, setIsOffline] = useState(false);
 
-  // Centralized visits from store (Fix A1)
+  // Centralized visits from store
   const monthlyVisits = benefit?.max_monthly_visits || 12;
   const storeRemaining = benefitTelemetry?.remainingVisits ?? 8;
+  const isQuotaExhausted = typeof storeRemaining === 'number' && storeRemaining <= 0;
   const remainingVisits = isQuotaExhausted ? 0 : storeRemaining;
 
   // Live cooldown countdown timer
@@ -340,21 +339,6 @@ export default function AccessPassScreen() {
             }
             setScannerVisible(true);
           }}
-        />
-
-        {/* Developer & Co-founder Simulator Toolbar */}
-        <DemoSimulationBar
-          isOutOfGeofence={isOutOfGeofence}
-          onToggleGeofence={() => setIsOutOfGeofence(!isOutOfGeofence)}
-          inCooldown={inCooldown}
-          onToggleCooldown={() => {
-            setInCooldown(!inCooldown);
-            setCooldownRemainingSeconds(860);
-          }}
-          isQuotaExhausted={isQuotaExhausted}
-          onToggleQuota={() => setIsQuotaExhausted(!isQuotaExhausted)}
-          isOffline={isOffline}
-          onToggleOffline={() => setIsOffline(!isOffline)}
         />
       </ScrollView>
 
