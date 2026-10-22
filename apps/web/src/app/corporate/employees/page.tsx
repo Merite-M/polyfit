@@ -544,7 +544,7 @@ export default function EmployeesPage() {
                         <input
                           type="checkbox"
                           checked={isSelected}
-                          onChange={() => {}}
+                          onChange={(e) => toggleSelectOne(emp.id, e as any)}
                           className="rounded border-[#CBD5E1] text-[#28D17C] focus:ring-[#28D17C] cursor-pointer"
                         />
                       </td>

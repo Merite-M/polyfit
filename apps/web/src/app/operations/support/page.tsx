@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
+  ShieldAlert,
   ShieldCheck,
   Smartphone,
   RotateCcw,
@@ -142,6 +143,7 @@ export default function SupportOperationsPage() {
   // Beneficiaries State
   const [beneficiaries, setBeneficiaries] = useState<BeneficiaryItem[]>([]);
   const [beneficiariesLoading, setBeneficiariesLoading] = useState(true);
+  const [beneficiariesError, setBeneficiariesError] = useState<string | null>(null);
   const [beneficiarySearch, setBeneficiarySearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [tierFilter, setTierFilter] = useState("all");
@@ -149,9 +151,11 @@ export default function SupportOperationsPage() {
   // Platform Settings State
   const [settings, setSettings] = useState<PlatformSettingItem[]>([]);
   const [settingsLoading, setSettingsLoading] = useState(true);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
   const [settingsSavingKey, setSettingsSavingKey] = useState<string | null>(null);
   const [localSettingsValues, setLocalSettingsValues] = useState<Record<string, any>>({});
   const [settingsSuccessNotice, setSettingsSuccessNotice] = useState<string | null>(null);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
 
   // Audit Logs State
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
@@ -169,6 +173,7 @@ export default function SupportOperationsPage() {
   // Fetch Beneficiaries
   const fetchBeneficiaries = async () => {
     setBeneficiariesLoading(true);
+    setBeneficiariesError(null);
     try {
       const params = new URLSearchParams();
       if (beneficiarySearch) params.set("query", beneficiarySearch);
@@ -181,6 +186,7 @@ export default function SupportOperationsPage() {
       }
     } catch (err) {
       console.error("[SupportPage] Failed to fetch beneficiaries:", err);
+      setBeneficiariesError("Unable to load beneficiary accounts. Please check connectivity or retry.");
     } finally {
       setBeneficiariesLoading(false);
     }
@@ -189,6 +195,7 @@ export default function SupportOperationsPage() {
   // Fetch Settings
   const fetchSettings = async () => {
     setSettingsLoading(true);
+    setSettingsError(null);
     try {
       const res = await apiFetch<any>("/api/operations/settings");
       if (res?.settings) {
@@ -201,6 +208,7 @@ export default function SupportOperationsPage() {
       }
     } catch (err) {
       console.error("[SupportPage] Failed to fetch settings:", err);
+      setSettingsError("Unable to fetch real-time security settings.");
     } finally {
       setSettingsLoading(false);
     }
@@ -253,7 +261,8 @@ export default function SupportOperationsPage() {
   // Handle setting update
   const handleSaveSetting = async (key: string, value: any) => {
     if (!rolePermissions.canUpdateSettings) {
-      alert("Permission Denied: Your current role cannot modify core platform configuration knobs.");
+      setPermissionError("Permission Denied: Your current role cannot modify core platform configuration knobs.");
+      setTimeout(() => setPermissionError(null), 5000);
       return;
     }
     setSettingsSavingKey(key);
@@ -282,7 +291,8 @@ export default function SupportOperationsPage() {
   // Handle Team Role assignment
   const handleAssignRole = async (userId: string, newRole: string) => {
     if (!rolePermissions.canManageRoles) {
-      alert("Permission Denied: Only Super Admin can change security access roles.");
+      setPermissionError("Permission Denied: Only Super Admin can change security access roles.");
+      setTimeout(() => setPermissionError(null), 5000);
       return;
     }
     setUpdatingUserRole(userId);
@@ -595,6 +605,16 @@ export default function SupportOperationsPage() {
                         Loading beneficiary telemetry roster...
                       </td>
                     </tr>
+                  ) : beneficiariesError ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-rose-400">
+                        <AlertTriangle className="w-6 h-6 mx-auto mb-2 text-rose-400" />
+                        <p className="font-semibold">{beneficiariesError}</p>
+                        <button onClick={fetchBeneficiaries} className="mt-3 px-3 py-1.5 rounded-lg bg-rose-500/20 border border-rose-500/30 text-xs font-bold text-rose-300 hover:bg-rose-500/30 transition-all cursor-pointer">
+                          Retry Roster Fetch
+                        </button>
+                      </td>
+                    </tr>
                   ) : filteredBeneficiaries.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-12 text-center text-slate-400">
@@ -739,6 +759,12 @@ export default function SupportOperationsPage() {
                 Dynamic configuration values persisted in PostgreSQL with instantaneous live propagation across verification routes.
               </p>
             </div>
+            {permissionError && (
+              <div className="px-3 py-1.5 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-rose-400" />
+                <span>{permissionError}</span>
+              </div>
+            )}
             {settingsSuccessNotice && (
               <div className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-[#28D17C] border border-emerald-500/30 text-xs font-semibold flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4" />
@@ -751,6 +777,14 @@ export default function SupportOperationsPage() {
             <div className="p-12 text-center text-slate-400">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#28D17C] mb-2" />
               Loading system knobs...
+            </div>
+          ) : settingsError ? (
+            <div className="p-12 text-center text-rose-400">
+              <AlertTriangle className="w-6 h-6 mx-auto text-rose-400 mb-2" />
+              <p className="font-semibold">{settingsError}</p>
+              <button onClick={fetchSettings} className="mt-3 px-3 py-1.5 rounded-lg bg-rose-500/20 border border-rose-500/30 text-xs font-bold text-rose-300 hover:bg-rose-500/30 transition-all cursor-pointer">
+                Retry Fetching Settings
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

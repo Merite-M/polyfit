@@ -199,6 +199,7 @@ export function MasterPlanBuilderDrawer({
   const [isExclusive, setIsExclusive] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -347,7 +348,7 @@ export function MasterPlanBuilderDrawer({
 
   const handleDelete = async () => {
     if (!plan?.id) return;
-    if (!confirm(`Are you sure you want to deactivate master plan "${plan.name}"?`)) return;
+
     try {
       setIsSubmitting(true);
       await apiFetch(`/api/operations/plans/${plan.id}`, { method: "DELETE" });
@@ -1021,14 +1022,36 @@ export function MasterPlanBuilderDrawer({
         {/* Drawer Footer Actions */}
         <div className="p-4 border-t border-[#21405A] bg-[#071521] flex items-center justify-between gap-3 shrink-0">
           {plan?.id ? (
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={isSubmitting}
-              className="px-3.5 py-2 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold transition-all cursor-pointer"
-            >
-              Deactivate Plan
-            </button>
+            showDeleteConfirm ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-rose-300 font-semibold">Deactivate plan?</span>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={isSubmitting}
+                  className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all cursor-pointer"
+                >
+                  Confirm
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isSubmitting}
+                  className="px-2 py-1 rounded-lg bg-[#0F283D] hover:bg-[#183954] text-slate-300 text-xs transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isSubmitting}
+                className="px-3.5 py-2 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold transition-all cursor-pointer"
+              >
+                Deactivate Plan
+              </button>
+            )
           ) : (
             <div />
           )}
