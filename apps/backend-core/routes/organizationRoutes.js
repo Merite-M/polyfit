@@ -1,4 +1,5 @@
 const express = require('express');
+const { sanitizePostgrestFilter } = require('@polyfit/shared-utils');
 const { supabase } = require('../services/supabaseService');
 const { requireAuth, requireRole, requireOrgAccess } = require('../middleware/authMiddleware');
 
@@ -121,7 +122,10 @@ router.get('/', requireAuth, async (req, res) => {
         query = query.eq('status', status);
       }
       if (search) {
-        query = query.ilike('name', `%${search}%`);
+        const cleanSearch = sanitizePostgrestFilter(search);
+        if (cleanSearch) {
+          query = query.ilike('name', `%${cleanSearch}%`);
+        }
       }
       const pageNum = Math.max(1, parseInt(page, 10) || 1);
       const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
