@@ -125,11 +125,7 @@ export default function AccessPassScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       }
       const msg = `Geofence check failed: You are 450m away from ${plaque.facilityName}. Maximum allowed access radius is 200m.`;
-      if (Platform.OS === 'web') {
-        alert(msg);
-      } else {
-        Alert.alert('Outside Geofence', msg);
-      }
+      Alert.alert('Outside Geofence', msg);
       return;
     }
 
@@ -139,11 +135,7 @@ export default function AccessPassScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
       }
       const msg = `Anti-passback cooldown active: Previous visit verified. Re-entry allowed in ${Math.ceil(cooldownRemainingSeconds / 60)} minutes.`;
-      if (Platform.OS === 'web') {
-        alert(msg);
-      } else {
-        Alert.alert('Cooldown Active', msg);
-      }
+      Alert.alert('Cooldown Active', msg);
       return;
     }
 
@@ -153,11 +145,7 @@ export default function AccessPassScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       }
       const msg = `Monthly allowance reached: You have utilized all ${monthlyVisits}/${monthlyVisits} visits for this cycle. Refreshes on Nov 1.`;
-      if (Platform.OS === 'web') {
-        alert(msg);
-      } else {
-        Alert.alert('Allowance Reached', msg);
-      }
+      Alert.alert('Allowance Reached', msg);
       return;
     }
 

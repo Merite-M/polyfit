@@ -2670,7 +2670,7 @@ async function getOperationsFinanceInvoices(params = {}) {
     .from('invoices')
     .select(`
       *,
-      organizations!inner (
+      organizations (
         id,
         name,
         tax_id,
@@ -2730,7 +2730,7 @@ async function getOperationsFinanceSettlements(params = {}) {
     .from('settlements')
     .select(`
       *,
-      providers!inner (
+      providers (
         id,
         name,
         category,

@@ -103,7 +103,8 @@ export function VisitorIntentModal({ isOpen, onClose }: VisitorIntentModalProps)
           <button
             type="button"
             onClick={() => handleSelectFlow("/join")}
-            className="group w-full p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border-2 border-slate-200/90 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 bg-slate-50/70 dark:bg-slate-800/40 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 text-left transition-all duration-150 flex items-center gap-3.5 cursor-pointer shadow-2xs hover:shadow-sm"
+            aria-label="Activate corporate benefit as an employee"
+            className="group w-full p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border-2 border-slate-200/90 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 bg-slate-50/70 dark:bg-slate-800/40 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 text-left transition-all duration-150 flex items-center gap-3.5 cursor-pointer shadow-2xs hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900"
           >
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all">
               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -128,7 +129,8 @@ export function VisitorIntentModal({ isOpen, onClose }: VisitorIntentModalProps)
           <button
             type="button"
             onClick={() => handleSelectFlow("/corporate/register")}
-            className="group w-full p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border-2 border-slate-200/90 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 bg-slate-50/70 dark:bg-slate-800/40 hover:bg-blue-50/30 dark:hover:bg-blue-950/20 text-left transition-all duration-150 flex items-center gap-3.5 cursor-pointer shadow-2xs hover:shadow-sm"
+            aria-label="Explore employer solutions as HR or company leader"
+            className="group w-full p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border-2 border-slate-200/90 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 bg-slate-50/70 dark:bg-slate-800/40 hover:bg-blue-50/30 dark:hover:bg-blue-950/20 text-left transition-all duration-150 flex items-center gap-3.5 cursor-pointer shadow-2xs hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900"
           >
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-blue-500 group-hover:text-white transition-all">
               <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -153,7 +155,8 @@ export function VisitorIntentModal({ isOpen, onClose }: VisitorIntentModalProps)
           <button
             type="button"
             onClick={() => handleSelectFlow("/partner/register")}
-            className="group w-full p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border-2 border-slate-200/90 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-indigo-500 bg-slate-50/70 dark:bg-slate-800/40 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 text-left transition-all duration-150 flex items-center gap-3.5 cursor-pointer shadow-2xs hover:shadow-sm"
+            aria-label="Register as a wellness facility partner"
+            className="group w-full p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border-2 border-slate-200/90 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-indigo-500 bg-slate-50/70 dark:bg-slate-800/40 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 text-left transition-all duration-150 flex items-center gap-3.5 cursor-pointer shadow-2xs hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900"
           >
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-indigo-500 group-hover:text-white transition-all">
               <Dumbbell className="w-4 h-4 sm:w-5 sm:h-5" />
