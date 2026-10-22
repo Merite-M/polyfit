@@ -8,7 +8,7 @@ const {
   getDistanceFromLatLonInM
 } = require('./totpService');
 
-const VALID_CATEGORIES = ['gym', 'pool', 'studio', 'clinic', 'wellness_center'];
+const VALID_CATEGORIES = ['gym', 'pool', 'studio', 'clinic', 'wellness_center', 'sports'];
 
 const DEFAULT_MAX_VISITS_BY_TIER = {
   basic: 8,

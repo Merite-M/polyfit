@@ -52,7 +52,7 @@ export interface CorporateEmployee {
   email: string;
   employee_id_external?: string | null;
   department?: string | null;
-  tier: "basic" | "standard" | "premium" | "executive" | string;
+  tier: "basic" | "starter" | "standard" | "premium" | "executive" | string;
   status: "active" | "frozen" | "terminated";
   created_at?: string;
   visits_this_month?: number;
@@ -71,7 +71,7 @@ interface EmployeeDetailDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onStatusChange: (id: string, newStatus: "active" | "frozen" | "terminated") => Promise<void>;
-  onTierChange: (id: string, newTier: "basic" | "standard" | "premium" | "executive") => Promise<void>;
+  onTierChange: (id: string, newTier: "basic" | "starter" | "standard" | "premium" | "executive") => Promise<void>;
   organizationName?: string;
 }
 
@@ -171,7 +171,7 @@ export function EmployeeDetailDrawer({
     }
   };
 
-  const handleTierSelect = async (newTier: "basic" | "standard" | "premium" | "executive") => {
+  const handleTierSelect = async (newTier: "basic" | "starter" | "standard" | "premium" | "executive") => {
     if (newTier === currentEmployee.tier || isUpdatingTier) return;
     setIsUpdatingTier(true);
     try {
@@ -363,7 +363,7 @@ export function EmployeeDetailDrawer({
               </div>
 
               <div className="flex items-center gap-1">
-                {(["basic", "standard", "premium", "executive"] as const).map((tierName) => (
+                {(["basic", "starter", "standard", "premium", "executive"] as const).map((tierName) => (
                   <button
                     key={tierName}
                     type="button"

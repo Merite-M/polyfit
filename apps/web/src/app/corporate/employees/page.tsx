@@ -116,7 +116,7 @@ export default function EmployeesPage() {
   // Tier Change in Drawer
   const handleTierChange = async (
     id: string,
-    newTier: "basic" | "standard" | "premium" | "executive"
+    newTier: "basic" | "starter" | "standard" | "premium" | "executive"
   ) => {
     await updateEmployeeTier(id, newTier);
     if (selectedEmployee && selectedEmployee.id === id) {
@@ -148,7 +148,7 @@ export default function EmployeesPage() {
 
   // Batch Change Tier
   const handleBatchChangeTier = async (
-    newTier: "basic" | "standard" | "premium" | "executive"
+    newTier: "basic" | "starter" | "standard" | "premium" | "executive"
   ) => {
     if (selectedIds.size === 0) return;
     setIsBatchLoading(true);
@@ -418,6 +418,7 @@ export default function EmployeesPage() {
             >
               <option value="all">Tier: All</option>
               <option value="basic">Basic</option>
+              <option value="starter">Starter</option>
               <option value="standard">Standard</option>
               <option value="premium">Premium</option>
               <option value="executive">Executive</option>
@@ -523,7 +524,7 @@ export default function EmployeesPage() {
                   const empTier = (emp.tier || "").toLowerCase();
                   const maxQuota =
                     emp.eligibility?.benefits?.max_monthly_visits ??
-                    (empTier === "executive" ? 20 : empTier === "premium" ? 20 : empTier === "standard" ? 10 : 4);
+                    (empTier === "executive" ? 20 : empTier === "premium" ? 16 : empTier === "standard" ? 12 : empTier === "starter" ? 8 : 4);
                   const visits = emp.visits_this_month || 0;
                   const pct = Math.min(100, Math.round((visits / Math.max(1, maxQuota)) * 100));
 

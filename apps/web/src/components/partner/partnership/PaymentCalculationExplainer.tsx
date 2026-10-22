@@ -20,7 +20,7 @@ export function PaymentCalculationExplainer() {
   const { commercialConditions } = usePartner();
   const rules = commercialConditions?.payment_calculation_rules;
 
-  const grossRate = rules?.gross_rate_per_checkin_rwf ?? 5000;
+  const grossRate = rules?.gross_rate_per_checkin_rwf ?? commercialConditions?.active_contract?.per_visit_rate ?? 5000;
   const platformPct = rules?.platform_fee_percent ?? 10;
   const platformFee = Math.round((grossRate * platformPct) / 100);
   const netRate = rules?.net_payout_per_checkin_rwf ?? (grossRate - platformFee);

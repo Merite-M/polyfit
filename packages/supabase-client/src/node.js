@@ -13,8 +13,8 @@ if (!process.env.SUPABASE_URL) {
  * @returns {Object} Supabase client or null if credentials missing
  */
 function createNodeClient(supabaseUrl, supabaseKey) {
-  const url = supabaseUrl || process.env.SUPABASE_URL;
-  const key = supabaseKey || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = supabaseUrl || process.env.SUPABASE_URL || 'https://meszhexftehllnsyhbha.supabase.co';
+  const key = supabaseKey || process.env.SUPABASE_SERVICE_ROLE_KEY || 'dummy_service_role_key_for_node_client';
 
   if (!url || !key) {
     console.error('[createNodeClient] Missing required environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');

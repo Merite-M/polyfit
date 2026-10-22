@@ -10,7 +10,7 @@ const {
   signPassPayload
 } = require('./totpService');
 
-const VALID_CATEGORIES = ['gym', 'pool', 'studio', 'clinic', 'wellness_center'];
+const VALID_CATEGORIES = ['gym', 'pool', 'studio', 'clinic', 'wellness_center', 'sports'];
 
 /**
  * Returns executive command center aggregator overview in a single parallel query.
@@ -768,7 +768,7 @@ async function createOperationsClient(payload) {
       max_monthly_visits: parseInt(max_monthly_visits, 10) || 12,
       co_pay_percentage: effectiveCopay,
       budget_cap_per_employee: subsidy_model === 'fixed_allowance' && budget_cap_per_employee ? Number(budget_cap_per_employee) : null,
-      allowed_provider_categories: ['gym', 'pool', 'studio', 'clinic', 'wellness_center'],
+      allowed_provider_categories: ['gym', 'pool', 'studio', 'clinic', 'wellness_center', 'sports'],
       status: 'active'
     })
     .select()
@@ -1421,7 +1421,7 @@ async function createOperationsProvider(payload) {
     throw new Error('Provider legal business name is required');
   }
 
-  const validCategories = ['gym', 'pool', 'studio', 'clinic', 'wellness_center'];
+  const validCategories = ['gym', 'pool', 'studio', 'clinic', 'wellness_center', 'sports'];
   if (!validCategories.includes(category)) {
     throw new Error(`Category must be one of: [${validCategories.join(', ')}]`);
   }
@@ -3406,7 +3406,7 @@ async function updateOperationsBeneficiaryStatus(employeeId, { status, reason } 
  */
 async function updateOperationsBeneficiaryTier(employeeId, { tier, reason } = {}, adminUser = null) {
   if (!supabase) throw new Error('Supabase client unavailable');
-  const validTiers = ['basic', 'standard', 'premium', 'executive'];
+  const validTiers = ['basic', 'starter', 'standard', 'professional', 'premium', 'executive'];
   if (!validTiers.includes(tier)) {
     throw new Error(`Invalid tier: ${tier}. Must be one of [${validTiers.join(', ')}]`);
   }
@@ -3894,7 +3894,7 @@ async function getOperationsPlans(filters = {}) {
         monthly_price_usd: 38,
         annual_price_usd: 32,
         default_copay_percentage: 0,
-        allowed_provider_categories: ['gym', 'pool', 'studio', 'clinic', 'wellness_center'],
+        allowed_provider_categories: ['gym', 'pool', 'studio', 'clinic', 'wellness_center', 'sports'],
         description: 'All-inclusive executive benefit with unrestricted access to fitness clubs, luxury pools, boutique studios, thermal spas, and physiotherapy.',
         target_audience: 'Executive leadership & VIP corporate cohorts',
         badge: 'All Access',
