@@ -152,6 +152,8 @@ export default function SupportOperationsPage() {
   const [settingsSavingKey, setSettingsSavingKey] = useState<string | null>(null);
   const [localSettingsValues, setLocalSettingsValues] = useState<Record<string, any>>({});
   const [settingsSuccessNotice, setSettingsSuccessNotice] = useState<string | null>(null);
+  const [settingsErrorNotice, setSettingsErrorNotice] = useState<string | null>(null);
+  const [teamErrorNotice, setTeamErrorNotice] = useState<string | null>(null);
 
   // Audit Logs State
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
@@ -252,8 +254,10 @@ export default function SupportOperationsPage() {
 
   // Handle setting update
   const handleSaveSetting = async (key: string, value: any) => {
+    setSettingsErrorNotice(null);
     if (!rolePermissions.canUpdateSettings) {
-      alert("Permission Denied: Your current role cannot modify core platform configuration knobs.");
+      setSettingsErrorNotice("Permission Denied: Your current role cannot modify core platform configuration knobs.");
+      setTimeout(() => setSettingsErrorNotice(null), 5000);
       return;
     }
     setSettingsSavingKey(key);
@@ -281,8 +285,10 @@ export default function SupportOperationsPage() {
 
   // Handle Team Role assignment
   const handleAssignRole = async (userId: string, newRole: string) => {
+    setTeamErrorNotice(null);
     if (!rolePermissions.canManageRoles) {
-      alert("Permission Denied: Only Super Admin can change security access roles.");
+      setTeamErrorNotice("Permission Denied: Only Super Admin can change security access roles.");
+      setTimeout(() => setTeamErrorNotice(null), 5000);
       return;
     }
     setUpdatingUserRole(userId);
@@ -745,6 +751,12 @@ export default function SupportOperationsPage() {
                 <span>{settingsSuccessNotice}</span>
               </div>
             )}
+            {settingsErrorNotice && (
+              <div className="px-3 py-1.5 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                <span>{settingsErrorNotice}</span>
+              </div>
+            )}
           </div>
 
           {settingsLoading ? (
@@ -1181,6 +1193,11 @@ export default function SupportOperationsPage() {
               {!rolePermissions.canManageRoles && (
                 <span className="text-[10px] text-amber-400 font-mono">
                   Role modification requires Super Admin privilege
+                </span>
+              )}
+              {teamErrorNotice && (
+                <span className="text-[10px] text-rose-400 font-mono font-bold">
+                  {teamErrorNotice}
                 </span>
               )}
             </div>

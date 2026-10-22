@@ -110,11 +110,7 @@ export function FacilityDetailSheet({
   const handleCheckInHere = () => {
     if (!isIncluded) {
       const msg = `Upgrade Required: ${facility.location_name} is excluded from your current corporate plan tier. Please contact your HR administrator to upgrade your plan.`;
-      if (Platform.OS === 'web') {
-        alert(msg);
-      } else {
-        Alert.alert('Upgrade Required', msg);
-      }
+      Alert.alert('Upgrade Required', msg);
       return;
     }
 

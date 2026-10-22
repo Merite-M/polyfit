@@ -108,11 +108,7 @@ export const FacilityCard = memo(function FacilityCard({
     e.stopPropagation();
     if (!isIncluded) {
       const msg = `Upgrade Required: ${facility.location_name} is excluded from your active corporate plan tier. Contact HR to upgrade your plan.`;
-      if (Platform.OS === 'web') {
-        alert(msg);
-      } else {
-        Alert.alert('Upgrade Required', msg);
-      }
+      Alert.alert('Upgrade Required', msg);
       return;
     }
     if (onQuickCheckIn) {
