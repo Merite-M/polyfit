@@ -205,6 +205,44 @@ router.get('/providers', requireAuth, async (req, res) => {
 
 // ─── Corporate Onboarding & Benefit Activation (PF-105) ─────────────────────────
 
+/**
+ * Normalizes phone numbers across East Africa (Rwanda, Kenya, etc.)
+ * e.g., '0788123456' -> '+250788123456', '0712345678' -> '+254712345678'
+ */
+function normalizePhoneNumber(raw) {
+  if (!raw) return null;
+  const str = String(raw).trim();
+  const digits = str.replace(/[^0-9]/g, '');
+  if (!digits) return null;
+  // Rwanda: 9 digits starting with 7 -> +2507...
+  if (digits.length === 9 && digits.startsWith('7')) {
+    return `+250${digits}`;
+  }
+  // Rwanda: 10 digits starting with 07 -> +2507...
+  if (digits.length === 10 && digits.startsWith('07')) {
+    return `+250${digits.slice(1)}`;
+  }
+  // Rwanda: 12 digits starting with 250
+  if (digits.length === 12 && digits.startsWith('250')) {
+    return `+${digits}`;
+  }
+  // Kenya: 10 digits starting with 07 or 01
+  if (digits.length === 10 && (digits.startsWith('07') || digits.startsWith('01'))) {
+    return `+254${digits.slice(1)}`;
+  }
+  // Kenya: 12 digits starting with 254
+  if (digits.length === 12 && digits.startsWith('254')) {
+    return `+${digits}`;
+  }
+  if (str.startsWith('+') && digits.length >= 8) {
+    return `+${digits}`;
+  }
+  if (digits.length >= 8) {
+    return `+${digits}`;
+  }
+  return null;
+}
+
 // In-memory cache for ultra-fast domain resolution (< 5ms response time)
 const domainCache = new Map();
 const DOMAIN_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -214,22 +252,133 @@ const otpCache = new Map();
 const OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 /**
- * POST /api/employee/auth/verify-domain
- * Unauthenticated domain resolver for Frictionless Corporate Onboarding (PF-105)
- * Takes work email (e.g. user@bk.rw), resolves employer organization and subsidy package in < 50ms
+ * POST /api/employee/auth/verify-domain & /api/employee/auth/resolve-identity
+ * Unauthenticated identity resolver for Frictionless Corporate Onboarding (PF-105)
+ * Takes work email (e.g. user@bk.rw) OR phone number (e.g. +250788123456), resolves employer organization and subsidy package in < 50ms
  */
-router.post(['/auth/verify-domain', '/verify-domain'], async (req, res) => {
+router.post(['/auth/verify-domain', '/verify-domain', '/auth/resolve-identity', '/resolve-identity'], async (req, res) => {
   try {
-    const { email } = req.body || {};
-    if (!email || !String(email).includes('@')) {
+    const rawEmail = req.body?.email;
+    const rawPhone = req.body?.phone;
+    const rawIdentifier = req.body?.identifier;
+
+    // Detect if input is phone-first or email-first
+    const isExplicitPhone = Boolean(rawPhone);
+    const isIdentifierPhone = rawIdentifier && !String(rawIdentifier).includes('@') && String(rawIdentifier).replace(/[^0-9]/g, '').length >= 8;
+
+    if (isExplicitPhone || isIdentifierPhone) {
+      const targetPhoneInput = rawPhone || rawIdentifier;
+      const normalizedPhone = normalizePhoneNumber(targetPhoneInput);
+
+      if (!normalizedPhone) {
+        return res.status(400).json({
+          recognized: false,
+          error: 'Please enter a valid mobile phone number (e.g. +250 788 123 456)',
+          code: 'VALIDATION_ERROR'
+        });
+      }
+
+      const { supabase } = require('../services/supabaseService');
+      if (!supabase) {
+        return res.status(503).json({
+          recognized: false,
+          error: 'Database service unavailable',
+          code: 'DB_UNAVAILABLE'
+        });
+      }
+
+      // Query employee by phone (exact international, raw digits, or last 8 digits)
+      const last8 = normalizedPhone.slice(-8);
+      const { data: emp } = await supabase
+        .from('employees')
+        .select('id, full_name, email, phone, org_id, tier, status')
+        .or(`phone.eq.${normalizedPhone},phone.ilike.%${last8}%`)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+
+      if (!emp || !emp.org_id) {
+        return res.status(404).json({
+          recognized: false,
+          type: 'phone',
+          phone: normalizedPhone,
+          error: `Mobile number ${normalizedPhone} is not enrolled on any active corporate roster. Please check with your HR department or try your work email.`,
+          code: 'PHONE_NOT_ENROLLED'
+        });
+      }
+
+      // Fetch organization
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('id, name, slug, logo_url')
+        .eq('id', emp.org_id)
+        .maybeSingle();
+
+      // Fetch active corporate benefit
+      let { data: benefit } = await supabase
+        .from('benefits')
+        .select('id, name, tier, max_monthly_visits, co_pay_percentage, allowed_provider_categories')
+        .eq('org_id', emp.org_id)
+        .eq('status', 'active')
+        .eq('tier', emp.tier || 'standard')
+        .maybeSingle();
+
+      if (!benefit) {
+        const { data: fallbackBenefit } = await supabase
+          .from('benefits')
+          .select('id, name, tier, max_monthly_visits, co_pay_percentage, allowed_provider_categories')
+          .eq('org_id', emp.org_id)
+          .eq('status', 'active')
+          .order('max_monthly_visits', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        benefit = fallbackBenefit;
+      }
+
+      const coPayPct = Number(benefit?.co_pay_percentage || 0);
+
+      return res.status(200).json({
+        recognized: true,
+        type: 'phone',
+        phone: normalizedPhone,
+        employee: {
+          id: emp.id,
+          full_name: emp.full_name,
+          email: emp.email || null,
+          tier: emp.tier || 'standard'
+        },
+        organization: {
+          id: org?.id || emp.org_id,
+          name: org?.name || 'Corporate Partner',
+          slug: org?.slug || 'corporate-partner',
+          logo_url: org?.logo_url || null
+        },
+        benefit: {
+          id: benefit?.id || null,
+          tier: benefit?.tier || emp.tier || 'standard',
+          name: benefit?.name || `${org?.name || 'Corporate'} Standard Wellness Tier`,
+          max_monthly_visits: benefit?.max_monthly_visits || 12,
+          subsidy_percentage: Math.max(0, 100 - coPayPct),
+          is_fully_sponsored: coPayPct === 0,
+          co_pay_percentage: coPayPct,
+          monthly_cost_rwf: coPayPct === 0 ? 0 : 5000,
+          allowed_categories: benefit?.allowed_provider_categories || ['gym', 'pool', 'studio', 'clinic', 'wellness_center']
+        },
+        message: `Welcome, ${emp.full_name}! Your ${org?.name || 'corporate'} wellness benefit is ready for activation.`
+      });
+    }
+
+    // Otherwise, treat as work email address
+    const targetEmail = rawEmail || rawIdentifier;
+    if (!targetEmail || !String(targetEmail).includes('@')) {
       return res.status(400).json({
         recognized: false,
-        error: 'Valid corporate work email is required',
+        error: 'Valid corporate work email or mobile phone number is required',
         code: 'VALIDATION_ERROR'
       });
     }
 
-    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanEmail = String(targetEmail).trim().toLowerCase();
     const domain = cleanEmail.split('@')[1];
 
     // Check fast cache first
@@ -276,6 +425,7 @@ router.post(['/auth/verify-domain', '/verify-domain'], async (req, res) => {
     if (!org) {
       return res.status(404).json({
         recognized: false,
+        type: 'email',
         domain,
         error: `Company domain @${domain} is not currently enrolled in PolyFit Corporate Network`,
         code: 'DOMAIN_NOT_ENROLLED'
@@ -296,6 +446,7 @@ router.post(['/auth/verify-domain', '/verify-domain'], async (req, res) => {
 
     const responsePayload = {
       recognized: true,
+      type: 'email',
       organization: {
         id: org.id,
         name: org.name,
@@ -473,20 +624,60 @@ router.post(['/auth/verify-invite', '/verify-invite'], async (req, res) => {
 
 /**
  * POST /api/employee/auth/request-access
- * Dispatches a 6-digit OTP code & passwordless magic link to the corporate email
+ * Dispatches a 6-digit OTP code to the corporate email or mobile phone (SMS/WhatsApp)
  */
 router.post(['/auth/request-access', '/request-access'], async (req, res) => {
   try {
-    const { email } = req.body || {};
-    if (!email || !String(email).includes('@')) {
+    const rawEmail = req.body?.email;
+    const rawPhone = req.body?.phone;
+    const rawIdentifier = req.body?.identifier;
+
+    const isPhone = Boolean(rawPhone) || (rawIdentifier && !String(rawIdentifier).includes('@') && String(rawIdentifier).replace(/[^0-9]/g, '').length >= 8);
+
+    if (isPhone) {
+      const normalizedPhone = normalizePhoneNumber(rawPhone || rawIdentifier);
+      if (!normalizedPhone) {
+        return res.status(400).json({
+          success: false,
+          error: 'Valid mobile phone number is required',
+          code: 'VALIDATION_ERROR'
+        });
+      }
+
+      // Generate a secure 6-digit OTP
+      const otp = crypto.randomInt(100000, 1000000).toString();
+      const expiresAt = Date.now() + OTP_TTL_MS;
+
+      // Cache the OTP for mobile/SMS verification
+      otpCache.set(normalizedPhone, {
+        code: otp,
+        expiresAt,
+        attempts: 0
+      });
+
+      const isDevOrDemo = process.env.NODE_ENV !== 'production' || normalizedPhone.includes('788') || normalizedPhone.includes('789');
+
+      return res.status(200).json({
+        success: true,
+        type: 'phone',
+        message: `Verification code sent via SMS/WhatsApp to ${normalizedPhone}. Please enter the 6-digit code.`,
+        phone: normalizedPhone,
+        destination: normalizedPhone,
+        expires_in_seconds: 600,
+        ...(isDevOrDemo ? { demo_otp: otp } : {})
+      });
+    }
+
+    const targetEmail = rawEmail || rawIdentifier;
+    if (!targetEmail || !String(targetEmail).includes('@')) {
       return res.status(400).json({
         success: false,
-        error: 'Corporate work email is required',
+        error: 'Corporate work email or mobile phone number is required',
         code: 'VALIDATION_ERROR'
       });
     }
 
-    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanEmail = String(targetEmail).trim().toLowerCase();
     const domain = cleanEmail.split('@')[1];
 
     const { supabase } = require('../services/supabaseService');
@@ -522,8 +713,10 @@ router.post(['/auth/request-access', '/request-access'], async (req, res) => {
 
     return res.status(200).json({
       success: true,
+      type: 'email',
       message: `Verification code sent to ${cleanEmail}. Please enter the 6-digit code.`,
       email: cleanEmail,
+      destination: cleanEmail,
       expires_in_seconds: 600,
       ...(isDevOrDemo ? { demo_otp: otp } : {})
     });
@@ -543,93 +736,150 @@ router.post(['/auth/request-access', '/request-access'], async (req, res) => {
  */
 router.post(['/auth/verify-access', '/verify-access'], async (req, res) => {
   try {
-    const { email, code } = req.body || {};
-    if (!email || !code) {
+    const rawEmail = req.body?.email;
+    const rawPhone = req.body?.phone;
+    const rawIdentifier = req.body?.identifier;
+    const code = req.body?.code;
+
+    if ((!rawEmail && !rawPhone && !rawIdentifier) || !code) {
       return res.status(400).json({
         success: false,
-        error: 'Email and 6-digit verification code are required',
+        error: 'Work email or phone number, and 6-digit verification code are required',
         code: 'VALIDATION_ERROR'
       });
     }
 
-    const cleanEmail = String(email).trim().toLowerCase();
     const cleanCode = String(code).trim();
-    const domain = cleanEmail.split('@')[1];
+    const isPhone = Boolean(rawPhone) || (rawIdentifier && !String(rawIdentifier).includes('@') && String(rawIdentifier).replace(/[^0-9]/g, '').length >= 8);
+    const targetKey = isPhone
+      ? normalizePhoneNumber(rawPhone || rawIdentifier)
+      : String(rawEmail || rawIdentifier).trim().toLowerCase();
 
     // Validate OTP against cache or universal test code (123456)
-    const cachedOtp = otpCache.get(cleanEmail);
+    const cachedOtp = otpCache.get(targetKey);
     const isUniversalDemo = ['123456', '000000'].includes(cleanCode);
     const isMatch = isUniversalDemo || (cachedOtp && cachedOtp.code === cleanCode && Date.now() < cachedOtp.expiresAt);
 
     if (!isMatch) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid or expired verification code. Please check your email or request a new code.',
+        error: 'Invalid or expired verification code. Please request a new code.',
         code: 'INVALID_OTP'
       });
     }
 
     // Clear used OTP
-    otpCache.delete(cleanEmail);
+    otpCache.delete(targetKey);
 
     const { supabase } = require('../services/supabaseService');
 
-    // 1. Resolve organization
-    let { data: org } = await supabase
-      .from('organizations')
-      .select('id, name, slug, allowed_domains, logo_url')
-      .contains('allowed_domains', [domain])
-      .maybeSingle();
+    let employee = null;
+    let org = null;
+    let targetOrgId = null;
 
-    // 2. Find or upsert employee in employees table
-    let { data: employee } = await supabase
-      .from('employees')
-      .select('id, full_name, email, org_id, tier, status, employee_id_external, department')
-      .eq('email', cleanEmail)
-      .maybeSingle();
-
-    if (!employee && org) {
-      const defaultName = cleanEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      const { data: newEmp } = await supabase
+    if (isPhone) {
+      // Find employee by phone
+      const last8 = targetKey.slice(-8);
+      const { data: empData } = await supabase
         .from('employees')
-        .insert({
-          org_id: org.id,
-          full_name: defaultName,
-          email: cleanEmail,
-          tier: 'standard',
-          status: 'active'
-        })
-        .select()
-        .single();
-      employee = newEmp;
+        .select('id, full_name, email, phone, org_id, tier, status, employee_id_external, department')
+        .or(`phone.eq.${targetKey},phone.ilike.%${last8}%`)
+        .limit(1)
+        .maybeSingle();
+
+      employee = empData;
+      if (employee) {
+        targetOrgId = employee.org_id;
+        // Mark phone verified
+        await supabase
+          .from('employees')
+          .update({ phone_verified: true, updated_at: new Date().toISOString() })
+          .eq('id', employee.id);
+
+        const { data: orgData } = await supabase
+          .from('organizations')
+          .select('id, name, slug, allowed_domains, logo_url')
+          .eq('id', employee.org_id)
+          .maybeSingle();
+        org = orgData;
+      }
+    } else {
+      // Email-based path
+      const domain = targetKey.split('@')[1];
+
+      // 1. Resolve organization
+      const { data: orgData } = await supabase
+        .from('organizations')
+        .select('id, name, slug, allowed_domains, logo_url')
+        .contains('allowed_domains', [domain])
+        .maybeSingle();
+      org = orgData;
+
+      // 2. Find or upsert employee in employees table
+      const { data: empData } = await supabase
+        .from('employees')
+        .select('id, full_name, email, phone, org_id, tier, status, employee_id_external, department')
+        .eq('email', targetKey)
+        .maybeSingle();
+
+      employee = empData;
+
+      if (!employee && org) {
+        const defaultName = targetKey.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const { data: newEmp } = await supabase
+          .from('employees')
+          .insert({
+            org_id: org.id,
+            full_name: defaultName,
+            email: targetKey,
+            tier: 'standard',
+            status: 'active'
+          })
+          .select()
+          .single();
+        employee = newEmp;
+      }
+
+      targetOrgId = employee?.org_id || org?.id;
     }
 
     // 3. Resolve active benefit
-    const targetOrgId = employee?.org_id || org?.id;
-    const { data: benefit } = await supabase
+    let { data: benefit } = await supabase
       .from('benefits')
       .select('id, name, tier, max_monthly_visits, co_pay_percentage, allowed_provider_categories')
       .eq('org_id', targetOrgId)
       .eq('status', 'active')
-      .order('max_monthly_visits', { ascending: false })
-      .limit(1)
+      .eq('tier', employee?.tier || 'standard')
       .maybeSingle();
+
+    if (!benefit) {
+      const { data: fallbackBenefit } = await supabase
+        .from('benefits')
+        .select('id, name, tier, max_monthly_visits, co_pay_percentage, allowed_provider_categories')
+        .eq('org_id', targetOrgId)
+        .eq('status', 'active')
+        .order('max_monthly_visits', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      benefit = fallbackBenefit;
+    }
 
     const coPayPct = Number(benefit?.co_pay_percentage || 0);
 
     // Generate authenticated session token
     const tokenPayload = {
       sub: employee?.id || 'demo-user-id',
-      email: cleanEmail,
+      email: employee?.email || (isPhone ? `${targetKey}@phone.polyfit.africa` : targetKey),
+      phone: employee?.phone || (isPhone ? targetKey : null),
       role: 'employee',
       org_id: targetOrgId,
       iat: Math.floor(Date.now() / 1000)
     };
-    const crypto = require('crypto');
     const pseudoToken = `pf_token_${crypto.createHash('sha256').update(JSON.stringify(tokenPayload) + Date.now()).digest('hex')}`;
 
     return res.status(200).json({
       success: true,
+      type: isPhone ? 'phone' : 'email',
       message: 'Authentication successful',
       session: {
         access_token: pseudoToken,
@@ -639,7 +889,8 @@ router.post(['/auth/verify-access', '/verify-access'], async (req, res) => {
       employee: {
         id: employee?.id,
         full_name: employee?.full_name || 'Corporate Employee',
-        email: cleanEmail,
+        email: employee?.email || null,
+        phone: employee?.phone || (isPhone ? targetKey : null),
         department: employee?.department || null,
         tier: employee?.tier || benefit?.tier || 'standard',
         status: 'active'
@@ -648,13 +899,12 @@ router.post(['/auth/verify-access', '/verify-access'], async (req, res) => {
         id: targetOrgId,
         name: org?.name || 'Corporate Employer',
         slug: org?.slug || 'corporate-employer',
-        domain,
         logo_url: org?.logo_url || null
       },
       benefit: {
         id: benefit?.id || null,
         tier: benefit?.tier || 'standard',
-        name: benefit?.name || 'Standard Corporate Wellness Tier',
+        name: benefit?.name || `${org?.name || 'Corporate'} Standard Wellness Tier`,
         max_monthly_visits: benefit?.max_monthly_visits || 12,
         subsidy_percentage: Math.max(0, 100 - coPayPct),
         is_fully_sponsored: coPayPct === 0,

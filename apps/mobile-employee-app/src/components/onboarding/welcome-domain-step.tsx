@@ -1,7 +1,7 @@
 /**
- * PolyFit Corporate Employee App - Step 1: Welcome & Domain Recognition
+ * PolyFit Corporate Employee App - Step 1: Welcome & Omnichannel Recognition
  * PF-105: Frictionless Corporate Employee Onboarding & Benefit Activation
- * Compliant with expo-native-ui, expo-animation, and vercel-react-native-skills
+ * Powered by Expo 57: expo-haptics, expo-image, reanimated spring physics
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -16,30 +16,36 @@ import {
   Animated,
   Platform,
 } from 'react-native';
-import { Mail, KeyRound, Building2, Check, Sparkles, ArrowRight } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
+import { Image as ExpoImage } from 'expo-image';
+import { Mail, Phone, KeyRound, Building2, Check, Sparkles, ArrowRight, UserCheck } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth-store';
 import { Palette, Radius, Spacing, Fonts } from '@/constants/theme';
 import { PolyFitLogo } from '@/components/common/polyfit-logo';
 
 export const WelcomeDomainStep: React.FC = () => {
   const {
+    identifier,
     email,
+    phone,
+    authIdentifierType,
     inviteCode,
     authMethod,
     organization,
     benefit,
+    employee,
     isLoading,
     error,
-    setEmail,
+    setIdentifier,
     setInviteCode,
     setAuthMethod,
-    resolveEmailDomain,
+    resolveIdentity,
     resolveInviteToken,
     submitRequestAccess,
     loadDemoAccount,
   } = useAuthStore();
 
-  const [inputEmail, setInputEmail] = useState(email);
+  const [inputVal, setInputVal] = useState(identifier || email || phone || '');
   const [inputCode, setInputCode] = useState(inviteCode);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -49,6 +55,9 @@ export const WelcomeDomainStep: React.FC = () => {
 
   useEffect(() => {
     if (organization) {
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      }
       Animated.parallel([
         Animated.spring(cardScale, {
           toValue: 1,
@@ -68,17 +77,21 @@ export const WelcomeDomainStep: React.FC = () => {
     }
   }, [organization]);
 
-  const handleEmailChange = (text: string) => {
-    setInputEmail(text);
-    setEmail(text);
+  const handleInputChange = (text: string) => {
+    setInputVal(text);
+    setIdentifier(text);
 
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
 
-    if (text.includes('@') && text.split('@')[1]?.includes('.')) {
+    const clean = text.trim();
+    const isEmail = clean.includes('@') && clean.split('@')[1]?.includes('.');
+    const isPhone = !clean.includes('@') && clean.replace(/[^0-9]/g, '').length >= 8;
+
+    if (isEmail || isPhone) {
       debounceTimer.current = setTimeout(() => {
-        resolveEmailDomain(text);
+        resolveIdentity(clean);
       }, 350);
     }
   };
@@ -93,9 +106,13 @@ export const WelcomeDomainStep: React.FC = () => {
   };
 
   const handleContinue = async () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    }
+
     if (authMethod === 'email') {
       if (!organization) {
-        const resolved = await resolveEmailDomain(inputEmail);
+        const resolved = await resolveIdentity(inputVal);
         if (!resolved) return;
       }
       await submitRequestAccess();
@@ -109,167 +126,211 @@ export const WelcomeDomainStep: React.FC = () => {
   };
 
   const isEmailMode = authMethod === 'email';
-  const hasValue = isEmailMode ? inputEmail.length > 0 : inputCode.length > 0;
+  const hasValue = isEmailMode ? inputVal.trim().length > 0 : inputCode.trim().length > 0;
+  const isPhoneInput = isEmailMode && !inputVal.includes('@') && inputVal.replace(/[^0-9]/g, '').length >= 3;
 
   return (
     <View style={styles.screenContainer}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         {/* Top Header & Progress Stepper */}
-      <View style={styles.topBar}>
-        <PolyFitLogo size={32} showWordmark theme="dark" />
+        <View style={styles.topBar}>
+          <PolyFitLogo size={32} showWordmark theme="dark" />
 
-        {/* Step Progress Pills */}
-        <View style={styles.stepperContainer}>
-          <View style={[styles.stepPill, styles.stepPillActive]} />
-          <View style={styles.stepPill} />
-          <View style={styles.stepPill} />
-        </View>
-      </View>
-
-      {/* Main Content Area */}
-      <View style={styles.contentBody}>
-        {/* Title & Microcopy */}
-        <View style={styles.headerBlock}>
-          <Text style={styles.screenTitle}>
-            {isEmailMode ? "What's your work email?" : 'Enter Staff ID or Code'}
-          </Text>
-          <Text style={styles.screenSubtitle}>
-            {isEmailMode
-              ? "We'll instantly unlock your company's subsidized wellness benefit."
-              : 'Enter the Staff ID from your employee badge (e.g. BK-8821) or web activation code.'}
-          </Text>
+          {/* Step Progress Pills */}
+          <View style={styles.stepperContainer}>
+            <View style={[styles.stepPill, styles.stepPillActive]} />
+            <View style={styles.stepPill} />
+            <View style={styles.stepPill} />
+          </View>
         </View>
 
-        {/* Input Card Container */}
-        <View style={styles.inputCard}>
-          <View style={styles.inputWrapper}>
-            {isEmailMode ? (
-              <Mail size={20} color={organization ? Palette.green : Palette.textMuted} />
-            ) : (
-              <KeyRound size={20} color={organization ? Palette.green : Palette.textMuted} />
+        {/* Main Content Area */}
+        <View style={styles.contentBody}>
+          {/* Title & Microcopy */}
+          <View style={styles.headerBlock}>
+            <Text style={styles.screenTitle}>
+              {isEmailMode ? 'Enter your work email or phone' : 'Enter Staff ID or Code'}
+            </Text>
+            <Text style={styles.screenSubtitle}>
+              {isEmailMode
+                ? "We'll instantly match your company's subsidized corporate wellness benefit."
+                : 'Enter the Staff ID from your employee badge (e.g. BK-8821) or web activation code.'}
+            </Text>
+          </View>
+
+          {/* Input Card Container */}
+          <View style={styles.inputCard}>
+            <View style={styles.inputWrapper}>
+              {isEmailMode ? (
+                isPhoneInput ? (
+                  <Phone size={20} color={organization ? Palette.green : Palette.textMuted} />
+                ) : (
+                  <Mail size={20} color={organization ? Palette.green : Palette.textMuted} />
+                )
+              ) : (
+                <KeyRound size={20} color={organization ? Palette.green : Palette.textMuted} />
+              )}
+
+              <TextInput
+                style={styles.textInput}
+                placeholder={isEmailMode ? 'e.g. claire@bk.rw or +250 788 123 456' : 'e.g. BK-8821 or 6-digit code'}
+                placeholderTextColor={Palette.textMuted}
+                value={isEmailMode ? inputVal : inputCode}
+                onChangeText={isEmailMode ? handleInputChange : handleCodeChange}
+                autoCapitalize={isEmailMode ? 'none' : 'characters'}
+                autoCorrect={false}
+                keyboardType={isEmailMode ? (isPhoneInput ? 'phone-pad' : 'email-address') : 'default'}
+                returnKeyType="done"
+                onSubmitEditing={handleContinue}
+              />
+
+              {organization && (
+                <View style={styles.verifiedBadge}>
+                  <Check size={14} color={Palette.green} />
+                  <Text style={styles.verifiedText}>Enrolled</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Error Message */}
+            {error && (
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorBannerText}>{error}</Text>
+              </View>
             )}
 
-            <TextInput
-              style={styles.textInput}
-              placeholder={isEmailMode ? 'e.g. jean.mugisha@bk.rw' : 'e.g. BK-8821 or 6-digit code'}
-              placeholderTextColor={Palette.textMuted}
-              value={isEmailMode ? inputEmail : inputCode}
-              onChangeText={isEmailMode ? handleEmailChange : handleCodeChange}
-              autoCapitalize={isEmailMode ? 'none' : 'characters'}
-              autoCorrect={false}
-              keyboardType={isEmailMode ? 'email-address' : 'default'}
-              returnKeyType="done"
-              onSubmitEditing={handleContinue}
-            />
-
+            {/* Employer Recognized Card (Springs into view with Expo Image) */}
             {organization && (
-              <View style={styles.verifiedBadge}>
-                <Check size={14} color={Palette.green} />
-                <Text style={styles.verifiedText}>Enrolled</Text>
-              </View>
+              <Animated.View
+                style={[
+                  styles.recognizedEmployerCard,
+                  {
+                    opacity: cardOpacity,
+                    transform: [{ scale: cardScale }],
+                  },
+                ]}
+              >
+                {organization.logo_url ? (
+                  <ExpoImage
+                    source={{ uri: organization.logo_url }}
+                    style={styles.employerLogoImage}
+                    contentFit="contain"
+                    transition={200}
+                  />
+                ) : (
+                  <View style={styles.employerIconBadge}>
+                    <Building2 size={20} color={Palette.green} />
+                  </View>
+                )}
+
+                <View style={styles.employerDetails}>
+                  <Text style={styles.employerName}>
+                    {employee?.full_name ? `${employee.full_name} (${organization.name})` : organization.name}
+                  </Text>
+                  <View style={styles.subsidyRow}>
+                    <Sparkles size={12} color={Palette.teal} />
+                    <Text style={styles.subsidyHighlight}>
+                      {benefit?.is_fully_sponsored
+                        ? '100% Employer Funded Benefit'
+                        : `${benefit?.subsidy_percentage}% Corporate Subsidy`}
+                    </Text>
+                  </View>
+                </View>
+              </Animated.View>
             )}
           </View>
 
-          {/* Error Message */}
-          {error && (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorBannerText}>{error}</Text>
-            </View>
-          )}
+          {/* Pathway Switcher Text Link */}
+          <Pressable
+            style={styles.switchPathwayButton}
+            onPress={() => {
+              if (Platform.OS !== 'web') {
+                Haptics.selectionAsync().catch(() => {});
+              }
+              const nextMode = isEmailMode ? 'invite' : 'email';
+              setAuthMethod(nextMode);
+            }}
+          >
+            <Text style={styles.switchPathwayText}>
+              {isEmailMode
+                ? 'Have a Staff ID or Activation Code instead? →'
+                : 'Use work email or mobile number instead →'}
+            </Text>
+          </Pressable>
+        </View>
 
-          {/* Employer Recognized Card (Springs into view) */}
-          {organization && (
-            <Animated.View
-              style={[
-                styles.recognizedEmployerCard,
-                {
-                  opacity: cardOpacity,
-                  transform: [{ scale: cardScale }],
-                },
-              ]}
+        {/* Bottom Pinned Action Bar */}
+        <View style={styles.bottomBar}>
+          {/* Quick Demo Pre-sets */}
+          <View style={styles.demoPresetContainer}>
+            <Text style={styles.demoLabel}>QUICK TEST ROSTER:</Text>
+            <Pressable
+              style={({ pressed }) => [styles.demoChip, pressed && { opacity: 0.7 }]}
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                }
+                setInputVal('+250788123456');
+                setIdentifier('+250788123456');
+                resolveIdentity('+250788123456');
+              }}
             >
-              <View style={styles.employerIconBadge}>
-                <Building2 size={20} color={Palette.green} />
-              </View>
-              <View style={styles.employerDetails}>
-                <Text style={styles.employerName}>{organization.name}</Text>
-                <View style={styles.subsidyRow}>
-                  <Sparkles size={12} color={Palette.teal} />
-                  <Text style={styles.subsidyHighlight}>
-                    {benefit?.is_fully_sponsored
-                      ? '100% Covered by Employer'
-                      : `${benefit?.subsidy_percentage}% Corporate Subsidy`}
-                  </Text>
-                </View>
-              </View>
-            </Animated.View>
-          )}
-        </View>
+              <Text style={styles.demoChipText}>BK (Phone)</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.demoChip, pressed && { opacity: 0.7 }]}
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                }
+                setInputVal('jean.mugisha@bk.rw');
+                setIdentifier('jean.mugisha@bk.rw');
+                resolveIdentity('jean.mugisha@bk.rw');
+              }}
+            >
+              <Text style={styles.demoChipText}>BK (Email)</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.demoChip, pressed && { opacity: 0.7 }]}
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                }
+                setInputVal('diane@techcorp.rw');
+                setIdentifier('diane@techcorp.rw');
+                resolveIdentity('diane@techcorp.rw');
+              }}
+            >
+              <Text style={styles.demoChipText}>TechCorp</Text>
+            </Pressable>
+          </View>
 
-        {/* Pathway Switcher Text Link */}
-        <Pressable
-          style={styles.switchPathwayButton}
-          onPress={() => {
-            const nextMode = isEmailMode ? 'invite' : 'email';
-            setAuthMethod(nextMode);
-          }}
-        >
-          <Text style={styles.switchPathwayText}>
-            {isEmailMode
-              ? 'Have a Staff ID or Activation Code instead? →'
-              : 'Use company email address instead →'}
-          </Text>
-        </Pressable>
-      </View>
-
-      {/* Bottom Pinned Action Bar */}
-      <View style={styles.bottomBar}>
-        {/* Quick Demo Pre-sets */}
-        <View style={styles.demoPresetContainer}>
-          <Text style={styles.demoLabel}>DEMO ROSTERS:</Text>
+          {/* Primary Action Button */}
           <Pressable
             style={({ pressed }) => [
-              styles.demoChip,
-              pressed && { opacity: 0.7 },
+              styles.continueButton,
+              !hasValue && styles.continueButtonDisabled,
+              pressed && hasValue && { transform: [{ scale: 0.98 }] },
             ]}
-            onPress={() => loadDemoAccount('bk')}
+            onPress={handleContinue}
+            disabled={isLoading || !hasValue}
           >
-            <Text style={styles.demoChipText}>Bank of Kigali</Text>
+            {isLoading ? (
+              <ActivityIndicator color="#0B1F33" />
+            ) : (
+              <View style={styles.continueButtonContent}>
+                <Text style={styles.continueButtonText}>
+                  {organization ? 'Continue to Verification' : 'Check My Benefit'}
+                </Text>
+                <ArrowRight size={18} color="#0B1F33" />
+              </View>
+            )}
           </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.demoChip,
-              pressed && { opacity: 0.7 },
-            ]}
-            onPress={() => loadDemoAccount('techcorp')}
-          >
-            <Text style={styles.demoChipText}>TechCorp</Text>
-          </Pressable>
-        </View>
-
-        {/* Primary Action Button */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.continueButton,
-            !hasValue && styles.continueButtonDisabled,
-            pressed && hasValue && { transform: [{ scale: 0.98 }] },
-          ]}
-          onPress={handleContinue}
-          disabled={isLoading || !hasValue}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#0B1F33" />
-          ) : (
-            <View style={styles.continueButtonContent}>
-              <Text style={styles.continueButtonText}>
-                {organization ? 'Continue to Verification' : 'Check My Benefit'}
-              </Text>
-              <ArrowRight size={18} color="#0B1F33" />
-            </View>
-          )}
-        </Pressable>
         </View>
       </ScrollView>
     </View>
@@ -417,6 +478,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(40, 209, 124, 0.3)',
     marginTop: 4,
+  },
+  employerLogoImage: {
+    width: 38,
+    height: 38,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
   },
   employerIconBadge: {
     width: 38,

@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { supabase } = require('./supabaseService');
+const { normalizePhoneNumber } = require('@polyfit/shared-utils');
 
 const VALID_TIERS = ['basic', 'standard', 'premium', 'executive'];
 const VALID_STATUSES = ['active', 'frozen', 'terminated'];
@@ -73,6 +74,8 @@ function parseCsv(csvText) {
       headerMap[idx] = 'last_name';
     } else if (clean === 'email' || clean === 'workemail' || clean === 'emailaddress') {
       headerMap[idx] = 'email';
+    } else if (clean === 'phone' || clean === 'phonenumber' || clean === 'mobile' || clean === 'telephone' || clean === 'contact' || clean === 'whatsapp') {
+      headerMap[idx] = 'phone';
     } else if (clean === 'employeeid' || clean === 'employeeidexternal' || clean === 'staffid' || clean === 'id') {
       headerMap[idx] = 'employee_id_external';
     } else if (clean === 'department' || clean === 'dept' || clean === 'team') {
@@ -90,6 +93,7 @@ function parseCsv(csvText) {
     const item = {
       full_name: '',
       email: '',
+      phone: null,
       employee_id_external: null,
       department: null,
       tier: 'standard',
@@ -114,6 +118,9 @@ function parseCsv(csvText) {
           item[field] = VALID_STATUSES.includes(lower) ? lower : 'active';
         } else if (field === 'email') {
           item[field] = (val || '').toLowerCase().trim();
+        } else if (field === 'phone') {
+          const rawPh = (val || '').trim();
+          item[field] = rawPh ? (normalizePhoneNumber(rawPh) || rawPh) : null;
         } else {
           item[field] = (val || '').trim() || null;
         }
@@ -124,7 +131,7 @@ function parseCsv(csvText) {
       item.full_name = `${firstName} ${lastName}`.trim();
     }
 
-    if (item.email || item.full_name) {
+    if (item.email || item.phone || item.full_name) {
       parsedRows.push(item);
     }
   }
@@ -137,7 +144,8 @@ function parseCsv(csvText) {
  */
 async function createSingleEmployee(orgId, {
   full_name,
-  email,
+  email = null,
+  phone = null,
   employee_id_external = null,
   department = null,
   tier = 'standard',
@@ -151,9 +159,15 @@ async function createSingleEmployee(orgId, {
     throw { status: 400, message: 'full_name is required', code: 'EMPLOYEE_MISSING_NAME' };
   }
 
-  const cleanEmail = (email || '').toLowerCase().trim();
-  if (!cleanEmail || !EMAIL_REGEX.test(cleanEmail)) {
+  const cleanEmail = email ? String(email).toLowerCase().trim() : null;
+  const cleanPhone = phone ? (normalizePhoneNumber(phone) || String(phone).trim()) : null;
+
+  if (cleanEmail && !EMAIL_REGEX.test(cleanEmail)) {
     throw { status: 400, message: 'A valid email address is required', code: 'EMPLOYEE_INVALID_EMAIL' };
+  }
+
+  if (!cleanEmail && !cleanPhone) {
+    throw { status: 400, message: 'Either a valid work email or a mobile phone number is required', code: 'EMPLOYEE_MISSING_CONTACT' };
   }
 
   const cleanTier = (tier || 'standard').toLowerCase().trim();
@@ -175,20 +189,42 @@ async function createSingleEmployee(orgId, {
   }
 
   // Check duplicate email in this org
-  const { data: existingEmp } = await supabase
-    .from('employees')
-    .select('id, email, status')
-    .eq('org_id', orgId)
-    .eq('email', cleanEmail)
-    .maybeSingle();
+  if (cleanEmail) {
+    const { data: existingEmp } = await supabase
+      .from('employees')
+      .select('id, email, status')
+      .eq('org_id', orgId)
+      .eq('email', cleanEmail)
+      .maybeSingle();
 
-  if (existingEmp) {
-    throw {
-      status: 409,
-      message: `Employee with email '${cleanEmail}' already exists in this organization`,
-      code: 'EMPLOYEE_DUPLICATE_EMAIL',
-      existingId: existingEmp.id
-    };
+    if (existingEmp) {
+      throw {
+        status: 409,
+        message: `Employee with email '${cleanEmail}' already exists in this organization`,
+        code: 'EMPLOYEE_DUPLICATE_EMAIL',
+        existingId: existingEmp.id
+      };
+    }
+  }
+
+  // Check duplicate phone in this org
+  if (cleanPhone) {
+    const last8 = cleanPhone.slice(-8);
+    const { data: existingPhoneEmp } = await supabase
+      .from('employees')
+      .select('id, phone, status')
+      .eq('org_id', orgId)
+      .or(`phone.eq.${cleanPhone},phone.ilike.%${last8}%`)
+      .maybeSingle();
+
+    if (existingPhoneEmp) {
+      throw {
+        status: 409,
+        message: `Employee with phone number '${cleanPhone}' already exists in this organization`,
+        code: 'EMPLOYEE_DUPLICATE_PHONE',
+        existingId: existingPhoneEmp.id
+      };
+    }
   }
 
   // Insert employee record
@@ -198,6 +234,7 @@ async function createSingleEmployee(orgId, {
       org_id: orgId,
       full_name: full_name.trim(),
       email: cleanEmail,
+      phone: cleanPhone,
       employee_id_external: employee_id_external ? String(employee_id_external).trim() : null,
       department: department ? String(department).trim() : null,
       tier: cleanTier,
@@ -249,9 +286,9 @@ async function createSingleEmployee(orgId, {
     assignedBenefit = { ...targetBenefit, eligibilityId: elig?.id };
   }
 
-  // Optional invitation creation
+  // Optional invitation creation (only if email is provided)
   let invitation = null;
-  if (send_invite) {
+  if (send_invite && cleanEmail) {
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     const { data: invData } = await supabase
@@ -299,13 +336,15 @@ async function processBulkImport(orgId, rows, options = {}) {
   // 2. Fetch existing employees for org to detect duplicates / updates
   const { data: existingList } = await supabase
     .from('employees')
-    .select('id, email, employee_id_external, tier, status')
+    .select('id, email, phone, employee_id_external, tier, status')
     .eq('org_id', orgId);
 
-  const existingMap = new Map();
+  const existingByEmail = new Map();
+  const existingByPhone = new Map();
   if (existingList) {
     existingList.forEach((e) => {
-      existingMap.set(e.email.toLowerCase(), e);
+      if (e.email) existingByEmail.set(e.email.toLowerCase(), e);
+      if (e.phone) existingByPhone.set(e.phone, e);
     });
   }
 
@@ -327,6 +366,7 @@ async function processBulkImport(orgId, rows, options = {}) {
 
   // 4. Validate and partition rows
   const seenEmailsInFile = new Set();
+  const seenPhonesInFile = new Set();
   const toInsert = [];
   const toUpdate = [];
   const skipped = [];
@@ -338,40 +378,53 @@ async function processBulkImport(orgId, rows, options = {}) {
 
     const fullName = (row.full_name || '').trim();
     const email = (row.email || '').toLowerCase().trim();
+    const phone = row.phone ? (normalizePhoneNumber(row.phone) || String(row.phone).trim()) : null;
     const tier = (row.tier || 'standard').toLowerCase().trim();
     const status = (row.status || 'active').toLowerCase().trim();
     const extId = row.employee_id || row.employee_id_external ? String(row.employee_id || row.employee_id_external).trim() : null;
     const department = row.department ? String(row.department).trim() : null;
 
     if (!fullName) {
-      failed.push({ row: rowIndex, email, error: 'Missing full_name' });
+      failed.push({ row: rowIndex, email: email || phone || 'N/A', error: 'Missing full_name' });
       continue;
     }
 
-    if (!email || !EMAIL_REGEX.test(email)) {
+    if (!email && !phone) {
+      failed.push({ row: rowIndex, email: 'N/A', error: 'Either work email or mobile phone number is required' });
+      continue;
+    }
+
+    if (email && !EMAIL_REGEX.test(email)) {
       failed.push({ row: rowIndex, email, error: 'Invalid email address' });
       continue;
     }
 
     if (!VALID_TIERS.includes(tier)) {
-      failed.push({ row: rowIndex, email, error: `Invalid tier '${tier}'. Allowed: ${VALID_TIERS.join(', ')}` });
+      failed.push({ row: rowIndex, email: email || phone, error: `Invalid tier '${tier}'. Allowed: ${VALID_TIERS.join(', ')}` });
       continue;
     }
 
-    if (seenEmailsInFile.has(email)) {
+    if (email && seenEmailsInFile.has(email)) {
       skipped.push({ row: rowIndex, email, reason: 'Duplicate email entry within CSV file' });
       continue;
     }
-    seenEmailsInFile.add(email);
+    if (email) seenEmailsInFile.add(email);
 
-    const existingEmp = existingMap.get(email);
+    if (phone && seenPhonesInFile.has(phone)) {
+      skipped.push({ row: rowIndex, phone, reason: 'Duplicate phone entry within CSV file' });
+      continue;
+    }
+    if (phone) seenPhonesInFile.add(phone);
+
+    const existingEmp = (email && existingByEmail.get(email)) || (phone && existingByPhone.get(phone));
     if (existingEmp) {
       if (updateExisting) {
         toUpdate.push({
           id: existingEmp.id,
           org_id: orgId,
           full_name: fullName,
-          email,
+          email: email || null,
+          phone: phone || null,
           tier,
           status,
           department,
@@ -379,13 +432,14 @@ async function processBulkImport(orgId, rows, options = {}) {
           updated_at: new Date().toISOString()
         });
       } else {
-        skipped.push({ row: rowIndex, email, reason: 'Employee already exists in organization' });
+        skipped.push({ row: rowIndex, email: email || phone, reason: 'Employee already exists in organization' });
       }
     } else {
       toInsert.push({
         org_id: orgId,
         full_name: fullName,
-        email,
+        email: email || null,
+        phone: phone || null,
         tier,
         status,
         department,
@@ -403,11 +457,11 @@ async function processBulkImport(orgId, rows, options = {}) {
     const { data: inserted, error: insertError } = await supabase
       .from('employees')
       .insert(chunk)
-      .select('id, full_name, email, tier, status');
+      .select('id, full_name, email, phone, tier, status');
 
     if (insertError) {
       chunk.forEach((item) => {
-        failed.push({ email: item.email, error: insertError.message });
+        failed.push({ email: item.email || item.phone, error: insertError.message });
       });
     } else if (inserted) {
       createdEmployees.push(...inserted);
@@ -448,7 +502,10 @@ async function processBulkImport(orgId, rows, options = {}) {
             .from('employees')
             .update({
               full_name: item.full_name,
+              email: item.email,
+              phone: item.phone,
               tier: item.tier,
+              status: item.status,
               department: item.department,
               employee_id_external: item.employee_id_external,
               updated_at: item.updated_at
@@ -462,25 +519,27 @@ async function processBulkImport(orgId, rows, options = {}) {
         if (!error) {
           updatedCount++;
         } else {
-          failed.push({ email: item.email, error: error.message });
+          failed.push({ email: item.email || item.phone, error: error.message });
         }
       }
     }
   }
 
-  // 8. Optional Batch Invitations
+  // 8. Optional Batch Invitations (for employees with email)
   let invitationsCreated = 0;
   if (sendInvites && createdEmployees.length > 0) {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-    const invites = createdEmployees.map((emp) => ({
-      email: emp.email,
-      role: 'employee',
-      org_id: orgId,
-      invited_by: invitedBy,
-      token: crypto.randomBytes(32).toString('hex'),
-      status: 'pending',
-      expires_at: expiresAt
-    }));
+    const invites = createdEmployees
+      .filter((emp) => emp.email)
+      .map((emp) => ({
+        email: emp.email,
+        role: 'employee',
+        org_id: orgId,
+        invited_by: invitedBy,
+        token: crypto.randomBytes(32).toString('hex'),
+        status: 'pending',
+        expires_at: expiresAt
+      }));
 
     for (let i = 0; i < invites.length; i += CHUNK_SIZE) {
       const chunk = invites.slice(i, i + CHUNK_SIZE);

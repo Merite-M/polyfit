@@ -684,28 +684,51 @@ router.get('/verify-company', async (req, res) => {
       return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
     }
 
-    // Search organizations by allowed_domains or slug or name
-    const { data: orgs, error: orgError } = await supabase
-      .from('organizations')
-      .select('id, name, slug, allowed_domains, industry, logo_url, status')
-      .eq('status', 'active');
+    const { normalizePhoneNumber } = require('@polyfit/shared-utils');
+    const normalizedPhone = normalizePhoneNumber(query);
 
-    if (orgError) throw orgError;
+    let matchedOrg = null;
 
-    const matchedOrg = (orgs || []).find((o) => {
-      if (Array.isArray(o.allowed_domains) && o.allowed_domains.some((d) => d.toLowerCase() === domain)) {
-        return true;
+    // Check if query is a phone number of an enrolled employee
+    if (normalizedPhone) {
+      const last8 = normalizedPhone.slice(-8);
+      const { data: empData } = await supabase
+        .from('employees')
+        .select('org_id, organizations(id, name, slug, industry, logo_url, status)')
+        .or(`phone.eq.${normalizedPhone},phone.ilike.%${last8}%`)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+
+      if (empData && empData.organizations && empData.organizations.status === 'active') {
+        matchedOrg = empData.organizations;
       }
-      if (o.slug && o.slug.toLowerCase() === domain) return true;
-      if (o.name && o.name.toLowerCase().includes(domain)) return true;
-      return false;
-    });
+    }
+
+    // Search organizations by allowed_domains or slug or name if not matched by phone
+    if (!matchedOrg) {
+      const { data: orgs, error: orgError } = await supabase
+        .from('organizations')
+        .select('id, name, slug, allowed_domains, industry, logo_url, status')
+        .eq('status', 'active');
+
+      if (orgError) throw orgError;
+
+      matchedOrg = (orgs || []).find((o) => {
+        if (Array.isArray(o.allowed_domains) && o.allowed_domains.some((d) => d.toLowerCase() === domain)) {
+          return true;
+        }
+        if (o.slug && o.slug.toLowerCase() === domain) return true;
+        if (o.name && o.name.toLowerCase().includes(domain)) return true;
+        return false;
+      });
+    }
 
     if (!matchedOrg) {
       return res.status(200).json({
         enrolled: false,
         domain,
-        message: `Your company (@${domain}) is not yet enrolled in PolyFit. Contact your HR team or request a corporate wellness pilot.`
+        message: `Your company or mobile number (${query}) is not yet enrolled in PolyFit. Contact your HR team or request a corporate wellness pilot.`
       });
     }
 

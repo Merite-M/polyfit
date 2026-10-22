@@ -29,6 +29,7 @@ interface ParsedEmployeeRow {
   rowNumber: number;
   full_name: string;
   email: string;
+  phone?: string;
   employee_id: string;
   department: string;
   tier: "basic" | "standard" | "premium";
@@ -99,15 +100,15 @@ export function BulkUploadModal({
   const validCount = parsedRows.filter((r) => r.isValid).length;
   const invalidCount = parsedRows.length - validCount;
 
-  // Download official CSV template
+  // Download official CSV template (with deskless phone support)
   const handleDownloadTemplate = () => {
     const templateContent = [
-      "first_name,last_name,email,employee_id,department,tier",
-      `Jean,Mugabo,jean.mugabo@${effectiveDomain},EMP-101,Engineering,standard`,
-      `Marie,Uwimana,marie.uwimana@${effectiveDomain},EMP-102,Marketing,standard`,
-      `Patrick,Niyonzima,patrick.n@${effectiveDomain},EMP-103,Finance,premium`,
-      `Claudine,Mukandekeza,claudine.m@${effectiveDomain},EMP-104,HR,standard`,
-      `Eric,Habimana,eric.h@${effectiveDomain},EMP-105,Operations,basic`,
+      "first_name,last_name,email,phone,employee_id,department,tier",
+      `Jean,Mugabo,jean.mugabo@${effectiveDomain},+250788123456,EMP-101,Engineering,standard`,
+      `Marie,Uwimana,marie.uwimana@${effectiveDomain},+250788234567,EMP-102,Marketing,standard`,
+      `Patrick,Niyonzima,,+250788345678,EMP-103,Branch Operations,standard`,
+      `Claudine,Mukandekeza,claudine.m@${effectiveDomain},,EMP-104,HR,standard`,
+      `Eric,Habimana,,+250788567890,EMP-105,Security & Logistics,basic`,
     ].join("\r\n");
 
     const blob = new Blob([templateContent], { type: "text/csv;charset=utf-8;" });
@@ -175,6 +176,7 @@ export function BulkUploadModal({
         }
 
         const email = (data["email"] || data["workemail"] || "").toLowerCase().trim();
+        const phone = (data["phone"] || data["phonenumber"] || data["mobile"] || data["telephone"] || data["contact"] || "").trim();
         const employeeId = data["employeeid"] || data["staffid"] || data["id"] || "";
         const department = data["department"] || data["dept"] || data["team"] || "General";
         const rawTier = (data["tier"] || data["benefittier"] || data["plantier"] || "standard").toLowerCase().trim();
@@ -186,12 +188,17 @@ export function BulkUploadModal({
         const warnings: string[] = [];
 
         if (!fullName) errors.push("Missing employee name");
-        if (!email) {
-          errors.push("Missing email address");
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          errors.push("Invalid email syntax");
-        } else if (corporateDomain && !email.endsWith(`@${corporateDomain}`)) {
-          warnings.push(`Non-corporate domain (@${email.split("@")[1]})`);
+        if (!email && !phone) {
+          errors.push("Missing contact (work email or mobile number required)");
+        } else {
+          if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            errors.push("Invalid email syntax");
+          } else if (email && corporateDomain && !email.endsWith(`@${corporateDomain}`)) {
+            warnings.push(`Non-corporate domain (@${email.split("@")[1]})`);
+          }
+          if (phone && phone.replace(/[^0-9]/g, "").length < 8) {
+            errors.push("Invalid phone number");
+          }
         }
 
         if (!["basic", "standard", "premium"].includes(rawTier)) {
@@ -202,6 +209,7 @@ export function BulkUploadModal({
           rowNumber: i,
           full_name: fullName,
           email,
+          phone: phone || undefined,
           employee_id: employeeId,
           department,
           tier,
@@ -577,7 +585,7 @@ export function BulkUploadModal({
                         <tr>
                           <th className="py-2.5 px-3">Status</th>
                           <th className="py-2.5 px-3">Employee</th>
-                          <th className="py-2.5 px-3">Email</th>
+                          <th className="py-2.5 px-3">Contact (Email / Phone)</th>
                           <th className="py-2.5 px-3">Dept</th>
                           <th className="py-2.5 px-3">Tier</th>
                           <th className="py-2.5 px-3">Notes</th>
@@ -603,7 +611,15 @@ export function BulkUploadModal({
                               {row.full_name || <span className="text-[var(--error,#EF4444)]">Missing</span>}
                             </td>
                             <td className="py-2 px-3 text-[var(--text-secondary,#526173)] font-mono text-[11px]">
-                              {row.email || <span className="text-[var(--error,#EF4444)]">Missing</span>}
+                              {row.email ? (
+                                <div>{row.email}</div>
+                              ) : null}
+                              {row.phone ? (
+                                <div className="text-[10px] text-[var(--primary,#0B1F33)] font-sans">{row.phone}</div>
+                              ) : null}
+                              {!row.email && !row.phone && (
+                                <span className="text-[var(--error,#EF4444)]">Missing</span>
+                              )}
                             </td>
                             <td className="py-2 px-3 text-[var(--text-secondary,#526173)]">{row.department}</td>
                             <td className="py-2 px-3">

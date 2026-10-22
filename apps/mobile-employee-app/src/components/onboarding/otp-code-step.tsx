@@ -1,7 +1,7 @@
 /**
  * PolyFit Corporate Employee App - Step 2: OTP Verification
  * PF-105: Frictionless Corporate Employee Onboarding & Benefit Activation
- * Compliant with expo-native-ui, expo-animation, and vercel-react-native-skills
+ * Powered by Expo 57: expo-haptics tactile feedback, auto-advance, zero password
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -15,13 +15,17 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
-import { ArrowLeft, ArrowRight, Sparkles, RefreshCw } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
+import { ArrowLeft, ArrowRight, Sparkles, RefreshCw, Smartphone, Mail } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth-store';
 import { Palette, Radius, Spacing, Fonts } from '@/constants/theme';
 
 export const OtpCodeStep: React.FC = () => {
   const {
     email,
+    phone,
+    identifier,
+    authIdentifierType,
     demoOtp,
     isLoading,
     error,
@@ -33,6 +37,9 @@ export const OtpCodeStep: React.FC = () => {
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [resendCooldown, setResendCooldown] = useState(45);
   const inputRefs = useRef<Array<TextInput | null>>([]);
+
+  const isPhoneDestination = authIdentifierType === 'phone' || (Boolean(phone) && !email);
+  const displayTarget = phone || email || identifier || 'your phone or work email';
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -56,12 +63,19 @@ export const OtpCodeStep: React.FC = () => {
     newDigits[index] = val;
     setDigits(newDigits);
 
+    if (val && Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
+
     if (val && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
 
     const fullCode = newDigits.join('');
     if (fullCode.length === 6 && !newDigits.includes('')) {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      }
       submitVerifyAccess(fullCode);
     }
   };
@@ -74,6 +88,9 @@ export const OtpCodeStep: React.FC = () => {
 
   const handleFillDemo = () => {
     const code = demoOtp || '123456';
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
     const split = code.split('').slice(0, 6);
     setDigits(split);
     submitVerifyAccess(code);
@@ -82,6 +99,9 @@ export const OtpCodeStep: React.FC = () => {
   const handleResend = async () => {
     if (resendCooldown > 0) return;
     setResendCooldown(45);
+    if (Platform.OS !== 'web') {
+      Haptics.selectionAsync().catch(() => {});
+    }
     await submitRequestAccess();
   };
 
@@ -89,64 +109,69 @@ export const OtpCodeStep: React.FC = () => {
 
   return (
     <View style={styles.screenContainer}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         {/* Top Header & Progress Stepper */}
-      <View style={styles.topBar}>
-        <Pressable
-          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]}
-          onPress={() => setStep('welcome')}
-        >
-          <ArrowLeft size={18} color="#FFFFFF" />
-        </Pressable>
+        <View style={styles.topBar}>
+          <Pressable
+            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]}
+            onPress={() => setStep('welcome')}
+          >
+            <ArrowLeft size={18} color="#FFFFFF" />
+          </Pressable>
 
-        {/* Step Progress Pills (Step 2 of 3) */}
-        <View style={styles.stepperContainer}>
-          <View style={[styles.stepPill, styles.stepPillCompleted]} />
-          <View style={[styles.stepPill, styles.stepPillActive]} />
-          <View style={styles.stepPill} />
-        </View>
-      </View>
-
-      {/* Main Content Area */}
-      <View style={styles.contentBody}>
-        {/* Title & Subtitle */}
-        <View style={styles.headerBlock}>
-          <Text style={styles.screenTitle}>Enter verification code</Text>
-          <Text style={styles.screenSubtitle}>
-            We sent a 6-digit access code to{' '}
-            <Text style={styles.highlightEmail}>{email || 'your corporate email'}</Text>.
-          </Text>
+          {/* Step Progress Pills (Step 2 of 3) */}
+          <View style={styles.stepperContainer}>
+            <View style={[styles.stepPill, styles.stepPillCompleted]} />
+            <View style={[styles.stepPill, styles.stepPillActive]} />
+            <View style={styles.stepPill} />
+          </View>
         </View>
 
-        {/* 6 Digit Input Boxes */}
-        <View style={styles.otpRow}>
-          {digits.map((digit, idx) => {
-            const isFocused = inputRefs.current[idx]?.isFocused?.();
-            const isFilled = digit.length > 0;
-            return (
-              <TextInput
-                key={idx}
-                ref={(ref) => {
-                  inputRefs.current[idx] = ref;
-                }}
-                style={[
-                  styles.otpBox,
-                  isFilled && styles.otpBoxFilled,
-                  isFocused && styles.otpBoxFocused,
-                ]}
-                value={digit}
-                onChangeText={(text) => handleDigitChange(idx, text)}
-                onKeyPress={(e) => handleKeyPress(idx, e)}
-                keyboardType="number-pad"
-                maxLength={1}
-                selectTextOnFocus
-                textAlign="center"
-              />
-            );
-          })}
-        </View>
+        {/* Main Content Area */}
+        <View style={styles.contentBody}>
+          {/* Title & Subtitle */}
+          <View style={styles.headerBlock}>
+            <Text style={styles.screenTitle}>Enter verification code</Text>
+            <Text style={styles.screenSubtitle}>
+              {isPhoneDestination
+                ? `We sent a 6-digit access code via SMS / WhatsApp to `
+                : `We sent a 6-digit access code to `}
+              <Text style={styles.highlightEmail}>{displayTarget}</Text>.
+            </Text>
+          </View>
+
+          {/* 6 Digit Input Boxes */}
+          <View style={styles.otpRow}>
+            {digits.map((digit, idx) => {
+              const isFocused = inputRefs.current[idx]?.isFocused?.();
+              const isFilled = digit.length > 0;
+              return (
+                <TextInput
+                  key={idx}
+                  ref={(ref) => {
+                    inputRefs.current[idx] = ref;
+                  }}
+                  style={[
+                    styles.otpBox,
+                    isFilled && styles.otpBoxFilled,
+                    isFocused && styles.otpBoxFocused,
+                  ]}
+                  value={digit}
+                  onChangeText={(text) => handleDigitChange(idx, text)}
+                  onKeyPress={(e) => handleKeyPress(idx, e)}
+                  keyboardType="number-pad"
+                  maxLength={1}
+                  selectTextOnFocus
+                  textAlign="center"
+                />
+              );
+            })}
+          </View>
 
         {/* Demo Auto-Fill Chip */}
         {demoOtp || __DEV__ ? (

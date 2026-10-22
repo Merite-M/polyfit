@@ -326,6 +326,41 @@ describe('Employee Portal & Mobile Telemetry Test Suite (PF-109)', () => {
       assert.equal(res.body.benefit.subsidy_percentage, 100);
       assert.equal(res.body.benefit.monthly_cost_rwf, 0);
     });
+
+    test('recognizes enrolled employee by phone number (+250788123456)', async () => {
+      const res = await request(app)
+        .post('/api/employee/auth/verify-domain')
+        .send({ phone: '+250788123456' });
+
+      assert.equal(res.status, 200);
+      assert.equal(res.body.recognized, true);
+      assert.equal(res.body.type, 'phone');
+      assert.equal(res.body.employee.full_name, 'Jean Mugisha');
+      assert.equal(res.body.organization.name, 'Bank of Kigali');
+      assert.ok(res.body.benefit);
+    });
+
+    test('recognizes enrolled employee by local formatted phone (0788123456)', async () => {
+      const res = await request(app)
+        .post('/api/employee/auth/resolve-identity')
+        .send({ identifier: '0788123456' });
+
+      assert.equal(res.status, 200);
+      assert.equal(res.body.recognized, true);
+      assert.equal(res.body.type, 'phone');
+      assert.equal(res.body.employee.full_name, 'Jean Mugisha');
+      assert.equal(res.body.organization.name, 'Bank of Kigali');
+    });
+
+    test('returns 404 for unenrolled mobile phone number', async () => {
+      const res = await request(app)
+        .post('/api/employee/auth/verify-domain')
+        .send({ phone: '+250789000111' });
+
+      assert.equal(res.status, 404);
+      assert.equal(res.body.recognized, false);
+      assert.equal(res.body.code, 'PHONE_NOT_ENROLLED');
+    });
   });
 
   // ─── 7. Corporate Onboarding & Benefit Activation (PF-105) ───────────────────
@@ -392,6 +427,40 @@ describe('Employee Portal & Mobile Telemetry Test Suite (PF-109)', () => {
       assert.equal(res.body.success, true);
       assert.ok(res.body.session.access_token);
       assert.equal(res.body.employee.email, 'jean.mugisha@bk.rw');
+      assert.equal(res.body.organization.name, 'Bank of Kigali');
+      assert.ok(res.body.benefit);
+    });
+
+    test('POST /api/employee/auth/request-access (phone) - dispatches SMS/WhatsApp OTP', async () => {
+      const res = await request(app)
+        .post('/api/employee/auth/request-access')
+        .send({ phone: '+250788123456' });
+
+      assert.equal(res.status, 200);
+      assert.equal(res.body.success, true);
+      assert.equal(res.body.type, 'phone');
+      assert.equal(res.body.phone, '+250788123456');
+      assert.ok(res.body.demo_otp);
+    });
+
+    test('POST /api/employee/auth/verify-access (phone) - verifies OTP and establishes session', async () => {
+      // 1. Request OTP
+      const reqRes = await request(app)
+        .post('/api/employee/auth/request-access')
+        .send({ phone: '+250788123456' });
+      const otp = reqRes.body.demo_otp;
+
+      // 2. Verify OTP
+      const res = await request(app)
+        .post('/api/employee/auth/verify-access')
+        .send({ phone: '+250788123456', code: otp });
+
+      assert.equal(res.status, 200);
+      assert.equal(res.body.success, true);
+      assert.equal(res.body.type, 'phone');
+      assert.ok(res.body.session.access_token);
+      assert.equal(res.body.employee.phone, '+250788123456');
+      assert.equal(res.body.employee.full_name, 'Jean Mugisha');
       assert.equal(res.body.organization.name, 'Bank of Kigali');
       assert.ok(res.body.benefit);
     });

@@ -14,19 +14,19 @@ const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL || 'https://polyfit-backend.onrender.com';
 
 /**
- * 1. Verify Corporate Email Domain (< 500ms SLA)
+ * 1. Verify Corporate Email Domain or Mobile Phone (< 500ms SLA)
  */
-export async function verifyDomain(email: string): Promise<DomainVerificationResult> {
-  const cleanEmail = email.trim().toLowerCase();
-  const domain = cleanEmail.split('@')[1];
+export async function verifyDomain(identifier: string): Promise<DomainVerificationResult> {
+  const clean = identifier.trim();
+  const isPhone = !clean.includes('@') && clean.replace(/[^0-9]/g, '').length >= 8;
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/employee/auth/verify-domain`, {
+    const res = await fetch(`${API_BASE_URL}/api/employee/auth/resolve-identity`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email: cleanEmail }),
+      body: JSON.stringify(isPhone ? { phone: clean } : { email: clean.toLowerCase() }),
     });
 
     if (res.ok) {
@@ -34,15 +34,17 @@ export async function verifyDomain(email: string): Promise<DomainVerificationRes
     }
 
     const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.error || `Domain @${domain} is not currently enrolled in PolyFit.`);
+    throw new Error(errData.error || (isPhone ? `Mobile ${clean} is not registered on any corporate roster.` : `Domain is not currently enrolled in PolyFit.`));
   } catch (err: any) {
     // Client-side fallback for offline / demo environments
-    if (domain === 'bk.rw' || domain === 'bankofkigali.rw') {
+    if (isPhone && (clean.includes('788123456') || clean.includes('0788123456') || clean.includes('123456'))) {
       return {
         recognized: true,
+        type: 'phone',
+        phone: '+250788123456',
         organization: {
           id: 'b0000000-0000-0000-0000-000000000001',
-          name: 'Corporate Partner',
+          name: 'Bank of Kigali',
           slug: 'bank-of-kigali',
           domain: 'bk.rw',
           logo_url: null,
@@ -50,7 +52,40 @@ export async function verifyDomain(email: string): Promise<DomainVerificationRes
         benefit: {
           id: 'b0000000-0000-0000-0000-000000000011',
           tier: 'standard',
-          name: 'Corporate Standard Wellness Plan',
+          name: 'Bank of Kigali Standard Wellness Plan',
+          max_monthly_visits: 12,
+          subsidy_percentage: 100,
+          is_fully_sponsored: true,
+          co_pay_percentage: 0,
+          monthly_cost_rwf: 0,
+          allowed_categories: ['gym', 'pool', 'studio', 'clinic', 'wellness_center'],
+        },
+        employee: {
+          id: 'b0000000-0000-0000-0000-000000000021',
+          full_name: 'Jean Mugisha',
+          email: 'jean.mugisha@bk.rw',
+          tier: 'standard',
+        },
+        message: 'Welcome, Jean Mugisha! Your Bank of Kigali wellness benefit is ready for activation.',
+      };
+    }
+
+    const domain = clean.includes('@') ? clean.split('@')[1] : '';
+    if (domain === 'bk.rw' || domain === 'bankofkigali.rw') {
+      return {
+        recognized: true,
+        type: 'email',
+        organization: {
+          id: 'b0000000-0000-0000-0000-000000000001',
+          name: 'Bank of Kigali',
+          slug: 'bank-of-kigali',
+          domain: 'bk.rw',
+          logo_url: null,
+        },
+        benefit: {
+          id: 'b0000000-0000-0000-0000-000000000011',
+          tier: 'standard',
+          name: 'Bank of Kigali Standard Wellness Plan',
           max_monthly_visits: 12,
           subsidy_percentage: 100,
           is_fully_sponsored: true,
@@ -65,6 +100,7 @@ export async function verifyDomain(email: string): Promise<DomainVerificationRes
     if (domain === 'techcorp.rw') {
       return {
         recognized: true,
+        type: 'email',
         organization: {
           id: 'c79a9982-4477-4336-a24b-561419f6c43b',
           name: 'TechCorp Rwanda',
@@ -148,10 +184,11 @@ export async function verifyInviteCode(code: string): Promise<InviteVerification
 }
 
 /**
- * 3. Request Access Code (OTP / Magic Link)
+ * 3. Request Access Code (OTP via Email or SMS/WhatsApp)
  */
-export async function requestAccess(email: string): Promise<RequestAccessResult> {
-  const cleanEmail = email.trim().toLowerCase();
+export async function requestAccess(identifier: string): Promise<RequestAccessResult> {
+  const clean = identifier.trim();
+  const isPhone = !clean.includes('@') && clean.replace(/[^0-9]/g, '').length >= 8;
 
   try {
     const res = await fetch(`${API_BASE_URL}/api/employee/auth/request-access`, {
@@ -159,7 +196,7 @@ export async function requestAccess(email: string): Promise<RequestAccessResult>
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email: cleanEmail }),
+      body: JSON.stringify(isPhone ? { phone: clean } : { email: clean.toLowerCase() }),
     });
 
     if (res.ok) {
@@ -172,8 +209,9 @@ export async function requestAccess(email: string): Promise<RequestAccessResult>
     // Return mock OTP for offline development
     return {
       success: true,
-      message: `Verification code sent to ${cleanEmail}.`,
-      email: cleanEmail,
+      type: isPhone ? 'phone' : 'email',
+      message: `Verification code sent to ${clean}.`,
+      destination: clean,
       expires_in_seconds: 600,
       demo_otp: '123456',
     };
@@ -183,9 +221,10 @@ export async function requestAccess(email: string): Promise<RequestAccessResult>
 /**
  * 4. Verify Access Code & Establish Session
  */
-export async function verifyAccess(email: string, code: string): Promise<VerifyAccessResult> {
-  const cleanEmail = email.trim().toLowerCase();
+export async function verifyAccess(identifier: string, code: string): Promise<VerifyAccessResult> {
+  const clean = identifier.trim();
   const cleanCode = code.trim();
+  const isPhone = !clean.includes('@') && clean.replace(/[^0-9]/g, '').length >= 8;
 
   try {
     const res = await fetch(`${API_BASE_URL}/api/employee/auth/verify-access`, {
@@ -193,7 +232,10 @@ export async function verifyAccess(email: string, code: string): Promise<VerifyA
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email: cleanEmail, code: cleanCode }),
+      body: JSON.stringify({
+        ...(isPhone ? { phone: clean } : { email: clean.toLowerCase() }),
+        code: cleanCode,
+      }),
     });
 
     if (res.ok) {
@@ -204,10 +246,10 @@ export async function verifyAccess(email: string, code: string): Promise<VerifyA
     throw new Error(errData.error || 'Invalid verification code.');
   } catch (err: any) {
     // Offline / Demo fallback
-    const domain = cleanEmail.split('@')[1];
-    const isBK = domain === 'bk.rw' || cleanEmail.includes('bk');
+    const isBK = clean.includes('bk') || clean.includes('788123456');
     return {
       success: true,
+      type: isPhone ? 'phone' : 'email',
       message: 'Authentication successful',
       session: {
         access_token: `demo_token_${Date.now()}`,
@@ -217,7 +259,8 @@ export async function verifyAccess(email: string, code: string): Promise<VerifyA
       employee: {
         id: isBK ? 'b0000000-0000-0000-0000-000000000021' : '00fbe4e1-86aa-44bc-ad89-fcce6fb75687',
         full_name: isBK ? 'Jean Mugisha' : 'Jean Mugabo',
-        email: cleanEmail,
+        email: isPhone ? null : clean,
+        phone: isPhone ? clean : '+250788123456',
         department: isBK ? 'Commercial Banking' : 'Engineering',
         tier: 'standard',
         status: 'active',

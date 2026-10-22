@@ -12,7 +12,7 @@ export default function OnboardingScreen() {
   const { step, isBenefitActivated } = useAuthStore();
 
   useEffect(() => {
-    if (isBenefitActivated && step === 'completed') {
+    if (isBenefitActivated || step === 'completed') {
       router.replace('/');
     }
   }, [isBenefitActivated, step, router]);
@@ -27,6 +27,7 @@ export default function OnboardingScreen() {
       {step === 'otp' && <OtpCodeStep />}
       {step === 'subsidy' && <SubsidyShowcaseStep />}
       {step === 'permissions' && <DeviceBindingStep onFinish={handleFinishOnboarding} />}
+      {step === 'completed' && <SubsidyShowcaseStep />}
     </View>
   );
 }

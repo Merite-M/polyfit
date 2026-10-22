@@ -95,6 +95,9 @@ const DEFAULT_NOTIFICATIONS: EmployeeNotificationSettings = {
 interface AuthState {
   step: OnboardingStep;
   email: string;
+  phone: string;
+  identifier: string;
+  authIdentifierType: 'email' | 'phone';
   inviteCode: string;
   authMethod: 'email' | 'invite';
   organization: CorporateOrganization | null;
@@ -118,10 +121,13 @@ interface AuthState {
   // Actions
   setStep: (step: OnboardingStep) => void;
   setEmail: (email: string) => void;
+  setPhone: (phone: string) => void;
+  setIdentifier: (identifier: string) => void;
   setInviteCode: (code: string) => void;
   setAuthMethod: (method: 'email' | 'invite') => void;
   clearError: () => void;
 
+  resolveIdentity: (identifier: string) => Promise<boolean>;
   resolveEmailDomain: (email: string) => Promise<boolean>;
   resolveInviteToken: (code: string) => Promise<boolean>;
   submitRequestAccess: () => Promise<boolean>;
@@ -143,6 +149,9 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set, get) => ({
   step: 'welcome',
   email: '',
+  phone: '',
+  identifier: '',
+  authIdentifierType: 'email',
   inviteCode: '',
   authMethod: 'email',
   organization: null,
@@ -164,32 +173,57 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isRefreshingProfile: false,
 
   setStep: (step) => set({ step, error: null }),
-  setEmail: (email) => set({ email, error: null }),
+  setEmail: (email) => set({ email, identifier: email, authIdentifierType: 'email', error: null }),
+  setPhone: (phone) => set({ phone, identifier: phone, authIdentifierType: 'phone', error: null }),
+  setIdentifier: (identifier) => {
+    const isPhone = !identifier.includes('@') && identifier.replace(/[^0-9]/g, '').length >= 8;
+    set({
+      identifier,
+      email: isPhone ? '' : identifier,
+      phone: isPhone ? identifier : '',
+      authIdentifierType: isPhone ? 'phone' : 'email',
+      error: null
+    });
+  },
   setInviteCode: (inviteCode) => set({ inviteCode, error: null }),
   setAuthMethod: (authMethod) => set({ authMethod, error: null }),
   clearError: () => set({ error: null }),
 
-  resolveEmailDomain: async (email: string) => {
-    if (!email || !email.includes('@')) {
-      set({ error: 'Please enter a valid corporate email address' });
+  resolveIdentity: async (identifier: string) => {
+    const clean = identifier.trim();
+    if (!clean) {
+      set({ error: 'Please enter your corporate email or mobile number' });
       return false;
     }
 
     set({ isLoading: true, error: null });
     try {
-      const result = await verifyDomain(email);
+      const result = await verifyDomain(clean);
+      const isPhone = result.type === 'phone';
       set({
         isLoading: false,
         organization: result.organization,
         benefit: result.benefit,
-        email: email.trim().toLowerCase(),
+        identifier: clean,
+        email: isPhone ? (result.employee?.email || '') : clean.toLowerCase(),
+        phone: isPhone ? (result.phone || clean) : '',
+        authIdentifierType: isPhone ? 'phone' : 'email',
+        employee: result.employee ? {
+          id: result.employee.id,
+          full_name: result.employee.full_name,
+          email: result.employee.email,
+          phone: result.phone || null,
+          department: null,
+          tier: result.employee.tier || 'standard',
+          status: 'active'
+        } : null,
         error: null,
       });
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error && err.message
         ? err.message
-        : 'Corporate domain not recognized';
+        : 'Company or employee identifier not recognized';
       set({
         isLoading: false,
         error: errorMessage,
@@ -198,6 +232,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
       return false;
     }
+  },
+
+  resolveEmailDomain: async (email: string) => {
+    return get().resolveIdentity(email);
   },
 
   resolveInviteToken: async (code: string) => {
@@ -233,15 +271,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   submitRequestAccess: async () => {
-    const { email } = get();
-    if (!email) {
-      set({ error: 'Corporate email is required to send verification code' });
+    const { identifier, email, phone } = get();
+    const target = identifier || email || phone;
+    if (!target) {
+      set({ error: 'Corporate email or mobile phone number is required' });
       return false;
     }
 
     set({ isLoading: true, error: null });
     try {
-      const result = await requestAccess(email);
+      const result = await requestAccess(target);
       set({
         isLoading: false,
         demoOtp: result.demo_otp || null,
@@ -259,15 +298,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   submitVerifyAccess: async (code: string) => {
-    const { email } = get();
-    if (!email || !code) {
-      set({ error: 'Email and 6-digit verification code are required' });
+    const { identifier, email, phone } = get();
+    const target = identifier || email || phone;
+    if (!target || !code) {
+      set({ error: 'Identifier and 6-digit verification code are required' });
       return false;
     }
 
     set({ isLoading: true, error: null });
     try {
-      const result = await verifyAccess(email, code);
+      const result = await verifyAccess(target, code);
       set({
         isLoading: false,
         session: result.session,
@@ -316,7 +356,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
         offlineTokenSeed: offlineSeed,
         isBenefitActivated: true,
-        step: 'permissions',
+        step: 'completed',
         error: null,
       });
       return true;

@@ -58,6 +58,7 @@ export default function UniversalJoinPage() {
 
   const sampleCompanies = [
     { label: "Bank of Kigali", query: "bk.rw" },
+    { label: "BK Phone (+250 788 123 456)", query: "+250788123456" },
     { label: "TechCorp Rwanda", query: "techcorp-rwanda" },
     { label: "Irembo", query: "irembo.gov.rw" },
     { label: "Equity Bank", query: "equitybank.co.ke" }
@@ -217,7 +218,7 @@ export default function UniversalJoinPage() {
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="e.g. Bank of Kigali, techcorp.rw, or name@company.rw"
+                    placeholder="e.g. Bank of Kigali, techcorp.rw, name@company.rw, or +250 788 123 456"
                     className="w-full pl-11 pr-4 py-3 bg-[#F7F9FC] border border-[#CBD5E1] rounded-2xl text-sm sm:text-base text-[#0B1F33] placeholder:text-slate-400 focus:outline-none focus:border-[#28D17C] focus:bg-white transition-all"
                   />
                 </div>

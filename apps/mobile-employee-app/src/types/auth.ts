@@ -25,7 +25,8 @@ export interface BenefitPackage {
 export interface EmployeeProfile {
   id: string;
   full_name: string;
-  email: string;
+  email: string | null;
+  phone?: string | null;
   department: string | null;
   tier: string;
   status: string;
@@ -39,9 +40,17 @@ export interface AuthSession {
 
 export interface DomainVerificationResult {
   recognized: boolean;
+  type?: 'email' | 'phone';
+  phone?: string;
   cached?: boolean;
   organization: CorporateOrganization;
   benefit: BenefitPackage;
+  employee?: {
+    id: string;
+    full_name: string;
+    email: string | null;
+    tier: string;
+  };
   message: string;
 }
 
@@ -58,14 +67,18 @@ export interface InviteVerificationResult {
 
 export interface RequestAccessResult {
   success: boolean;
+  type?: 'email' | 'phone';
   message: string;
-  email: string;
+  email?: string;
+  phone?: string;
+  destination?: string;
   expires_in_seconds: number;
   demo_otp?: string;
 }
 
 export interface VerifyAccessResult {
   success: boolean;
+  type?: 'email' | 'phone';
   message: string;
   session: AuthSession;
   employee: EmployeeProfile;

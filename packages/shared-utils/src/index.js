@@ -50,9 +50,51 @@ function sanitizePostgrestFilter(input) {
   return input.replace(/[\(\),:\\"'\/%_]/g, '').trim();
 }
 
+/**
+ * Normalizes East African and international phone numbers into E.164 format (+250..., +254...).
+ * Supports Rwanda (9 digits, 07..., 250...), Kenya (07..., 01..., 254...), and general international.
+ *
+ * @param {string|number} raw - Raw phone number input
+ * @returns {string|null} E.164 formatted phone or null if invalid
+ */
+function normalizePhoneNumber(raw) {
+  if (!raw) return null;
+  const str = String(raw).trim();
+  const digits = str.replace(/[^0-9]/g, '');
+  if (!digits) return null;
+  // Rwanda: 9 digits starting with 7 -> +2507...
+  if (digits.length === 9 && digits.startsWith('7')) {
+    return `+250${digits}`;
+  }
+  // Rwanda: 10 digits starting with 07 -> +2507...
+  if (digits.length === 10 && digits.startsWith('07')) {
+    return `+250${digits.slice(1)}`;
+  }
+  // Rwanda: 12 digits starting with 250
+  if (digits.length === 12 && digits.startsWith('250')) {
+    return `+${digits}`;
+  }
+  // Kenya: 10 digits starting with 07 or 01
+  if (digits.length === 10 && (digits.startsWith('07') || digits.startsWith('01'))) {
+    return `+254${digits.slice(1)}`;
+  }
+  // Kenya: 12 digits starting with 254
+  if (digits.length === 12 && digits.startsWith('254')) {
+    return `+${digits}`;
+  }
+  if (str.startsWith('+') && digits.length >= 8) {
+    return `+${digits}`;
+  }
+  if (digits.length >= 8) {
+    return `+${digits}`;
+  }
+  return null;
+}
+
 module.exports = {
   getDistanceFromLatLonInM,
   sanitizePostgrestFilter,
+  normalizePhoneNumber,
 };
 
 /**
