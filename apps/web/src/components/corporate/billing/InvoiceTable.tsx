@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { formatRwf, formatInvoiceDate, generateRraEbmInvoicePdf } from "@/lib/invoice-pdf";
 import {
   Search,
@@ -50,32 +50,58 @@ export function InvoiceTable({
   const [activeFilter, setActiveFilter] = useState<"all" | "unpaid" | "paid" | "disputed">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const overdueCount = invoices.filter((i) => i.status === "overdue").length;
-  const unpaidCount = invoices.filter((i) => i.status === "sent" || i.status === "overdue").length;
+  // Performance Optimization: Compute invoice badge counts in a single O(N) pass,
+  // avoiding 4 separate .filter() iterations on every render pass.
+  const { overdueCount, unpaidCount, paidCount, disputedCount } = useMemo(() => {
+    let overdue = 0;
+    let unpaid = 0;
+    let paid = 0;
+    let disputed = 0;
 
-  const filteredInvoices = invoices.filter((inv) => {
-    // Tab filter
-    if (activeFilter === "unpaid" && inv.status !== "sent" && inv.status !== "overdue") {
-      return false;
-    }
-    if (activeFilter === "paid" && inv.status !== "paid") {
-      return false;
-    }
-    if (activeFilter === "disputed" && inv.status !== "disputed") {
-      return false;
-    }
-
-    // Search query
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const numMatch = (inv.invoice_number || "").toLowerCase().includes(q);
-      const periodMatch = (inv.billing_period_start || "").includes(q) || (inv.billing_period_end || "").includes(q);
-      const statusMatch = inv.status.toLowerCase().includes(q);
-      return numMatch || periodMatch || statusMatch;
+    for (let i = 0; i < invoices.length; i++) {
+      const status = invoices[i].status;
+      if (status === "overdue") {
+        overdue++;
+        unpaid++;
+      } else if (status === "sent") {
+        unpaid++;
+      } else if (status === "paid") {
+        paid++;
+      } else if (status === "disputed") {
+        disputed++;
+      }
     }
 
-    return true;
-  });
+    return { overdueCount: overdue, unpaidCount: unpaid, paidCount: paid, disputedCount: disputed };
+  }, [invoices]);
+
+  // Performance Optimization: Memoize filtered invoices to prevent repeated array filtering,
+  // string lowercase conversions, and substring searching when unneeded parent re-renders occur.
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter((inv) => {
+      // Tab filter
+      if (activeFilter === "unpaid" && inv.status !== "sent" && inv.status !== "overdue") {
+        return false;
+      }
+      if (activeFilter === "paid" && inv.status !== "paid") {
+        return false;
+      }
+      if (activeFilter === "disputed" && inv.status !== "disputed") {
+        return false;
+      }
+
+      // Search query
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const numMatch = (inv.invoice_number || "").toLowerCase().includes(q);
+        const periodMatch = (inv.billing_period_start || "").includes(q) || (inv.billing_period_end || "").includes(q);
+        const statusMatch = inv.status.toLowerCase().includes(q);
+        return numMatch || periodMatch || statusMatch;
+      }
+
+      return true;
+    });
+  }, [invoices, activeFilter, searchQuery]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -180,7 +206,7 @@ export function InvoiceTable({
                 : "text-[#526173] hover:bg-[#F7F9FC]"
             }`}
           >
-            Paid ({invoices.filter((i) => i.status === "paid").length})
+            Paid ({paidCount})
           </button>
           <button
             onClick={() => setActiveFilter("disputed")}
@@ -190,7 +216,7 @@ export function InvoiceTable({
                 : "text-[#526173] hover:bg-[#F7F9FC]"
             }`}
           >
-            Disputed ({invoices.filter((i) => i.status === "disputed").length})
+            Disputed ({disputedCount})
           </button>
         </div>
 
