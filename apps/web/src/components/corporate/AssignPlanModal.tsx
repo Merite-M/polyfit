@@ -298,7 +298,7 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="w-8 h-8 rounded-full bg-card border border-border hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            className="w-8 h-8 rounded-full bg-card border border-border hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <X className="w-4 h-4" />
           </button>
@@ -341,7 +341,7 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
                 type="button"
                 onClick={() => setAssignMode("people")}
                 className={cn(
-                  "py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer",
+                  "py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   assignMode === "people"
                     ? "bg-card text-foreground shadow-xs font-bold"
                     : "text-muted-foreground hover:text-foreground"
@@ -357,7 +357,7 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
                 type="button"
                 onClick={() => setAssignMode("departments")}
                 className={cn(
-                  "py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer",
+                  "py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   assignMode === "departments"
                     ? "bg-card text-foreground shadow-xs font-bold"
                     : "text-muted-foreground hover:text-foreground"
@@ -383,13 +383,15 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search by name, email, department, or staff ID..."
-                    className="w-full pl-9 pr-8 py-2 rounded-xl bg-background border border-border text-xs text-foreground placeholder-muted-foreground focus:outline-none focus:border-secondary transition-colors"
+                    aria-label="Search employees"
+                    className="w-full pl-9 pr-8 py-2 rounded-xl bg-background border border-border text-xs text-foreground placeholder-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus:border-secondary transition-colors"
                   />
                   {searchQuery && (
                     <button
                       type="button"
                       onClick={() => setSearchQuery("")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label="Clear search input"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -401,7 +403,8 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
                   <select
                     value={selectedDeptFilter}
                     onChange={(e) => setSelectedDeptFilter(e.target.value)}
-                    className="px-2.5 py-1.5 rounded-lg bg-background border border-border text-[11px] text-muted-foreground focus:outline-none focus:border-secondary cursor-pointer"
+                    aria-label="Filter by department"
+                    className="px-2.5 py-1.5 rounded-lg bg-background border border-border text-[11px] text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus:border-secondary cursor-pointer"
                   >
                     <option value="all">All Departments</option>
                     {uniqueEmployeeDepartments.map((dept) => (
@@ -415,7 +418,8 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
                   <select
                     value={selectedTierFilter}
                     onChange={(e) => setSelectedTierFilter(e.target.value)}
-                    className="px-2.5 py-1.5 rounded-lg bg-background border border-border text-[11px] text-muted-foreground focus:outline-none focus:border-secondary cursor-pointer"
+                    aria-label="Filter by current tier"
+                    className="px-2.5 py-1.5 rounded-lg bg-background border border-border text-[11px] text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus:border-secondary cursor-pointer"
                   >
                     <option value="all">All Current Tiers</option>
                     {uniqueEmployeeTiers.map((t) => (
@@ -433,7 +437,7 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
                         setSelectedDeptFilter("all");
                         setSelectedTierFilter("all");
                       }}
-                      className="text-[11px] text-muted-foreground hover:text-foreground underline cursor-pointer"
+                      className="text-[11px] text-muted-foreground hover:text-foreground underline cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xs"
                     >
                       Reset filters
                     </button>
@@ -462,7 +466,7 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
                   <button
                     type="button"
                     onClick={selectAllFilteredEmployees}
-                    className="text-[11px] text-secondary hover:underline font-semibold cursor-pointer"
+                    className="text-[11px] text-secondary hover:underline font-semibold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xs"
                   >
                     {filteredEmployees.length > 0 &&
                     filteredEmployees.every((e) => selectedEmployeeIds.includes(e.id))
@@ -475,7 +479,7 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
                       <button
                         type="button"
                         onClick={clearEmployeeSelection}
-                        className="text-[11px] text-destructive hover:underline cursor-pointer"
+                        className="text-[11px] text-destructive hover:underline cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xs"
                       >
                         Clear
                       </button>
@@ -584,7 +588,7 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
                 <button
                   type="button"
                   onClick={selectAllDepts}
-                  className="text-[11px] text-secondary hover:underline font-semibold cursor-pointer"
+                  className="text-[11px] text-secondary hover:underline font-semibold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xs"
                 >
                   {selectedDepts.length === availableDepartments.length ? "Deselect All" : "Select All"}
                 </button>
@@ -696,14 +700,21 @@ export const AssignPlanModal: React.FC<AssignPlanModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-input text-muted-foreground text-xs font-semibold hover:bg-muted transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-xl border border-input text-muted-foreground text-xs font-semibold hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || effectiveTotalAssigned === 0}
-              className="px-5 py-2 rounded-xl bg-accent text-accent-foreground text-xs font-bold hover:bg-accent-hover transition-colors shadow-sm disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+              title={
+                effectiveTotalAssigned === 0
+                  ? assignMode === "people"
+                    ? "Select at least one employee to assign"
+                    : "Select at least one department to assign"
+                  : undefined
+              }
+              className="px-5 py-2 rounded-xl bg-accent text-accent-foreground text-xs font-bold hover:bg-accent-hover transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {isSubmitting ? (
                 "Assigning..."
