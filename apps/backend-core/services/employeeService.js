@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const { supabase } = require('./supabaseService');
-const { normalizePhoneNumber } = require('@polyfit/shared-utils');
+const { normalizePhoneNumber, sanitizePostgrestFilter } = require('@polyfit/shared-utils');
 
 const VALID_TIERS = ['basic', 'standard', 'premium', 'executive'];
 const VALID_STATUSES = ['active', 'frozen', 'terminated'];
@@ -210,11 +210,13 @@ async function createSingleEmployee(orgId, {
   // Check duplicate phone in this org
   if (cleanPhone) {
     const last8 = cleanPhone.slice(-8);
+    const safePhone = sanitizePostgrestFilter(cleanPhone);
+    const safeLast8 = sanitizePostgrestFilter(last8);
     const { data: existingPhoneEmp } = await supabase
       .from('employees')
       .select('id, phone, status')
       .eq('org_id', orgId)
-      .or(`phone.eq.${cleanPhone},phone.ilike.%${last8}%`)
+      .or(`phone.eq.${safePhone},phone.ilike.%${safeLast8}%`)
       .maybeSingle();
 
     if (existingPhoneEmp) {

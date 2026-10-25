@@ -10,6 +10,7 @@ const {
   getEmployeeNetwork
 } = require('../services/employeePortalService');
 const { evaluateEmployeeEligibility } = require('../services/eligibilityService');
+const { sanitizePostgrestFilter } = require('@polyfit/shared-utils');
 
 const router = express.Router();
 
@@ -289,10 +290,12 @@ router.post(['/auth/verify-domain', '/verify-domain', '/auth/resolve-identity', 
 
       // Query employee by phone (exact international, raw digits, or last 8 digits)
       const last8 = normalizedPhone.slice(-8);
+      const safePhone = sanitizePostgrestFilter(normalizedPhone);
+      const safeLast8 = sanitizePostgrestFilter(last8);
       const { data: emp } = await supabase
         .from('employees')
         .select('id, full_name, email, phone, org_id, tier, status')
-        .or(`phone.eq.${normalizedPhone},phone.ilike.%${last8}%`)
+        .or(`phone.eq.${safePhone},phone.ilike.%${safeLast8}%`)
         .eq('status', 'active')
         .limit(1)
         .maybeSingle();
@@ -780,10 +783,12 @@ router.post(['/auth/verify-access', '/verify-access'], async (req, res) => {
     if (isPhone) {
       // Find employee by phone
       const last8 = targetKey.slice(-8);
+      const safeTargetKey = sanitizePostgrestFilter(targetKey);
+      const safeLast8 = sanitizePostgrestFilter(last8);
       const { data: empData } = await supabase
         .from('employees')
         .select('id, full_name, email, phone, org_id, tier, status, employee_id_external, department')
-        .or(`phone.eq.${targetKey},phone.ilike.%${last8}%`)
+        .or(`phone.eq.${safeTargetKey},phone.ilike.%${safeLast8}%`)
         .limit(1)
         .maybeSingle();
 

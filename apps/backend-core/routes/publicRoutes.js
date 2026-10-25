@@ -692,10 +692,12 @@ router.get('/verify-company', async (req, res) => {
     // Check if query is a phone number of an enrolled employee
     if (normalizedPhone) {
       const last8 = normalizedPhone.slice(-8);
+      const safePhone = sanitizePostgrestFilter(normalizedPhone);
+      const safeLast8 = sanitizePostgrestFilter(last8);
       const { data: empData } = await supabase
         .from('employees')
         .select('org_id, organizations(id, name, slug, industry, logo_url, status)')
-        .or(`phone.eq.${normalizedPhone},phone.ilike.%${last8}%`)
+        .or(`phone.eq.${safePhone},phone.ilike.%${safeLast8}%`)
         .eq('status', 'active')
         .limit(1)
         .maybeSingle();
