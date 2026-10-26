@@ -188,6 +188,11 @@ export function UniversalOmnibar({ isOpen, onClose }: UniversalOmnibarProps) {
             aria-label="Search network entities"
             aria-autocomplete="list"
             aria-controls="omnibar-search-results"
+            aria-activedescendant={
+              filteredResults.length > 0 && selectedIndex >= 0
+                ? `omnibar-option-${selectedIndex}`
+                : undefined
+            }
             className="flex-1 text-sm bg-transparent border-none outline-none text-foreground placeholder:text-slate-400 font-medium"
           />
           {loading && (
@@ -226,6 +231,7 @@ export function UniversalOmnibar({ isOpen, onClose }: UniversalOmnibarProps) {
               key={cat.id}
               role="tab"
               aria-selected={activeCategory === cat.id}
+              aria-controls="omnibar-search-results"
               onClick={() => setActiveCategory(cat.id)}
               className={`px-2.5 py-1 rounded-lg font-medium transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 outline-none ${
                 activeCategory === cat.id
@@ -272,6 +278,7 @@ export function UniversalOmnibar({ isOpen, onClose }: UniversalOmnibarProps) {
             return (
               <div
                 key={`${item.type}-${item.id}`}
+                id={`omnibar-option-${index}`}
                 role="option"
                 aria-selected={isSelected}
                 tabIndex={0}
