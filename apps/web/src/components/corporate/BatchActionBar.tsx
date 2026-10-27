@@ -57,7 +57,7 @@ export function BatchActionBar({
             type="button"
             disabled={isLoading}
             onClick={onBatchFreeze}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1E3A5F] hover:bg-[#F59E0B] hover:text-[#0B1F33] text-xs font-semibold transition-all cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1E3A5F] hover:bg-[#F59E0B] hover:text-[#0B1F33] text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#28D17C]"
             title="Temporarily freeze mobile passes for all selected employees"
           >
             <PauseCircle className="w-3.5 h-3.5 text-[#F59E0B]" />
@@ -69,7 +69,7 @@ export function BatchActionBar({
             type="button"
             disabled={isLoading}
             onClick={onBatchActivate}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1E3A5F] hover:bg-[#28D17C] hover:text-[#0B1F33] text-xs font-semibold transition-all cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1E3A5F] hover:bg-[#28D17C] hover:text-[#0B1F33] text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#28D17C]"
             title="Reactivate full benefit coverage for all selected employees"
           >
             <PlayCircle className="w-3.5 h-3.5 text-[#28D17C]" />
@@ -82,7 +82,9 @@ export function BatchActionBar({
               type="button"
               disabled={isLoading}
               onClick={() => setIsTierMenuOpen(!isTierMenuOpen)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1E3A5F] hover:bg-[#2A4D75] text-xs font-semibold transition-all cursor-pointer disabled:opacity-50"
+              aria-expanded={isTierMenuOpen}
+              aria-haspopup="menu"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1E3A5F] hover:bg-[#2A4D75] text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#28D17C]"
             >
               <Crown className="w-3.5 h-3.5 text-[#00D2B4]" />
               <span>Change Tier</span>
@@ -90,16 +92,20 @@ export function BatchActionBar({
             </button>
 
             {isTierMenuOpen && (
-              <div className="absolute bottom-full mb-2 left-0 w-36 bg-[#0B1F33] border border-[#1E3A5F] rounded-xl shadow-xl p-1 z-50 animate-in fade-in zoom-in-95">
+              <div
+                role="menu"
+                className="absolute bottom-full mb-2 left-0 w-36 bg-[#0B1F33] border border-[#1E3A5F] rounded-xl shadow-xl p-1 z-50 animate-in fade-in zoom-in-95"
+              >
                 {(["basic", "standard", "premium", "executive"] as const).map((tier) => (
                   <button
                     key={tier}
                     type="button"
+                    role="menuitem"
                     onClick={() => {
                       setIsTierMenuOpen(false);
                       onBatchChangeTier(tier);
                     }}
-                    className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold capitalize text-white hover:bg-[#1E3A5F] transition-colors cursor-pointer"
+                    className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold capitalize text-white hover:bg-[#1E3A5F] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#28D17C]"
                   >
                     {tier}
                   </button>
@@ -113,7 +119,7 @@ export function BatchActionBar({
             type="button"
             disabled={isLoading}
             onClick={onBatchExport}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1E3A5F] hover:bg-[#2A4D75] text-xs font-semibold transition-all cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1E3A5F] hover:bg-[#2A4D75] text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#28D17C]"
           >
             <Download className="w-3.5 h-3.5 text-[#00D2B4]" />
             <span>Export CSV</span>
@@ -124,7 +130,8 @@ export function BatchActionBar({
         <button
           type="button"
           onClick={onClearSelection}
-          className="ml-2 p-1.5 rounded-lg text-[#8491A3] hover:text-white hover:bg-[#1E3A5F] transition-colors cursor-pointer"
+          aria-label="Deselect all"
+          className="ml-2 p-1.5 rounded-lg text-[#8491A3] hover:text-white hover:bg-[#1E3A5F] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#28D17C]"
           title="Deselect all"
         >
           <X className="w-4 h-4" />
