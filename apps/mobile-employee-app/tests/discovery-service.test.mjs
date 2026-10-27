@@ -2,18 +2,23 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 // Re-implement or test pure algorithms to verify business logic correctness
+const DEG_TO_RAD = Math.PI / 180;
+const EARTH_RADIUS_KM = 6371;
+
 function calculateDistanceKm(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  if (lat1 === lat2 && lon1 === lon2) return 0;
+  const dLat = (lat2 - lat1) * DEG_TO_RAD;
+  const dLon = (lon2 - lon1) * DEG_TO_RAD;
+  const sinDLat2 = Math.sin(dLat / 2);
+  const sinDLon2 = Math.sin(dLon / 2);
   const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Number((R * c).toFixed(2));
+    sinDLat2 * sinDLat2 +
+    Math.cos(lat1 * DEG_TO_RAD) *
+      Math.cos(lat2 * DEG_TO_RAD) *
+      sinDLon2 *
+      sinDLon2;
+  const dist = EARTH_RADIUS_KM * 2 * Math.asin(Math.sqrt(Math.min(1, a)));
+  return Math.round(dist * 100) / 100;
 }
 
 function extractNeighborhood(address, name) {
