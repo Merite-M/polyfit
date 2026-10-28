@@ -1046,16 +1046,34 @@ async function getOperationsProviders(options = {}) {
     let todayVisitsForProvider = 0;
     let mtdVisitsForProvider = 0;
 
-    locations.forEach((loc) => {
+    // Single pass aggregation across provider locations to eliminate redundant O(N) array traversals (some/filter)
+    let activeLocCount = 0;
+    let maintenanceLocCount = 0;
+    let providerHasPhotos = false;
+
+    for (let i = 0; i < locations.length; i++) {
+      const loc = locations[i];
       totalCertifiedLocations += 1;
-      if (loc.status === 'active') activeLocationsCount += 1;
-      if (loc.status === 'maintenance' || loc.metadata?.is_maintenance_mode) maintenanceLocationsCount += 1;
+
+      if (loc.status === 'active') {
+        activeLocationsCount += 1;
+        activeLocCount += 1;
+      }
+
+      if (loc.status === 'maintenance' || loc.metadata?.is_maintenance_mode) {
+        maintenanceLocationsCount += 1;
+        maintenanceLocCount += 1;
+      }
+
+      if (!providerHasPhotos && loc.photos && loc.photos.length > 0) {
+        providerHasPhotos = true;
+      }
 
       const locToday = todayVisitsByLoc.get(loc.id) || 0;
       const locMtd = mtdVisitsByLoc.get(loc.id) || 0;
       todayVisitsForProvider += locToday;
       mtdVisitsForProvider += locMtd;
-    });
+    }
 
     // Determine primary negotiated rate
     const primaryRate = activeContract
@@ -1069,7 +1087,7 @@ async function getOperationsProviders(options = {}) {
     const onboarding = p.onboarding_details || {};
     const kycDocs = onboarding.kyc_documents || {};
     const hasRdb = Boolean(p.tax_id || kycDocs.rdb_certificate);
-    const hasPhotos = Boolean(locations.some((l) => l.photos && l.photos.length > 0) || kycDocs.facility_photos);
+    const hasPhotos = Boolean(providerHasPhotos || kycDocs.facility_photos);
     const hasHygiene = Boolean(kycDocs.hygiene_checklist);
     const hasBanking = Boolean(p.bank_details && (p.bank_details.account_number || p.bank_details.momo_code));
 
@@ -1102,9 +1120,9 @@ async function getOperationsProviders(options = {}) {
       primaryCity: locations[0]?.city || 'Kigali',
       primary_city: locations[0]?.city || 'Kigali',
       primaryAddress: locations[0]?.address || 'In Registration',
-      hasActiveMaintenance: locations.some((l) => l.status === 'maintenance' || l.metadata?.is_maintenance_mode),
-      maintenance_location_count: locations.filter((l) => l.status === 'maintenance' || l.metadata?.is_maintenance_mode).length,
-      active_location_count: locations.filter((l) => l.status === 'active').length,
+      hasActiveMaintenance: maintenanceLocCount > 0,
+      maintenance_location_count: maintenanceLocCount,
+      active_location_count: activeLocCount,
       primaryPayoutRate: primaryRate,
       per_visit_rate: primaryRate,
       currency,
