@@ -71,7 +71,8 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
       <div className="hidden md:flex items-center flex-1 max-w-md mx-2 sm:mx-4 lg:mx-6 min-w-0">
         <button
           onClick={onOpenOmnibar}
-          className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 hover:border-slate-300 text-xs text-slate-500 transition-all shadow-2xs group cursor-pointer min-w-0 overflow-hidden"
+          aria-label="Search operations (Cmd+K)"
+          className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 hover:border-slate-300 text-xs text-slate-500 transition-all shadow-2xs group cursor-pointer min-w-0 overflow-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 outline-none"
         >
           <div className="flex items-center gap-2.5 min-w-0 overflow-hidden">
             <Search className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors shrink-0" />
@@ -91,7 +92,8 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
         {/* Global Emergency Bypass Action */}
         <button
           onClick={() => openBypassModal()}
-          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#008A4B] hover:bg-[#00703C] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+          aria-label="Emergency Turnstile Bypass Pass"
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#008A4B] hover:bg-[#00703C] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 outline-none"
           title="Emergency Turnstile Bypass Pass"
         >
           <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
@@ -101,7 +103,7 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
         {/* Mobile Search Button */}
         <button
           onClick={onOpenOmnibar}
-          className="md:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+          className="md:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-emerald-500 outline-none"
           aria-label="Search"
         >
           <Search className="w-5 h-5" />
