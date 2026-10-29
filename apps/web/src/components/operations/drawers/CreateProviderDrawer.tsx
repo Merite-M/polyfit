@@ -35,7 +35,8 @@ const CATEGORY_OPTIONS = [
   { id: "studio", label: "Yoga & Pilates Studio", icon: "🧘‍♀️", defaultRate: 5000 },
   { id: "pool", label: "Olympic & Aquatic Pool", icon: "🏊‍♂️", defaultRate: 4500 },
   { id: "clinic", label: "Physiotherapy & Rehab", icon: "🩺", defaultRate: 8500 },
-  { id: "wellness_center", label: "Holistic Wellness & Spa", icon: "🌿", defaultRate: 7000 }
+  { id: "wellness_center", label: "Holistic Wellness & Spa", icon: "🌿", defaultRate: 7000 },
+  { id: "sports", label: "Sports & Racquet Courts", icon: "🏸", defaultRate: 5000 }
 ];
 
 const CITY_OPTIONS = [

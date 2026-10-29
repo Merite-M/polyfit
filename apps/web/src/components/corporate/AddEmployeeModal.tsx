@@ -39,7 +39,7 @@ export function AddEmployeeModal({
   const [email, setEmail] = useState("");
   const [employeeIdExternal, setEmployeeIdExternal] = useState("");
   const [department, setDepartment] = useState("Engineering");
-  const [tier, setTier] = useState<"basic" | "standard" | "premium" | "executive">("standard");
+  const [tier, setTier] = useState<"basic" | "starter" | "standard" | "premium" | "executive">("standard");
   const [status, setStatus] = useState<"active" | "frozen">("active");
   const [sendInvite, setSendInvite] = useState(true);
 
@@ -300,7 +300,7 @@ export function AddEmployeeModal({
                 id="employee-benefit-tier"
                 name="tier"
                 value={tier}
-                onChange={(e) => setTier(e.target.value as "basic" | "standard" | "premium" | "executive")}
+                onChange={(e) => setTier(e.target.value as "basic" | "starter" | "standard" | "premium" | "executive")}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border,#E2E8F0)] bg-[var(--surface,#FFFFFF)] text-xs font-medium text-[var(--text-primary,#0B1F33)] focus:outline-none focus:border-[var(--accent,#28D17C)] focus:ring-1 focus:ring-[var(--accent,#28D17C)]"
               >
                 <option value="basic">Basic (4 visits/mo • 20% co-pay)</option>

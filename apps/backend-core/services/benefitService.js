@@ -1,7 +1,7 @@
 const { supabase } = require('./supabaseService');
 const { VALID_TIERS } = require('./employeeService');
 
-const VALID_PROVIDER_CATEGORIES = ['gym', 'pool', 'studio', 'clinic', 'wellness_center'];
+const VALID_PROVIDER_CATEGORIES = ['gym', 'pool', 'studio', 'clinic', 'wellness_center', 'sports'];
 
 /**
  * Creates a new Benefit Plan for an organization (multi-tier support)

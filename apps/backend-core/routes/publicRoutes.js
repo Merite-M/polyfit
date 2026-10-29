@@ -854,6 +854,9 @@ router.post('/partner/register', leadFormLimiter, async (req, res) => {
       primaryCategory = 'clinic';
     } else if (categoryList.some(c => c.toLowerCase().includes('sauna') || c.toLowerCase().includes('spa') || c.toLowerCase().includes('wellness'))) {
       primaryCategory = 'wellness_center';
+    } else if (categoryList.some(c => c.toLowerCase().includes('sport') || c.toLowerCase().includes('court') || c.toLowerCase().includes('tennis') || c.toLowerCase().includes('padel'))) {
+      primaryCategory = 'sports';
+      primaryCategory = 'wellness_center';
     }
 
     // Check if provider already exists

@@ -1261,7 +1261,7 @@ async function getProviderCommercialConditions(providerId) {
       name: 'PolyFit Premium / Executive Tier',
       description: 'Executive all-access corporate tier covering all premium facilities, studios, and recovery.',
       co_pay_percentage: 0,
-      allowed_provider_categories: ['gym', 'pool', 'studio', 'clinic', 'wellness_center']
+      allowed_provider_categories: ['gym', 'pool', 'studio', 'clinic', 'wellness_center', 'sports']
     }
   ];
 

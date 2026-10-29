@@ -11,6 +11,14 @@
 // PROVIDER CATEGORIES & ACTOR ROLES
 // ============================================================================
 
+export type BenefitTier =
+  | 'basic'
+  | 'starter'
+  | 'standard'
+  | 'professional'
+  | 'premium'
+  | 'executive';
+
 export type ProviderCategory = 
   | 'gym'
   | 'pool'
@@ -101,7 +109,7 @@ export interface Benefit {
   id: string;
   org_id: string;
   name: string;
-  tier: 'starter' | 'standard' | 'executive' | string;
+  tier: BenefitTier | string;
   description?: string;
   max_monthly_visits: number;
   co_pay_percentage: number;

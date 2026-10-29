@@ -80,7 +80,7 @@ describe('Reporting & Analytics Engine Test Suite (PF-81)', () => {
     });
 
     test('VALID_CATEGORIES includes all aggregator wellness categories', () => {
-      assert.deepEqual(VALID_CATEGORIES, ['gym', 'pool', 'studio', 'clinic', 'wellness_center']);
+      assert.deepEqual(VALID_CATEGORIES, ['gym', 'pool', 'studio', 'clinic', 'wellness_center', 'sports']);
     });
 
     test('DAYS_OF_WEEK contains 7 days from Sunday to Saturday', () => {
