@@ -133,6 +133,16 @@ export function UniversalOmnibar({ isOpen, onClose }: UniversalOmnibarProps) {
     onClose();
   }, [openDrawer, onClose]);
 
+  // Scroll selected result into view when selectedIndex changes
+  useEffect(() => {
+    if (filteredResults.length > 0) {
+      const activeEl = document.getElementById(`omnibar-option-${selectedIndex}`);
+      if (activeEl) {
+        activeEl.scrollIntoView({ block: "nearest" });
+      }
+    }
+  }, [selectedIndex, filteredResults.length]);
+
   // Keyboard navigation inside Omnibar
   const handleInputKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
@@ -188,6 +198,11 @@ export function UniversalOmnibar({ isOpen, onClose }: UniversalOmnibarProps) {
             aria-label="Search network entities"
             aria-autocomplete="list"
             aria-controls="omnibar-search-results"
+            aria-activedescendant={
+              filteredResults.length > 0 && filteredResults[selectedIndex]
+                ? `omnibar-option-${selectedIndex}`
+                : undefined
+            }
             className="flex-1 text-sm bg-transparent border-none outline-none text-foreground placeholder:text-slate-400 font-medium"
           />
           {loading && (
@@ -272,6 +287,7 @@ export function UniversalOmnibar({ isOpen, onClose }: UniversalOmnibarProps) {
 
             return (
               <div
+                id={`omnibar-option-${index}`}
                 key={`${item.type}-${item.id}`}
                 role="option"
                 aria-selected={isSelected}
