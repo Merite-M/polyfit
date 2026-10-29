@@ -7,6 +7,8 @@
 
 const DEG_TO_RAD = Math.PI / 180;
 const EARTH_RADIUS_METERS = 6371e3;
+const POSTGREST_FILTER_REGEX = /[\(\),:\\"'\/%_]/g;
+const NON_DIGIT_REGEX = /[^0-9]/g;
 
 /**
  * Calculates distance in meters between two GPS coordinates using an optimized Haversine formula.
@@ -47,7 +49,7 @@ function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
  */
 function sanitizePostgrestFilter(input) {
   if (!input || typeof input !== 'string') return '';
-  return input.replace(/[\(\),:\\"'\/%_]/g, '').trim();
+  return input.replace(POSTGREST_FILTER_REGEX, '').trim();
 }
 
 /**
@@ -60,7 +62,7 @@ function sanitizePostgrestFilter(input) {
 function normalizePhoneNumber(raw) {
   if (!raw) return null;
   const str = String(raw).trim();
-  const digits = str.replace(/[^0-9]/g, '');
+  const digits = str.replace(NON_DIGIT_REGEX, '');
   if (!digits) return null;
   // Rwanda: 9 digits starting with 7 -> +2507...
   if (digits.length === 9 && digits.startsWith('7')) {
