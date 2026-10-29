@@ -226,6 +226,7 @@ export function UniversalOmnibar({ isOpen, onClose }: UniversalOmnibarProps) {
               key={cat.id}
               role="tab"
               aria-selected={activeCategory === cat.id}
+              aria-controls="omnibar-search-results"
               onClick={() => setActiveCategory(cat.id)}
               className={`px-2.5 py-1 rounded-lg font-medium transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 outline-none ${
                 activeCategory === cat.id
