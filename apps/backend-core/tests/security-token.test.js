@@ -71,4 +71,10 @@ describe("Security Fix: PostgREST Filter Injection Prevention", () => {
     const cleaned = sanitizePostgrestFilter(maliciousStaffId);
     assert.strictEqual(cleaned, "EMP-101orstatus.eq.activefoo");
   });
+
+  test("sanitizes query parameters in getOperationsSupportBeneficiaries to prevent PostgREST filter injection", () => {
+    const maliciousInput = "test@example.com),email.ilike.%";
+    const cleaned = sanitizePostgrestFilter(maliciousInput);
+    assert.strictEqual(cleaned, "test@example.comemail.ilike.");
+  });
 });

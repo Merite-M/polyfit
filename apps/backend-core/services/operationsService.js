@@ -3040,8 +3040,10 @@ async function getOperationsSupportBeneficiaries({ q, status, tier, orgId, page 
     `, { count: 'exact' });
 
   if (q && q.trim()) {
-    const cleanQ = q.trim();
-    query = query.or(`full_name.ilike.%${cleanQ}%,email.ilike.%${cleanQ}%,employee_id_external.ilike.%${cleanQ}%`);
+    const cleanQ = sanitizePostgrestFilter(q);
+    if (cleanQ) {
+      query = query.or(`full_name.ilike.%${cleanQ}%,email.ilike.%${cleanQ}%,employee_id_external.ilike.%${cleanQ}%`);
+    }
   }
 
   if (status && status !== 'all') {
