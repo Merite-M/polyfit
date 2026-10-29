@@ -1,8 +1,8 @@
 const crypto = require('crypto');
 const { supabase } = require('./supabaseService');
-const { normalizePhoneNumber } = require('@polyfit/shared-utils');
+const { normalizePhoneNumber, sanitizePostgrestFilter } = require('@polyfit/shared-utils');
 
-const VALID_TIERS = ['basic', 'standard', 'premium', 'executive'];
+const VALID_TIERS = ['basic', 'starter', 'standard', 'professional', 'premium', 'executive'];
 const VALID_STATUSES = ['active', 'frozen', 'terminated'];
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -214,7 +214,7 @@ async function createSingleEmployee(orgId, {
       .from('employees')
       .select('id, phone, status')
       .eq('org_id', orgId)
-      .or(`phone.eq.${cleanPhone},phone.ilike.%${last8}%`)
+      .or(`phone.eq.${sanitizePostgrestFilter(cleanPhone)},phone.ilike.%${sanitizePostgrestFilter(last8)}%`)
       .maybeSingle();
 
     if (existingPhoneEmp) {

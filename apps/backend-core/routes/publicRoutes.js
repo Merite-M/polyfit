@@ -695,7 +695,7 @@ router.get('/verify-company', async (req, res) => {
       const { data: empData } = await supabase
         .from('employees')
         .select('org_id, organizations(id, name, slug, industry, logo_url, status)')
-        .or(`phone.eq.${normalizedPhone},phone.ilike.%${last8}%`)
+        .or(`phone.eq.${sanitizePostgrestFilter(normalizedPhone)},phone.ilike.%${sanitizePostgrestFilter(last8)}%`)
         .eq('status', 'active')
         .limit(1)
         .maybeSingle();
@@ -853,6 +853,9 @@ router.post('/partner/register', leadFormLimiter, async (req, res) => {
     } else if (categoryList.some(c => c.toLowerCase().includes('physio') || c.toLowerCase().includes('clinic'))) {
       primaryCategory = 'clinic';
     } else if (categoryList.some(c => c.toLowerCase().includes('sauna') || c.toLowerCase().includes('spa') || c.toLowerCase().includes('wellness'))) {
+      primaryCategory = 'wellness_center';
+    } else if (categoryList.some(c => c.toLowerCase().includes('sport') || c.toLowerCase().includes('court') || c.toLowerCase().includes('tennis') || c.toLowerCase().includes('padel'))) {
+      primaryCategory = 'sports';
       primaryCategory = 'wellness_center';
     }
 

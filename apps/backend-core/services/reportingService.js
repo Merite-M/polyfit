@@ -1,7 +1,7 @@
 const { supabase } = require('./supabaseService');
 
 // ─── Constants & Configuration ────────────────────────────────────────────────
-const VALID_CATEGORIES = ['gym', 'pool', 'studio', 'clinic', 'wellness_center'];
+const VALID_CATEGORIES = ['gym', 'pool', 'studio', 'clinic', 'wellness_center', 'sports'];
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const WELLBEING_ROI_FACTORS = {
