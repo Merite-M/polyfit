@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const express = require('express');
 const { rateLimit } = require('express-rate-limit');
 const { requireAuth } = require('../middleware/authMiddleware');
+const { sanitizePostgrestFilter } = require('@polyfit/shared-utils');
 const {
   getEmployeeForAuthUser,
   getEmployeeMe,
@@ -292,7 +293,7 @@ router.post(['/auth/verify-domain', '/verify-domain', '/auth/resolve-identity', 
       const { data: emp } = await supabase
         .from('employees')
         .select('id, full_name, email, phone, org_id, tier, status')
-        .or(`phone.eq.${normalizedPhone},phone.ilike.%${last8}%`)
+        .or(`phone.eq.${sanitizePostgrestFilter(normalizedPhone)},phone.ilike.%${sanitizePostgrestFilter(last8)}%`)
         .eq('status', 'active')
         .limit(1)
         .maybeSingle();
@@ -783,7 +784,7 @@ router.post(['/auth/verify-access', '/verify-access'], async (req, res) => {
       const { data: empData } = await supabase
         .from('employees')
         .select('id, full_name, email, phone, org_id, tier, status, employee_id_external, department')
-        .or(`phone.eq.${targetKey},phone.ilike.%${last8}%`)
+        .or(`phone.eq.${sanitizePostgrestFilter(targetKey)},phone.ilike.%${sanitizePostgrestFilter(last8)}%`)
         .limit(1)
         .maybeSingle();
 

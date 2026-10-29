@@ -695,7 +695,7 @@ router.get('/verify-company', async (req, res) => {
       const { data: empData } = await supabase
         .from('employees')
         .select('org_id, organizations(id, name, slug, industry, logo_url, status)')
-        .or(`phone.eq.${normalizedPhone},phone.ilike.%${last8}%`)
+        .or(`phone.eq.${sanitizePostgrestFilter(normalizedPhone)},phone.ilike.%${sanitizePostgrestFilter(last8)}%`)
         .eq('status', 'active')
         .limit(1)
         .maybeSingle();
