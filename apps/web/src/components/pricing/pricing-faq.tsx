@@ -82,9 +82,11 @@ export default function PricingFaq({ onOpenLeadForm }: PricingFaqProps = {}) {
               >
                 <button
                   type="button"
+                  id={`pricing-faq-btn-${index}`}
                   onClick={() => toggleFaq(index)}
                   className="w-full text-left px-5 sm:px-6 py-4 sm:py-5 flex items-center justify-between gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer"
                   aria-expanded={isOpen}
+                  aria-controls={`pricing-faq-answer-${index}`}
                 >
                   <span className="text-sm sm:text-base font-bold text-foreground">
                     {faq.question}
@@ -94,12 +96,17 @@ export default function PricingFaq({ onOpenLeadForm }: PricingFaqProps = {}) {
                       isOpen ? "rotate-180 bg-accent-subtle text-accent" : "text-muted-foreground"
                     }`}
                   >
-                    <ChevronDown className="w-4 h-4" />
+                    <ChevronDown className="w-4 h-4" aria-hidden="true" />
                   </div>
                 </button>
 
                 {isOpen && (
-                  <div className="px-5 sm:px-6 pb-5 pt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed border-t border-border/60">
+                  <div
+                    id={`pricing-faq-answer-${index}`}
+                    role="region"
+                    aria-labelledby={`pricing-faq-btn-${index}`}
+                    className="px-5 sm:px-6 pb-5 pt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed border-t border-border/60"
+                  >
                     {faq.answer}
                   </div>
                 )}
