@@ -199,7 +199,7 @@ export function UniversalOmnibar({ isOpen, onClose }: UniversalOmnibarProps) {
             aria-autocomplete="list"
             aria-controls="omnibar-search-results"
             aria-activedescendant={
-              filteredResults.length > 0 && filteredResults[selectedIndex]
+              filteredResults.length > 0 && selectedIndex >= 0 && filteredResults[selectedIndex]
                 ? `omnibar-option-${selectedIndex}`
                 : undefined
             }
