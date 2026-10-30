@@ -32,7 +32,7 @@ export function PlatformSuiteLauncher({
   const containerRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
-  // Close on outside click
+  // Close on outside click or Escape key press
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -42,9 +42,18 @@ export function PlatformSuiteLauncher({
         setIsOpen(false);
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && isOpen) {
+        setIsOpen(false);
+      }
+    }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
 
   const portals = [
     {
@@ -110,7 +119,7 @@ export function PlatformSuiteLauncher({
             : "bg-background/90 hover:bg-muted border-border text-foreground shadow-2xs"
         )}
         aria-expanded={isOpen}
-        aria-haspopup="true"
+        aria-haspopup="menu"
         title="Switch between PolyFit platform surfaces"
       >
         <Grid className="w-3.5 h-3.5 text-emerald-400" />
