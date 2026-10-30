@@ -1,5 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
+const { safeCompare } = require('@polyfit/shared-utils');
 const { supabase } = require('../services/supabaseService');
 const { logAuthEvent } = require('../services/auditService');
 const {
@@ -724,10 +725,16 @@ router.patch('/:id/dispute', requireAuth, requireRole('super_admin', 'polyfit_op
 // ─── Turnstile Authentication Helper ─────────────────────────────────────────
 function authenticateTurnstile(req, res, next) {
   const turnstileKey = req.headers['x-polyfit-turnstile-key'];
-  const configuredKey = process.env.TURNSTILE_API_KEY || 'polyfit_turnstile_relay_key_2026';
+  const configuredKey = process.env.TURNSTILE_API_KEY || (process.env.NODE_ENV !== 'production' ? 'polyfit_turnstile_relay_key_2026' : null);
 
   if (turnstileKey) {
-    if (turnstileKey === configuredKey) {
+    if (!configuredKey) {
+      return res.status(503).json({
+        error: 'Turnstile API key not configured',
+        code: 'TURNSTILE_NOT_CONFIGURED'
+      });
+    }
+    if (safeCompare(turnstileKey, configuredKey)) {
       req.isTurnstileDevice = true;
       req.primaryRole = 'turnstile_device';
       return next();
