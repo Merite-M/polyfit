@@ -1,7 +1,7 @@
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("crypto");
-const { sanitizePostgrestFilter } = require("@polyfit/shared-utils");
+const { sanitizePostgrestFilter, safeCompare } = require("@polyfit/shared-utils");
 
 describe("Security Fix: Cryptographically Secure PRNG for Sensitive Tokens", () => {
   test("invitation token follows inv_<48 hex chars> cryptographically secure format", () => {
@@ -82,5 +82,26 @@ describe("Security Fix: PostgREST Filter Injection Prevention", () => {
     const maliciousPhone = "+250788123456),phone.ilike.%88123456%";
     const cleaned = sanitizePostgrestFilter(maliciousPhone);
     assert.strictEqual(cleaned, "+250788123456phone.ilike.88123456");
+  });
+});
+
+describe("Security Fix: Timing-Safe Secret Comparison (safeCompare)", () => {
+  test("returns true for matching secret strings", () => {
+    assert.strictEqual(safeCompare("polyfit_cron_secret_2026", "polyfit_cron_secret_2026"), true);
+  });
+
+  test("returns false for mismatched secret strings of same length", () => {
+    assert.strictEqual(safeCompare("polyfit_cron_secret_2026", "polyfit_cron_secret_2027"), false);
+  });
+
+  test("returns false for mismatched secret strings of different lengths without throwing", () => {
+    assert.strictEqual(safeCompare("short", "polyfit_cron_secret_2026"), false);
+    assert.strictEqual(safeCompare("polyfit_cron_secret_2026_extended", "polyfit_cron_secret_2026"), false);
+  });
+
+  test("returns false for non-string, null, or undefined inputs safely", () => {
+    assert.strictEqual(safeCompare(null, "secret"), false);
+    assert.strictEqual(safeCompare("secret", undefined), false);
+    assert.strictEqual(safeCompare(12345, "12345"), false);
   });
 });
