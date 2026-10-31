@@ -9,6 +9,7 @@ const {
   requireOrgAccess,
   requireProviderAccess
 } = require('../middleware/authMiddleware');
+const { safeCompare } = require('@polyfit/shared-utils');
 const {
   deriveEmployeeSecret,
   generateTotp,
@@ -727,7 +728,8 @@ function authenticateTurnstile(req, res, next) {
   const configuredKey = process.env.TURNSTILE_API_KEY || 'polyfit_turnstile_relay_key_2026';
 
   if (turnstileKey) {
-    if (turnstileKey === configuredKey) {
+    // Constant-time comparison prevents timing side-channel attacks on IoT turnstile key
+    if (safeCompare(turnstileKey, configuredKey)) {
       req.isTurnstileDevice = true;
       req.primaryRole = 'turnstile_device';
       return next();

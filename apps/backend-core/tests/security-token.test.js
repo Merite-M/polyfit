@@ -1,7 +1,7 @@
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("crypto");
-const { sanitizePostgrestFilter } = require("@polyfit/shared-utils");
+const { sanitizePostgrestFilter, safeCompare } = require("@polyfit/shared-utils");
 
 describe("Security Fix: Cryptographically Secure PRNG for Sensitive Tokens", () => {
   test("invitation token follows inv_<48 hex chars> cryptographically secure format", () => {
@@ -82,5 +82,41 @@ describe("Security Fix: PostgREST Filter Injection Prevention", () => {
     const maliciousPhone = "+250788123456),phone.ilike.%88123456%";
     const cleaned = sanitizePostgrestFilter(maliciousPhone);
     assert.strictEqual(cleaned, "+250788123456phone.ilike.88123456");
+  });
+});
+
+describe("Security Fix: Constant-Time safeCompare for Secrets & Tokens", () => {
+  test("returns true for identical secret strings", () => {
+    const secret = "cron_secret_kigali_2026_super_secure";
+    assert.strictEqual(safeCompare(secret, secret), true);
+    assert.strictEqual(safeCompare("polyfit_turnstile_relay_key_2026", "polyfit_turnstile_relay_key_2026"), true);
+  });
+
+  test("returns false for mismatched strings of equal length", () => {
+    assert.strictEqual(safeCompare("polyfit_turnstile_relay_key_2026", "polyfit_turnstile_relay_key_2025"), false);
+    assert.strictEqual(safeCompare("a", "b"), false);
+  });
+
+  test("returns false for strings of different lengths", () => {
+    assert.strictEqual(safeCompare("short", "much_longer_secret_token"), false);
+    assert.strictEqual(safeCompare("polyfit_turnstile_relay_key_2026", "polyfit"), false);
+  });
+
+  test("returns false safely when arguments are null, undefined, or non-strings", () => {
+    assert.strictEqual(safeCompare(null, "secret"), false);
+    assert.strictEqual(safeCompare("secret", null), false);
+    assert.strictEqual(safeCompare(undefined, "secret"), false);
+    assert.strictEqual(safeCompare("secret", undefined), false);
+    assert.strictEqual(safeCompare(12345, 12345), false);
+    assert.strictEqual(safeCompare({}, {}), false);
+    assert.strictEqual(safeCompare(null, null), false);
+  });
+
+  test("SHA-256 fixed-length digests guarantee timing-safe comparison regardless of input length", () => {
+    const input1 = "a".repeat(1000);
+    const input2 = "a".repeat(1000);
+    const input3 = "a".repeat(999) + "b";
+    assert.strictEqual(safeCompare(input1, input2), true);
+    assert.strictEqual(safeCompare(input1, input3), false);
   });
 });

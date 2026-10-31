@@ -1,4 +1,5 @@
 const express = require('express');
+const { safeCompare } = require('@polyfit/shared-utils');
 const { generateAllInvoices, markOverdueInvoices } = require('../services/billingService');
 const { generateAllSettlements } = require('../services/settlementService');
 
@@ -19,7 +20,8 @@ function verifyCronSecret(req, res, next) {
   }
 
   const provided = req.headers['x-cron-secret'] || req.headers['authorization']?.replace('Bearer ', '');
-  if (provided !== CRON_SECRET) {
+  // Constant-time comparison prevents timing attacks on CRON_SECRET
+  if (!safeCompare(provided, CRON_SECRET)) {
     return res.status(401).json({
       error: 'Invalid cron secret',
       code: 'CRON_UNAUTHORIZED'
