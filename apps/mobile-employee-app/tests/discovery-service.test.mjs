@@ -36,6 +36,35 @@ function extractNeighborhood(address, name) {
   return 'Kigali Central';
 }
 
+const DAYS_OF_WEEK = [
+  'sunday',
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+];
+
+function parseTimeStr(timeStr) {
+  const colonIdx = timeStr.indexOf(':');
+  if (colonIdx === -1) {
+    const h = parseInt(timeStr, 10) || 0;
+    return [h, 0];
+  }
+  const h = parseInt(timeStr.slice(0, colonIdx), 10) || 0;
+  const m = parseInt(timeStr.slice(colonIdx + 1), 10) || 0;
+  return [h, m];
+}
+
+function formatHourMinute(h, m) {
+  const mStr = m === 0 ? '00' : m < 10 ? `0${m}` : `${m}`;
+  if (h === 0) return `12:${mStr} AM`;
+  if (h === 12) return `12:${mStr} PM`;
+  if (h > 12) return `${h - 12}:${mStr} PM`;
+  return `${h}:${mStr} AM`;
+}
+
 function getFacilityOperatingStatus(hours, mockDate = new Date()) {
   if (!hours) {
     return {
@@ -45,17 +74,7 @@ function getFacilityOperatingStatus(hours, mockDate = new Date()) {
     };
   }
 
-  const days = [
-    'sunday',
-    'monday',
-    'tuesday',
-    'wednesday',
-    'thursday',
-    'friday',
-    'saturday',
-  ];
-
-  const currentDay = days[mockDate.getDay()];
+  const currentDay = DAYS_OF_WEEK[mockDate.getDay()];
   const todayHours = hours[currentDay];
 
   if (!todayHours || !todayHours.open || !todayHours.close) {
@@ -68,11 +87,11 @@ function getFacilityOperatingStatus(hours, mockDate = new Date()) {
 
   const currentMinutes = mockDate.getHours() * 60 + mockDate.getMinutes();
 
-  const [openH, openM] = todayHours.open.split(':').map(Number);
-  const [closeH, closeM] = todayHours.close.split(':').map(Number);
+  const [openH, openM] = parseTimeStr(todayHours.open);
+  const [closeH, closeM] = parseTimeStr(todayHours.close);
 
-  const openMinutes = openH * 60 + (openM || 0);
-  const closeMinutes = closeH * 60 + (closeM || 0);
+  const openMinutes = openH * 60 + openM;
+  const closeMinutes = closeH * 60 + closeM;
 
   if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
     const minutesLeft = closeMinutes - currentMinutes;
@@ -84,22 +103,28 @@ function getFacilityOperatingStatus(hours, mockDate = new Date()) {
       };
     }
 
-    const formattedClose =
-      closeH > 12 ? `${closeH - 12}:${closeM === 0 ? '00' : closeM} PM` : `${closeH}:${closeM === 0 ? '00' : closeM} AM`;
-
     return {
       isOpen: true,
-      statusText: `Open Now • Closes ${formattedClose}`,
+      statusText: `Open Now • Closes ${formatHourMinute(closeH, closeM)}`,
       statusBadge: 'open',
     };
   }
 
   if (currentMinutes < openMinutes) {
-    const formattedOpen =
-      openH > 12 ? `${openH - 12}:${openM === 0 ? '00' : openM} PM` : `${openH}:${openM === 0 ? '00' : openM} AM`;
     return {
       isOpen: false,
-      statusText: `Closed • Opens at ${formattedOpen}`,
+      statusText: `Closed • Opens at ${formatHourMinute(openH, openM)}`,
+      statusBadge: 'closed',
+    };
+  }
+
+  const nextDay = DAYS_OF_WEEK[(mockDate.getDay() + 1) % 7];
+  const nextHours = hours[nextDay];
+  if (nextHours && nextHours.open) {
+    const [nextH, nextM] = parseTimeStr(nextHours.open);
+    return {
+      isOpen: false,
+      statusText: `Closed • Opens tomorrow ${formatHourMinute(nextH, nextM)}`,
       statusBadge: 'closed',
     };
   }
@@ -162,4 +187,27 @@ test('getFacilityOperatingStatus reports Closed when outside operating hours', (
   assert.equal(status.isOpen, false);
   assert.equal(status.statusBadge, 'closed');
   assert.match(status.statusText, /Closed • Opens at 6:00 AM/);
+});
+
+test('getFacilityOperatingStatus reports Closed and opens tomorrow with correct next day hours', () => {
+  const hours = {
+    monday: { open: '06:00', close: '22:00' },
+    tuesday: { open: '05:30', close: '21:00' },
+  };
+  // Mock Monday at 23:00 (after close)
+  const mondayNight = new Date('2026-10-05T23:00:00');
+  const status = getFacilityOperatingStatus(hours, mondayNight);
+  assert.equal(status.isOpen, false);
+  assert.equal(status.statusBadge, 'closed');
+  assert.match(status.statusText, /Closed • Opens tomorrow 5:30 AM/);
+});
+
+test('parseTimeStr and formatHourMinute handle noon, midnight, and minutes cleanly', () => {
+  assert.deepEqual(parseTimeStr('12:00'), [12, 0]);
+  assert.deepEqual(parseTimeStr('00:05'), [0, 5]);
+  assert.deepEqual(parseTimeStr('23:45'), [23, 45]);
+  assert.equal(formatHourMinute(12, 0), '12:00 PM');
+  assert.equal(formatHourMinute(0, 5), '12:05 AM');
+  assert.equal(formatHourMinute(23, 45), '11:45 PM');
+  assert.equal(formatHourMinute(9, 30), '9:30 AM');
 });
