@@ -1,7 +1,7 @@
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("crypto");
-const { sanitizePostgrestFilter } = require("@polyfit/shared-utils");
+const { sanitizePostgrestFilter, safeCompare } = require("@polyfit/shared-utils");
 
 describe("Security Fix: Cryptographically Secure PRNG for Sensitive Tokens", () => {
   test("invitation token follows inv_<48 hex chars> cryptographically secure format", () => {
@@ -82,5 +82,33 @@ describe("Security Fix: PostgREST Filter Injection Prevention", () => {
     const maliciousPhone = "+250788123456),phone.ilike.%88123456%";
     const cleaned = sanitizePostgrestFilter(maliciousPhone);
     assert.strictEqual(cleaned, "+250788123456phone.ilike.88123456");
+  });
+});
+
+describe("Security Fix: Constant-Time Comparison for Secrets (Timing Attack Prevention)", () => {
+  test("returns true for matching secret strings", () => {
+    const secret = "cron_secret_kigali_production_2026_xyz";
+    assert.strictEqual(safeCompare(secret, secret), true);
+  });
+
+  test("returns false for mismatching secret strings", () => {
+    assert.strictEqual(safeCompare("secret-a", "secret-b"), false);
+  });
+
+  test("returns false when candidate is a prefix of secret", () => {
+    assert.strictEqual(safeCompare("secret", "secret_extra"), false);
+  });
+
+  test("returns false when lengths differ significantly", () => {
+    assert.strictEqual(safeCompare("short", "a_very_long_secret_token_1234567890"), false);
+  });
+
+  test("safely handles null, undefined, and non-string types without throwing", () => {
+    assert.strictEqual(safeCompare(null, "secret"), false);
+    assert.strictEqual(safeCompare("secret", null), false);
+    assert.strictEqual(safeCompare(undefined, "secret"), false);
+    assert.strictEqual(safeCompare("secret", undefined), false);
+    assert.strictEqual(safeCompare(123, "123"), false);
+    assert.strictEqual(safeCompare({}, {}), false);
   });
 });
