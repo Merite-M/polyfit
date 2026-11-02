@@ -1,7 +1,7 @@
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("crypto");
-const { sanitizePostgrestFilter } = require("@polyfit/shared-utils");
+const { sanitizePostgrestFilter, safeCompare } = require("@polyfit/shared-utils");
 
 describe("Security Fix: Cryptographically Secure PRNG for Sensitive Tokens", () => {
   test("invitation token follows inv_<48 hex chars> cryptographically secure format", () => {
@@ -82,5 +82,36 @@ describe("Security Fix: PostgREST Filter Injection Prevention", () => {
     const maliciousPhone = "+250788123456),phone.ilike.%88123456%";
     const cleaned = sanitizePostgrestFilter(maliciousPhone);
     assert.strictEqual(cleaned, "+250788123456phone.ilike.88123456");
+  });
+});
+
+describe("Security Fix: Constant-Time Comparison (safeCompare) for Secrets and Tokens", () => {
+  test("returns true for identical valid secret tokens", () => {
+    const token = "polyfit_turnstile_relay_key_2026";
+    assert.strictEqual(safeCompare(token, token), true);
+    assert.strictEqual(safeCompare("secret-cron-token-1234567890", "secret-cron-token-1234567890"), true);
+  });
+
+  test("returns false for different tokens of identical length", () => {
+    const tokenA = "polyfit_turnstile_relay_key_2026";
+    const tokenB = "polyfit_turnstile_relay_key_2027";
+    assert.strictEqual(safeCompare(tokenA, tokenB), false);
+  });
+
+  test("returns false for tokens of different lengths without throwing", () => {
+    const tokenA = "short_key";
+    const tokenB = "very_long_secret_key_exceeding_length";
+    assert.strictEqual(safeCompare(tokenA, tokenB), false);
+  });
+
+  test("handles empty strings, null, undefined, and non-string types safely", () => {
+    assert.strictEqual(safeCompare("", "secret"), false);
+    assert.strictEqual(safeCompare("secret", ""), false);
+    assert.strictEqual(safeCompare(null, "secret"), false);
+    assert.strictEqual(safeCompare("secret", null), false);
+    assert.strictEqual(safeCompare(undefined, "secret"), false);
+    assert.strictEqual(safeCompare("secret", undefined), false);
+    assert.strictEqual(safeCompare(12345, "12345"), false);
+    assert.strictEqual(safeCompare({}, {}), false);
   });
 });

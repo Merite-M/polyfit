@@ -5,6 +5,8 @@
  * Only include functions that are actively used by multiple packages.
  */
 
+const crypto = require('crypto');
+
 const DEG_TO_RAD = Math.PI / 180;
 const EARTH_RADIUS_METERS = 6371e3;
 const POSTGREST_FILTER_REGEX = /[\(\),:\\"'\/%_]/g;
@@ -93,10 +95,28 @@ function normalizePhoneNumber(raw) {
   return null;
 }
 
+/**
+ * Constant-time string comparison using SHA-256 digests and crypto.timingSafeEqual.
+ * Prevents timing side-channel attacks when comparing secret keys and authentication tokens.
+ *
+ * @param {string} a - First string (e.g. user-provided token)
+ * @param {string} b - Second string (e.g. expected secret key)
+ * @returns {boolean} True if both strings are non-empty and identical
+ */
+function safeCompare(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || !a || !b) {
+    return false;
+  }
+  const hashA = crypto.createHash('sha256').update(a).digest();
+  const hashB = crypto.createHash('sha256').update(b).digest();
+  return crypto.timingSafeEqual(hashA, hashB);
+}
+
 module.exports = {
   getDistanceFromLatLonInM,
   sanitizePostgrestFilter,
   normalizePhoneNumber,
+  safeCompare,
 };
 
 /**
