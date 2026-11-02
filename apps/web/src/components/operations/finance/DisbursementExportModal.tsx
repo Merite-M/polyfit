@@ -109,6 +109,7 @@ export function DisbursementExportModal({
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
+      aria-labelledby="disbursement-export-dialog-title"
       onCancel={(e) => {
         if (isExporting) {
           e.preventDefault();
@@ -126,7 +127,7 @@ export function DisbursementExportModal({
               <FileSpreadsheet className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 tracking-tight">
+              <h2 id="disbursement-export-dialog-title" className="text-base font-bold text-slate-900 tracking-tight">
                 Disbursement Batch Export
               </h2>
               <p className="text-xs text-slate-500">
@@ -138,7 +139,7 @@ export function DisbursementExportModal({
             type="button"
             onClick={onClose}
             disabled={isExporting}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition disabled:opacity-50"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition disabled:opacity-50 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
             aria-label="Close dialog"
           >
             <X className="h-5 w-5" />
@@ -148,14 +149,14 @@ export function DisbursementExportModal({
         {/* Modal Body */}
         <div className="p-6 space-y-5">
           {error && (
-            <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800">
+            <div role="alert" className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800">
               <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
           {exportStats && (
-            <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-900">
+            <div role="status" aria-live="polite" className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-900">
               <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
               <div>
                 <p className="font-semibold text-emerald-950">
@@ -173,14 +174,16 @@ export function DisbursementExportModal({
 
           {/* Rail Selector */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+            <label id="rail-selector-label" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
               Disbursement Rail
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div role="radiogroup" aria-labelledby="rail-selector-label" className="grid grid-cols-2 gap-3">
               <button
                 type="button"
+                role="radio"
+                aria-checked={rail === "momo"}
                 onClick={() => setRail("momo")}
-                className={`flex flex-col items-start p-3.5 rounded-xl border text-left transition ${
+                className={`flex flex-col items-start p-3.5 rounded-xl border text-left transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
                   rail === "momo"
                     ? "border-amber-500 bg-amber-50/80 text-amber-950 ring-2 ring-amber-500/20"
                     : "border-slate-200 bg-slate-50/60 text-slate-700 hover:border-slate-300 hover:bg-slate-100"
@@ -197,8 +200,10 @@ export function DisbursementExportModal({
 
               <button
                 type="button"
+                role="radio"
+                aria-checked={rail === "bank"}
                 onClick={() => setRail("bank")}
-                className={`flex flex-col items-start p-3.5 rounded-xl border text-left transition ${
+                className={`flex flex-col items-start p-3.5 rounded-xl border text-left transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                   rail === "bank"
                     ? "border-blue-500 bg-blue-50/80 text-blue-950 ring-2 ring-blue-500/20"
                     : "border-slate-200 bg-slate-50/60 text-slate-700 hover:border-slate-300 hover:bg-slate-100"
@@ -217,10 +222,10 @@ export function DisbursementExportModal({
 
           {/* Status Filter */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+            <label id="status-filter-label" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
               Settlement Status
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div role="radiogroup" aria-labelledby="status-filter-label" className="grid grid-cols-3 gap-2">
               {[
                 { id: "approved", label: "Approved Only", desc: "Ready to pay" },
                 { id: "pending", label: "Draft / Pending", desc: "Awaiting approval" },
@@ -229,8 +234,10 @@ export function DisbursementExportModal({
                 <button
                   key={item.id}
                   type="button"
+                  role="radio"
+                  aria-checked={status === item.id}
                   onClick={() => setStatus(item.id)}
-                  className={`flex flex-col items-center justify-center py-2.5 px-3 rounded-xl border text-xs font-medium transition ${
+                  className={`flex flex-col items-center justify-center py-2.5 px-3 rounded-xl border text-xs font-medium transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${
                     status === item.id
                       ? "border-emerald-500 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-500/20 font-semibold"
                       : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
@@ -251,10 +258,11 @@ export function DisbursementExportModal({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-slate-500 mb-1">
+                <label htmlFor="period-start-date" className="block text-[10px] uppercase tracking-wider text-slate-500 mb-1">
                   From Date
                 </label>
                 <input
+                  id="period-start-date"
                   type="date"
                   value={periodStart}
                   onChange={(e) => setPeriodStart(e.target.value)}
@@ -262,10 +270,11 @@ export function DisbursementExportModal({
                 />
               </div>
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-slate-500 mb-1">
+                <label htmlFor="period-end-date" className="block text-[10px] uppercase tracking-wider text-slate-500 mb-1">
                   To Date
                 </label>
                 <input
+                  id="period-end-date"
                   type="date"
                   value={periodEnd}
                   onChange={(e) => setPeriodEnd(e.target.value)}
@@ -282,7 +291,7 @@ export function DisbursementExportModal({
             type="button"
             onClick={onClose}
             disabled={isExporting}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition disabled:opacity-50 shadow-2xs"
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition disabled:opacity-50 shadow-2xs cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
           >
             Close
           </button>
@@ -290,7 +299,7 @@ export function DisbursementExportModal({
             type="button"
             onClick={handleDownload}
             disabled={isExporting}
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition disabled:opacity-50 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
           >
             {isExporting ? (
               <>
