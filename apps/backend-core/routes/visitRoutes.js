@@ -19,6 +19,7 @@ const {
   getDistanceFromLatLonInM,
   DEFAULT_TIME_STEP_SECONDS
 } = require('../services/totpService');
+const { safeCompare } = require('@polyfit/shared-utils');
 
 const router = express.Router();
 
@@ -727,7 +728,8 @@ function authenticateTurnstile(req, res, next) {
   const configuredKey = process.env.TURNSTILE_API_KEY || 'polyfit_turnstile_relay_key_2026';
 
   if (turnstileKey) {
-    if (turnstileKey === configuredKey) {
+    // Constant-time token comparison prevents timing attacks on hardware turnstile relay key
+    if (safeCompare(turnstileKey, configuredKey)) {
       req.isTurnstileDevice = true;
       req.primaryRole = 'turnstile_device';
       return next();
