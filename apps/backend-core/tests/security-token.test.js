@@ -1,7 +1,36 @@
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("crypto");
-const { sanitizePostgrestFilter } = require("@polyfit/shared-utils");
+const { sanitizePostgrestFilter, safeCompare } = require("@polyfit/shared-utils");
+
+describe("Security Fix: Constant-Time Token & Secret Verification", () => {
+  test("returns true for identical secret strings", () => {
+    const secret = "polyfit_super_secret_cron_key_2026_!@#$%";
+    assert.strictEqual(safeCompare(secret, secret), true);
+  });
+
+  test("returns false for different secrets of identical length", () => {
+    assert.strictEqual(safeCompare("secret_token_alpha_1", "secret_token_alpha_2"), false);
+  });
+
+  test("returns false for secrets of differing lengths without throwing error", () => {
+    assert.strictEqual(safeCompare("short_secret", "much_longer_secret_string_value"), false);
+    assert.strictEqual(safeCompare("", "a"), false);
+  });
+
+  test("returns true for matching empty strings", () => {
+    assert.strictEqual(safeCompare("", ""), true);
+  });
+
+  test("safely rejects null, undefined, numbers, and object inputs", () => {
+    assert.strictEqual(safeCompare(null, "secret"), false);
+    assert.strictEqual(safeCompare("secret", null), false);
+    assert.strictEqual(safeCompare(undefined, "secret"), false);
+    assert.strictEqual(safeCompare("secret", undefined), false);
+    assert.strictEqual(safeCompare(12345, "12345"), false);
+    assert.strictEqual(safeCompare({ token: "123" }, "123"), false);
+  });
+});
 
 describe("Security Fix: Cryptographically Secure PRNG for Sensitive Tokens", () => {
   test("invitation token follows inv_<48 hex chars> cryptographically secure format", () => {

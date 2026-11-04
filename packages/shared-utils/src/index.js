@@ -5,10 +5,27 @@
  * Only include functions that are actively used by multiple packages.
  */
 
+const crypto = require('crypto');
+
 const DEG_TO_RAD = Math.PI / 180;
 const EARTH_RADIUS_METERS = 6371e3;
 const POSTGREST_FILTER_REGEX = /[\(\),:\\"'\/%_]/g;
 const NON_DIGIT_REGEX = /[^0-9]/g;
+
+/**
+ * Constant-time string comparison using crypto.timingSafeEqual with SHA-256 digest hashing.
+ * Prevents timing side-channel attacks when comparing secret tokens, API keys, or webhooks.
+ *
+ * @param {unknown} a - First value to compare
+ * @param {unknown} b - Second value to compare
+ * @returns {boolean} True if both strings are identical, false otherwise
+ */
+function safeCompare(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const hashA = crypto.createHash('sha256').update(a).digest();
+  const hashB = crypto.createHash('sha256').update(b).digest();
+  return crypto.timingSafeEqual(hashA, hashB);
+}
 
 /**
  * Calculates distance in meters between two GPS coordinates using an optimized Haversine formula.
@@ -97,6 +114,7 @@ module.exports = {
   getDistanceFromLatLonInM,
   sanitizePostgrestFilter,
   normalizePhoneNumber,
+  safeCompare,
 };
 
 /**
