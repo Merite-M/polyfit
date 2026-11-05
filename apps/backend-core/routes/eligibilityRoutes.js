@@ -95,12 +95,47 @@ router.get('/employee/:employeeId', requireAuth, async (req, res) => {
       });
     }
 
-    // Fetch employee
-    const { data: employee, error: empError } = await supabase
-      .from('employees')
-      .select('id, org_id, full_name, email, department, tier, status')
-      .eq('id', employeeId)
-      .single();
+    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+
+    // Concurrently fetch employee, active eligibility, and visits this month
+    const [
+      { data: employee, error: empError },
+      { data: eligibility },
+      { count: visitsThisMonth }
+    ] = await Promise.all([
+      supabase
+        .from('employees')
+        .select('id, org_id, full_name, email, department, tier, status')
+        .eq('id', employeeId)
+        .single(),
+      supabase
+        .from('eligibility')
+        .select(`
+          id,
+          status,
+          activated_at,
+          expires_at,
+          benefits (
+            id,
+            name,
+            tier,
+            max_monthly_visits,
+            co_pay_percentage,
+            allowed_provider_categories,
+            allowed_locations,
+            budget_cap_per_employee
+          )
+        `)
+        .eq('employee_id', employeeId)
+        .eq('status', 'active')
+        .maybeSingle(),
+      supabase
+        .from('visits')
+        .select('id', { count: 'exact', head: true })
+        .eq('employee_id', employeeId)
+        .eq('status', 'verified')
+        .gte('check_in_at', startOfMonth)
+    ]);
 
     if (empError || !employee) {
       return res.status(404).json({
@@ -118,38 +153,6 @@ router.get('/employee/:employeeId', requireAuth, async (req, res) => {
         });
       }
     }
-
-    // Fetch eligibility
-    const { data: eligibility } = await supabase
-      .from('eligibility')
-      .select(`
-        id,
-        status,
-        activated_at,
-        expires_at,
-        benefits (
-          id,
-          name,
-          tier,
-          max_monthly_visits,
-          co_pay_percentage,
-          allowed_provider_categories,
-          allowed_locations,
-          budget_cap_per_employee
-        )
-      `)
-      .eq('employee_id', employeeId)
-      .eq('status', 'active')
-      .maybeSingle();
-
-    // Fetch visits this month
-    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-    const { count: visitsThisMonth } = await supabase
-      .from('visits')
-      .select('id', { count: 'exact', head: true })
-      .eq('employee_id', employeeId)
-      .eq('status', 'verified')
-      .gte('check_in_at', startOfMonth);
 
     const benefit = eligibility?.benefits || null;
     const maxVisits = benefit?.max_monthly_visits || null;
