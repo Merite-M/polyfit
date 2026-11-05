@@ -348,7 +348,8 @@ export function FrontDeskAccessTerminal({
             type="button"
             onClick={() => setAudioFeedback(!audioFeedback)}
             title={audioFeedback ? 'Disable sound chime' : 'Enable sound chime'}
-            className={`p-2 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1.5 ${
+            aria-label={audioFeedback ? 'Disable audio chime feedback' : 'Enable audio chime feedback'}
+            className={`p-2 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
               audioFeedback
                 ? 'bg-[#28D17C]/15 border-[#28D17C]/40 text-[#28D17C]'
                 : 'bg-white/5 border-white/10 text-[#8491A3] hover:text-white'
@@ -361,7 +362,8 @@ export function FrontDeskAccessTerminal({
           <button
             type="button"
             onClick={onOpenManualBackup}
-            className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/15 transition-colors flex items-center gap-1.5"
+            aria-label="Open manual override check-in modal"
+            className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/15 transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             title="Open comprehensive manual checkin modal"
           >
             <UserCheck className="w-3.5 h-3.5 text-[#00D2B4]" />
@@ -375,14 +377,16 @@ export function FrontDeskAccessTerminal({
         {/* Left Column: Verification Controls */}
         <div className="lg:col-span-7 space-y-4">
           {/* Modality Tabs */}
-          <div className="flex items-center gap-2 bg-black/30 p-1 rounded-xl border border-white/10">
+          <div role="tablist" aria-label="Pass verification method" className="flex items-center gap-2 bg-black/30 p-1 rounded-xl border border-white/10">
             <button
               type="button"
+              role="tab"
+              aria-selected={activeMode === 'totp'}
               onClick={() => {
                 setActiveMode('totp');
                 resetForm();
               }}
-              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 activeMode === 'totp'
                   ? 'bg-[#28D17C] text-[#0B1F33] font-bold shadow-xs'
                   : 'text-[#8491A3] hover:text-white'
@@ -393,11 +397,13 @@ export function FrontDeskAccessTerminal({
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={activeMode === 'turnstile'}
               onClick={() => {
                 setActiveMode('turnstile');
                 resetForm();
               }}
-              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 activeMode === 'turnstile'
                   ? 'bg-[#28D17C] text-[#0B1F33] font-bold shadow-xs'
                   : 'text-[#8491A3] hover:text-white'
@@ -412,10 +418,10 @@ export function FrontDeskAccessTerminal({
           {activeMode === 'totp' && (
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-[#8491A3] mb-2">
+                <label id="totp-input-label" className="block text-xs font-medium text-[#8491A3] mb-2">
                   Enter 6-digit rotating pass from employee's mobile app:
                 </label>
-                <div className="flex items-center justify-between gap-2 max-w-sm">
+                <div role="group" aria-labelledby="totp-input-label" className="flex items-center justify-between gap-2 max-w-sm">
                   {totpDigits.map((digit, idx) => (
                     <input
                       key={idx}
@@ -431,6 +437,7 @@ export function FrontDeskAccessTerminal({
                       onKeyDown={(e) => handleKeyDown(idx, e)}
                       autoFocus={idx === 0}
                       disabled={isVerifying}
+                      aria-label={`Digit ${idx + 1} of 6`}
                       className="w-12 h-14 sm:w-13 sm:h-16 text-center text-2xl sm:text-3xl font-black font-mono bg-black/40 border-2 border-white/20 focus:border-[#28D17C] focus:bg-black/60 rounded-xl text-white outline-none transition-all shadow-inner focus:ring-2 focus:ring-[#28D17C]/40"
                     />
                   ))}
@@ -504,7 +511,7 @@ export function FrontDeskAccessTerminal({
                 <button
                   type="submit"
                   disabled={isVerifying || (!turnstileToken.trim() && !employeeIdentifier.trim())}
-                  className="px-4 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] disabled:opacity-40 text-[#0B1F33] font-bold text-xs sm:text-sm transition-all flex items-center gap-2"
+                  className="px-4 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] disabled:opacity-40 text-[#0B1F33] font-bold text-xs sm:text-sm transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                   {isVerifying ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
@@ -517,7 +524,9 @@ export function FrontDeskAccessTerminal({
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-[#8491A3] hover:text-white transition-colors"
+                  title="Reset form fields"
+                  aria-label="Reset entry form"
+                  className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-[#8491A3] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                   <RotateCcw className="w-4 h-4" />
                 </button>
@@ -527,7 +536,7 @@ export function FrontDeskAccessTerminal({
         </div>
 
         {/* Right Column: Live Result Telemetry & Pass Status */}
-        <div className="lg:col-span-5 flex flex-col justify-center">
+        <div aria-live="polite" aria-atomic="true" className="lg:col-span-5 flex flex-col justify-center">
           {/* Waiting Idle State */}
           {!result && !isVerifying && (
             <div className="bg-black/20 rounded-xl p-5 border border-dashed border-white/10 text-center flex flex-col items-center justify-center min-h-[160px]">
