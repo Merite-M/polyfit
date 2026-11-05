@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { getDistanceFromLatLonInM } = require('@polyfit/shared-utils');
+const { getDistanceFromLatLonInM, safeCompare } = require('@polyfit/shared-utils');
 
 const DEFAULT_TIME_STEP_SECONDS = 30;
 
@@ -140,7 +140,8 @@ function verifySignedPassPayload(signedPayload) {
       .update(jsonStr)
       .digest('base64url');
 
-    if (sig !== expectedSig) return null;
+    // Constant-time comparison to prevent timing side-channel attacks on pass signature
+    if (!safeCompare(sig, expectedSig)) return null;
     return JSON.parse(jsonStr);
   } catch (err) {
     return null;
