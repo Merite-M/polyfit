@@ -13,7 +13,7 @@ import {
   DollarSign,
   Sparkles
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, rwfLocaleFormatter, standardNumberFormatter } from "@/lib/utils";
 
 interface BudgetForecasterCardProps {
   initialHeadcount?: number;
@@ -59,7 +59,7 @@ export const BudgetForecasterCard: React.FC<BudgetForecasterCardProps> = ({
   }, [headcount, avgVisits, copayPct, contractRate]);
 
   const formatRwf = (amt: number) => {
-    return new Intl.NumberFormat("en-RW", { maximumFractionDigits: 0 }).format(amt) + " RWF";
+    return rwfLocaleFormatter.format(amt) + " RWF";
   };
 
   return (
@@ -192,7 +192,7 @@ export const BudgetForecasterCard: React.FC<BudgetForecasterCardProps> = ({
                   Monthly Visits
                 </div>
                 <div className="text-xl font-bold text-foreground mt-1 font-mono">
-                  {new Intl.NumberFormat().format(metrics.totalVisits)}
+                  {standardNumberFormatter.format(metrics.totalVisits)}
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-0.5">
                   {headcount} staff × {avgVisits} visits

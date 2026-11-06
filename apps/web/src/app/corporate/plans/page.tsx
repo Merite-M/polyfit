@@ -11,7 +11,7 @@ import {
   Users,
   TrendingUp,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, rwfLocaleFormatter } from "@/lib/utils";
 import { useCorporate } from "@/contexts/CorporateContext";
 import { CorporateHeader } from "@/components/corporate/CorporateHeader";
 import { apiFetch } from "@/lib/api-client";
@@ -167,7 +167,7 @@ export default function PlansPage() {
   };
 
   const formatRwf = (amt: number) => {
-    return new Intl.NumberFormat("en-RW", { maximumFractionDigits: 0 }).format(amt) + " RWF";
+    return rwfLocaleFormatter.format(amt) + " RWF";
   };
 
   return (
