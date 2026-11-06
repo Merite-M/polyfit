@@ -1,3 +1,7 @@
 ## 2025-05-18 - Accessibility on Hover-Overlay Photo Gallery Grids
 **Learning:** In photo gallery management components (such as partner facility onboarding grids), action buttons (like delete) are often hidden inside hover overlays (`opacity-0 group-hover:opacity-100`). Keyboard users navigating via Tab cannot reveal or focus these actions unless `group-focus-within:opacity-100` or explicit focus styles are attached to the container. Additionally, icon-only delete buttons within gallery cards must provide indexed dynamic ARIA labels (e.g. `aria-label="Delete facility photo #1"`) rather than generic titles.
 **Action:** Always include `group-focus-within:opacity-100` on overlay containers, dynamic `aria-label` attributes on card actions, and `focus-visible:ring-2` on interactive elements in image grid components.
+
+## 2026-10-29 - Modal Tabs and Top-Layer Dismiss Semantics
+**Learning:** In native `<dialog>` modals with multi-view controls (e.g., Marketing Toolkit asset generators), tab buttons commonly omit ARIA tablist/tab/tabpanel semantics and focus indicators. Screen readers fail to convey which asset section is active or how panels relate, and the icon-only modal close button lacks an accessible name.
+**Action:** When implementing modal tab switchers, wrap the header in `role="tablist"` with `aria-label`, bind each tab trigger with `role="tab"`, `id`, `aria-selected`, and `aria-controls`, pair them with `role="tabpanel"`, `id`, and `aria-labelledby`, and ensure the close button has an explicit `aria-label` and `focus-visible` ring.
