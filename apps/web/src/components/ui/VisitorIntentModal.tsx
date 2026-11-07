@@ -56,6 +56,34 @@ export function VisitorIntentModal({ isOpen, onClose }: VisitorIntentModalProps)
     router.push(route);
   };
 
+  // Keyboard shortcut accelerators: 1 for Employees, 2 for Employers, 3 for Providers
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+        return;
+      }
+
+      if (e.key === "1") {
+        e.preventDefault();
+        handleSelectFlow("/join");
+      } else if (e.key === "2") {
+        e.preventDefault();
+        handleSelectFlow("/corporate/register");
+      } else if (e.key === "3") {
+        e.preventDefault();
+        handleSelectFlow("/partner/register");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
   return (
     <dialog
       ref={dialogRef}
@@ -67,6 +95,7 @@ export function VisitorIntentModal({ isOpen, onClose }: VisitorIntentModalProps)
         onClose();
       }}
       aria-labelledby="visitor-intent-title"
+      aria-describedby="visitor-intent-desc"
       className="pf-native-dialog max-w-lg w-[94vw] max-h-[92dvh] my-auto mx-auto p-0 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col"
     >
       <div className="relative p-4 sm:p-6 overflow-y-auto max-h-[92dvh] flex flex-col justify-between">
@@ -79,6 +108,7 @@ export function VisitorIntentModal({ isOpen, onClose }: VisitorIntentModalProps)
             </span>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:ring-2 focus-visible:ring-emerald-500 cursor-pointer"
             aria-label="Close dialog"
@@ -92,7 +122,7 @@ export function VisitorIntentModal({ isOpen, onClose }: VisitorIntentModalProps)
           <h2 id="visitor-intent-title" className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             Which best describes you?
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+          <p id="visitor-intent-desc" className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
             Choose your journey to access personalized wellness passes, employer proposals, or provider tools.
           </p>
         </div>
@@ -103,7 +133,8 @@ export function VisitorIntentModal({ isOpen, onClose }: VisitorIntentModalProps)
           <button
             type="button"
             onClick={() => handleSelectFlow("/join")}
-            aria-label="Activate corporate benefit as an employee"
+            aria-keyshortcuts="1"
+            aria-label="Activate corporate benefit as an employee (shortcut: key 1)"
             className="group w-full p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border-2 border-slate-200/90 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 bg-slate-50/70 dark:bg-slate-800/40 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 text-left transition-all duration-150 flex items-center gap-3.5 cursor-pointer shadow-2xs hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900"
           >
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all">
@@ -114,9 +145,14 @@ export function VisitorIntentModal({ isOpen, onClose }: VisitorIntentModalProps)
                 <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                   I want to activate my PolyFit benefit
                 </span>
-                <span className="text-[9px] sm:text-[10px] uppercase font-bold px-1.5 sm:px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
-                  Employees
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded shadow-2xs">
+                    1
+                  </kbd>
+                  <span className="text-[9px] sm:text-[10px] uppercase font-bold px-1.5 sm:px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
+                    Employees
+                  </span>
+                </div>
               </div>
               <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 leading-snug">
                 Check employer sponsorship, verify by work email or Staff ID, and unlock your mobile pass.
@@ -129,7 +165,8 @@ export function VisitorIntentModal({ isOpen, onClose }: VisitorIntentModalProps)
           <button
             type="button"
             onClick={() => handleSelectFlow("/corporate/register")}
-            aria-label="Explore employer solutions as HR or company leader"
+            aria-keyshortcuts="2"
+            aria-label="Explore employer solutions as HR or company leader (shortcut: key 2)"
             className="group w-full p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border-2 border-slate-200/90 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 bg-slate-50/70 dark:bg-slate-800/40 hover:bg-blue-50/30 dark:hover:bg-blue-950/20 text-left transition-all duration-150 flex items-center gap-3.5 cursor-pointer shadow-2xs hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900"
           >
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-blue-500 group-hover:text-white transition-all">
@@ -140,9 +177,14 @@ export function VisitorIntentModal({ isOpen, onClose }: VisitorIntentModalProps)
                 <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   I am an Employer / HR Leader
                 </span>
-                <span className="text-[9px] sm:text-[10px] uppercase font-bold px-1.5 sm:px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
-                  Companies
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded shadow-2xs">
+                    2
+                  </kbd>
+                  <span className="text-[9px] sm:text-[10px] uppercase font-bold px-1.5 sm:px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                    Companies
+                  </span>
+                </div>
               </div>
               <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 leading-snug">
                 Subsidized corporate plans, employee benefit allocation & single monthly RRA EBM invoices.
@@ -155,7 +197,8 @@ export function VisitorIntentModal({ isOpen, onClose }: VisitorIntentModalProps)
           <button
             type="button"
             onClick={() => handleSelectFlow("/partner/register")}
-            aria-label="Register as a wellness facility partner"
+            aria-keyshortcuts="3"
+            aria-label="Register as a wellness facility partner (shortcut: key 3)"
             className="group w-full p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border-2 border-slate-200/90 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-indigo-500 bg-slate-50/70 dark:bg-slate-800/40 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 text-left transition-all duration-150 flex items-center gap-3.5 cursor-pointer shadow-2xs hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900"
           >
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-indigo-500 group-hover:text-white transition-all">
@@ -166,9 +209,14 @@ export function VisitorIntentModal({ isOpen, onClose }: VisitorIntentModalProps)
                 <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                   I operate a Wellness Facility
                 </span>
-                <span className="text-[9px] sm:text-[10px] uppercase font-bold px-1.5 sm:px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
-                  Partners
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded shadow-2xs">
+                    3
+                  </kbd>
+                  <span className="text-[9px] sm:text-[10px] uppercase font-bold px-1.5 sm:px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
+                    Partners
+                  </span>
+                </div>
               </div>
               <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 leading-snug">
                 Receive corporate client traffic, Net-15 automated settlements & free check-in tools.
