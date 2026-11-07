@@ -32,7 +32,7 @@ export function PlatformSuiteLauncher({
   const containerRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
-  // Close on outside click
+  // Close on outside click and Escape keydown
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -42,9 +42,20 @@ export function PlatformSuiteLauncher({
         setIsOpen(false);
       }
     }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && isOpen) {
+        setIsOpen(false);
+      }
+    }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
 
   const portals = [
     {
@@ -104,13 +115,15 @@ export function PlatformSuiteLauncher({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer border select-none",
+          "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer border select-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500",
           variant === "dark" || (variant === "auto" && (pathname === "/" || pathname.startsWith("/pricing") || pathname.startsWith("/network")))
             ? "bg-slate-800/80 hover:bg-slate-700/80 border-white/10 text-slate-200 hover:text-white shadow-2xs"
             : "bg-background/90 hover:bg-muted border-border text-foreground shadow-2xs"
         )}
         aria-expanded={isOpen}
         aria-haspopup="true"
+        aria-controls="platform-suite-menu"
+        aria-label="PolyFit suite navigation launcher"
         title="Switch between PolyFit platform surfaces"
       >
         <Grid className="w-3.5 h-3.5 text-emerald-400" />
@@ -128,8 +141,11 @@ export function PlatformSuiteLauncher({
       {/* Dropdown Menu */}
       {isOpen && (
         <div
+          id="platform-suite-menu"
           className="absolute right-0 sm:left-0 mt-2 w-80 sm:w-96 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50 animate-in fade-in-50 zoom-in-95 duration-150 text-slate-100"
           role="menu"
+          aria-orientation="vertical"
+          aria-label="PolyFit Ecosystem Portals"
         >
           {/* Header */}
           <div className="px-3 py-2 border-b border-slate-800/80 flex items-center justify-between">
