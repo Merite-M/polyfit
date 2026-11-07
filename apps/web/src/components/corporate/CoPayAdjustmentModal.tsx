@@ -16,7 +16,7 @@ import {
   Building2,
   Users
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, rwfLocaleFormatter } from "@/lib/utils";
 import { BenefitPlan } from "./PlanCard";
 
 interface CoPayAdjustmentModalProps {
@@ -104,7 +104,7 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
   const taxShieldRwf = Math.round(estMonthlyEmployerLiability * 0.30);
 
   const formatRwf = (amt: number) => {
-    return new Intl.NumberFormat("en-RW", { maximumFractionDigits: 0 }).format(amt) + " RWF";
+    return rwfLocaleFormatter.format(amt) + " RWF";
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

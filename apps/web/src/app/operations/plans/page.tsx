@@ -17,7 +17,7 @@ import {
   Lock,
   Filter
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, rwfLocaleFormatter } from "@/lib/utils";
 import { apiFetch } from "@/lib/api-client";
 import {
   MasterPlanBuilderDrawer,
@@ -124,7 +124,7 @@ function OperationsPlansContent() {
   }, [plans, selectedOrgFilter, selectedTierFilter, selectedStatusFilter, searchQuery]);
 
   const formatRwf = (amt: number) => {
-    return new Intl.NumberFormat("en-RW", { maximumFractionDigits: 0 }).format(amt) + " RWF";
+    return rwfLocaleFormatter.format(amt) + " RWF";
   };
 
   return (

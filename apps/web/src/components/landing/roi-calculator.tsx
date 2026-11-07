@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useLeadModal } from "@/lib/lead-modal";
 import { apiFetch } from "@/lib/api-client";
+import { standardNumberFormatter } from "@/lib/utils";
 
 interface RoiCalculatorProps {
   onOpenLeadForm?: (type: "employer" | "provider") => void;
@@ -173,7 +174,7 @@ export default function RoiCalculator({ onOpenLeadForm }: RoiCalculatorProps = {
   const annualSavingsRwf = annualStandardRwf - effectiveAnnualRwf;
 
   const formatRwf = (num: number) => {
-    return `RWF ${new Intl.NumberFormat("en-US").format(num)}`;
+    return `RWF ${standardNumberFormatter.format(num)}`;
   };
 
   // Dynamic slider bounds based on live tiers
@@ -276,7 +277,7 @@ export default function RoiCalculator({ onOpenLeadForm }: RoiCalculatorProps = {
                           {isSelected && <Check className="w-3 h-3 text-emerald-400 shrink-0" />}
                         </div>
                         <span className={`text-[10px] font-mono font-normal ${isSelected ? "text-slate-300" : "text-muted-foreground"}`}>
-                          {new Intl.NumberFormat("en-US").format(t.monthlyRwf)} RWF/mo
+                          {standardNumberFormatter.format(t.monthlyRwf)} RWF/mo
                         </span>
                       </button>
                     );
@@ -357,9 +358,9 @@ export default function RoiCalculator({ onOpenLeadForm }: RoiCalculatorProps = {
                   className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
                 />
                 <div className="flex justify-between text-[11px] text-muted-foreground mt-1 font-medium font-mono">
-                  <span>{new Intl.NumberFormat("en-US").format(minAllowance)} RWF</span>
-                  <span>{new Intl.NumberFormat("en-US").format(Math.round((minAllowance + maxAllowance) / 2))}</span>
-                  <span>{new Intl.NumberFormat("en-US").format(maxAllowance)} RWF</span>
+                  <span>{standardNumberFormatter.format(minAllowance)} RWF</span>
+                  <span>{standardNumberFormatter.format(Math.round((minAllowance + maxAllowance) / 2))}</span>
+                  <span>{standardNumberFormatter.format(maxAllowance)} RWF</span>
                 </div>
               </div>
             </div>
