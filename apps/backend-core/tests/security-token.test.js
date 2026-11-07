@@ -1,7 +1,7 @@
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("crypto");
-const { sanitizePostgrestFilter } = require("@polyfit/shared-utils");
+const { sanitizePostgrestFilter, safeCompare } = require("@polyfit/shared-utils");
 
 describe("Security Fix: Cryptographically Secure PRNG for Sensitive Tokens", () => {
   test("invitation token follows inv_<48 hex chars> cryptographically secure format", () => {
@@ -82,5 +82,34 @@ describe("Security Fix: PostgREST Filter Injection Prevention", () => {
     const maliciousPhone = "+250788123456),phone.ilike.%88123456%";
     const cleaned = sanitizePostgrestFilter(maliciousPhone);
     assert.strictEqual(cleaned, "+250788123456phone.ilike.88123456");
+  });
+});
+
+describe("Security Fix: Constant-Time Token & Secret Key Comparison (safeCompare)", () => {
+  test("returns true for identical secret strings", () => {
+    const secret = "polyfit_turnstile_relay_key_2026";
+    assert.strictEqual(safeCompare(secret, secret), true);
+    assert.strictEqual(safeCompare("cron-secret-token-xyz-123", "cron-secret-token-xyz-123"), true);
+  });
+
+  test("returns false for non-matching secret strings", () => {
+    assert.strictEqual(safeCompare("correct-secret-123", "wrong-secret-456"), false);
+    assert.strictEqual(safeCompare("partial-secret", "partial-secret-extended"), false);
+  });
+
+  test("safely handles null, undefined, or non-string values without throwing errors", () => {
+    assert.strictEqual(safeCompare(null, "expected-secret"), false);
+    assert.strictEqual(safeCompare(undefined, "expected-secret"), false);
+    assert.strictEqual(safeCompare("provided-secret", null), false);
+    assert.strictEqual(safeCompare("provided-secret", undefined), false);
+    assert.strictEqual(safeCompare(null, null), false);
+    assert.strictEqual(safeCompare(12345, "12345"), false);
+    assert.strictEqual(safeCompare({}, "secret"), false);
+  });
+
+  test("performs constant-time comparison on different length strings without leaking length timing", () => {
+    const longSecret = "a".repeat(100);
+    const shortSecret = "a";
+    assert.strictEqual(safeCompare(longSecret, shortSecret), false);
   });
 });
