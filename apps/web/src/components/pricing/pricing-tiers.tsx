@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Check, Sparkles, Building2, ShieldCheck, Zap, ArrowRight } from "lucide-react";
 import { useLeadModal } from "@/lib/lead-modal";
+import { standardNumberFormatter } from "@/lib/utils";
 import { apiFetch } from "@/lib/api-client";
 
 interface PricingTiersProps {
@@ -225,7 +226,7 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
   const formatPrice = (tierPrice: any) => {
     if (tierPrice[billingCycle] === "Custom") return "Custom";
     if (currency === "RWF") {
-      return `RWF ${new Intl.NumberFormat("en-US").format(tierPrice[billingCycle])}`;
+      return `RWF ${standardNumberFormatter.format(tierPrice[billingCycle])}`;
     }
     return `$${tierPrice[billingCycle]}`;
   };

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Check, X, Crown, Shield, Layers, UserPlus, Edit2, Percent, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, rwfLocaleFormatter } from "@/lib/utils";
 import { BenefitPlan } from "./PlanCard";
 
 interface PlanComparisonMatrixProps {
@@ -31,7 +31,7 @@ export const PlanComparisonMatrix: React.FC<PlanComparisonMatrixProps> = ({
   }
 
   const formatRwf = (amt: number) => {
-    return new Intl.NumberFormat("en-RW", { maximumFractionDigits: 0 }).format(amt) + " RWF";
+    return rwfLocaleFormatter.format(amt) + " RWF";
   };
 
   return (

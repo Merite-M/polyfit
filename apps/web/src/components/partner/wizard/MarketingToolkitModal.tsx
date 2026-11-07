@@ -210,18 +210,23 @@ Together, we are building a healthier, more active workforce across East Africa.
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+            aria-label="Close marketing toolkit"
+            className="p-1 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
       {/* Tab Controls */}
-      <div className="flex border-b border-border bg-muted px-5 pt-3 gap-3 shrink-0">
+      <div role="tablist" aria-label="Marketing toolkit assets" className="flex border-b border-border bg-muted px-5 pt-3 gap-3 shrink-0">
         <button
           type="button"
+          role="tab"
+          id="tab-signage"
+          aria-selected={activeTab === 'signage'}
+          aria-controls="panel-signage"
           onClick={() => setActiveTab('signage')}
-          className={`pb-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+          className={`pb-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-t ${
             activeTab === 'signage'
               ? 'border-accent text-primary'
               : 'border-transparent text-muted-foreground hover:text-primary'
@@ -233,8 +238,12 @@ Together, we are building a healthier, more active workforce across East Africa.
 
         <button
           type="button"
+          role="tab"
+          id="tab-badge"
+          aria-selected={activeTab === 'badge'}
+          aria-controls="panel-badge"
           onClick={() => setActiveTab('badge')}
-          className={`pb-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+          className={`pb-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-t ${
             activeTab === 'badge'
               ? 'border-accent text-primary'
               : 'border-transparent text-muted-foreground hover:text-primary'
@@ -246,8 +255,12 @@ Together, we are building a healthier, more active workforce across East Africa.
 
         <button
           type="button"
+          role="tab"
+          id="tab-social"
+          aria-selected={activeTab === 'social'}
+          aria-controls="panel-social"
           onClick={() => setActiveTab('social')}
-          className={`pb-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+          className={`pb-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-t ${
             activeTab === 'social'
               ? 'border-accent text-primary'
               : 'border-transparent text-muted-foreground hover:text-primary'
@@ -262,7 +275,7 @@ Together, we are building a healthier, more active workforce across East Africa.
       <div className="p-6 overflow-y-auto flex-1 space-y-4 bg-white dark:bg-card">
         {/* TAB 1: FRONT DESK SIGNAGE */}
         {activeTab === 'signage' && (
-          <div className="space-y-4">
+          <div role="tabpanel" id="panel-signage" aria-labelledby="tab-signage" className="space-y-4">
             <div className="bg-muted border border-border rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="space-y-1">
                 <h3 className="text-sm font-bold text-primary">
@@ -307,7 +320,7 @@ Together, we are building a healthier, more active workforce across East Africa.
 
         {/* TAB 2: DIGITAL SVG BADGE */}
         {activeTab === 'badge' && (
-          <div className="space-y-4">
+          <div role="tabpanel" id="panel-badge" aria-labelledby="tab-badge" className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-primary">
@@ -385,7 +398,7 @@ Together, we are building a healthier, more active workforce across East Africa.
 
         {/* TAB 3: SOCIAL MEDIA COPY */}
         {activeTab === 'social' && (
-          <div className="space-y-4">
+          <div role="tabpanel" id="panel-social" aria-labelledby="tab-social" className="space-y-4">
             {/* Instagram Announcement */}
             <div className="bg-muted border border-border rounded-xl p-4 space-y-2">
               <div className="flex items-center justify-between">
@@ -404,6 +417,7 @@ Together, we are building a healthier, more active workforce across East Africa.
               {/* readOnly social copy textarea — pf-textarea-sm for auto-size */}
               <textarea
                 readOnly
+                aria-label="Instagram announcement caption"
                 value={instagramCaption}
                 className="pf-textarea-sm w-full p-2.5 bg-card border border-border rounded-lg text-xs text-primary font-sans"
               />
@@ -426,6 +440,7 @@ Together, we are building a healthier, more active workforce across East Africa.
               </div>
               <textarea
                 readOnly
+                aria-label="LinkedIn B2B partner post copy"
                 value={linkedinCaption}
                 className="pf-textarea-sm w-full p-2.5 bg-card border border-border rounded-lg text-xs text-primary font-sans"
               />

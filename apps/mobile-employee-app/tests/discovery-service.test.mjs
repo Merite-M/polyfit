@@ -36,6 +36,34 @@ function extractNeighborhood(address, name) {
   return 'Kigali Central';
 }
 
+const DAYS_ORDER = [
+  'sunday',
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+];
+
+function parseTimeMinutes(timeStr) {
+  const colonIdx = timeStr.indexOf(':');
+  if (colonIdx === -1) {
+    const h = parseInt(timeStr, 10) || 0;
+    return { h, m: 0, total: h * 60 };
+  }
+  const h = parseInt(timeStr.slice(0, colonIdx), 10) || 0;
+  const m = parseInt(timeStr.slice(colonIdx + 1), 10) || 0;
+  return { h, m, total: h * 60 + m };
+}
+
+function format12Hour(h, m) {
+  const period = h >= 12 ? 'PM' : 'AM';
+  const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
+  const displayM = m === 0 ? '00' : m < 10 ? '0' + m : m;
+  return displayH + ':' + displayM + ' ' + period;
+}
+
 function getFacilityOperatingStatus(hours, mockDate = new Date()) {
   if (!hours) {
     return {
@@ -45,17 +73,8 @@ function getFacilityOperatingStatus(hours, mockDate = new Date()) {
     };
   }
 
-  const days = [
-    'sunday',
-    'monday',
-    'tuesday',
-    'wednesday',
-    'thursday',
-    'friday',
-    'saturday',
-  ];
-
-  const currentDay = days[mockDate.getDay()];
+  const dayIdx = mockDate.getDay();
+  const currentDay = DAYS_ORDER[dayIdx];
   const todayHours = hours[currentDay];
 
   if (!todayHours || !todayHours.open || !todayHours.close) {
@@ -68,38 +87,41 @@ function getFacilityOperatingStatus(hours, mockDate = new Date()) {
 
   const currentMinutes = mockDate.getHours() * 60 + mockDate.getMinutes();
 
-  const [openH, openM] = todayHours.open.split(':').map(Number);
-  const [closeH, closeM] = todayHours.close.split(':').map(Number);
+  const openTime = parseTimeMinutes(todayHours.open);
+  const closeTime = parseTimeMinutes(todayHours.close);
 
-  const openMinutes = openH * 60 + (openM || 0);
-  const closeMinutes = closeH * 60 + (closeM || 0);
-
-  if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
-    const minutesLeft = closeMinutes - currentMinutes;
+  if (currentMinutes >= openTime.total && currentMinutes < closeTime.total) {
+    const minutesLeft = closeTime.total - currentMinutes;
     if (minutesLeft <= 45) {
       return {
         isOpen: true,
-        statusText: `Closing soon • in ${minutesLeft}m`,
+        statusText: 'Closing soon • in ' + minutesLeft + 'm',
         statusBadge: 'closing_soon',
       };
     }
 
-    const formattedClose =
-      closeH > 12 ? `${closeH - 12}:${closeM === 0 ? '00' : closeM} PM` : `${closeH}:${closeM === 0 ? '00' : closeM} AM`;
-
     return {
       isOpen: true,
-      statusText: `Open Now • Closes ${formattedClose}`,
+      statusText: 'Open Now • Closes ' + format12Hour(closeTime.h, closeTime.m),
       statusBadge: 'open',
     };
   }
 
-  if (currentMinutes < openMinutes) {
-    const formattedOpen =
-      openH > 12 ? `${openH - 12}:${openM === 0 ? '00' : openM} PM` : `${openH}:${openM === 0 ? '00' : openM} AM`;
+  if (currentMinutes < openTime.total) {
     return {
       isOpen: false,
-      statusText: `Closed • Opens at ${formattedOpen}`,
+      statusText: 'Closed • Opens at ' + format12Hour(openTime.h, openTime.m),
+      statusBadge: 'closed',
+    };
+  }
+
+  const nextDay = DAYS_ORDER[(dayIdx + 1) % 7];
+  const nextHours = hours[nextDay];
+  if (nextHours && nextHours.open) {
+    const nextTime = parseTimeMinutes(nextHours.open);
+    return {
+      isOpen: false,
+      statusText: 'Closed • Opens tomorrow ' + format12Hour(nextTime.h, nextTime.m),
       statusBadge: 'closed',
     };
   }

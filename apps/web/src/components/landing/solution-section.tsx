@@ -24,7 +24,7 @@ export default function SolutionSection() {
   const activeEvent = VERIFIED_ACCESS_EVENTS[currentEventIndex];
 
   return (
-    <section className="py-16 sm:py-24 bg-white text-slate-900 border-t border-gray-200/60" id="how-it-works">
+    <section className="py-16 sm:py-24 bg-white text-slate-900 border-t border-gray-200/60" id="the-solution">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-12 gap-10 sm:gap-12 lg:gap-16 items-center">
           {/* Left Text */}

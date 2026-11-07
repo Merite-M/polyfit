@@ -1,7 +1,7 @@
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("crypto");
-const { sanitizePostgrestFilter } = require("@polyfit/shared-utils");
+const { sanitizePostgrestFilter, safeCompare } = require("@polyfit/shared-utils");
 
 describe("Security Fix: Cryptographically Secure PRNG for Sensitive Tokens", () => {
   test("invitation token follows inv_<48 hex chars> cryptographically secure format", () => {
@@ -82,5 +82,39 @@ describe("Security Fix: PostgREST Filter Injection Prevention", () => {
     const maliciousPhone = "+250788123456),phone.ilike.%88123456%";
     const cleaned = sanitizePostgrestFilter(maliciousPhone);
     assert.strictEqual(cleaned, "+250788123456phone.ilike.88123456");
+  });
+});
+
+describe("Security Fix: Constant-Time safeCompare Timing Side-Channel Prevention", () => {
+  test("returns true for identical secret strings", () => {
+    assert.strictEqual(safeCompare("secret_token_abc123", "secret_token_abc123"), true);
+    assert.strictEqual(safeCompare("CRON_KEY_998877", "CRON_KEY_998877"), true);
+    assert.strictEqual(safeCompare("", ""), true);
+  });
+
+  test("returns false for different secret strings of same length", () => {
+    assert.strictEqual(safeCompare("secret_token_abc123", "secret_token_abc124"), false);
+    assert.strictEqual(safeCompare("aaaaaaaaaaaaaaaa", "baaaaaaaaaaaaaaa"), false);
+  });
+
+  test("returns false for secrets of differing lengths without throwing RangeError", () => {
+    assert.strictEqual(safeCompare("short", "much_longer_secret_string"), false);
+    assert.strictEqual(safeCompare("polyfit_turnstile_relay_key_2026", "polyfit_turnstile_relay_key_202"), false);
+    assert.strictEqual(safeCompare("", "non_empty"), false);
+  });
+
+  test("safely handles non-string inputs (null, undefined, numbers, objects) by returning false", () => {
+    assert.strictEqual(safeCompare(null, "secret"), false);
+    assert.strictEqual(safeCompare("secret", null), false);
+    assert.strictEqual(safeCompare(undefined, undefined), false);
+    assert.strictEqual(safeCompare(12345, "12345"), false);
+    assert.strictEqual(safeCompare({}, {}), false);
+    assert.strictEqual(safeCompare(Buffer.from("secret"), "secret"), false);
+  });
+
+  test("prevents timing leak on partial prefix matches", () => {
+    const secret = "polyfit_super_secret_cron_token_2026_xyz";
+    assert.strictEqual(safeCompare("polyfit_super_secret_cron_token_2026_xy", secret), false);
+    assert.strictEqual(safeCompare("polyfit_super_secret_cron_token_2026_xyza", secret), false);
   });
 });
