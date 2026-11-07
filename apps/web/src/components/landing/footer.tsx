@@ -57,11 +57,6 @@ export default function Footer({ onOpenLeadForm }: FooterProps = {}) {
                   Pricing & Plan Tiers
                 </Link>
               </li>
-              <li>
-                <Link href="/brand" className="text-accent hover:underline font-medium transition-colors">
-                  Brand & Design System
-                </Link>
-              </li>
             </ul>
           </div>
 

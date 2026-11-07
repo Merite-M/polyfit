@@ -22,7 +22,7 @@ export default function DemoLayout({
     "@type": "Organization",
     "name": "PolyFit",
     "url": "https://polyfit.onrender.com",
-    "logo": "https://polyfit.onrender.com/brand/primary_logo.png",
+    "logo": "https://polyfit.onrender.com/polyfit-logo-stitch.png",
     "description": "B2B2C Corporate Wellness Aggregator Network connecting employers with independent fitness and wellness facilities across East Africa.",
     "address": {
       "@type": "PostalAddress",
