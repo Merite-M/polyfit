@@ -2,7 +2,6 @@
 **Learning:** In photo gallery management components (such as partner facility onboarding grids), action buttons (like delete) are often hidden inside hover overlays (`opacity-0 group-hover:opacity-100`). Keyboard users navigating via Tab cannot reveal or focus these actions unless `group-focus-within:opacity-100` or explicit focus styles are attached to the container. Additionally, icon-only delete buttons within gallery cards must provide indexed dynamic ARIA labels (e.g. `aria-label="Delete facility photo #1"`) rather than generic titles.
 **Action:** Always include `group-focus-within:opacity-100` on overlay containers, dynamic `aria-label` attributes on card actions, and `focus-visible:ring-2` on interactive elements in image grid components.
 
-<<<<<<< HEAD
 ## 2026-11-04 - Ecosystem Switcher Dropdown Keyboard Dismissal & ARIA Semantics
 **Learning:** Cross-portal navigation switchers (e.g., `PlatformSuiteLauncher`) that render floating custom dropdown menus trap keyboard users unless an explicit `Escape` key event listener is bound when open. Furthermore, trigger buttons require explicit `aria-controls` referencing the menu's ID and clear `focus-visible:ring-2` styles so keyboard navigators do not lose orientation.
 **Action:** Always bind `keydown` for `Escape` alongside outside-click listeners in custom dropdown menus, pair trigger `aria-controls` with menu ID, and provide explicit `aria-orientation="vertical"` for `role="menu"` containers.

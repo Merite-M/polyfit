@@ -14,8 +14,6 @@
 **Learning:** In mobile facility discovery loops, `Number((val).toFixed(2))` was being invoked on every coordinate pair to round output. `.toFixed(2)` allocates a string on the heap, which is then parsed back into a double float by `Number()`. Replacing string formatting with pure integer arithmetic (`Math.round(val * 100) / 100`) combined with Haversine math optimizations yielded a ~5x execution speedup (~80% latency reduction) without GC heap churn.
 **Action:** In numeric hot paths (loops/enrichment/sorting), use `Math.round(val * 100) / 100` instead of `Number(val.toFixed(2))` to round floating point numbers without allocating intermediate string objects.
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 ## 2026-03-31 - Intl.NumberFormat Module-Level Singleton Caching
 **Learning:** Instantiating `new Intl.NumberFormat(...)` inline within interactive UI components (such as interactive budget sliders, ROI calculators, pricing cards, and currency formatting helpers) creates expensive formatters on every render and slider drag event. In benchmarks, instantiating `Intl.NumberFormat` takes ~643ms per 10,000 iterations compared to ~8ms when reusing a cached module-level instance (~80x execution speedup) while completely eliminating Garbage Collection heap pressure.
 **Action:** Always hoist and export `Intl.NumberFormat` instances as singletons at module scope in shared utility files or components instead of instantiating them dynamically inside render cycles or helper functions.
