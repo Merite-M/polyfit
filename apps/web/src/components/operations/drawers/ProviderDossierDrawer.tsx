@@ -27,7 +27,10 @@ import {
   RefreshCw,
   Eye,
   FileCheck,
-  AlertCircle
+  AlertCircle,
+  Copy,
+  MessageSquare,
+  Send
 } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 import { formatCurrencyDisplay } from "@/lib/utils";
@@ -77,6 +80,11 @@ export function ProviderDossierDrawer({
   const [kycRevisionNotes, setKycRevisionNotes] = useState("");
   const [kycRejectReason, setKycRejectReason] = useState("");
   const [activeKycModal, setActiveKycModal] = useState<"revision" | "reject" | null>(null);
+
+  // Partner activation & invitation state
+  const [approvingInvite, setApprovingInvite] = useState(false);
+  const [copiedInvite, setCopiedInvite] = useState(false);
+  const [inviteSuccessMessage, setInviteSuccessMessage] = useState<string | null>(null);
 
   // Synchronize native <dialog> lifecycle
   useEffect(() => {
@@ -199,6 +207,39 @@ export function ProviderDossierDrawer({
       console.error("[ProviderDossierDrawer] KYC action failed:", err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // 1-Click Approve & Issue Activation Invitation Token
+  const handleApproveAndIssueInvite = async () => {
+    if (!providerId) return;
+    setApprovingInvite(true);
+    setInviteSuccessMessage(null);
+    try {
+      const res = await apiFetch<any>(`/api/operations/providers/${providerId}/approve-invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: providerData?.provider?.contact_email || providerData?.provider?.settlement_email,
+          contact_name: providerData?.provider?.name
+        })
+      });
+      setInviteSuccessMessage(res.message || "Provider approved & activation invitation issued!");
+      await fetchProviderDetail(providerId);
+      onProviderUpdated?.();
+    } catch (err: any) {
+      console.error("[ProviderDossierDrawer] Approve & Invite error:", err);
+      alert(err.message || "Failed to approve provider and issue invitation");
+    } finally {
+      setApprovingInvite(false);
+    }
+  };
+
+  const handleCopyActivationUrl = (url: string) => {
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(url);
+      setCopiedInvite(true);
+      setTimeout(() => setCopiedInvite(false), 2500);
     }
   };
 
@@ -430,6 +471,109 @@ export function ProviderDossierDrawer({
               </div>
             ) : (
               <>
+                {/* ═══════════ PARTNER REVIEW & ACTIVATION BANNER ═══════════ */}
+                {(provider.status === "pending_review" || provider.status === "in_review" || providerData?.invitation) && (
+                  <div className="p-4 rounded-xl border transition-all space-y-3 bg-gradient-to-r from-slate-50 to-emerald-50/30 border-emerald-200">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2.5">
+                        <div className="p-2 rounded-lg bg-[#28D17C]/20 text-[#0B1F33] shrink-0 mt-0.5">
+                          <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-slate-900 text-xs tracking-tight">
+                              Partner Network Onboarding Gate
+                            </h4>
+                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              SLA: 24h Max
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                            {provider.status === "pending_review" || provider.status === "in_review"
+                              ? "This facility submitted a self-registration application. Verify KYC credentials, then approve to generate the activation credentials token."
+                              : "This partner has been certified and issued an invitation token to activate their Partner Portal."}
+                          </p>
+                        </div>
+                      </div>
+
+                      {(provider.status === "pending_review" || provider.status === "in_review") && (
+                        <button
+                          onClick={handleApproveAndIssueInvite}
+                          disabled={approvingInvite}
+                          className="px-3.5 py-1.5 bg-[#28D17C] text-[#0B1F33] rounded-lg font-bold text-xs flex items-center gap-1.5 hover:bg-[#22BC6E] transition-all shadow-sm shrink-0 cursor-pointer disabled:opacity-50"
+                        >
+                          {approvingInvite ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          )}
+                          <span>Approve & Issue Invitation</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {inviteSuccessMessage && (
+                      <div className="p-2.5 rounded-lg bg-emerald-100/80 border border-emerald-300 text-emerald-900 text-[11px] font-semibold flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-emerald-700" />
+                        <span>{inviteSuccessMessage}</span>
+                      </div>
+                    )}
+
+                    {providerData?.invitation && (
+                      <div className="p-3 bg-white rounded-lg border border-emerald-200/80 space-y-2.5">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                            <Send className="w-3.5 h-3.5 text-emerald-600" />
+                            Activation Credentials Link:
+                          </span>
+                          <span className="font-mono text-[10px] text-slate-500">
+                            Status: <strong className="uppercase text-emerald-700">{providerData.invitation.status}</strong> (Valid for 14 Days)
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            readOnly
+                            value={providerData.invitation.activationUrl}
+                            className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md font-mono text-[11px] text-slate-700 select-all focus:outline-none"
+                          />
+                          <button
+                            onClick={() => handleCopyActivationUrl(providerData.invitation.activationUrl)}
+                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-md font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 border border-slate-300"
+                            title="Copy link to clipboard"
+                          >
+                            {copiedInvite ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                <span className="text-emerald-700">Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5 text-slate-600" />
+                                <span>Copy Link</span>
+                              </>
+                            )}
+                          </button>
+
+                          {providerData.invitation.whatsappUrl && (
+                            <a
+                              href={providerData.invitation.whatsappUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-md font-bold text-xs flex items-center gap-1.5 transition-colors shrink-0 shadow-xs"
+                              title="Send direct invitation via WhatsApp to facility manager"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" />
+                              <span>Dispatch WhatsApp</span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* ═══════════ TAB 1: COMMERCIAL & PAYOUT MATRIX ═══════════ */}
                 {activeTab === "commercial" && (
                   <div className="space-y-6">
@@ -658,12 +802,16 @@ export function ProviderDossierDrawer({
 
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleKycAction("approve")}
-                          disabled={saving}
+                          onClick={handleApproveAndIssueInvite}
+                          disabled={saving || approvingInvite}
                           className="px-3 py-1.5 bg-[#28D17C] text-[#0B1F33] rounded-lg font-bold text-xs flex items-center gap-1.5 hover:bg-[#22BC6E] transition-colors cursor-pointer shadow-xs disabled:opacity-50"
                         >
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Approve & Issue Contract</span>
+                          {approvingInvite ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          )}
+                          <span>Approve & Issue Invitation</span>
                         </button>
 
                         <button

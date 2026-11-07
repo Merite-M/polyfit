@@ -557,8 +557,22 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+const hasAuthToken = () => {
+  if (typeof window === 'undefined') return false;
+  try {
+    return !!(
+      localStorage.getItem('polyfit_token') ||
+      localStorage.getItem('polyfit_partner_token') ||
+      localStorage.getItem('sb-meszhexftehllnsyhbha-auth-token') ||
+      document.cookie.includes('sb-')
+    );
+  } catch {
+    return false;
+  }
+};
+
   const refreshLocations = useCallback(async () => {
-    if (!provider?.id) return;
+    if (!provider?.id || !hasAuthToken()) return;
     try {
       const res = await apiFetch<{ success: boolean; locations: ProviderLocation[] }>(
         `/api/providers/${provider.id}/locations`
@@ -572,6 +586,7 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
   }, [provider?.id]);
 
   const refreshSummary = useCallback(async () => {
+    if (!hasAuthToken()) return;
     try {
       const locParam = selectedLocationId !== 'all' ? `?provider_location_id=${selectedLocationId}` : '';
       const res = await apiFetch<{ success: boolean; summary: TodaySummary }>(
@@ -586,7 +601,7 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
   }, [selectedLocationId]);
 
   const refreshDashboard = useCallback(async () => {
-    if (!provider?.id) return;
+    if (!provider?.id || !hasAuthToken()) return;
     try {
       const locParam = selectedLocationId !== 'all' ? `?provider_location_id=${selectedLocationId}` : '';
       const res = await apiFetch<{ success: boolean } & DashboardOverview>(
@@ -601,7 +616,7 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
   }, [provider?.id, selectedLocationId]);
 
   const refreshCommercialConditions = useCallback(async () => {
-    if (!provider?.id) return;
+    if (!provider?.id || !hasAuthToken()) return;
     try {
       const res = await apiFetch<{ success: boolean } & CommercialConditions>(
         `/api/providers/${provider.id}/commercial-conditions`
@@ -617,6 +632,10 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true;
     const init = async () => {
+      if (!hasAuthToken()) {
+        if (isMounted) setLoading(false);
+        return;
+      }
       setLoading(true);
       await Promise.allSettled([
         refreshLocations(),
@@ -628,16 +647,16 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
     };
     init();
 
-    // Background sync: poll summary every 20s if window is visible
+    // Background sync: poll summary every 30s if window is visible and authenticated
     const pollInterval = setInterval(() => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible' && hasAuthToken()) {
         refreshSummary();
       }
-    }, 20000);
+    }, 30000);
 
-    // Refresh on tab focus
+    // Refresh on tab focus if authenticated
     const handleVisibilityChange = () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible' && hasAuthToken()) {
         refreshSummary();
         refreshDashboard();
       }

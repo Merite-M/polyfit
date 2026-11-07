@@ -16,6 +16,7 @@ const {
   addOperationsProviderLocation,
   updateOperationsProviderLocation,
   updateOperationsProviderKyc,
+  approveOperationsProviderInvite,
   updateOperationsProviderPayoutMatrix,
   getOperationsVisits,
   getOperationsDisputes,
@@ -408,6 +409,30 @@ router.patch('/providers/:id/kyc', async (req, res) => {
     return res.status(400).json({
       error: error.message,
       code: 'OPERATIONS_KYC_UPDATE_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/operations/providers/:id/approve-invite
+ * Super Admin 1-Click Approve Provider & Issue Activation Invitation Token.
+ * Sets provider status to active, verifies KYC, creates/rotates public.invitations token,
+ * and returns activation URL + direct WhatsApp dispatch link.
+ */
+router.post('/providers/:id/approve-invite', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await approveOperationsProviderInvite(id, req.body);
+    return res.status(200).json({
+      success: true,
+      message: 'Provider approved and activation invitation issued successfully',
+      ...result
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Approve provider invite error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_PROVIDER_APPROVE_FAILED'
     });
   }
 });

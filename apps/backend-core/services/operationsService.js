@@ -1385,6 +1385,35 @@ async function getOperationsProviderDetail(providerId) {
     }
   };
 
+  // Fetch latest invitation for provider if exists
+  let latestInvitation = null;
+  const { data: inviteData } = await supabase
+    .from('invitations')
+    .select('id, email, token, status, expires_at, created_at, accepted_at')
+    .eq('provider_id', providerId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (inviteData) {
+    const frontendBase = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const rawPhone = onboarding.phone || provider.bank_details?.momo_phone || '';
+    let cleanPhone = (rawPhone || '').replace(/\D/g, '');
+    if (cleanPhone.startsWith('07')) {
+      cleanPhone = '250' + cleanPhone.slice(1);
+    } else if (cleanPhone.startsWith('7')) {
+      cleanPhone = '250' + cleanPhone;
+    }
+    const activationUrl = `${frontendBase}/partner/activate?token=${inviteData.token}`;
+    const whatsappMsg = `Hello ${onboarding.contact_name || provider.name}! Congratulations, your wellness facility "${provider.name}" has been approved to join the PolyFit Corporate Wellness Network. Please activate your Partner Portal account here: ${activationUrl}`;
+
+    latestInvitation = {
+      ...inviteData,
+      activationUrl,
+      whatsappUrl: cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMsg)}` : null
+    };
+  }
+
   return {
     provider: {
       id: provider.id,
@@ -1422,6 +1451,7 @@ async function getOperationsProviderDetail(providerId) {
       momoPhone: provider.bank_details?.momo_phone || ''
     },
     complianceDossier,
+    invitation: latestInvitation,
     metrics: {
       todayVisitsCount: todayVisits.length,
       mtdVisitsCount: mtdVisits.length,
@@ -1817,6 +1847,147 @@ async function updateOperationsProviderKyc(providerId, payload) {
   }
 
   return updated;
+}
+
+/**
+ * Super Admin 1-Click Approve Provider & Issue Activation Invitation Token.
+ * Sets provider status to 'active', ensures KYC is approved, generates/rotates
+ * invitation token in public.invitations for role 'provider_admin', and builds
+ * copyable activation URL and direct WhatsApp dispatch deep-link.
+ */
+async function approveOperationsProviderInvite(providerId, options = {}) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  // 1. Fetch provider
+  const { data: provider, error: pErr } = await supabase
+    .from('providers')
+    .select('*')
+    .eq('id', providerId)
+    .single();
+
+  if (pErr || !provider) {
+    throw new Error(`Provider not found: ${pErr ? pErr.message : 'Invalid ID'}`);
+  }
+
+  const contactEmail = (options.email || provider.contact_email || provider.settlement_email || '').trim().toLowerCase();
+  if (!contactEmail) {
+    throw new Error('Provider contact email is required to issue an activation invitation');
+  }
+
+  // 2. Update provider status to active and approve KYC
+  const onboarding = provider.onboarding_details || {};
+  const kycDocs = onboarding.kyc_documents || {};
+  kycDocs.approved_at = new Date().toISOString();
+  kycDocs.rdb_certificate = kycDocs.rdb_certificate || 'verified';
+  kycDocs.hygiene_checklist = kycDocs.hygiene_checklist || 'verified';
+  kycDocs.facility_photos = kycDocs.facility_photos || 'verified';
+
+  const { data: updatedProvider, error: updateErr } = await supabase
+    .from('providers')
+    .update({
+      status: 'active',
+      rejection_reason: null,
+      onboarding_details: {
+        ...onboarding,
+        kyc_documents: kycDocs,
+        approved_at: new Date().toISOString()
+      },
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', providerId)
+    .select()
+    .single();
+
+  if (updateErr) {
+    throw new Error(`Failed to activate provider: ${updateErr.message}`);
+  }
+
+  // Also activate initial provider location if it exists
+  try {
+    await supabase
+      .from('provider_locations')
+      .update({ status: 'active', updated_at: new Date().toISOString() })
+      .eq('provider_id', providerId)
+      .eq('status', 'pending_review');
+  } catch (locUpdErr) {
+    console.warn('[approveOperationsProviderInvite] Location status notice:', locUpdErr.message);
+  }
+
+  // 3. Generate secure invitation token
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(); // 14 days
+
+  // Check if existing pending invitation exists, or insert new one
+  const { data: existingInvite } = await supabase
+    .from('invitations')
+    .select('id')
+    .eq('provider_id', providerId)
+    .eq('status', 'pending')
+    .maybeSingle();
+
+  let invitationRecord;
+  if (existingInvite) {
+    const { data: updatedInvite, error: invUpdateErr } = await supabase
+      .from('invitations')
+      .update({
+        token,
+        email: contactEmail,
+        expires_at: expiresAt,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', existingInvite.id)
+      .select()
+      .single();
+
+    if (invUpdateErr) throw new Error(`Failed to update invitation: ${invUpdateErr.message}`);
+    invitationRecord = updatedInvite;
+  } else {
+    const { data: newInvite, error: invInsertErr } = await supabase
+      .from('invitations')
+      .insert({
+        email: contactEmail,
+        role: 'provider_admin',
+        provider_id: providerId,
+        token,
+        status: 'pending',
+        expires_at: expiresAt
+      })
+      .select()
+      .single();
+
+    if (invInsertErr) throw new Error(`Failed to create invitation: ${invInsertErr.message}`);
+    invitationRecord = newInvite;
+  }
+
+  const frontendBase = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const activationUrl = `${frontendBase}/partner/activate?token=${token}`;
+
+  // Clean phone number for WhatsApp deep link
+  const rawPhone = options.phone || onboarding.phone || provider.bank_details?.momo_phone || '';
+  let cleanPhone = (rawPhone || '').replace(/\D/g, '');
+  if (cleanPhone.startsWith('07')) {
+    cleanPhone = '250' + cleanPhone.slice(1);
+  } else if (cleanPhone.startsWith('7')) {
+    cleanPhone = '250' + cleanPhone;
+  }
+
+  const contactName = options.contact_name || onboarding.contact_name || provider.name;
+  const whatsappMsg = `Hello ${contactName}! Congratulations, your wellness facility "${provider.name}" has been approved to join the PolyFit Corporate Wellness Network in Rwanda. Please activate your Partner Portal account here: ${activationUrl}`;
+  const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMsg)}` : null;
+
+  return {
+    provider: updatedProvider,
+    invitation: {
+      id: invitationRecord.id,
+      email: contactEmail,
+      token,
+      activation_url: activationUrl,
+      whatsapp_url: whatsappUrl,
+      expires_at: expiresAt
+    }
+  };
 }
 
 /**
@@ -4236,6 +4407,7 @@ module.exports = {
   addOperationsProviderLocation,
   updateOperationsProviderLocation,
   updateOperationsProviderKyc,
+  approveOperationsProviderInvite,
   updateOperationsProviderPayoutMatrix,
   getOperationsVisits,
   getOperationsDisputes,

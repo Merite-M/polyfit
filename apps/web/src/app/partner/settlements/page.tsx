@@ -224,7 +224,7 @@ export default function PartnerSettlementsPage() {
             </span>
           </div>
           <p className="text-xs text-[#6D28D9] mt-1 leading-relaxed">
-            Monthly provider earnings close on the final calendar day of each month. In accordance with Wellhub and Gymlib partner benchmarks, all technical exceptions or retroactive visit claims must be submitted by the <strong>2nd day of the following month</strong>. Payouts are reconciled and disbursed via electronic funds transfer (EFT) or MTN MoMo Business Code on the <strong>15th of the month</strong>.
+            Monthly provider earnings close on the final calendar day of each month. In accordance with PolyFit network settlement protocols, all technical exceptions or retroactive visit claims must be submitted by the <strong>2nd day of the following month</strong>. Payouts are reconciled and disbursed via electronic funds transfer (EFT) or MTN MoMo Business Code on the <strong>15th of the month</strong>.
           </p>
         </div>
       </div>

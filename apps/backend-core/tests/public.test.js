@@ -313,4 +313,58 @@ describe('Public Lead & Demo Pipeline Test Suite (PF-88)', () => {
       assert.ok(res.body.redirect_url);
     });
   });
+
+  describe('Partner Identity & Activation Pipeline (Wellhub Benchmark)', () => {
+    test('GET /api/public/partner/check-email rejects request with missing email and token', async () => {
+      const res = await request(app).get('/api/public/partner/check-email');
+      assert.equal(res.status, 400);
+      assert.equal(res.body.code, 'VALIDATION_ERROR');
+    });
+
+    test('GET /api/public/partner/check-email returns not_found for unregistered email', async () => {
+      const res = await request(app)
+        .get('/api/public/partner/check-email')
+        .query({ email: `unregistered-${Date.now()}@test.rw` });
+      assert.equal(res.status, 200);
+      assert.equal(res.body.exists, false);
+      assert.equal(res.body.status, 'not_found');
+    });
+
+    test('POST /api/public/partner/activate-account validates strict password requirements', async () => {
+      const res = await request(app)
+        .post('/api/public/partner/activate-account')
+        .send({
+          email: 'test@partner.rw',
+          password: 'short',
+          terms_accepted: true
+        });
+      assert.equal(res.status, 400);
+      assert.equal(res.body.code, 'WEAK_PASSWORD');
+    });
+
+    test('POST /api/public/partner/activate-account enforces Terms of Use acceptance', async () => {
+      const res = await request(app)
+        .post('/api/public/partner/activate-account')
+        .send({
+          email: 'test@partner.rw',
+          password: 'ValidPassword123!',
+          terms_accepted: false
+        });
+      assert.equal(res.status, 400);
+      assert.equal(res.body.code, 'TERMS_REQUIRED');
+    });
+
+    test('POST /api/public/partner/activate-account rejects invalid or expired invitation token', async () => {
+      const res = await request(app)
+        .post('/api/public/partner/activate-account')
+        .send({
+          token: 'invalid_token_12345',
+          password: 'ValidPassword123!',
+          terms_accepted: true
+        });
+      assert.equal(res.status, 400);
+      assert.equal(res.body.code, 'INVITE_NOT_FOUND');
+    });
+  });
 });
+

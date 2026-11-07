@@ -11,7 +11,10 @@ import { PayoutAccountModal } from '@/components/partner/settlements/PayoutAccou
 
 function PartnerLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isRegisterPage = pathname?.startsWith("/partner/register");
+  const isStandaloneAuth =
+    pathname?.startsWith('/partner/register') ||
+    pathname?.startsWith('/partner/login') ||
+    pathname?.startsWith('/partner/activate');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileDrawerRef = useRef<HTMLDialogElement>(null);
 
@@ -38,7 +41,7 @@ function PartnerLayoutShell({ children }: { children: React.ReactNode }) {
     }
   }, [mobileMenuOpen]);
 
-  if (isRegisterPage) {
+  if (isStandaloneAuth) {
     return (
       <main className="min-h-screen bg-background text-foreground antialiased">
         {children}
@@ -118,6 +121,20 @@ function PartnerLayoutShell({ children }: { children: React.ReactNode }) {
 }
 
 export default function PartnerLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isStandaloneAuth =
+    pathname?.startsWith('/partner/register') ||
+    pathname?.startsWith('/partner/login') ||
+    pathname?.startsWith('/partner/activate');
+
+  if (isStandaloneAuth) {
+    return (
+      <main className="min-h-screen bg-background text-foreground antialiased">
+        {children}
+      </main>
+    );
+  }
+
   return (
     <PartnerProvider>
       <PartnerLayoutShell>{children}</PartnerLayoutShell>

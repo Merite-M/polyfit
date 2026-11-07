@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Dumbbell,
   Building2,
   MapPin,
   Mail,
+  Clock,
   Phone,
   User,
   CheckCircle2,
@@ -80,11 +81,19 @@ const RWANDA_DISTRICTS = [
   "Huye - Southern Province"
 ];
 
-export default function PartnerRegistrationPage() {
+function PartnerRegistrationContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryStatus = searchParams?.get("status");
+  const queryEmail = searchParams?.get("email");
+
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(queryStatus === "submitted");
+  const [submittedEmail, setSubmittedEmail] = useState<string>(queryEmail || "");
+  const [submittedName, setSubmittedName] = useState<string>("");
 
   // Form Fields
   const [businessName, setBusinessName] = useState("");
@@ -196,20 +205,124 @@ export default function PartnerRegistrationPage() {
             console.warn("[PartnerRegister] Storage notice:", e);
           }
         }
-        // Redirect to partner setup wizard with new location ID
-        const redirect = res?.redirect_url || "/partner/setup";
-        router.push(redirect);
+        setIsSubmitted(true);
+        setSubmittedName(businessName.trim());
+        setSubmittedEmail(contactEmail.trim().toLowerCase());
+        router.push(`/partner/register?status=submitted&email=${encodeURIComponent(contactEmail.trim().toLowerCase())}`);
       } else {
         throw new Error(res?.error || "Registration could not be completed.");
       }
     } catch (err: any) {
       console.error("[PartnerRegister] Submission error:", err);
-      // Fallback graceful redirect to partner portal in case of offline mock mode
-      router.push("/partner/setup?welcome=true");
+      setSubmitError(err.message || "Failed to submit facility application");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Render High-Trust Operations Review Screen when submitted
+  if (isSubmitted || queryStatus === "submitted") {
+    const displayEmail = submittedEmail || queryEmail || contactEmail;
+    const displayName = submittedName || businessName || "Your Wellness Facility";
+
+    return (
+      <div className="min-h-screen bg-[#F7F9FC] text-[#0B1F33] flex flex-col justify-between selection:bg-[#28D17C]/20 selection:text-[#0B1F33]">
+        <header className="h-16 px-6 bg-white border-b border-[#E2E8F0] flex items-center justify-between sticky top-0 z-20">
+          <Link href="/" className="flex items-center gap-2">
+            <PolyFitLogo theme="light" iconSize={26} />
+          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/partner/login?email=${encodeURIComponent(displayEmail)}`}
+              className="text-xs font-semibold text-slate-600 hover:text-[#0B1F33] transition-colors"
+            >
+              Sign In
+            </Link>
+          </div>
+        </header>
+
+        <main className="flex-1 flex items-center justify-center px-4 py-12">
+          <div className="w-full max-w-xl space-y-6">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center space-y-6">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+                <ShieldCheck className="w-9 h-9" />
+              </div>
+
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-mono font-bold tracking-wide uppercase border border-emerald-200">
+                  <Clock className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>Review SLA: 24 Hours Max</span>
+                </div>
+                <h1 className="text-2xl font-bold text-[#0B1F33] tracking-tight">
+                  Application Submitted for Review
+                </h1>
+                <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+                  Thank you for submitting <strong className="text-slate-900">{displayName}</strong> to the PolyFit Corporate Wellness Network. Your facility details and commercial payout rails have been queued for Operations review.
+                </p>
+              </div>
+
+              {/* Progress Stepper */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-left space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                    ✓
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">1. Facility Profile & Payout Rails Submitted</h4>
+                    <p className="text-[11px] text-slate-500">Facility amenities, commercial expectations, and banking info recorded.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-amber-100 border border-amber-300 text-amber-800 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 animate-pulse">
+                    2
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">2. Operations Review & KYC Verification</h4>
+                    <p className="text-[11px] text-slate-600">PolyFit Operations is reviewing compliance. Committed turnaround is <strong className="text-slate-900">within 24 hours max</strong>.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                    3
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-700">3. Activation Link & Credential Formulation</h4>
+                    <p className="text-[11px] text-slate-500">
+                      Upon approval, your secure activation link will be dispatched to <span className="font-mono text-slate-800">{displayEmail}</span> and via WhatsApp.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-3 pt-2">
+                <Link
+                  href={`/partner/login?email=${encodeURIComponent(displayEmail)}`}
+                  className="w-full py-3 px-4 bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all"
+                >
+                  <span>Check Application Status on Partner Portal</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+
+                <Link
+                  href="/network"
+                  className="block text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+                >
+                  Explore the PolyFit Provider Network Directory &rarr;
+                </Link>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <footer className="py-4 px-6 text-center text-xs text-slate-500 border-t border-[#E2E8F0]">
+          PolyFit Corporate Wellness Network &bull; Provider Verification &bull; Kigali, Rwanda
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F7F9FC] text-[#0B1F33] flex flex-col justify-between selection:bg-indigo-500/20 selection:text-indigo-950">
@@ -749,17 +862,17 @@ export default function PartnerRegistrationPage() {
                     type="button"
                     onClick={handleSubmitRegistration}
                     disabled={isSubmitting || !agreedToTerms}
-                    className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl flex items-center gap-2 shadow-md hover:shadow-lg transition-all disabled:opacity-50 cursor-pointer"
+                    className="px-6 py-3.5 bg-[#0B1F33] hover:bg-[#132D43] text-white font-bold text-sm rounded-xl flex items-center gap-2 shadow-md hover:shadow-lg transition-all disabled:opacity-50 cursor-pointer"
                   >
                     {isSubmitting ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Submitting Onboarding...</span>
+                        <span>Submitting for Review...</span>
                       </>
                     ) : (
                       <>
-                        <span>Accept & Launch Facility Account</span>
-                        <ArrowRight className="w-4 h-4" />
+                        <span>Submit for Operations Review (24h SLA)</span>
+                        <ArrowRight className="w-4 h-4 text-[#28D17C]" />
                       </>
                     )}
                   </button>
@@ -777,3 +890,18 @@ export default function PartnerRegistrationPage() {
     </div>
   );
 }
+
+export default function PartnerRegistrationPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F7F9FC] flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-[#28D17C] border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <PartnerRegistrationContent />
+    </Suspense>
+  );
+}
+

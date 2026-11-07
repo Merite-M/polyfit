@@ -170,7 +170,7 @@ export function TopEmployersCard() {
       <div className="mt-5 pt-3.5 border-t border-[#F1F4F8] flex items-center justify-between text-xs text-[#526173]">
         <div className="flex items-center gap-1.5">
           <ShieldCheck className="w-4 h-4 text-[#28D17C]" />
-          <span>Wellhub Enterprise Privacy Shield — Corporate Data Protected</span>
+          <span>PolyFit Enterprise Privacy Shield — Corporate Data Protected</span>
         </div>
         <span className="font-mono text-[11px] text-[#8491A3]">Verified RRA EBM</span>
       </div>

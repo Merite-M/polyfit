@@ -876,7 +876,7 @@ router.post('/partner/register', leadFormLimiter, async (req, res) => {
         .insert({
           name: cleanBusinessName,
           category: primaryCategory,
-          status: 'active',
+          status: 'pending_review',
           contact_email: cleanEmail,
           settlement_email: cleanEmail,
           pricing_expectations: {
@@ -932,7 +932,7 @@ router.post('/partner/register', leadFormLimiter, async (req, res) => {
           address: `${location.trim() || 'Kigali'}, Rwanda`,
           city: location.trim() || 'Kigali',
           country: 'Rwanda',
-          status: 'active',
+          status: 'pending_review',
           amenities: categoryList,
           metadata: {
             contact_person: contact_name.trim(),
@@ -957,10 +957,10 @@ router.post('/partner/register', leadFormLimiter, async (req, res) => {
         phone: phone.trim(),
         country: 'Rwanda',
         company_size: `${facility_count} location(s)`,
-        interest_tier: 'Provider Network Onboarded',
-        message: `Registered as ${primaryCategory} in ${location}. Accepted Net-15 commercial agreement.`,
+        interest_tier: 'Provider Network Review',
+        message: `Facility application submitted as ${primaryCategory} in ${location}. Awaiting Operations review (24h SLA).`,
         source: 'partner_register_flow',
-        status: 'approved'
+        status: 'pending'
       });
     } catch (leadErr) {
       console.warn('[PartnerRegister] Lead sync notice:', leadErr.message);
@@ -968,25 +968,393 @@ router.post('/partner/register', leadFormLimiter, async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: 'Wellness provider facility onboarded successfully! Welcome to the PolyFit Network.',
+      status: 'pending_review',
+      review_sla: '24h max',
+      message: 'Wellness facility application submitted for PolyFit Operations review. Verification SLA: 24h max.',
       provider: {
         id: provider.id,
         name: provider.name,
         category: provider.category,
         contact_email: provider.contact_email,
-        status: provider.status
+        status: provider.status || 'pending_review'
       },
       location: locationRecord ? {
         id: locationRecord.id,
         name: locationRecord.name
       } : null,
-      redirect_url: locationRecord ? `/partner/setup?locationId=${locationRecord.id}&welcome=true` : '/partner/locations'
+      redirect_url: `/partner/register?status=submitted&email=${encodeURIComponent(cleanEmail)}`
     });
   } catch (error) {
     console.error('[PartnerRegister] Unexpected error:', error);
     return res.status(500).json({
       error: error.message || 'Failed to complete partner facility registration',
       code: 'REGISTRATION_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/public/partner/check-email
+ * Wellhub Identifier Entrypoint:
+ * Validates whether an email has a registered provider, a pending 24h review,
+ * a pending invitation requiring password setup, or is already active.
+ * Also supports checking by ?token=... for direct invitation deep-links.
+ */
+router.get('/partner/check-email', async (req, res) => {
+  try {
+    const { email, token } = req.query;
+
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    // If token provided directly (e.g. from WhatsApp / email link /partner/activate?token=...)
+    if (token) {
+      const { data: invite, error: invErr } = await supabase
+        .from('invitations')
+        .select('id, email, role, provider_id, status, expires_at, created_at')
+        .eq('token', token.trim())
+        .maybeSingle();
+
+      if (invErr || !invite) {
+        return res.status(404).json({
+          valid: false,
+          status: 'not_found',
+          message: 'Invalid invitation link or token not found.'
+        });
+      }
+
+      if (invite.status === 'accepted') {
+        return res.status(200).json({
+          valid: false,
+          status: 'active',
+          email: invite.email,
+          message: 'This invitation has already been activated. Please sign in with your password.'
+        });
+      }
+
+      const isExpired = new Date(invite.expires_at) <= new Date();
+      if (invite.status === 'expired' || isExpired) {
+        return res.status(200).json({
+          valid: false,
+          status: 'expired',
+          email: invite.email,
+          message: 'This invitation link has expired. Please contact PolyFit Operations to request a new link.'
+        });
+      }
+
+      // Fetch provider name
+      let providerName = 'Your Wellness Facility';
+      if (invite.provider_id) {
+        const { data: prov } = await supabase
+          .from('providers')
+          .select('id, name, status')
+          .eq('id', invite.provider_id)
+          .maybeSingle();
+        if (prov?.name) providerName = prov.name;
+      }
+
+      return res.status(200).json({
+        valid: true,
+        status: 'invite_pending',
+        email: invite.email,
+        role: invite.role || 'provider_admin',
+        provider_id: invite.provider_id,
+        provider_name: providerName,
+        token: token.trim(),
+        message: `Welcome! Create a secure password for ${invite.email} to manage ${providerName}.`
+      });
+    }
+
+    // Email lookup
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: 'Email or token is required', code: 'VALIDATION_ERROR' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const safeEmail = sanitizePostgrestFilter(cleanEmail);
+
+    // 1. Search for provider by contact_email or settlement_email
+    const { data: providers, error: provSearchErr } = await supabase
+      .from('providers')
+      .select('id, name, status, contact_email, settlement_email, rejection_reason')
+      .or(`contact_email.eq.${safeEmail},settlement_email.eq.${safeEmail}`)
+      .order('created_at', { ascending: false });
+
+    const provider = providers && providers[0];
+
+    // 2. Also search invitations by email
+    const { data: invitations } = await supabase
+      .from('invitations')
+      .select('id, email, token, role, provider_id, status, expires_at')
+      .eq('email', cleanEmail)
+      .order('created_at', { ascending: false });
+
+    const pendingInvite = invitations && invitations.find(i => i.status === 'pending' && new Date(i.expires_at) > new Date());
+    const acceptedInvite = invitations && invitations.find(i => i.status === 'accepted');
+
+    if (!provider && !pendingInvite && !acceptedInvite) {
+      return res.status(200).json({
+        exists: false,
+        status: 'not_found',
+        email: cleanEmail,
+        message: 'No registered facility found with this email. Please register your facility to join PolyFit.'
+      });
+    }
+
+    const providerName = provider?.name || 'Your Wellness Facility';
+
+    // Provider is pending review (24h SLA)
+    if (provider && (provider.status === 'pending_review' || provider.status === 'in_review')) {
+      return res.status(200).json({
+        exists: true,
+        status: 'pending_review',
+        email: cleanEmail,
+        provider_name: providerName,
+        review_sla: '24h max',
+        message: `Your facility application for "${providerName}" has been received and is currently being reviewed by PolyFit Operations (SLA: 24h max). Once approved, an activation link will be dispatched via WhatsApp/email.`
+      });
+    }
+
+    // Provider is rejected
+    if (provider && provider.status === 'rejected') {
+      return res.status(200).json({
+        exists: true,
+        status: 'rejected',
+        email: cleanEmail,
+        provider_name: providerName,
+        message: provider.rejection_reason || 'Facility application was not approved by PolyFit Operations.'
+      });
+    }
+
+    // Pending invitation exists -> user needs to create password (Wellhub Screen 2)
+    if (pendingInvite) {
+      return res.status(200).json({
+        exists: true,
+        status: 'invite_pending',
+        email: cleanEmail,
+        provider_name: providerName,
+        provider_id: pendingInvite.provider_id || provider?.id,
+        invitation_token: pendingInvite.token,
+        role: pendingInvite.role || 'provider_admin',
+        message: `Your facility "${providerName}" has been approved! Create your password to activate your access.`
+      });
+    }
+
+    // Active provider and user is ready for returning login
+    return res.status(200).json({
+      exists: true,
+      status: 'active',
+      email: cleanEmail,
+      provider_name: providerName,
+      provider_id: provider?.id,
+      message: 'Account active. Please enter your password to sign in.'
+    });
+  } catch (error) {
+    console.error('[checkEmail] Error:', error);
+    return res.status(500).json({
+      error: error.message || 'Failed to check email identity',
+      code: 'CHECK_EMAIL_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/public/partner/activate-account
+ * Wellhub Password Formulation & Account Activation:
+ * Sets the password for the partner admin, validates security rules
+ * (8+ chars, uppercase, lowercase, number/special), accepts invitation,
+ * creates/updates Supabase Auth user, links user_roles ('provider_admin'),
+ * signs the user in, and returns live session + provider context.
+ * Post-activation routing: routes to /partner/setup on first login!
+ */
+router.post('/partner/activate-account', leadFormLimiter, async (req, res) => {
+  try {
+    const { token, email, password, terms_accepted } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required', code: 'PASSWORD_REQUIRED' });
+    }
+
+    // Strict Wellhub password rules
+    const hasMinLen = password.length >= 8;
+    const hasUpperLower = /[a-z]/.test(password) && /[A-Z]/.test(password);
+    const hasNumOrSpecial = /[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
+
+    if (!hasMinLen || !hasUpperLower || !hasNumOrSpecial) {
+      return res.status(400).json({
+        error: 'Password must have at least 8 characters, upper and lower cases, and at least one number or special character',
+        code: 'WEAK_PASSWORD'
+      });
+    }
+
+    if (!terms_accepted) {
+      return res.status(400).json({
+        error: 'You must agree to the Terms of Use and Privacy Policy',
+        code: 'TERMS_REQUIRED'
+      });
+    }
+
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    // Find invitation by token or pending email
+    let invite = null;
+    if (token && token.trim()) {
+      const { data: invByToken } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('token', token.trim())
+        .maybeSingle();
+      invite = invByToken;
+    } else if (email && email.trim()) {
+      const { data: invByEmail } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('email', email.trim().toLowerCase())
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      invite = invByEmail && invByEmail[0];
+    } else {
+      return res.status(400).json({ error: 'Invitation token or email is required', code: 'TOKEN_OR_EMAIL_REQUIRED' });
+    }
+
+    if (!invite) {
+      return res.status(400).json({
+        error: 'No valid or pending invitation found for activation. Please request a new link.',
+        code: 'INVITE_NOT_FOUND'
+      });
+    }
+
+    if (invite.status === 'accepted') {
+      return res.status(400).json({
+        error: 'Invitation has already been activated. Please log in directly with your password.',
+        code: 'ALREADY_ACTIVATED'
+      });
+    }
+
+    if (new Date(invite.expires_at) <= new Date()) {
+      return res.status(400).json({
+        error: 'This invitation link has expired. Please contact PolyFit Operations.',
+        code: 'INVITE_EXPIRED'
+      });
+    }
+
+    const userEmail = invite.email.toLowerCase().trim();
+
+    // Fetch provider details
+    let provider = null;
+    if (invite.provider_id) {
+      const { data: prov } = await supabase
+        .from('providers')
+        .select('id, name, status, contact_email')
+        .eq('id', invite.provider_id)
+        .maybeSingle();
+      provider = prov;
+    }
+
+    // Create or update user in Supabase Auth via admin API
+    let userId;
+    const { data: createdUser, error: createError } = await supabase.auth.admin.createUser({
+      email: userEmail,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        role: invite.role || 'provider_admin',
+        provider_id: invite.provider_id,
+        provider_name: provider?.name || 'Wellness Facility'
+      }
+    });
+
+    if (createError) {
+      // If user already exists in auth.users, update password
+      const { data: existingUsers } = await supabase.auth.admin.listUsers();
+      const match = existingUsers?.users?.find((u) => u.email.toLowerCase() === userEmail);
+      if (match) {
+        userId = match.id;
+        const { error: updErr } = await supabase.auth.admin.updateUserById(userId, {
+          password,
+          email_confirm: true,
+          user_metadata: {
+            role: invite.role || 'provider_admin',
+            provider_id: invite.provider_id,
+            provider_name: provider?.name || 'Wellness Facility'
+          }
+        });
+        if (updErr) {
+          throw new Error(`Failed to set password: ${updErr.message}`);
+        }
+      } else {
+        throw new Error(`User provisioning error: ${createError.message}`);
+      }
+    } else {
+      userId = createdUser.user.id;
+    }
+
+    // Assign role in public.user_roles
+    try {
+      await supabase.from('user_roles').upsert({
+        user_id: userId,
+        role: invite.role || 'provider_admin',
+        provider_id: invite.provider_id
+      }, { onConflict: 'user_id,role,provider_id' });
+    } catch (roleErr) {
+      console.warn('[activateAccount] user_roles notice:', roleErr.message);
+    }
+
+    // Mark invitation accepted
+    await supabase
+      .from('invitations')
+      .update({
+        status: 'accepted',
+        accepted_at: new Date().toISOString()
+      })
+      .eq('id', invite.id);
+
+    // If provider was pending, ensure marked active
+    if (provider && provider.status !== 'active') {
+      await supabase
+        .from('providers')
+        .update({ status: 'active', updated_at: new Date().toISOString() })
+        .eq('id', provider.id);
+    }
+
+    // Obtain active session by signing in
+    let session = null;
+    try {
+      const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({
+        email: userEmail,
+        password
+      });
+      if (!loginErr && loginData?.session) {
+        session = loginData.session;
+      }
+    } catch (signInErr) {
+      console.warn('[activateAccount] Session generation notice:', signInErr.message);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Account activated successfully! Welcome to the PolyFit Partner Portal.',
+      user: {
+        id: userId,
+        email: userEmail,
+        role: invite.role || 'provider_admin'
+      },
+      provider: provider ? {
+        id: provider.id,
+        name: provider.name
+      } : null,
+      session,
+      redirect_url: '/partner/setup'
+    });
+  } catch (error) {
+    console.error('[activateAccount] Error:', error);
+    return res.status(500).json({
+      error: error.message || 'Failed to activate partner account',
+      code: 'ACTIVATION_FAILED'
     });
   }
 });
