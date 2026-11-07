@@ -13,7 +13,7 @@ interface LeadModalTriggerProps {
 
 export function LeadModalTrigger({
   type = "employer",
-  intent = true,
+  intent = false,
   children,
   className,
   ariaLabel,
