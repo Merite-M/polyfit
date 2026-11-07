@@ -446,20 +446,14 @@ export default function RoiCalculator({ onOpenLeadForm }: RoiCalculatorProps = {
             </div>
 
             {/* CTA Button */}
-            <button
-              onClick={() => {
-                if (onOpenLeadForm) {
-                  onOpenLeadForm("employer");
-                } else {
-                  openLeadModal("employer");
-                }
-              }}
+            <Link
+              href={`/corporate/register?plan=${selectedTierId}&headcount=${employees}`}
               aria-label="Talk to us to receive a custom proposal"
-              className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 py-4 rounded-xl font-bold text-sm transition-all duration-150 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer active:scale-95"
+              className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 py-4 rounded-xl font-bold text-sm transition-all duration-150 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer active:scale-95 text-center"
             >
               <span>Talk to Us for an Itemized Proposal</span>
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </Link>
           </div>
         </div>
       </div>

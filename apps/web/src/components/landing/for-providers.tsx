@@ -1,5 +1,5 @@
 import { Users, CheckCircle2, DollarSign, TrendingUp, ArrowRight } from "lucide-react";
-import { LeadModalTrigger } from "./lead-modal-trigger";
+import Link from "next/link";
 
 interface ForProvidersProps {
   onOpenLeadForm?: (type: 'employer' | 'provider') => void;
@@ -60,14 +60,14 @@ export default function ForProviders({ onOpenLeadForm }: ForProvidersProps = {})
         </div>
 
         <div>
-          <LeadModalTrigger 
-            type="provider"
-            ariaLabel="Become a PolyFit Provider - Open provider registration form"
+          <Link
+            href="/partner/register"
+            aria-label="Become a PolyFit Provider - Open partner registration portal"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#28D17C] hover:bg-[#28D17C]/90 text-[#0B1F33] px-6 sm:px-8 py-3.5 sm:py-4 rounded-[10px] text-base font-semibold transition-all duration-150 shadow-md hover:shadow-lg min-h-[48px] cursor-pointer"
           >
             <span>Become a PolyFit Provider</span>
             <ArrowRight className="w-5 h-5" />
-          </LeadModalTrigger>
+          </Link>
         </div>
       </div>
     </section>

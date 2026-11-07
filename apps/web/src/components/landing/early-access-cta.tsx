@@ -1,4 +1,5 @@
 import { Building2, Dumbbell, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { LeadModalTrigger } from "./lead-modal-trigger";
 
 interface EarlyAccessCTAProps {
@@ -58,14 +59,14 @@ export default function EarlyAccessCTA({ onOpenLeadForm }: EarlyAccessCTAProps =
                 Join the PolyFit network to reach corporate employees, fill off-peak capacity, and grow your facility with verified visit tracking.
               </p>
             </div>
-            <LeadModalTrigger 
-              type="provider"
-              ariaLabel="Join the network - Open provider registration form"
+            <Link
+              href="/partner/register"
+              aria-label="Join the network - Register as a wellness facility partner"
               className="w-full border border-white/30 hover:bg-white/10 text-white px-6 py-3.5 sm:py-4 rounded-[10px] text-base font-semibold transition-all duration-150 flex items-center justify-center gap-2 min-h-[48px] cursor-pointer"
             >
               <span>Join the network</span>
               <ArrowRight className="w-5 h-5 text-gray-300" />
-            </LeadModalTrigger>
+            </Link>
           </div>
         </div>
 

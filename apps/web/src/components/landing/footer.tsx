@@ -84,13 +84,12 @@ export default function Footer({ onOpenLeadForm }: FooterProps = {}) {
                 </LeadModalTrigger>
               </li>
               <li>
-                <LeadModalTrigger
-                  type="provider"
-                  ariaLabel="Wellness Providers - Open provider registration modal"
+                <Link
+                  href="/partner/register"
                   className="hover:text-white transition-colors text-left cursor-pointer"
                 >
                   Provider Network Join
-                </LeadModalTrigger>
+                </Link>
               </li>
               <li>
                 <Link href="/#about" className="hover:text-white transition-colors">
