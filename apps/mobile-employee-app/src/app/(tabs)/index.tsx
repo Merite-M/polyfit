@@ -105,14 +105,42 @@ export default function AccessPassScreen() {
       if (Platform.OS !== 'web') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       }
+
+      const apiBaseUrl =
+        process.env.EXPO_PUBLIC_API_URL ||
+        (process.env.NODE_ENV === 'production'
+          ? 'https://polyfit-backend.onrender.com'
+          : 'http://localhost:3001');
+
+      // 1. Sync any pending offline visits queued in local SecureStore vault
+      if (session?.access_token) {
+        await OfflineVaultService.syncOfflineVisits(apiBaseUrl, session.access_token).catch((e) => {
+          console.warn('[AccessPass] Offline sync during refresh note:', e);
+        });
+      }
+
+      // 2. Refresh auth session state and live profile/visit telemetry concurrently
       await Promise.all([
         initializeSession().catch(() => {}),
         refreshProfileAndVisits().catch(() => {}),
       ]);
+
+      // 3. Dynamically evaluate connection health to update offline badge status
+      try {
+        const pingController = new AbortController();
+        const timeoutId = setTimeout(() => pingController.abort(), 3000);
+        const healthRes = await fetch(`${apiBaseUrl}/health`, {
+          signal: pingController.signal,
+        });
+        clearTimeout(timeoutId);
+        setIsOffline(!healthRes.ok);
+      } catch {
+        setIsOffline(true);
+      }
     } finally {
       setIsRefreshing(false);
     }
-  }, [initializeSession, refreshProfileAndVisits]);
+  }, [session?.access_token, initializeSession, refreshProfileAndVisits]);
 
   // Handle Modality B Scan Success (from Camera or Plaque Simulator)
   const handlePlaqueScanned = async (plaque: ScannedPlaqueData) => {
