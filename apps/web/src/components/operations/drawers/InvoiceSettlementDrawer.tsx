@@ -33,12 +33,107 @@ import { generateInvoicePdf, formatRwf } from "@/lib/invoice-pdf";
 import { generateSettlementPdf } from "@/lib/settlement-pdf";
 import { CreditNoteModal } from "@/components/operations/finance/CreditNoteModal";
 
+export interface InvoiceLineItemRecord {
+  id?: string;
+  description?: string;
+  quantity?: number;
+  unit_price?: number;
+  amount?: number;
+  provider_id?: string;
+  provider_name?: string;
+  visit_count?: number;
+  per_visit_rate?: number;
+  subtotal?: number;
+}
+
+export interface SettlementProviderBankDetails {
+  payout_method?: string;
+  bank_name?: string;
+  account_name?: string;
+  account_number?: string;
+  swift_code?: string;
+  momo_code?: string;
+  momo_phone?: string;
+}
+
+export interface SettlementProviderRecord {
+  id?: string;
+  name?: string;
+  category?: string;
+  tax_id?: string | null;
+  settlement_email?: string | null;
+  bank_details?: SettlementProviderBankDetails | null;
+}
+
+export interface InvoiceOrganizationRecord {
+  id?: string;
+  name?: string;
+  tax_id?: string | null;
+  billing_email?: string | null;
+  country?: string | null;
+}
+
+export interface SettlementRecord {
+  id: string;
+  statement_number?: string;
+  provider_id?: string;
+  settlement_period_start?: string;
+  settlement_period_end?: string;
+  total_visits?: number;
+  total_amount?: number | string;
+  gross_amount?: number | string;
+  platform_fee_amount?: number | string;
+  net_amount?: number | string;
+  currency?: string;
+  status?: string;
+  payment_reference?: string;
+  created_at?: string;
+  providers?: SettlementProviderRecord | null;
+}
+
+export interface InvoiceRecord {
+  id: string;
+  invoice_number?: string;
+  org_id?: string;
+  billing_period_start?: string;
+  billing_period_end?: string;
+  total_visits?: number;
+  total_amount?: number | string;
+  subtotal_amount?: number | string;
+  tax_amount?: number | string;
+  currency?: string;
+  status?: string;
+  due_date?: string;
+  paid_at?: string;
+  created_at?: string;
+  organizations?: InvoiceOrganizationRecord | null;
+  line_items?: InvoiceLineItemRecord[];
+}
+
+export interface InvoiceSettlementRecord extends Partial<InvoiceRecord>, Partial<SettlementRecord> {
+  id: string;
+  status?: string;
+  total_amount?: number | string;
+  total_visits?: number;
+  created_at?: string;
+}
+
+interface InvoicesApiResponse {
+  success?: boolean;
+  invoices?: InvoiceSettlementRecord[];
+}
+
+interface SettlementsApiResponse {
+  success?: boolean;
+  settlements?: InvoiceSettlementRecord[];
+}
+
 export interface InvoiceSettlementDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   entityType: "invoice" | "settlement";
   entityId: string | null;
-  initialData?: Record<string, any>;
+  initialData?: InvoiceSettlementRecord | Record<string, unknown>;
   onEntityUpdated?: () => void;
 }
 
@@ -53,7 +148,7 @@ export function InvoiceSettlementDrawer({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const { openDrawer } = useOperationsDrawer();
 
-  const [record, setRecord] = useState<any>(initialData || null);
+  const [record, setRecord] = useState<InvoiceSettlementRecord | null>((initialData as InvoiceSettlementRecord) || null);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,23 +168,23 @@ export function InvoiceSettlementDrawer({
     setError(null);
     try {
       if (entityType === "invoice") {
-        const res = await apiFetch<any>(`/api/operations/finance/invoices?q=${entityId}`);
+        const res = await apiFetch<InvoicesApiResponse>(`/api/operations/finance/invoices?q=${entityId}`);
         if (res?.invoices && res.invoices.length > 0) {
-          const found = res.invoices.find((i: any) => i.id === entityId) || res.invoices[0];
+          const found = res.invoices.find((i) => i.id === entityId) || res.invoices[0];
           setRecord(found);
         } else if (initialData) {
-          setRecord(initialData);
+          setRecord(initialData as InvoiceSettlementRecord);
         }
       } else {
-        const res = await apiFetch<any>(`/api/operations/finance/settlements?q=${entityId}`);
+        const res = await apiFetch<SettlementsApiResponse>(`/api/operations/finance/settlements?q=${entityId}`);
         if (res?.settlements && res.settlements.length > 0) {
-          const found = res.settlements.find((s: any) => s.id === entityId) || res.settlements[0];
+          const found = res.settlements.find((s) => s.id === entityId) || res.settlements[0];
           setRecord(found);
         } else if (initialData) {
-          setRecord(initialData);
+          setRecord(initialData as InvoiceSettlementRecord);
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[InvoiceSettlementDrawer] Fetch error:", err);
       if (!record) setError(`Failed to fetch ${entityType} details.`);
     } finally {
@@ -135,7 +230,7 @@ export function InvoiceSettlementDrawer({
     setActionLoading(true);
     setError(null);
     try {
-      await apiFetch<any>(`/api/operations/finance/invoices/${record.id}/status`, {
+      await apiFetch<{ success: boolean; invoice?: InvoiceRecord }>(`/api/operations/finance/invoices/${record.id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
@@ -143,8 +238,9 @@ export function InvoiceSettlementDrawer({
       setSuccessMessage(`Invoice successfully updated to ${newStatus.toUpperCase()}`);
       await fetchDetails();
       if (onEntityUpdated) onEntityUpdated();
-    } catch (err: any) {
-      setError(err?.message || "Failed to update invoice status");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to update invoice status";
+      setError(message);
     } finally {
       setActionLoading(false);
     }
@@ -156,8 +252,8 @@ export function InvoiceSettlementDrawer({
       const pdfData = {
         id: record.id,
         invoice_number: record.invoice_number || `INV-${record.id.slice(0, 8)}`,
-        billing_period_start: record.billing_period_start || record.created_at,
-        billing_period_end: record.billing_period_end || record.due_date || record.created_at,
+        billing_period_start: record.billing_period_start || record.created_at || new Date().toISOString(),
+        billing_period_end: record.billing_period_end || record.due_date || record.created_at || new Date().toISOString(),
         total_visits: record.total_visits || 0,
         total_amount: Number(record.total_amount) || 0,
         tax_amount: Number(record.tax_amount) || 0,
@@ -171,7 +267,7 @@ export function InvoiceSettlementDrawer({
           billing_email: record.organizations?.billing_email || null,
           country: "Rwanda",
         },
-        line_items: record.line_items?.map((li: any) => ({
+        line_items: record.line_items?.map((li: InvoiceLineItemRecord) => ({
           provider_name: li.description || "Corporate Wellness Benefit Access",
           visit_count: li.quantity || 1,
           per_visit_rate: Number(li.unit_price) || Number(record.total_amount) || 0,
@@ -186,7 +282,7 @@ export function InvoiceSettlementDrawer({
         ],
       };
       generateInvoicePdf(pdfData);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[InvoiceSettlementDrawer] PDF error:", err);
       setError("Failed to generate PDF document");
     }
@@ -198,14 +294,15 @@ export function InvoiceSettlementDrawer({
     setActionLoading(true);
     setError(null);
     try {
-      await apiFetch<any>(`/api/operations/finance/settlements/${record.id}/approve`, {
+      await apiFetch<{ success: boolean; settlement?: SettlementRecord }>(`/api/operations/finance/settlements/${record.id}/approve`, {
         method: "POST",
       });
       setSuccessMessage("Settlement statement approved for payout clearinghouse");
       await fetchDetails();
       if (onEntityUpdated) onEntityUpdated();
-    } catch (err: any) {
-      setError(err?.message || "Failed to approve settlement");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to approve settlement";
+      setError(message);
     } finally {
       setActionLoading(false);
     }
@@ -220,7 +317,7 @@ export function InvoiceSettlementDrawer({
     setActionLoading(true);
     setError(null);
     try {
-      await apiFetch<any>(`/api/operations/finance/settlements/${record.id}/disburse`, {
+      await apiFetch<{ success: boolean; settlement?: SettlementRecord }>(`/api/operations/finance/settlements/${record.id}/disburse`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ payment_reference: disbursementRef.trim() }),
@@ -229,8 +326,9 @@ export function InvoiceSettlementDrawer({
       setShowDisburseInput(false);
       await fetchDetails();
       if (onEntityUpdated) onEntityUpdated();
-    } catch (err: any) {
-      setError(err?.message || "Failed to disburse settlement");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to disburse settlement";
+      setError(message);
     } finally {
       setActionLoading(false);
     }
@@ -242,14 +340,14 @@ export function InvoiceSettlementDrawer({
       const pdfData = {
         id: record.id,
         statement_number: `SETTLE-${record.id.slice(0, 8)}`,
-        period_start: record.settlement_period_start || record.created_at,
-        period_end: record.settlement_period_end || record.created_at,
+        period_start: record.settlement_period_start || record.created_at || new Date().toISOString(),
+        period_end: record.settlement_period_end || record.created_at || new Date().toISOString(),
         total_visits: record.total_visits || 0,
         gross_amount: Number(record.total_amount) || 0,
         adjustments_amount: 0,
         platform_fee_amount: 0,
         net_amount: Number(record.total_amount) || 0,
-        status: (record.status === "disbursed" || record.status === "paid" ? "paid" : "pending") as any,
+        status: (record.status === "disbursed" || record.status === "paid" ? "paid" : "pending") as "paid" | "pending",
         payment_reference: record.payment_reference || undefined,
         created_at: record.created_at,
         provider: {
@@ -264,13 +362,13 @@ export function InvoiceSettlementDrawer({
             org_name: "PolyFit Corporate Network Beneficiaries",
             category: record.providers?.category || "fitness",
             visit_count: record.total_visits || 0,
-            per_visit_rate: record.total_visits > 0 ? Math.round(Number(record.total_amount) / record.total_visits) : 3800,
+            per_visit_rate: (record.total_visits ?? 0) > 0 ? Math.round(Number(record.total_amount || 0) / (record.total_visits || 1)) : 3800,
             subtotal: Number(record.total_amount) || 0,
           }
         ],
       };
       generateSettlementPdf(pdfData);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[InvoiceSettlementDrawer] Statement PDF error:", err);
       setError("Failed to generate Settlement PDF statement");
     }
@@ -541,7 +639,7 @@ export function InvoiceSettlementDrawer({
                         <span>Invoice Line Items</span>
                       </h3>
                       <div className="space-y-2">
-                        {record.line_items.map((item: any, idx: number) => (
+                        {record.line_items.map((item: InvoiceLineItemRecord, idx: number) => (
                           <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-900 border border-slate-800/80 text-xs">
                             <div className="space-y-0.5">
                               <span className="font-medium text-slate-200">{item.description || "Benefit Access"}</span>
