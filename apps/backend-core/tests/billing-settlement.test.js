@@ -282,3 +282,20 @@ describe('PF-121: Operations Marketplace Finance Endpoints', () => {
     assert.strictEqual(res.body.code, 'OPERATIONS_SETTLEMENT_RUN_FAILED');
   });
 });
+
+describe('PF-121: Single-Pass getOperationsFinanceOverview Aggregation Performance', () => {
+  const { getOperationsFinanceOverview } = require('../services/operationsService');
+
+  it('correctly aggregates invoices, settlements, and status counts', async () => {
+    const overview = await getOperationsFinanceOverview();
+    assert.strictEqual(overview.success, true);
+    assert.strictEqual(overview.currency, 'RWF');
+    assert.ok(overview.invoicesSummary);
+    assert.ok(overview.settlementsSummary);
+    assert.strictEqual(typeof overview.invoicesSummary.countsByStatus.draft, 'number');
+    assert.strictEqual(typeof overview.invoicesSummary.countsByStatus.paid, 'number');
+    assert.strictEqual(typeof overview.settlementsSummary.countsByStatus.pending, 'number');
+    assert.strictEqual(typeof overview.settlementsSummary.countsByStatus.paid, 'number');
+    assert.ok(overview.operations.unbilledVerifiedVisits >= 0);
+  });
+});

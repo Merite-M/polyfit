@@ -2803,15 +2803,64 @@ async function getOperationsFinanceOverview() {
   const visList = visits || [];
   const dispList = disputes || [];
 
-  // Invoiced totals
-  const totalInvoicedGmv = invList.reduce((acc, inv) => acc + (parseFloat(inv.total_amount) || 0), 0);
-  const totalTaxCollected = invList.reduce((acc, inv) => acc + (parseFloat(inv.tax_amount) || 0), 0);
+  // BOLT OPTIMIZATION: Single-pass aggregation for invoices.
+  // Combines GMV, tax, total billed visits, and status counts into a single loop pass.
+  // Reduces invoice array passes from 8 (3 reduces + 5 filters) down to 1 pass (8N -> N).
+  let totalInvoicedGmv = 0;
+  let totalTaxCollected = 0;
+  let totalBilledVisits = 0;
+  const invoicesCountByStatus = {
+    all: invList.length,
+    draft: 0,
+    sent: 0,
+    paid: 0,
+    overdue: 0,
+    disputed: 0
+  };
+
+  for (let i = 0; i < invList.length; i++) {
+    const inv = invList[i];
+    totalInvoicedGmv += parseFloat(inv.total_amount) || 0;
+    totalTaxCollected += parseFloat(inv.tax_amount) || 0;
+    totalBilledVisits += parseInt(inv.total_visits, 10) || 0;
+    if (invoicesCountByStatus[inv.status] !== undefined) {
+      invoicesCountByStatus[inv.status]++;
+    }
+  }
   const totalInvoicedNet = Math.max(0, totalInvoicedGmv - totalTaxCollected);
 
-  // Settlement liabilities
-  const totalSettlementLiability = setList.reduce((acc, s) => acc + (parseFloat(s.total_amount) || 0), 0);
-  const paidSettlements = setList.filter(s => s.status === 'paid').reduce((acc, s) => acc + (parseFloat(s.total_amount) || 0), 0);
-  const pendingSettlements = setList.filter(s => s.status === 'pending' || s.status === 'processing').reduce((acc, s) => acc + (parseFloat(s.total_amount) || 0), 0);
+  // BOLT OPTIMIZATION: Single-pass aggregation for settlements.
+  // Combines total liability, paid/pending totals, and status counts into a single loop pass.
+  // Reduces settlement array passes from 7 (3 reduces/filters + 4 filters) down to 1 pass (7M -> M).
+  let totalSettlementLiability = 0;
+  let paidSettlements = 0;
+  let pendingSettlements = 0;
+  const settlementsCountByStatus = {
+    all: setList.length,
+    pending: 0,
+    processing: 0,
+    paid: 0,
+    failed: 0
+  };
+
+  for (let i = 0; i < setList.length; i++) {
+    const s = setList[i];
+    const amt = parseFloat(s.total_amount) || 0;
+    totalSettlementLiability += amt;
+    const st = s.status;
+    if (st === 'paid') {
+      paidSettlements += amt;
+      settlementsCountByStatus.paid++;
+    } else if (st === 'pending') {
+      pendingSettlements += amt;
+      settlementsCountByStatus.pending++;
+    } else if (st === 'processing') {
+      pendingSettlements += amt;
+      settlementsCountByStatus.processing++;
+    } else if (st === 'failed') {
+      settlementsCountByStatus.failed++;
+    }
+  }
 
   // Margin calculation (with fallback for early demo data)
   const gmv = totalInvoicedGmv > 0 ? totalInvoicedGmv : 48200000;
@@ -2824,28 +2873,8 @@ async function getOperationsFinanceOverview() {
   const disputedVisitsCount = activeDisputes.length;
   const disputeEscrowHeld = disputedVisitsCount * 3800; // Average per-visit rate RWF 3,800
 
-  // Invoice breakdown by status
-  const invoicesCountByStatus = {
-    all: invList.length,
-    draft: invList.filter(i => i.status === 'draft').length,
-    sent: invList.filter(i => i.status === 'sent').length,
-    paid: invList.filter(i => i.status === 'paid').length,
-    overdue: invList.filter(i => i.status === 'overdue').length,
-    disputed: invList.filter(i => i.status === 'disputed').length
-  };
-
-  // Settlement breakdown by status
-  const settlementsCountByStatus = {
-    all: setList.length,
-    pending: setList.filter(s => s.status === 'pending').length,
-    processing: setList.filter(s => s.status === 'processing').length,
-    paid: setList.filter(s => s.status === 'paid').length,
-    failed: setList.filter(s => s.status === 'failed').length
-  };
-
   // Unbilled verified visits
   const verifiedVisits = visList.filter(v => v.status === 'verified').length;
-  const totalBilledVisits = invList.reduce((acc, i) => acc + (parseInt(i.total_visits, 10) || 0), 0);
   const unbilledVerifiedVisits = Math.max(0, verifiedVisits - totalBilledVisits);
 
   // Closing schedule
