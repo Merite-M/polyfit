@@ -25,3 +25,7 @@
 ## 2026-11-07 - Keyboard Accelerator Badges in Multi-Actor Decision Dialogs
 **Learning:** In initial onboarding/intent gateway dialogs featuring high-level actor paths (such as Beneficiaries, Employers, and Providers), users navigating via keyboard benefit significantly from single-stroke numeric shortcut accelerators (`1`, `2`, `3`). Coupling window keydown listeners with visible `<kbd>` badges and `aria-keyshortcuts` enables instant navigation without requiring multiple Tab keystrokes across complex modals, while ensuring screen reader transparency through explicit descriptive labels and `aria-describedby` linkage.
 **Action:** Always pair decision cards in modal flows with numeric hotkeys, `aria-keyshortcuts`, `aria-describedby`, and `<kbd>` badge affordances so keyboard users can navigate rapidly.
+
+## 2026-11-12 - Keyboard Selection & Radiogroup Semantics in Facility Branch Switchers
+**Learning:** In multi-branch partner management dialogs (such as `FacilityUnitsModal`), list items rendered as clickable `<div>` containers cannot be navigated or selected by keyboard-only users. Wrapping the container in `role="radiogroup"` with an accessible label and marking options with `role="radio"`, `aria-checked`, `tabIndex={0}`, and `Enter`/`Space` key listeners transforms unnavigable visual lists into accessible single-select controls.
+**Action:** Always equip list-based entity switchers with `role="radiogroup"`, `role="radio"`, `aria-checked`, `tabIndex={0}`, Enter/Space keydown handlers, and `focus-visible:ring-2` focus rings.

@@ -87,17 +87,32 @@ export function FacilityUnitsModal({ isOpen, onClose }: FacilityUnitsModalProps)
             placeholder="Search facility name, branch, or city (e.g. Kigali, Nyarutarama)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search facility units"
             className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl bg-card border border-border text-primary placeholder:text-subdued focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </div>
       </div>
 
       {/* Facilities List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+      <div
+        role="radiogroup"
+        aria-label="Partner facility units"
+        className="flex-1 overflow-y-auto p-4 space-y-2.5"
+      >
         {/* Option: All Locations (Network Aggregation) */}
         <div
+          role="radio"
+          aria-checked={selectedLocationId === 'all'}
+          aria-label="All Locations (Aggregated Network View)"
+          tabIndex={0}
           onClick={() => handleSelectLocation('all')}
-          className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleSelectLocation('all');
+            }
+          }}
+          className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
             selectedLocationId === 'all'
               ? 'bg-accent-subtle border-accent shadow-xs'
               : 'bg-card border-border hover:border-border/70 hover:bg-muted'
@@ -146,8 +161,18 @@ export function FacilityUnitsModal({ isOpen, onClose }: FacilityUnitsModalProps)
           return (
             <div
               key={loc.id}
+              role="radio"
+              aria-checked={isSelected}
+              aria-label={`${loc.name}, Unit ${unitNumber}`}
+              tabIndex={0}
               onClick={() => handleSelectLocation(loc.id)}
-              className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between group ${
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleSelectLocation(loc.id);
+                }
+              }}
+              className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between group outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
                 isSelected
                   ? 'bg-accent-subtle border-accent shadow-xs'
                   : 'bg-card border-border hover:border-border/70 hover:bg-muted'
