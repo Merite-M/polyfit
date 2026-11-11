@@ -49,7 +49,7 @@ export default function ProblemSection() {
             </div>
             <h3 className="text-xl font-bold text-[#0B1F33] mb-3">Employers</h3>
             <p className="text-gray-600 text-sm leading-relaxed mb-6">
-              Companies invest in employee wellness—but benefits are less valuable when employees can't conveniently use them.
+              Companies invest in employee wellness, but benefits are less valuable when employees can't conveniently use them.
             </p>
             <ul className="space-y-2 text-sm text-gray-600 border-t border-gray-100 pt-4">
               <li className="flex items-center gap-2">
