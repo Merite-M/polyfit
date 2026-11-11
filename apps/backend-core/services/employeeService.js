@@ -917,7 +917,9 @@ async function batchUpdateEmployees(orgId, { action, employee_ids = [], tier = n
         status: emp.status === 'active' ? 'active' : 'suspended'
       }));
 
-      await supabase.from('eligibility').insert(newEligibilities);
+      await supabase
+        .from('eligibility')
+        .upsert(newEligibilities, { onConflict: 'employee_id,benefit_id' });
     }
 
     results.succeeded = matchedIds.length;

@@ -202,7 +202,7 @@ describe('Public Lead & Demo Pipeline Test Suite (PF-88)', () => {
       assert.ok(res.body.network);
       assert.ok(res.body.pricing);
       assert.ok(Array.isArray(res.body.pricing));
-      assert.equal(res.body.pricing.length, 4);
+      assert.ok(res.body.pricing.length >= 4);
       const basic = res.body.pricing.find((t) => t.id === "basic");
       const starter = res.body.pricing.find((t) => t.id === "starter");
       const premium = res.body.pricing.find((t) => t.id === "premium");

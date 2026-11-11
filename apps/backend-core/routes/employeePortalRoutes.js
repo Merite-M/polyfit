@@ -987,8 +987,15 @@ router.post(['/benefit/activate', '/benefit/activation'], async (req, res) => {
       targetBenefitId = activeBenefit?.id;
     }
 
-    // 3. Upsert eligibility record
+    // 3. Upsert eligibility record (expire prior active benefits to satisfy idx_eligibility_single_active)
     if (targetBenefitId) {
+      await supabase
+        .from('eligibility')
+        .update({ status: 'expired' })
+        .eq('employee_id', employee.id)
+        .neq('benefit_id', targetBenefitId)
+        .eq('status', 'active');
+
       await supabase
         .from('eligibility')
         .upsert({

@@ -2253,12 +2253,13 @@ router.patch('/corporate/employees/:id', async (req, res) => {
 
           await supabase
             .from('eligibility')
-            .insert({
+            .upsert({
               employee_id: id,
               benefit_id: targetBenefit.id,
               status: updatedEmp.status === 'active' ? 'active' : 'suspended',
-              activated_at: new Date().toISOString()
-            });
+              activated_at: new Date().toISOString(),
+              expires_at: null
+            }, { onConflict: 'employee_id,benefit_id' });
         }
       } else if (status !== undefined) {
         await supabase
@@ -2419,10 +2420,17 @@ router.post('/corporate/benefits/:id/assign', async (req, res) => {
         employee_id: empId,
         benefit_id: id,
         status: 'active',
-        activated_at: new Date().toISOString()
+        activated_at: new Date().toISOString(),
+        expires_at: null
       }));
 
-      await supabase.from('eligibility').insert(eligibilityInserts);
+      const { error: insErr } = await supabase
+        .from('eligibility')
+        .upsert(eligibilityInserts, { onConflict: 'employee_id,benefit_id' });
+
+      if (insErr) {
+        console.warn('[PublicCorporate] Error upserting eligibility:', insErr.message);
+      }
     }
 
     return res.status(200).json({ success: true, message: `Assigned benefit plan to specified targets` });

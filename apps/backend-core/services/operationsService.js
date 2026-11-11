@@ -2710,6 +2710,7 @@ async function adjudicateVisitDispute(visitId, payload, adminUserId = null) {
         status: targetDisputeStatus,
         resolution_type: resolutionType,
         resolution_notes: notes.trim() || null,
+        created_at: nowIso,
         resolved_at: nowIso,
         resolved_by: adminUserId,
         metadata: {

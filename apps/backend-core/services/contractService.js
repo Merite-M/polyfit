@@ -122,6 +122,12 @@ async function createContract({
     .single();
 
   if (insertError) {
+    if (insertError.code === '23505' || insertError.message?.includes('idx_provider_contracts_single_active')) {
+      const error = new Error('An active contract already exists for this organization and provider. Terminate the existing active contract first.');
+      error.code = 'ACTIVE_CONTRACT_EXISTS';
+      error.statusCode = 409;
+      throw error;
+    }
     const error = new Error(`Failed to create contract: ${insertError.message}`);
     error.code = 'CONTRACT_CREATE_FAILED';
     error.statusCode = 500;
@@ -322,6 +328,12 @@ async function updateContract(contractId, updates = {}) {
     .maybeSingle();
 
   if (error) {
+    if (error.code === '23505' || error.message?.includes('idx_provider_contracts_single_active')) {
+      const err = new Error('An active contract already exists for this organization and provider. Terminate the existing active contract first.');
+      err.code = 'ACTIVE_CONTRACT_EXISTS';
+      err.statusCode = 409;
+      throw err;
+    }
     const err = new Error(`Failed to update contract: ${error.message}`);
     err.statusCode = 500;
     throw err;

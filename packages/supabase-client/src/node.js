@@ -21,10 +21,17 @@ function createNodeClient(supabaseUrl, supabaseKey) {
     return null;
   }
 
+  const internalSecret = process.env.INTERNAL_API_KEY || 'dev-internal-api-key-system-access';
+
   return createClient(url, key, {
     auth: {
       autoRefreshToken: false,
       persistSession: false
+    },
+    global: {
+      headers: {
+        'x-polyfit-internal-secret': internalSecret
+      }
     }
   });
 }

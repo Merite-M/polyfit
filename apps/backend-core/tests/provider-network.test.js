@@ -309,10 +309,11 @@ describe('Provider & Network Engine Test Suite (PF-83)', () => {
   // ─── 7. Provider Contract Management Lifecycle ──────────────────────────────
   describe('Provider Contract Management Lifecycle', () => {
     let testContractId = null;
+    const CONTRACT_TEST_ORG_ID = 'b0000000-0000-0000-0000-000000000002'; // Equity Bank (distinct from BK to respect idx_provider_contracts_single_active)
 
     test('createContract creates contract with per_visit_rate, cap and access rules', async () => {
       const contract = await createContract({
-        orgId: KNOWN_ORG_ID,
+        orgId: CONTRACT_TEST_ORG_ID,
         providerId: KNOWN_PROVIDER_ID,
         perVisitRate: 4800,
         monthlyCap: 75,
@@ -322,7 +323,7 @@ describe('Provider & Network Engine Test Suite (PF-83)', () => {
 
       assert.ok(contract.id);
       testContractId = contract.id;
-      assert.equal(contract.org_id, KNOWN_ORG_ID);
+      assert.equal(contract.org_id, CONTRACT_TEST_ORG_ID);
       assert.equal(contract.provider_id, KNOWN_PROVIDER_ID);
       assert.equal(Number(contract.per_visit_rate), 4800);
       assert.equal(contract.monthly_cap, 75);
@@ -334,7 +335,7 @@ describe('Provider & Network Engine Test Suite (PF-83)', () => {
     test('listContracts lists contracts with admin privilege', async () => {
       const list = await listContracts({
         userRoles: ['super_admin'],
-        filterOrgId: KNOWN_ORG_ID
+        filterOrgId: CONTRACT_TEST_ORG_ID
       });
 
       assert.ok(list.contracts.length > 0);
@@ -350,7 +351,7 @@ describe('Provider & Network Engine Test Suite (PF-83)', () => {
       });
 
       assert.equal(contract.id, testContractId);
-      assert.equal(contract.org_id, KNOWN_ORG_ID);
+      assert.equal(contract.org_id, CONTRACT_TEST_ORG_ID);
     });
 
     test('activateContract transitions contract to active', async () => {
