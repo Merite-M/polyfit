@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const express = require('express');
 const { rateLimit } = require('express-rate-limit');
 const { requireAuth } = require('../middleware/authMiddleware');
-const { sanitizePostgrestFilter } = require('@polyfit/shared-utils');
+const { sanitizePostgrestFilter, safeCompare } = require('@polyfit/shared-utils');
 const {
   getEmployeeForAuthUser,
   getEmployeeMe,
@@ -756,10 +756,27 @@ router.post(['/auth/verify-access', '/verify-access'], async (req, res) => {
       ? normalizePhoneNumber(rawPhone || rawIdentifier)
       : String(rawEmail || rawIdentifier).trim().toLowerCase();
 
-    // Validate OTP against cache or universal test code (123456)
+    // Validate OTP against cache or universal test code (123456) strictly in non-production
     const cachedOtp = otpCache.get(targetKey);
-    const isUniversalDemo = ['123456', '000000'].includes(cleanCode);
-    const isMatch = isUniversalDemo || (cachedOtp && cachedOtp.code === cleanCode && Date.now() < cachedOtp.expiresAt);
+    // Universal demo codes are strictly forbidden in production
+    const isUniversalDemo = process.env.NODE_ENV !== 'production' && ['123456', '000000'].includes(cleanCode);
+
+    if (cachedOtp) {
+      cachedOtp.attempts = (cachedOtp.attempts || 0) + 1;
+      // Invalidate OTP after 5 failed attempts to prevent brute-force enumeration
+      if (cachedOtp.attempts > 5) {
+        otpCache.delete(targetKey);
+        return res.status(429).json({
+          success: false,
+          error: 'Too many failed verification attempts. Please request a new code.',
+          code: 'OTP_MAX_ATTEMPTS_EXCEEDED'
+        });
+      }
+    }
+
+    // Constant-time comparison using safeCompare to prevent timing side-channel attacks
+    const isCachedMatch = cachedOtp && safeCompare(cachedOtp.code, cleanCode) && Date.now() < cachedOtp.expiresAt;
+    const isMatch = isUniversalDemo || isCachedMatch;
 
     if (!isMatch) {
       return res.status(400).json({
