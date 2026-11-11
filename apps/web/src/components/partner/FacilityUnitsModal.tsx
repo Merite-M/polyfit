@@ -70,8 +70,9 @@ export function FacilityUnitsModal({ isOpen, onClose }: FacilityUnitsModalProps)
           </div>
         </div>
         <button
+          type="button"
           onClick={onClose}
-          className="p-1.5 rounded-lg text-subdued hover:text-primary hover:bg-muted transition-colors"
+          className="p-1.5 rounded-lg text-subdued hover:text-primary hover:bg-muted transition-colors cursor-pointer focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
           aria-label="Close dialog"
         >
           <X className="w-5 h-5" />
@@ -85,19 +86,27 @@ export function FacilityUnitsModal({ isOpen, onClose }: FacilityUnitsModalProps)
           <input
             type="text"
             placeholder="Search facility name, branch, or city (e.g. Kigali, Nyarutarama)..."
+            aria-label="Search facility units by name, branch, or city"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl bg-card border border-border text-primary placeholder:text-subdued focus:outline-none focus:ring-2 focus:ring-accent"
+            className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl bg-card border border-border text-primary placeholder:text-subdued focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
           />
         </div>
       </div>
 
       {/* Facilities List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+      <div
+        role="radiogroup"
+        aria-label="Available facility units"
+        className="flex-1 overflow-y-auto p-4 space-y-2.5"
+      >
         {/* Option: All Locations (Network Aggregation) */}
-        <div
+        <button
+          type="button"
+          role="radio"
+          aria-checked={selectedLocationId === 'all'}
           onClick={() => handleSelectLocation('all')}
-          className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+          className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent ${
             selectedLocationId === 'all'
               ? 'bg-accent-subtle border-accent shadow-xs'
               : 'bg-card border-border hover:border-border/70 hover:bg-muted'
@@ -133,7 +142,7 @@ export function FacilityUnitsModal({ isOpen, onClose }: FacilityUnitsModalProps)
               <Check className="w-3.5 h-3.5 stroke-[3]" />
             </div>
           )}
-        </div>
+        </button>
 
         <div className="pt-2 pb-1 px-1 text-[11px] font-semibold text-subdued uppercase tracking-wider">
           Individual Facility Units
@@ -144,10 +153,13 @@ export function FacilityUnitsModal({ isOpen, onClose }: FacilityUnitsModalProps)
           const unitNumber = `#85193${idx + 1}`;
 
           return (
-            <div
+            <button
               key={loc.id}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
               onClick={() => handleSelectLocation(loc.id)}
-              className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between group ${
+              className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between group focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent ${
                 isSelected
                   ? 'bg-accent-subtle border-accent shadow-xs'
                   : 'bg-card border-border hover:border-border/70 hover:bg-muted'
@@ -201,12 +213,12 @@ export function FacilityUnitsModal({ isOpen, onClose }: FacilityUnitsModalProps)
                   <ChevronRight className="w-4 h-4 text-subdued group-hover:text-primary transition-colors" />
                 )}
               </div>
-            </div>
+            </button>
           );
         })}
 
         {filteredLocations.length === 0 && (
-          <div className="text-center py-8">
+          <div role="status" aria-live="polite" className="text-center py-8">
             <Building2 className="w-8 h-8 text-subdued mx-auto opacity-50 mb-2" />
             <p className="text-xs font-semibold text-primary">No facility units found</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Try searching with a different branch name or city.</p>
@@ -221,8 +233,9 @@ export function FacilityUnitsModal({ isOpen, onClose }: FacilityUnitsModalProps)
           <span>Turnstile &amp; GPS Geofence Synchronized</span>
         </div>
         <button
+          type="button"
           onClick={onClose}
-          className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity"
+          className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
         >
           Done
         </button>
