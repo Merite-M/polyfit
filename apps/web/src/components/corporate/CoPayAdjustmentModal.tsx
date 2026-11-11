@@ -134,6 +134,7 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
   return (
     <dialog
       ref={dialogRef}
+      aria-labelledby="copay-modal-title"
       onCancel={(e) => {
         e.preventDefault();
         onClose();
@@ -150,7 +151,7 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
               <Percent className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-foreground">
+              <h2 id="copay-modal-title" className="text-base font-bold text-foreground">
                 Adjust Co-Pay & Cost Sharing
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -162,7 +163,7 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Close co-pay modal"
           >
             <X className="w-4 h-4" />
@@ -247,8 +248,12 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
                 max={100}
                 step={5}
                 value={copayPct}
+                aria-valuenow={copayPct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuetext={`${copayPct}% Employee Co-Pay, ${employerSubsidyPct}% Company Subsidy`}
                 onChange={(e) => setCopayPct(Number(e.target.value))}
-                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
               <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
                 <span>0% Co-Pay (100% Sponsored)</span>
@@ -270,7 +275,7 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
                   type="button"
                   onClick={() => setCopayPct(preset.copay)}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer",
+                    "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     copayPct === preset.copay
                       ? "bg-primary text-primary-foreground border-primary shadow-xs"
                       : "bg-card border-border text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -328,15 +333,21 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
 
           {/* Effective Timing */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-foreground block">
+            <label id="timing-group-label" className="text-xs font-bold text-foreground block">
               Policy Effective Timing
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div
+              role="radiogroup"
+              aria-labelledby="timing-group-label"
+              className="grid grid-cols-2 gap-3"
+            >
               <button
                 type="button"
+                role="radio"
+                aria-checked={effectiveTiming === "immediate"}
                 onClick={() => setEffectiveTiming("immediate")}
                 className={cn(
-                  "p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between",
+                  "p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   effectiveTiming === "immediate"
                     ? "bg-primary/5 border-primary text-foreground"
                     : "bg-card border-border text-muted-foreground hover:bg-muted"
@@ -353,9 +364,11 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
 
               <button
                 type="button"
+                role="radio"
+                aria-checked={effectiveTiming === "next_billing_cycle"}
                 onClick={() => setEffectiveTiming("next_billing_cycle")}
                 className={cn(
-                  "p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between",
+                  "p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   effectiveTiming === "next_billing_cycle"
                     ? "bg-primary/5 border-primary text-foreground"
                     : "bg-card border-border text-muted-foreground hover:bg-muted"
@@ -379,7 +392,7 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Cancel
           </button>
@@ -387,7 +400,7 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="px-5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+            className="px-5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-all shadow-xs cursor-pointer flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {isSubmitting ? (
               <span>Saving...</span>
