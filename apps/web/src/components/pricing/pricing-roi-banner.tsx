@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { TrendingUp, Users, HeartPulse, Receipt, ArrowRight } from "lucide-react";
 import { useLeadModal } from "@/lib/lead-modal";
 
@@ -106,14 +107,13 @@ export default function PricingRoiBanner({ onOpenLeadForm }: PricingRoiBannerPro
             >
               Test ROI Calculator
             </a>
-            <button
-              type="button"
-              onClick={() => handleOpenLead('employer')}
+            <Link
+              href="/corporate/register"
               className="w-full sm:w-auto whitespace-nowrap px-6 py-2.5 bg-accent hover:bg-emerald-400 text-accent-foreground text-xs sm:text-sm font-bold rounded-[10px] transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>Get Custom Quote</span>
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </Link>
           </div>
         </div>
       </div>

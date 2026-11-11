@@ -80,6 +80,7 @@ function CorporateRegistrationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const planQuery = searchParams.get("plan");
+  const headcountQuery = searchParams.get("headcount") || searchParams.get("employees");
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -89,7 +90,15 @@ function CorporateRegistrationContent() {
   const [contactName, setContactName] = useState("");
   const [workEmail, setWorkEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [headcount, setHeadcount] = useState<number>(30);
+  const [headcount, setHeadcount] = useState<number>(() => {
+    if (headcountQuery) {
+      const parsed = parseInt(headcountQuery, 10);
+      if (!isNaN(parsed) && parsed >= 5 && parsed <= 5000) {
+        return parsed;
+      }
+    }
+    return 30;
+  });
   const [industry, setIndustry] = useState("Technology & Financial Services");
   const [selectedTier, setSelectedTier] = useState<string>(() => {
     if (planQuery && PLAN_TIERS.some((p) => p.id === planQuery.toLowerCase())) {
