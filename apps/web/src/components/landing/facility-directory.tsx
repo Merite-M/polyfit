@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { 
   Dumbbell, 
   Waves, 
@@ -762,14 +763,13 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
                   </div>
 
                   {/* Action CTA */}
-                  <button
-                    type="button"
-                    onClick={() => handleOpenLead('employer')}
+                  <Link
+                    href="/corporate/register"
                     className="w-full py-3 px-4 bg-accent hover:bg-emerald-400 text-accent-foreground text-xs sm:text-sm font-bold rounded-[10px] transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                   >
                     <span>Request Employee Access to this Venue</span>
                     <ArrowRight className="w-4 h-4" />
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -934,13 +934,12 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <button
-              type="button"
-              onClick={() => handleOpenLead('provider')}
-              className="px-6 py-3.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm font-bold rounded-[10px] transition-colors whitespace-nowrap text-center cursor-pointer shadow-xs"
+            <Link
+              href="/partner/register"
+              className="px-6 py-3.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm font-bold rounded-[10px] transition-colors whitespace-nowrap text-center cursor-pointer shadow-xs inline-block"
             >
               Apply to Become a Partner
-            </button>
+            </Link>
           </div>
         </div>
 

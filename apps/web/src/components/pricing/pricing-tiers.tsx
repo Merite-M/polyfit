@@ -434,13 +434,12 @@ export default function PricingTiers({ onOpenLeadForm }: PricingTiersProps = {})
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => handleOpenLead('employer')}
-            className="whitespace-nowrap px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm font-semibold rounded-[10px] transition-colors cursor-pointer"
+          <Link
+            href="/demo"
+            className="whitespace-nowrap px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm font-semibold rounded-[10px] transition-colors cursor-pointer inline-block"
           >
             Schedule 15-Min Briefing
-          </button>
+          </Link>
         </div>
       </div>
     </section>

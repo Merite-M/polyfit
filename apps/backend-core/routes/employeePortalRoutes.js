@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const express = require('express');
 const { rateLimit } = require('express-rate-limit');
 const { requireAuth } = require('../middleware/authMiddleware');
-const { sanitizePostgrestFilter } = require('@polyfit/shared-utils');
+const { sanitizePostgrestFilter, safeCompare } = require('@polyfit/shared-utils');
 const {
   getEmployeeForAuthUser,
   getEmployeeMe,
@@ -656,7 +656,8 @@ router.post(['/auth/request-access', '/request-access'], async (req, res) => {
         attempts: 0
       });
 
-      const isDevOrDemo = process.env.NODE_ENV !== 'production' || normalizedPhone.includes('788') || normalizedPhone.includes('789');
+      // Universal/demo OTP output strictly prohibited in production to prevent credential leakage
+      const isDevOrDemo = process.env.NODE_ENV !== 'production';
 
       return res.status(200).json({
         success: true,
@@ -709,8 +710,8 @@ router.post(['/auth/request-access', '/request-access'], async (req, res) => {
       }
     }
 
-    // In non-production/demo environments, include demo_otp for immediate frictionless testing
-    const isDevOrDemo = process.env.NODE_ENV !== 'production' || cleanEmail.includes('techcorp.rw') || cleanEmail.includes('bk.rw');
+    // Universal/demo OTP output strictly prohibited in production to prevent credential leakage
+    const isDevOrDemo = process.env.NODE_ENV !== 'production';
 
     return res.status(200).json({
       success: true,
@@ -756,10 +757,25 @@ router.post(['/auth/verify-access', '/verify-access'], async (req, res) => {
       ? normalizePhoneNumber(rawPhone || rawIdentifier)
       : String(rawEmail || rawIdentifier).trim().toLowerCase();
 
-    // Validate OTP against cache or universal test code (123456)
+    // Validate OTP against cache with attempt bounding and constant-time safeCompare
     const cachedOtp = otpCache.get(targetKey);
-    const isUniversalDemo = ['123456', '000000'].includes(cleanCode);
-    const isMatch = isUniversalDemo || (cachedOtp && cachedOtp.code === cleanCode && Date.now() < cachedOtp.expiresAt);
+    // Universal demo OTP bypass strictly prohibited in production environments
+    const isUniversalDemo = process.env.NODE_ENV !== 'production' && ['123456', '000000'].includes(cleanCode);
+
+    if (cachedOtp) {
+      cachedOtp.attempts = (cachedOtp.attempts || 0) + 1;
+      if (cachedOtp.attempts > 5) {
+        otpCache.delete(targetKey);
+        return res.status(429).json({
+          success: false,
+          error: 'Too many failed verification attempts. Please request a new code.',
+          code: 'TOO_MANY_ATTEMPTS'
+        });
+      }
+    }
+
+    const isCodeValid = cachedOtp && Date.now() < cachedOtp.expiresAt && safeCompare(cachedOtp.code, cleanCode);
+    const isMatch = isUniversalDemo || isCodeValid;
 
     if (!isMatch) {
       return res.status(400).json({
