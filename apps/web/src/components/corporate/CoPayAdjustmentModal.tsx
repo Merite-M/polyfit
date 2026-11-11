@@ -134,6 +134,8 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
   return (
     <dialog
       ref={dialogRef}
+      aria-labelledby="copay-modal-title"
+      aria-describedby="copay-modal-description"
       onCancel={(e) => {
         e.preventDefault();
         onClose();
@@ -150,10 +152,10 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
               <Percent className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-foreground">
+              <h2 id="copay-modal-title" className="text-base font-bold text-foreground">
                 Adjust Co-Pay & Cost Sharing
               </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p id="copay-modal-description" className="text-xs text-muted-foreground mt-0.5">
                 Configure employee payroll deduction vs. corporate sponsorship for this contracted tier.
               </p>
             </div>
@@ -247,8 +249,12 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
                 max={100}
                 step={5}
                 value={copayPct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={copayPct}
+                aria-valuetext={`${copayPct}% employee co-pay, ${employerSubsidyPct}% company subsidy`}
                 onChange={(e) => setCopayPct(Number(e.target.value))}
-                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-emerald-500 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
               />
               <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
                 <span>0% Co-Pay (100% Sponsored)</span>
@@ -258,7 +264,7 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
             </div>
 
             {/* Quick Preset Buttons */}
-            <div className="flex flex-wrap gap-2 pt-1">
+            <div role="group" aria-label="Preset co-pay ratios" className="flex flex-wrap gap-2 pt-1">
               {[
                 { label: "100% Employer Funded", copay: 0 },
                 { label: "85% Subsidy (15% Co-Pay)", copay: 15 },
@@ -268,9 +274,10 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
                 <button
                   key={preset.copay}
                   type="button"
+                  aria-pressed={copayPct === preset.copay}
                   onClick={() => setCopayPct(preset.copay)}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer",
+                    "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
                     copayPct === preset.copay
                       ? "bg-primary text-primary-foreground border-primary shadow-xs"
                       : "bg-card border-border text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -328,15 +335,17 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
 
           {/* Effective Timing */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-foreground block">
+            <label id="effective-timing-label" className="text-xs font-bold text-foreground block">
               Policy Effective Timing
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div role="radiogroup" aria-labelledby="effective-timing-label" className="grid grid-cols-2 gap-3">
               <button
                 type="button"
+                role="radio"
+                aria-checked={effectiveTiming === "immediate"}
                 onClick={() => setEffectiveTiming("immediate")}
                 className={cn(
-                  "p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between",
+                  "p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
                   effectiveTiming === "immediate"
                     ? "bg-primary/5 border-primary text-foreground"
                     : "bg-card border-border text-muted-foreground hover:bg-muted"
@@ -353,9 +362,11 @@ export const CoPayAdjustmentModal: React.FC<CoPayAdjustmentModalProps> = ({
 
               <button
                 type="button"
+                role="radio"
+                aria-checked={effectiveTiming === "next_billing_cycle"}
                 onClick={() => setEffectiveTiming("next_billing_cycle")}
                 className={cn(
-                  "p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between",
+                  "p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
                   effectiveTiming === "next_billing_cycle"
                     ? "bg-primary/5 border-primary text-foreground"
                     : "bg-card border-border text-muted-foreground hover:bg-muted"
