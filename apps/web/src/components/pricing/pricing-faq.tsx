@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { useLeadModal } from "@/lib/lead-modal";
 
@@ -123,13 +124,12 @@ export default function PricingFaq({ onOpenLeadForm }: PricingFaqProps = {}) {
           <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto mt-1 mb-4">
             Our enterprise advisory team will design a customized multi-city benefit package matching your specific headcount and wellness objectives.
           </p>
-          <button
-            type="button"
-            onClick={() => handleOpenLead('employer')}
+          <Link
+            href="/demo"
             className="inline-flex items-center justify-center px-6 py-2.5 bg-accent hover:bg-emerald-400 text-accent-foreground text-xs sm:text-sm font-bold rounded-[10px] shadow-sm transition-all cursor-pointer"
           >
             Speak With Our Corporate Team
-          </button>
+          </Link>
         </div>
       </div>
     </section>
