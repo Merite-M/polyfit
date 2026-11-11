@@ -31,6 +31,36 @@ const ALLOWED_ROLES = [
 ];
 
 /**
+ * Validates redirect URLs to prevent open redirect vulnerabilities and auth token leakage.
+ * Only allows safe relative paths (e.g. /reset-password) or whitelisted frontend origins.
+ */
+function sanitizeRedirectUrl(targetUrl, fallbackPath = '') {
+  const defaultBase = (process.env.FRONTEND_URL || 'http://localhost:3000').split(',')[0].trim();
+  const defaultUrl = `${defaultBase}${fallbackPath.startsWith('/') ? fallbackPath : '/' + fallbackPath}`;
+  if (!targetUrl || typeof targetUrl !== 'string') return defaultUrl;
+
+  const trimmed = targetUrl.trim();
+  // Prevent protocol-relative (//evil.com) and backslash (/\\evil.com) bypasses
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//') && !trimmed.startsWith('/\\')) {
+    return `${defaultBase}${trimmed}`;
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return defaultUrl;
+    const allowedOrigins = [
+      'https://polyfit.onrender.com',
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map((o) => o.trim()) : [])
+    ];
+    return allowedOrigins.includes(parsed.origin) ? trimmed : defaultUrl;
+  } catch {
+    return defaultUrl;
+  }
+}
+
+/**
  * Helper: fetch roles for a user ID
  */
 async function fetchUserRoles(userId) {
@@ -269,11 +299,12 @@ router.post('/magic-link', authRateLimiter, async (req, res) => {
       });
     }
 
+    const safeRedirect = sanitizeRedirectUrl(redirectTo);
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email,
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: redirectTo || process.env.FRONTEND_URL || 'http://localhost:3000'
+        emailRedirectTo: safeRedirect
       }
     });
 
@@ -375,8 +406,9 @@ router.post('/password-reset', authRateLimiter, async (req, res) => {
       });
     }
 
+    const safeRedirect = sanitizeRedirectUrl(redirectTo, '/reset-password');
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectTo || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password`
+      redirectTo: safeRedirect
     });
 
     if (resetError) {
