@@ -1062,17 +1062,26 @@ router.get('/team', async (req, res) => {
 });
 
 /**
- * POST /api/operations/team/roles
+ * POST & PATCH /api/operations/team/roles
  * Assigns or updates internal operator role with audit record.
+ * Supports both POST and PATCH for full frontend/API client compatibility.
  */
-router.post('/team/roles', async (req, res) => {
+const handleTeamRoleAssignment = async (req, res) => {
   try {
-    const { userId, email, role, operatorName } = req.body || {};
+    const { userId, target_user_id, email, operator_email, role, operatorName } = req.body || {};
+    const finalUserId = userId || target_user_id;
+    const finalEmail = email || operator_email;
+
     if (!role) {
       return res.status(400).json({ error: 'Role is required', code: 'ROLE_REQUIRED' });
     }
     const adminUser = req.user || { id: null, role: 'super_admin', name: 'Ops Super Admin' };
-    const result = await assignOperationsTeamRole({ userId, email, role, operatorName }, adminUser);
+    const result = await assignOperationsTeamRole({
+      userId: finalUserId,
+      email: finalEmail,
+      role,
+      operatorName
+    }, adminUser);
     return res.status(200).json(result);
   } catch (error) {
     console.error('[operationsRoutes] Team role assign error:', error.message);
@@ -1081,7 +1090,10 @@ router.post('/team/roles', async (req, res) => {
       code: 'OPERATIONS_ROLE_ASSIGN_FAILED'
     });
   }
-});
+};
+
+router.post('/team/roles', handleTeamRoleAssignment);
+router.patch('/team/roles', handleTeamRoleAssignment);
 
 /**
  * GET /api/operations/plans

@@ -110,62 +110,82 @@ router.post('/demo', leadFormLimiter, async (req, res) => {
  */
 router.post('/lead', leadFormLimiter, async (req, res) => {
   try {
-    const { type, name, organization, email, phone, employees, message, business, location, website_url_hp } = req.body;
+    const {
+      type = 'employer',
+      name,
+      full_name,
+      contact_name,
+      organization,
+      company_name,
+      business,
+      email,
+      work_email,
+      phone,
+      country = 'Rwanda',
+      employees,
+      company_size,
+      locations,
+      message,
+      location,
+      source,
+      website_url_hp
+    } = req.body || {};
 
+    // 1. Anti-spam honeypot detection
     if (website_url_hp) {
       return res.status(200).json({ success: true });
+    }
+
+    // 2. Normalize and validate input fields
+    const contactName = (contact_name || name || full_name || '').trim();
+    const cleanEmail = (work_email || email || '').trim().toLowerCase();
+    const company = (company_name || organization || business || contactName || 'Corporate Client').trim();
+    const size = (company_size || employees || (locations ? `${locations} location(s)` : '10-50')).trim();
+    const cleanPhone = (phone || '').trim();
+    const cleanCountry = (country || 'Rwanda').trim();
+
+    if (!contactName) {
+      return res.status(400).json({ error: 'Contact name is required', code: 'VALIDATION_ERROR' });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+      return res.status(400).json({ error: 'A valid email address is required', code: 'VALIDATION_ERROR' });
     }
 
     if (!supabase) {
       throw new Error('Database service unavailable');
     }
 
-    if (type === 'employer') {
-      const { data, error } = await supabase
-        .from('demo_requests')
-        .insert({
-          company_name: organization || name,
-          contact_name: name,
-          work_email: (email || '').toLowerCase(),
-          phone: phone || '',
-          country: 'Rwanda',
-          company_size: employees || '10-50',
-          message: message || null,
-          source: 'landing_modal_employer',
-          status: 'pending'
-        })
-        .select('id')
-        .single();
-
-      if (error) throw error;
-      return res.status(201).json({ success: true, id: data.id });
-    }
-
-    // Provider acquisition inquiry (PF-88 supply-side lead capture)
+    const isProvider = type === 'provider' || !!business || !!locations;
     const providerLocationInfo = location ? ` [Location: ${location}]` : '';
-    const { data: provData, error: provError } = await supabase
+    const leadSource = source || (isProvider ? 'landing_modal_provider' : 'landing_modal_employer');
+    const interestTier = isProvider ? 'Provider Network Onboarding' : 'Employer Corporate Wellness';
+
+    const { data, error } = await supabase
       .from('demo_requests')
       .insert({
-        company_name: business || organization || name || 'Wellness Provider Facility',
-        contact_name: name,
-        work_email: (email || '').toLowerCase(),
-        phone: phone || '',
-        country: 'Rwanda',
-        company_size: req.body.locations ? `${req.body.locations} location(s)` : '1 location',
-        interest_tier: 'Provider Network Onboarding',
-        message: `${message || 'Provider partner inquiry'}${providerLocationInfo}`,
-        source: 'landing_modal_provider',
+        company_name: company,
+        contact_name: contactName,
+        work_email: cleanEmail,
+        phone: cleanPhone,
+        country: cleanCountry,
+        company_size: size,
+        interest_tier: interestTier,
+        message: message ? `${message}${providerLocationInfo}` : (isProvider ? 'Provider partner inquiry' : null),
+        source: leadSource,
         status: 'pending'
       })
       .select('id')
       .single();
 
-    if (provError) throw provError;
+    if (error) throw error;
 
     return res.status(201).json({
       success: true,
-      id: provData.id,
-      message: "Provider inquiry received. Our network onboarding team will reach out within 24 hours."
+      id: data.id,
+      message: isProvider
+        ? 'Provider inquiry received. Our network onboarding team will reach out within 24 hours.'
+        : 'Inquiry received. A corporate wellness advisor will contact you within 24 hours.'
     });
   } catch (error) {
     console.error('[PublicLead] Error submitting lead:', error);

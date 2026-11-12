@@ -45,7 +45,7 @@ export function ActivationCards({
 
   const inviteUrl = typeof window !== "undefined"
     ? `${window.location.origin}/join/${organizationSlug}`
-    : `https://polyfit.onrender.com/join/${organizationSlug}`;
+    : `${process.env.NEXT_PUBLIC_APP_URL || "https://polyfit.onrender.com"}/join/${organizationSlug}`;
 
   const handleCopyLink = () => {
     if (navigator?.clipboard) {

@@ -503,7 +503,10 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
   }, [user, organizationId, isSuperAdmin, authLoading, loadPortalData]);
 
   // Invite Link derived from origin
-  const [origin, setOrigin] = useState("https://polyfit.onrender.com");
+  const [origin, setOrigin] = useState(() => {
+    if (typeof window !== "undefined") return window.location.origin;
+    return process.env.NEXT_PUBLIC_APP_URL || "https://polyfit.onrender.com";
+  });
   useEffect(() => {
     if (typeof window !== "undefined") {
       setOrigin(window.location.origin);

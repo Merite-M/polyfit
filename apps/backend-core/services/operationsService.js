@@ -2553,6 +2553,35 @@ async function executeTurnstileEmergencyBypass(payload, adminUserId = null) {
     .single();
 
   if (insertErr) {
+    if (insertErr.code === '23505' && insertErr.message?.includes('anti_double_checkin')) {
+      const { data: existingVisit } = await supabase
+        .from('visits')
+        .select(`
+          id,
+          check_in_at,
+          verification_method,
+          status,
+          metadata,
+          employees ( id, full_name, email, tier ),
+          organizations ( id, name ),
+          provider_locations ( id, name, city, providers ( id, name ) )
+        `)
+        .eq('employee_id', employee.id)
+        .eq('provider_location_id', location.id)
+        .order('check_in_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (existingVisit) {
+        return {
+          success: true,
+          bypassCode: generatedBypassCode,
+          visit: existingVisit,
+          alreadyCheckedIn: true,
+          message: 'Active verified check-in already recorded at this location'
+        };
+      }
+    }
     console.error('[operationsService] emergency bypass insert error:', insertErr.message);
     throw new Error(`Failed to record emergency turnstile visit: ${insertErr.message}`);
   }

@@ -142,6 +142,22 @@ app.use('/api/employee', employeePortalRoutes);
 // PF-117 / EPIC-05: Super Admin Console, Command Center Analytics & Universal Omnibar
 const operationsRoutes = require('./routes/operationsRoutes');
 app.use('/api/operations', operationsRoutes);
+
+// ─── Centralized Error Handling Middleware (Express 5) ─────────────────────────
+app.use((err, req, res, next) => {
+  const statusCode = err.status || err.statusCode || 500;
+  console.error(`[UnhandledError] ${req.method} ${req.path} (${statusCode}):`, err.message || err);
+
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  res.status(statusCode).json({
+    error: err.message || 'Internal server error occurred',
+    code: err.code || 'INTERNAL_SERVER_ERROR',
+    timestamp: new Date().toISOString()
+  });
+});
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Server Start ─────────────────────────────────────────────────────────────
