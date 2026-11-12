@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '@/lib/api-client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface ProviderLocation {
   id: string;
@@ -58,6 +59,7 @@ export interface ProviderProfile {
   tax_id?: string;
   bank_details?: ProviderBankDetails;
   rating?: number;
+  status?: string;
 }
 
 export interface TodaySummary {
@@ -213,6 +215,8 @@ export interface AmendmentRequestPayload {
 
 interface PartnerContextType {
   provider: ProviderProfile | null;
+  providerStatus: 'active' | 'pending_review' | 'not_found' | 'loading';
+  isSuperAdmin: boolean;
   setProviderProfile: (profile: ProviderProfile) => void;
   locations: ProviderLocation[];
   selectedLocationId: string;
@@ -461,7 +465,9 @@ const DEFAULT_COMMERCIAL_CONDITIONS: CommercialConditions = {
 const PartnerContext = createContext<PartnerContextType | undefined>(undefined);
 
 export function PartnerProvider({ children }: { children: React.ReactNode }) {
-  const [provider, setProvider] = useState<ProviderProfile | null>(DEFAULT_PROVIDER);
+  const { providerId, user, isSuperAdmin, isDemoMode, isLoading: authLoading } = useAuth();
+  const [provider, setProvider] = useState<ProviderProfile | null>(null);
+  const [providerStatus, setProviderStatus] = useState<'active' | 'pending_review' | 'not_found' | 'loading'>('loading');
   const [locations, setLocations] = useState<ProviderLocation[]>(DEFAULT_LOCATIONS);
   const [selectedLocationId, setSelectedLocationIdState] = useState<string>('all');
   const [todaySummary, setTodaySummary] = useState<TodaySummary | null>({
@@ -489,44 +495,113 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
   const openPayoutModal = useCallback(() => setPayoutModalOpen(true), []);
   const closePayoutModal = useCallback(() => setPayoutModalOpen(false), []);
 
-  // Hydrate saved provider and location from localStorage on client mount
+  // Dynamic Partner session resolution & tenant isolation
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedProvider = localStorage.getItem('polyfit_partner_provider');
-        if (savedProvider) {
-          const parsed = JSON.parse(savedProvider);
-          if (parsed?.id && parsed?.name) {
-            setProvider((prev) => ({
-              ...DEFAULT_PROVIDER,
-              ...prev,
-              ...parsed
-            }));
-            setDashboardData((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    provider: {
-                      ...prev.provider,
-                      id: parsed.id,
-                      name: parsed.name,
-                      category: parsed.category || prev.provider.category
-                    }
-                  }
-                : null
-            );
-          }
-        }
-      } catch (e) {
-        console.warn('[PartnerContext] Provider hydration notice:', e);
+    let isCancelled = false;
+
+    async function initPartnerSession() {
+      if (authLoading) {
+        setProviderStatus('loading');
+        return;
       }
 
-      const savedLoc = localStorage.getItem('polyfit_partner_location_id');
-      if (savedLoc) {
-        setSelectedLocationIdState(savedLoc);
+      if (!user) {
+        setProvider(null);
+        setProviderStatus('loading');
+        setLoading(false);
+        return;
+      }
+
+      setProviderStatus('loading');
+      setLoading(true);
+
+      try {
+        let resolvedProvider: ProviderProfile | null = null;
+        let provStatus = 'active';
+
+        // 1. Direct providerId resolution
+        const targetProvId = providerId || user?.user_metadata?.provider_id;
+        if (targetProvId) {
+          try {
+            const res = await apiFetch<any>(`/api/providers/${targetProvId}`);
+            if (res?.provider) {
+              resolvedProvider = res.provider;
+              provStatus = res.provider.status || 'active';
+            }
+          } catch (e) {
+            console.warn('[PartnerContext] Error fetching provider by ID:', e);
+          }
+        }
+
+        // 2. Email lookup resolution
+        if (!resolvedProvider && user.email) {
+          try {
+            const checkRes = await apiFetch<any>(`/api/public/partner/check-email?email=${encodeURIComponent(user.email)}`);
+            if (checkRes?.exists && checkRes.provider_id) {
+              provStatus = checkRes.status || 'active';
+              resolvedProvider = {
+                id: checkRes.provider_id,
+                name: checkRes.provider_name || 'Wellness Provider Facility',
+                category: checkRes.category || 'gym',
+                contact_email: user.email,
+                status: provStatus
+              };
+            }
+          } catch (e) {
+            console.warn('[PartnerContext] Error looking up partner by email:', e);
+          }
+        }
+
+        // 3. Super admin or demo mode fallback
+        if (!resolvedProvider && (isSuperAdmin || isDemoMode)) {
+          resolvedProvider = DEFAULT_PROVIDER;
+          provStatus = 'active';
+        }
+
+        if (isCancelled) return;
+
+        if (resolvedProvider) {
+          setProvider(resolvedProvider);
+          if (provStatus === 'pending_review' || resolvedProvider.status === 'pending_review') {
+            setProviderStatus('pending_review');
+          } else {
+            setProviderStatus('active');
+          }
+          setDashboardData((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  provider: {
+                    ...prev.provider,
+                    id: resolvedProvider!.id,
+                    name: resolvedProvider!.name,
+                    category: resolvedProvider!.category || prev.provider.category
+                  }
+                }
+              : null
+          );
+        } else {
+          setProvider(null);
+          setProviderStatus('not_found');
+        }
+      } catch (err) {
+        console.error('[PartnerContext] Error initializing partner session:', err);
+        if (!isCancelled) {
+          setProviderStatus('not_found');
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     }
-  }, []);
+
+    initPartnerSession();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user, providerId, isSuperAdmin, isDemoMode, authLoading]);
 
   const setSelectedLocationId = useCallback((id: string) => {
     setSelectedLocationIdState(id);
@@ -881,6 +956,8 @@ const hasAuthToken = () => {
     <PartnerContext.Provider
       value={{
         provider,
+        providerStatus,
+        isSuperAdmin,
         setProviderProfile,
         locations,
         selectedLocationId,

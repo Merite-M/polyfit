@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const {
   getOperationsOverview,
   searchOperationsUniversal,
@@ -207,6 +208,132 @@ router.patch('/clients/:id', async (req, res) => {
       error: error.message,
       code: 'OPERATIONS_CLIENT_UPDATE_FAILED'
     });
+  }
+});
+
+/**
+ * POST /api/operations/clients/:id/approve
+ * 1-Click Operations Approval & Activation:
+ * Sets organization status to 'active', ensures pending invitation exists for HR admin,
+ * and returns activation link for WhatsApp / email dispatch.
+ */
+router.post('/clients/:id/approve', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    const { data: org, error: orgErr } = await supabase
+      .from('organizations')
+      .update({ status: 'active', updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select('id, name, slug, contact_email, billing_email, status')
+      .single();
+
+    if (orgErr || !org) {
+      return res.status(404).json({ error: 'Corporate client not found or update failed', code: 'CLIENT_NOT_FOUND' });
+    }
+
+    const adminEmail = (org.contact_email || org.billing_email || '').toLowerCase().trim();
+    let token = `inv_${crypto.randomBytes(24).toString('hex')}`;
+
+    if (adminEmail) {
+      const { data: existingInvite } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('org_id', id)
+        .eq('email', adminEmail)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingInvite && existingInvite.status === 'pending' && new Date(existingInvite.expires_at) > new Date()) {
+        token = existingInvite.token;
+      } else {
+        const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+        const { data: newInvite } = await supabase
+          .from('invitations')
+          .insert({
+            email: adminEmail,
+            role: 'org_admin',
+            org_id: id,
+            token,
+            status: 'pending',
+            expires_at: expiresAt
+          })
+          .select()
+          .single();
+        if (newInvite?.token) token = newInvite.token;
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Corporate client "${org.name}" approved and activated successfully.`,
+      organization: org,
+      invitation_token: token,
+      activate_url: `/corporate/activate?token=${token}`
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Client approve error:', error.message);
+    return res.status(500).json({ error: error.message, code: 'OPERATIONS_CLIENT_APPROVE_FAILED' });
+  }
+});
+
+/**
+ * POST /api/operations/clients/:id/resend-invite
+ * Generates fresh invitation link for corporate HR admin.
+ */
+router.post('/clients/:id/resend-invite', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    const { data: org, error: orgErr } = await supabase
+      .from('organizations')
+      .select('id, name, slug, contact_email, billing_email')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (orgErr || !org) {
+      return res.status(404).json({ error: 'Corporate client not found', code: 'CLIENT_NOT_FOUND' });
+    }
+
+    const adminEmail = (org.contact_email || org.billing_email || req.body?.email || '').toLowerCase().trim();
+    if (!adminEmail) {
+      return res.status(400).json({ error: 'Corporate admin email is required to dispatch invite', code: 'EMAIL_REQUIRED' });
+    }
+
+    const token = `inv_${crypto.randomBytes(24).toString('hex')}`;
+    const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: newInvite, error: invErr } = await supabase
+      .from('invitations')
+      .insert({
+        email: adminEmail,
+        role: 'org_admin',
+        org_id: id,
+        token,
+        status: 'pending',
+        expires_at: expiresAt
+      })
+      .select()
+      .single();
+
+    if (invErr) throw invErr;
+
+    return res.status(200).json({
+      success: true,
+      message: `Fresh activation invitation link generated for ${adminEmail}.`,
+      invitation_token: token,
+      activate_url: `/corporate/activate?token=${token}`
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Resend invite error:', error.message);
+    return res.status(500).json({ error: error.message, code: 'RESEND_INVITE_FAILED' });
   }
 });
 

@@ -268,7 +268,7 @@ export function CorporateSidebar({
               <HelpCircle className="w-4 h-4" />
             </Link>
             <button
-              onClick={() => signOut?.()}
+              onClick={() => signOut?.("/corporate/login")}
               className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors"
               title="Sign Out"
             >

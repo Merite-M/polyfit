@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const { supabase } = require('@polyfit/supabase-client');
 const { sanitizePostgrestFilter } = require('@polyfit/shared-utils');
 const { rateLimit } = require('express-rate-limit');
@@ -1491,9 +1492,457 @@ router.patch('/locations/:id', async (req, res) => {
 });
 
 /**
+ * GET /api/public/corporate/check-email
+ * Corporate Employer Email & Invitation Token Lookup (Wellhub / Gymlib adapted for Africa):
+ * Checks whether a corporate email has an existing registered organization,
+ * a pending application under PolyFit review, an active invitation to create password,
+ * or an active corporate account ready for sign-in.
+ */
+router.get('/corporate/check-email', leadFormLimiter, async (req, res) => {
+  try {
+    const { email, token } = req.query;
+
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    // 1. Token-first verification
+    if (token && typeof token === 'string' && token.trim()) {
+      const cleanToken = token.trim();
+      const { data: invite, error: invErr } = await supabase
+        .from('invitations')
+        .select('id, email, token, role, org_id, status, expires_at')
+        .eq('token', cleanToken)
+        .maybeSingle();
+
+      if (invErr) {
+        console.error('[corporateCheckEmail] Token lookup error:', invErr);
+      }
+
+      if (!invite) {
+        return res.status(404).json({
+          valid: false,
+          status: 'expired',
+          message: 'Invitation link not found or invalid. Please contact PolyFit Operations or request a new link.'
+        });
+      }
+
+      if (invite.status === 'accepted') {
+        return res.status(200).json({
+          valid: true,
+          status: 'active',
+          email: invite.email,
+          org_id: invite.org_id,
+          message: 'Your corporate account is already activated. Please enter your password to sign in.'
+        });
+      }
+
+      if (new Date(invite.expires_at) <= new Date()) {
+        return res.status(200).json({
+          valid: false,
+          status: 'expired',
+          email: invite.email,
+          message: 'This corporate invitation link has expired (7-day validity). Please request a fresh invitation link.'
+        });
+      }
+
+      // Fetch organization name
+      let orgName = 'Your Organization';
+      let orgSlug = 'corporate';
+      if (invite.org_id) {
+        const { data: org } = await supabase
+          .from('organizations')
+          .select('id, name, slug, status')
+          .eq('id', invite.org_id)
+          .maybeSingle();
+        if (org?.name) orgName = org.name;
+        if (org?.slug) orgSlug = org.slug;
+      }
+
+      return res.status(200).json({
+        valid: true,
+        status: 'invite_pending',
+        email: invite.email,
+        role: invite.role || 'org_admin',
+        org_id: invite.org_id,
+        organization_name: orgName,
+        organization_slug: orgSlug,
+        token: cleanToken,
+        message: `Welcome! Create your administrator password for ${invite.email} to manage ${orgName}.`
+      });
+    }
+
+    // 2. Email lookup
+    if (!email || typeof email !== 'string' || !email.trim()) {
+      return res.status(400).json({ error: 'Corporate email or invitation token is required', code: 'VALIDATION_ERROR' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const safeEmail = sanitizePostgrestFilter(cleanEmail);
+    const emailDomain = cleanEmail.split('@')[1];
+
+    // Search organization by contact_email, billing_email, or allowed_domains
+    const { data: orgs, error: orgSearchErr } = await supabase
+      .from('organizations')
+      .select('id, name, slug, status, contact_email, billing_email, allowed_domains')
+      .or(`contact_email.eq.${safeEmail},billing_email.eq.${safeEmail}`)
+      .order('created_at', { ascending: false });
+
+    let organization = orgs && orgs[0];
+
+    // If not found by direct email, check domain whitelist
+    if (!organization && emailDomain) {
+      const { data: domainOrgs } = await supabase
+        .from('organizations')
+        .select('id, name, slug, status, contact_email, billing_email, allowed_domains')
+        .contains('allowed_domains', [emailDomain])
+        .order('created_at', { ascending: false });
+      if (domainOrgs && domainOrgs[0]) {
+        organization = domainOrgs[0];
+      }
+    }
+
+    // Search invitations by email
+    const { data: invitations } = await supabase
+      .from('invitations')
+      .select('id, email, token, role, org_id, status, expires_at')
+      .eq('email', cleanEmail)
+      .in('role', ['org_admin', 'finance_manager'])
+      .order('created_at', { ascending: false });
+
+    const pendingInvite = invitations && invitations.find(i => i.status === 'pending' && new Date(i.expires_at) > new Date());
+    const acceptedInvite = invitations && invitations.find(i => i.status === 'accepted');
+
+    if (!organization && !pendingInvite && !acceptedInvite) {
+      return res.status(200).json({
+        exists: false,
+        status: 'not_found',
+        email: cleanEmail,
+        message: 'No registered corporate employer found with this work email. Would you like to register your organization?'
+      });
+    }
+
+    const orgName = organization?.name || 'Your Organization';
+    const orgSlug = organization?.slug || 'corporate';
+    const orgId = organization?.id || pendingInvite?.org_id;
+
+    // Organization is pending PolyFit Operations review
+    if (organization && (organization.status === 'pending_review' || organization.status === 'in_review')) {
+      return res.status(200).json({
+        exists: true,
+        status: 'pending_review',
+        email: cleanEmail,
+        organization_name: orgName,
+        organization_id: orgId,
+        organization_slug: orgSlug,
+        review_sla: '24h max',
+        message: `Your corporate wellness registration for "${orgName}" is currently under review by PolyFit Operations (SLA: 24h max). An account activation link will be sent to ${cleanEmail}.`
+      });
+    }
+
+    // Organization is rejected / archived
+    if (organization && organization.status === 'rejected') {
+      return res.status(200).json({
+        exists: true,
+        status: 'rejected',
+        email: cleanEmail,
+        organization_name: orgName,
+        organization_id: orgId,
+        message: 'This corporate registration was not approved. Please contact PolyFit Operations for enterprise assistance.'
+      });
+    }
+
+    // Pending invitation exists -> user formulation required
+    if (pendingInvite) {
+      return res.status(200).json({
+        exists: true,
+        status: 'invite_pending',
+        email: cleanEmail,
+        organization_name: orgName,
+        organization_id: orgId,
+        organization_slug: orgSlug,
+        invitation_token: pendingInvite.token,
+        role: pendingInvite.role || 'org_admin',
+        message: `Your organization "${orgName}" is ready! Create your administrator password to activate your portal.`
+      });
+    }
+
+    // Active organization and user ready for sign in
+    return res.status(200).json({
+      exists: true,
+      status: 'active',
+      email: cleanEmail,
+      organization_name: orgName,
+      organization_id: orgId,
+      organization_slug: orgSlug,
+      message: 'Corporate account active. Please enter your password to sign in.'
+    });
+  } catch (error) {
+    console.error('[corporateCheckEmail] Error:', error);
+    return res.status(500).json({
+      error: error.message || 'Failed to check corporate email identity',
+      code: 'CHECK_EMAIL_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/public/corporate/activate-account
+ * Corporate HR Admin Password Formulation & Account Activation:
+ * Sets the password for the corporate HR admin, validates strict security rules
+ * (8+ chars, uppercase, lowercase, number/special), accepts invitation,
+ * creates/updates Supabase Auth user, assigns user_roles ('org_admin'),
+ * signs the user in, and returns live session + organization context.
+ */
+router.post('/corporate/activate-account', leadFormLimiter, async (req, res) => {
+  try {
+    const { token, email, password, terms_accepted } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required', code: 'PASSWORD_REQUIRED' });
+    }
+
+    // Strict Wellhub password rules
+    const hasMinLen = password.length >= 8;
+    const hasUpperLower = /[a-z]/.test(password) && /[A-Z]/.test(password);
+    const hasNumOrSpecial = /[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
+
+    if (!hasMinLen || !hasUpperLower || !hasNumOrSpecial) {
+      return res.status(400).json({
+        error: 'Password must have at least 8 characters, upper and lower cases, and at least one number or special character',
+        code: 'WEAK_PASSWORD'
+      });
+    }
+
+    if (!terms_accepted) {
+      return res.status(400).json({
+        error: 'You must review and agree to the Corporate Wellness Agreement and Terms of Service',
+        code: 'TERMS_REQUIRED'
+      });
+    }
+
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    // Find invitation by token or pending email
+    let invite = null;
+    if (token && typeof token === 'string' && token.trim()) {
+      const { data: invByToken } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('token', token.trim())
+        .maybeSingle();
+      invite = invByToken;
+    } else if (email && typeof email === 'string' && email.trim()) {
+      const { data: invByEmail } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('email', email.trim().toLowerCase())
+        .in('role', ['org_admin', 'finance_manager'])
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      invite = invByEmail && invByEmail[0];
+    } else {
+      return res.status(400).json({ error: 'Invitation token or email is required', code: 'TOKEN_OR_EMAIL_REQUIRED' });
+    }
+
+    if (!invite) {
+      return res.status(400).json({
+        error: 'No valid or pending corporate invitation found for activation. Please request a new link.',
+        code: 'INVITE_NOT_FOUND'
+      });
+    }
+
+    if (invite.status === 'accepted') {
+      return res.status(400).json({
+        error: 'Invitation has already been activated. Please log in directly with your password.',
+        code: 'ALREADY_ACTIVATED'
+      });
+    }
+
+    if (new Date(invite.expires_at) <= new Date()) {
+      return res.status(400).json({
+        error: 'This corporate invitation link has expired. Please contact PolyFit Operations.',
+        code: 'INVITE_EXPIRED'
+      });
+    }
+
+    const userEmail = invite.email.toLowerCase().trim();
+
+    // Fetch organization details
+    let organization = null;
+    if (invite.org_id) {
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('id, name, slug, status, contact_email')
+        .eq('id', invite.org_id)
+        .maybeSingle();
+      organization = org;
+    }
+
+    // Create or update user in Supabase Auth via admin API
+    let userId;
+    const { data: createdUser, error: createError } = await supabase.auth.admin.createUser({
+      email: userEmail,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        role: invite.role || 'org_admin',
+        org_id: invite.org_id,
+        org_name: organization?.name || 'Corporate Employer',
+        org_slug: organization?.slug || 'corporate'
+      }
+    });
+
+    if (createError) {
+      // If user already exists in auth.users, update password
+      const { data: existingUsers } = await supabase.auth.admin.listUsers();
+      const match = existingUsers?.users?.find((u) => u.email.toLowerCase() === userEmail);
+      if (match) {
+        userId = match.id;
+        const { error: updErr } = await supabase.auth.admin.updateUserById(userId, {
+          password,
+          email_confirm: true,
+          user_metadata: {
+            role: invite.role || 'org_admin',
+            org_id: invite.org_id,
+            org_name: organization?.name || 'Corporate Employer',
+            org_slug: organization?.slug || 'corporate'
+          }
+        });
+        if (updErr) {
+          throw new Error(`Failed to set password: ${updErr.message}`);
+        }
+      } else {
+        throw new Error(`User provisioning error: ${createError.message}`);
+      }
+    } else {
+      userId = createdUser.user.id;
+    }
+
+    // Assign role in public.user_roles
+    try {
+      await supabase.from('user_roles').upsert({
+        user_id: userId,
+        role: invite.role || 'org_admin',
+        org_id: invite.org_id
+      }, { onConflict: 'user_id,role,org_id' });
+    } catch (roleErr) {
+      console.warn('[corporateActivateAccount] user_roles notice:', roleErr.message);
+    }
+
+    // Mark invitation accepted
+    await supabase
+      .from('invitations')
+      .update({
+        status: 'accepted',
+        accepted_at: new Date().toISOString()
+      })
+      .eq('id', invite.id);
+
+    // If organization was pending, ensure marked active
+    if (organization && organization.status !== 'active') {
+      await supabase
+        .from('organizations')
+        .update({ status: 'active', updated_at: new Date().toISOString() })
+        .eq('id', organization.id);
+    }
+
+    // Obtain active session by signing in
+    let session = null;
+    try {
+      const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({
+        email: userEmail,
+        password
+      });
+      if (!loginErr && loginData?.session) {
+        session = loginData.session;
+      }
+    } catch (signInErr) {
+      console.warn('[corporateActivateAccount] Session generation notice:', signInErr.message);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Corporate administrator account activated successfully! Welcome to the PolyFit Corporate Portal.',
+      session,
+      organization: organization ? {
+        id: organization.id,
+        name: organization.name,
+        slug: organization.slug
+      } : null,
+      redirect_url: `/corporate?org=${organization?.slug || 'corporate'}&welcome=true`
+    });
+  } catch (error) {
+    console.error('[corporateActivateAccount] Error:', error);
+    return res.status(500).json({
+      error: error.message || 'Failed to activate corporate account',
+      code: 'ACTIVATION_FAILED'
+    });
+  }
+});
+
+/**
+ * POST /api/public/operations/verify
+ * Verifies if the authenticated session holds a PolyFit Super Admin or Operations role.
+ */
+router.post('/operations/verify', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.replace(/^Bearer\s+/i, '') || req.body?.access_token;
+
+    if (!token) {
+      return res.status(401).json({ error: 'Access token required', code: 'UNAUTHORIZED' });
+    }
+
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database service unavailable', code: 'SERVICE_UNAVAILABLE' });
+    }
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      return res.status(401).json({ error: 'Invalid or expired session', code: 'UNAUTHORIZED' });
+    }
+
+    // Check user_roles for super_admin or polyfit_ops
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id);
+
+    const hasSuperAdminRole = roles && roles.some((r) => r.role === 'super_admin' || r.role === 'polyfit_ops');
+    const metadataRole = user.user_metadata?.role;
+    const isSuperAdmin = hasSuperAdminRole || metadataRole === 'super_admin' || metadataRole === 'polyfit_ops';
+
+    if (!isSuperAdmin) {
+      return res.status(403).json({
+        is_super_admin: false,
+        error: 'Access restricted to PolyFit Operations & Super Administrators',
+        code: 'FORBIDDEN'
+      });
+    }
+
+    return res.status(200).json({
+      is_super_admin: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: hasSuperAdminRole ? (roles.find(r => r.role === 'super_admin')?.role || 'polyfit_ops') : metadataRole
+      }
+    });
+  } catch (error) {
+    console.error('[operationsVerify] Error:', error);
+    return res.status(500).json({ error: error.message || 'Operations verification failed', code: 'VERIFY_FAILED' });
+  }
+});
+
+/**
  * POST /api/public/corporate/register
  * Dedicated, multi-step self-service onboarding for corporate employers & HR leaders.
- * Configures corporate organization profile, auto-generates slug, creates benefit tier, and enables employee self-join.
+ * Configures corporate organization profile, auto-generates slug, creates benefit tier,
+ * generates admin invitation token, optionally sets admin password directly, and enables employee self-join.
  */
 router.post('/corporate/register', leadFormLimiter, async (req, res) => {
   try {
@@ -1508,6 +1957,7 @@ router.post('/corporate/register', leadFormLimiter, async (req, res) => {
       subsidy_percentage = 100,
       billing_currency = 'RWF',
       terms_accepted,
+      password,
       source = 'corporate_self_onboarding'
     } = req.body;
 
@@ -1544,6 +1994,19 @@ router.post('/corporate/register', leadFormLimiter, async (req, res) => {
         error: 'Corporate employer registration requires an official company domain email (e.g. name@company.rw), not a personal free email.',
         code: 'CORPORATE_DOMAIN_REQUIRED'
       });
+    }
+
+    // Optional direct password validation
+    if (password) {
+      const hasMinLen = password.length >= 8;
+      const hasUpperLower = /[a-z]/.test(password) && /[A-Z]/.test(password);
+      const hasNumOrSpecial = /[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
+      if (!hasMinLen || !hasUpperLower || !hasNumOrSpecial) {
+        return res.status(400).json({
+          error: 'Password must have at least 8 characters, upper and lower cases, and at least one number or special character',
+          code: 'WEAK_PASSWORD'
+        });
+      }
     }
 
     let baseSlug = slugify(cleanCompanyName);
@@ -1663,6 +2126,100 @@ router.post('/corporate/register', leadFormLimiter, async (req, res) => {
       }
     }
 
+    // Generate or ensure an invitation token exists for the corporate administrator
+    const inviteToken = `inv_${crypto.randomBytes(24).toString('hex')}`;
+    const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    let invitationRecord = null;
+
+    try {
+      const { data: existingInvite } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('email', cleanEmail)
+        .eq('org_id', organization.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingInvite) {
+        invitationRecord = existingInvite;
+      } else {
+        const { data: newInvite } = await supabase
+          .from('invitations')
+          .insert({
+            email: cleanEmail,
+            role: 'org_admin',
+            org_id: organization.id,
+            token: inviteToken,
+            status: password ? 'accepted' : 'pending',
+            accepted_at: password ? new Date().toISOString() : null,
+            expires_at: expiresAt
+          })
+          .select()
+          .single();
+        invitationRecord = newInvite;
+      }
+    } catch (invErr) {
+      console.warn('[CorporateRegister] Invitation record notice:', invErr.message);
+    }
+
+    // Direct password provision if user provided password at registration
+    let session = null;
+    if (password) {
+      try {
+        let userId;
+        const { data: authUser, error: authErr } = await supabase.auth.admin.createUser({
+          email: cleanEmail,
+          password,
+          email_confirm: true,
+          user_metadata: {
+            role: 'org_admin',
+            org_id: organization.id,
+            org_name: organization.name,
+            org_slug: organization.slug
+          }
+        });
+
+        if (authErr) {
+          const { data: existingUsers } = await supabase.auth.admin.listUsers();
+          const match = existingUsers?.users?.find((u) => u.email.toLowerCase() === cleanEmail);
+          if (match) {
+            userId = match.id;
+            await supabase.auth.admin.updateUserById(userId, {
+              password,
+              email_confirm: true,
+              user_metadata: {
+                role: 'org_admin',
+                org_id: organization.id,
+                org_name: organization.name,
+                org_slug: organization.slug
+              }
+            });
+          }
+        } else if (authUser?.user) {
+          userId = authUser.user.id;
+        }
+
+        if (userId) {
+          await supabase.from('user_roles').upsert({
+            user_id: userId,
+            role: 'org_admin',
+            org_id: organization.id
+          }, { onConflict: 'user_id,role,org_id' });
+
+          const { data: signInData } = await supabase.auth.signInWithPassword({
+            email: cleanEmail,
+            password
+          });
+          if (signInData?.session) {
+            session = signInData.session;
+          }
+        }
+      } catch (userProvisionErr) {
+        console.warn('[CorporateRegister] Direct user provisioning notice:', userProvisionErr.message);
+      }
+    }
+
     // Lead capture in demo_requests for Super Admin pipeline
     try {
       await supabase.from('demo_requests').insert({
@@ -1681,13 +2238,20 @@ router.post('/corporate/register', leadFormLimiter, async (req, res) => {
       console.warn('[CorporateRegister] Lead sync notice:', leadErr.message);
     }
 
+    const tokenToReturn = invitationRecord?.token || inviteToken;
+    const activateUrl = `/corporate/activate?token=${tokenToReturn}`;
+    const redirectUrl = session
+      ? `/corporate?org=${organization.slug}&welcome=true`
+      : activateUrl;
+
     return res.status(201).json({
       success: true,
-      message: 'Corporate wellness program created successfully! Your employee enrollment link is active.',
+      message: 'Corporate wellness program created successfully! Administrator credentials prepared.',
       organization: {
         id: organization.id,
         name: organization.name,
         slug: organization.slug,
+        status: organization.status,
         allowed_domains: organization.allowed_domains,
         contracted_seats: organization.contracted_seats
       },
@@ -1698,8 +2262,11 @@ router.post('/corporate/register', leadFormLimiter, async (req, res) => {
         max_visits: planVisits,
         subsidy_percentage: Number(subsidy_percentage) || 100
       } : null,
+      invitation_token: tokenToReturn,
+      activate_url: activateUrl,
       employee_join_link: `/join/${organization.slug}`,
-      redirect_url: `/corporate?org=${organization.slug}&welcome=true`
+      session,
+      redirect_url: redirectUrl
     });
   } catch (error) {
     console.error('[CorporateRegister] Unexpected error:', error);

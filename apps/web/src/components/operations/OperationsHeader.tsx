@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { Search, Menu, Clock, Shield, Bell, CheckCircle2, Zap } from "lucide-react";
+import { Search, Menu, Clock, Shield, Bell, CheckCircle2, Zap, LogOut } from "lucide-react";
 import { useOperationsDrawer } from "@/contexts/OperationsDrawerContext";
 import { PlatformSuiteLauncher } from "@/components/ui/PlatformSuiteLauncher";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface OperationsHeaderProps {
   onOpenMobileMenu?: () => void;
@@ -13,6 +14,7 @@ interface OperationsHeaderProps {
 
 export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: OperationsHeaderProps) {
   const pathname = usePathname();
+  const { user, role, signOut } = useAuth();
   const [currentTime, setCurrentTime] = useState<string>("");
   const { openBypassModal } = useOperationsDrawer();
 
@@ -124,15 +126,26 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
         {/* Unified Cross-Portal Suite Launcher */}
         <PlatformSuiteLauncher variant="light" />
 
-        {/* Admin Avatar & Role */}
+        {/* Admin Avatar, Role & Sign Out */}
         <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
           <div className="w-8 h-8 rounded-full bg-[#0B1F33] text-white flex items-center justify-center text-xs font-bold font-mono">
-            SA
+            {user?.email ? user.email.slice(0, 2).toUpperCase() : "SA"}
           </div>
           <div className="hidden md:block text-left">
-            <div className="text-xs font-semibold text-[#0B1F33] leading-tight">Super Admin</div>
-            <div className="text-[10px] text-slate-500 font-mono">ops@polyfit.rw</div>
+            <div className="text-xs font-semibold text-[#0B1F33] leading-tight">
+              {role === "super_admin" ? "Super Admin" : "PolyFit Ops"}
+            </div>
+            <div className="text-[10px] text-slate-500 font-mono truncate max-w-[130px]">
+              {user?.email || "ops@polyfit.africa"}
+            </div>
           </div>
+          <button
+            onClick={() => signOut("/operations/login")}
+            title="Sign Out of Operations Console"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-slate-100 transition-colors ml-1"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </header>

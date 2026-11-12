@@ -173,15 +173,18 @@ function CorporateRegistrationContent() {
       });
 
       if (res?.success) {
-        const redirect = res?.redirect_url || `/corporate?org=${res.organization?.slug || "company"}&welcome=true`;
+        const redirect =
+          res?.activate_url ||
+          res?.redirect_url ||
+          `/corporate/activate?email=${encodeURIComponent(workEmail.trim())}&welcome=true`;
         router.push(redirect);
       } else {
         throw new Error(res?.error || "Corporate registration could not be completed.");
       }
     } catch (err: any) {
       console.error("[CorporateRegister] Submission error:", err);
-      // Resilient fallback in offline/mock demo mode
-      router.push("/corporate?welcome=true");
+      // Fallback redirect to activation page with email prefilled
+      router.push(`/corporate/activate?email=${encodeURIComponent(workEmail.trim())}&welcome=true`);
     } finally {
       setIsSubmitting(false);
     }
@@ -207,7 +210,7 @@ function CorporateRegistrationContent() {
 
         <div className="flex items-center gap-3">
           <Link
-            href="/corporate"
+            href="/corporate/login"
             className="text-xs font-semibold text-slate-600 hover:text-[#0B1F33] transition-colors"
           >
             Existing HR Client? Sign In

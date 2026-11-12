@@ -147,6 +147,32 @@ export function EmployerContractDrawer({
     }
   };
 
+  // 1-Click Operations Approval & Activation Link Generation
+  const [approving, setApproving] = useState(false);
+  const [approvalResult, setApprovalResult] = useState<any>(null);
+
+  const handleApproveClient = async () => {
+    if (!clientId) return;
+    setApproving(true);
+    try {
+      const res = await apiFetch<any>(`/api/operations/clients/${clientId}/approve`, {
+        method: "POST"
+      });
+      if (res?.success) {
+        setApprovalResult(res);
+        setClientData((prev: any) => ({
+          ...prev,
+          organization: { ...prev?.organization, status: "active" }
+        }));
+        onClientUpdated?.();
+      }
+    } catch (err) {
+      console.error("[EmployerContractDrawer] Approval failed:", err);
+    } finally {
+      setApproving(false);
+    }
+  };
+
   // Update Contracted Seats
   const handleSaveCapacity = async () => {
     if (!clientId) return;
@@ -323,6 +349,59 @@ export function EmployerContractDrawer({
               </button>
             </div>
           </div>
+
+          {/* Operations 1-Click Approval Banner */}
+          {org.status !== "active" && (
+            <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-950/70 to-slate-900 border border-emerald-500/40 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/30">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                      Pending PolyFit Operations Review
+                    </h4>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      Client completed agreement registration. Review and approve to activate corporate roster and issue the employer administrator pass link.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleApproveClient}
+                  disabled={approving}
+                  className="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shrink-0 flex items-center gap-1.5 transition-all shadow-md disabled:opacity-50 cursor-pointer"
+                >
+                  {approving ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  )}
+                  <span>Approve & Issue Access</span>
+                </button>
+              </div>
+
+              {approvalResult?.activate_url && (
+                <div className="p-2.5 rounded-lg bg-slate-950/80 border border-emerald-500/30 flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-mono text-emerald-300 truncate">
+                    {approvalResult.activate_url}
+                  </span>
+                  <button
+                    onClick={() => {
+                      if (typeof navigator !== "undefined" && navigator.clipboard) {
+                        navigator.clipboard.writeText(
+                          window.location.origin + approvalResult.activate_url
+                        );
+                      }
+                    }}
+                    className="px-2.5 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-[10px] font-bold shrink-0 transition-colors cursor-pointer"
+                  >
+                    Copy Link
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Seat Capacity Bar with 90% Near-Capacity Alert */}
           <div className="p-3.5 rounded-xl bg-[#071521] border border-[#21405A] space-y-2">

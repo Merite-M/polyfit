@@ -27,7 +27,22 @@ export interface CorporateOrganization {
   contact_email?: string;
   billing_email?: string;
   industry?: string;
+  status?: string;
+  contracted_seats?: number;
 }
+
+export const EMPTY_ORGANIZATION: CorporateOrganization = {
+  id: "",
+  name: "PolyFit Corporate",
+  slug: "",
+  domain: "polyfit.africa",
+  allowed_domains: [],
+  tax_id: "000000000",
+  contact_email: "support@polyfit.africa",
+  billing_email: "billing@polyfit.africa",
+  industry: "Corporate Client",
+  status: "active",
+};
 
 export const NETWORK_ORGANIZATIONS: CorporateOrganization[] = [
   {
@@ -165,6 +180,8 @@ const ZERO_ECONOMICS: CorporateEconomics = {
 interface CorporateContextType {
   // Organization state & switcher
   organization: CorporateOrganization;
+  organizationStatus: "active" | "pending_review" | "not_found" | "loading";
+  isSuperAdmin: boolean;
   availableOrganizations: CorporateOrganization[];
   switchOrganization: (orgId: string) => void;
   updateOrganizationProfile: (data: Partial<CorporateOrganization>) => Promise<void>;
@@ -216,55 +233,14 @@ interface CorporateContextType {
 const CorporateContext = createContext<CorporateContextType | undefined>(undefined);
 
 export function CorporateProvider({ children }: { children: React.ReactNode }) {
-  const { organizationId, user, isDemoMode } = useAuth();
+  const { organizationId, user, isSuperAdmin, isDemoMode, isLoading: authLoading } = useAuth();
 
-  // 1. Organization State with URL and localStorage sync
-  const initialOrg = useMemo(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      let orgSlug = params.get("org") || params.get("slug");
-      if (!orgSlug) {
-        try {
-          orgSlug = localStorage.getItem("polyfit_corporate_active_org");
-        } catch {}
-      } else {
-        try {
-          localStorage.setItem("polyfit_corporate_active_org", orgSlug);
-        } catch {}
-      }
-      if (orgSlug) {
-        const match = NETWORK_ORGANIZATIONS.find(
-          (o) => o.slug.toLowerCase() === orgSlug!.toLowerCase() || o.id === orgSlug
-        );
-        if (match) return match;
-        const slugClean = orgSlug.toLowerCase();
-        const nameClean = slugClean
-          .split("-")
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(" ");
-        return {
-          id: slugClean,
-          name: nameClean,
-          slug: slugClean,
-          domain: `${slugClean}.rw`,
-          allowed_domains: [`${slugClean}.rw`],
-          tax_id: "100000000",
-          contact_email: `hr@${slugClean}.rw`,
-          billing_email: `finance@${slugClean}.rw`,
-          industry: "Corporate Client",
-        };
-      }
-    }
-    if (organizationId) {
-      const match = NETWORK_ORGANIZATIONS.find((o) => o.id === organizationId);
-      if (match) return match;
-    }
-    return NETWORK_ORGANIZATIONS[0];
-  }, [organizationId]);
-
-  const [availableOrganizations, setAvailableOrganizations] =
-    useState<CorporateOrganization[]>(NETWORK_ORGANIZATIONS);
-  const [organization, setOrganization] = useState<CorporateOrganization>(initialOrg);
+  // 1. Organization State initialized to empty until resolved
+  const [organization, setOrganization] = useState<CorporateOrganization>(EMPTY_ORGANIZATION);
+  const [organizationStatus, setOrganizationStatus] = useState<
+    "active" | "pending_review" | "not_found" | "loading"
+  >("loading");
+  const [availableOrganizations, setAvailableOrganizations] = useState<CorporateOrganization[]>([]);
 
   // 2. Global UI Controls
   const [selectedRange, setSelectedRange] = useState("30d");
@@ -362,7 +338,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
 
   // Load portal data dynamically from database for ANY organization
   const loadPortalData = useCallback(async (targetSlugOrId: string) => {
-    if (!targetSlugOrId) return;
+    if (!targetSlugOrId) return null;
     setIsLoadingEmployees(true);
     setIsLoadingPlans(true);
     try {
@@ -397,7 +373,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
         if (res.reportingData) {
           setReportingData(res.reportingData);
         }
-        return;
+        return res;
       }
     } catch (err) {
       console.warn("[CorporateContext] Portal data fetch notice:", err);
@@ -414,33 +390,117 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       setEconomics(TECHCORP_CANONICAL_DATA.economics);
       setInvoices(TECHCORP_CANONICAL_DATA.invoices as unknown as InvoiceRecord[]);
     }
+    return null;
   }, []);
 
-  // Load active corporate organization data
+  // Multi-actor Corporate session initialization
   useEffect(() => {
-    async function initPortalData() {
+    let isCancelled = false;
+
+    async function initCorporateSession() {
+      if (authLoading) {
+        setOrganizationStatus("loading");
+        return;
+      }
+
+      // If unauthenticated, reset to empty
+      if (!user) {
+        setOrganization(EMPTY_ORGANIZATION);
+        setOrganizationStatus("loading");
+        return;
+      }
+
+      setOrganizationStatus("loading");
+
       try {
-        let target = initialOrg.slug || initialOrg.id;
-        if (typeof window !== "undefined") {
-          const params = new URLSearchParams(window.location.search);
-          const orgParam = params.get("org") || params.get("slug");
-          if (orgParam) {
-            target = orgParam;
-          } else {
-            try {
-              const saved = localStorage.getItem("polyfit_corporate_active_org");
-              if (saved) target = saved;
-            } catch {}
+        if (isSuperAdmin) {
+          // Super admin: can browse all organizations in the network
+          let orgs = NETWORK_ORGANIZATIONS;
+          try {
+            const listRes = await apiFetch<any>("/api/public/corporate/organizations");
+            if (listRes?.success && Array.isArray(listRes.organizations) && listRes.organizations.length > 0) {
+              orgs = listRes.organizations;
+            }
+          } catch (e) {
+            console.warn("[CorporateContext] Failed to fetch full org list, using network orgs fallback", e);
+          }
+
+          if (isCancelled) return;
+          setAvailableOrganizations(orgs);
+
+          // Find active org from query param, localStorage, or fallback to first
+          let selectedOrg = orgs[0];
+          if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            const queryOrg = params.get("org") || params.get("slug");
+            const storedOrg = localStorage.getItem("polyfit_corporate_active_org");
+            const targetSlug = queryOrg || storedOrg;
+            if (targetSlug) {
+              const match = orgs.find((o) => o.slug === targetSlug || o.id === targetSlug);
+              if (match) selectedOrg = match;
+            }
+          }
+
+          setOrganization(selectedOrg);
+          setOrganizationStatus("active");
+          await loadPortalData(selectedOrg.slug || selectedOrg.id);
+          return;
+        }
+
+        // Standard Corporate HR User: strictly scoped to their assigned organization
+        let targetOrgId = organizationId;
+        let orgStatusFromCheck: string | null = null;
+
+        if (!targetOrgId && user.email) {
+          try {
+            const checkRes = await apiFetch<any>(`/api/public/corporate/check-email?email=${encodeURIComponent(user.email)}`);
+            if (checkRes?.success && checkRes.organization) {
+              targetOrgId = checkRes.organization.id;
+              orgStatusFromCheck = checkRes.status || checkRes.organization.status;
+            }
+          } catch (e) {
+            console.warn("[CorporateContext] Check-email lookup warning:", e);
           }
         }
 
-        await loadPortalData(target);
+        if (isCancelled) return;
+
+        if (!targetOrgId) {
+          setOrganization(EMPTY_ORGANIZATION);
+          setAvailableOrganizations([]);
+          setOrganizationStatus("not_found");
+          return;
+        }
+
+        const dataRes = await loadPortalData(targetOrgId);
+        if (isCancelled) return;
+
+        const effectiveOrg = dataRes?.organization || organization;
+        const rawStatus = (orgStatusFromCheck || effectiveOrg?.status || "active").toLowerCase();
+
+        if (rawStatus === "pipeline" || rawStatus === "pending_review") {
+          setOrganizationStatus("pending_review");
+        } else {
+          setOrganizationStatus("active");
+        }
+
+        if (effectiveOrg && effectiveOrg.id) {
+          setAvailableOrganizations([effectiveOrg]);
+        }
       } catch (err) {
-        console.warn("[CorporateContext] Error loading portal data:", err);
+        console.error("[CorporateContext] Error initializing corporate session:", err);
+        if (!isCancelled) {
+          setOrganizationStatus("not_found");
+        }
       }
     }
-    initPortalData();
-  }, [initialOrg.slug, initialOrg.id, loadPortalData]);
+
+    initCorporateSession();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user, organizationId, isSuperAdmin, authLoading, loadPortalData]);
 
   // Invite Link derived from origin
   const [origin, setOrigin] = useState("https://polyfit.onrender.com");
@@ -524,9 +584,13 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     refreshFunnelData();
   }, [organization.id, refreshFunnelData]);
 
-  // Switch organization
+  // Switch organization (super_admin only)
   const switchOrganization = useCallback(
     async (orgId: string) => {
+      if (!isSuperAdmin) {
+        showToast("Organization switching is restricted to PolyFit Operations administrators.");
+        return;
+      }
       const found = availableOrganizations.find((o) => o.id === orgId || o.slug === orgId);
       if (found) {
         setOrganization(found);
@@ -542,7 +606,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
         }
       }
     },
-    [availableOrganizations, loadPortalData, showToast]
+    [isSuperAdmin, availableOrganizations, loadPortalData, showToast]
   );
 
   // Update profile
@@ -865,6 +929,8 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(
     () => ({
       organization,
+      organizationStatus,
+      isSuperAdmin,
       availableOrganizations,
       switchOrganization,
       updateOrganizationProfile,
@@ -902,6 +968,8 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     }),
     [
       organization,
+      organizationStatus,
+      isSuperAdmin,
       availableOrganizations,
       switchOrganization,
       updateOrganizationProfile,
