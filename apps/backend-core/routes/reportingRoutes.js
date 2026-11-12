@@ -277,5 +277,80 @@ router.get(
     }
   }
 );
+// ─── Dimensional Analytical Routes (Star Schema & Materialized Views) ────────
+// GET /api/reporting/dimensional/corporate-kpis/:orgId
+router.get(
+  '/dimensional/corporate-kpis/:orgId',
+  requireAuth,
+  requireRole('org_admin', 'polyfit_ops', 'super_admin'),
+  requireOrgAccess(),
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+      const kpis = await getDimensionalCorporateKpis(orgId);
+      if (!kpis) {
+        return res.status(404).json({ error: 'Corporate KPI data not found for organization', code: 'REPORTING_KPIS_NOT_FOUND' });
+      }
+      return res.status(200).json({ success: true, kpis });
+    } catch (err) {
+      console.error('[reportingRoutes] Dimensional corporate KPIs error:', err.message);
+      return res.status(500).json({ error: err.message, code: 'REPORTING_DIMENSIONAL_FAILED' });
+    }
+  }
+);
+
+// GET /api/reporting/dimensional/partner-kpis/:providerId
+router.get(
+  '/dimensional/partner-kpis/:providerId',
+  requireAuth,
+  requireRole('provider_admin', 'polyfit_ops', 'super_admin'),
+  requireProviderAccess(),
+  async (req, res) => {
+    try {
+      const { providerId } = req.params;
+      const kpis = await getDimensionalPartnerKpis(providerId);
+      if (!kpis) {
+        return res.status(404).json({ error: 'Partner KPI data not found for provider', code: 'REPORTING_KPIS_NOT_FOUND' });
+      }
+      return res.status(200).json({ success: true, kpis });
+    } catch (err) {
+      console.error('[reportingRoutes] Dimensional partner KPIs error:', err.message);
+      return res.status(500).json({ error: err.message, code: 'REPORTING_DIMENSIONAL_FAILED' });
+    }
+  }
+);
+
+// GET /api/reporting/dimensional/executive-analytics
+router.get(
+  '/dimensional/executive-analytics',
+  requireAuth,
+  requireRole('polyfit_ops', 'super_admin'),
+  async (req, res) => {
+    try {
+      const monthKey = req.query.month_key || req.query.monthKey;
+      const analytics = await getDimensionalExecutiveAnalytics(monthKey);
+      return res.status(200).json({ success: true, analytics });
+    } catch (err) {
+      console.error('[reportingRoutes] Executive analytics error:', err.message);
+      return res.status(500).json({ error: err.message, code: 'REPORTING_DIMENSIONAL_FAILED' });
+    }
+  }
+);
+
+// POST /api/reporting/dimensional/refresh-executive-analytics
+router.post(
+  '/dimensional/refresh-executive-analytics',
+  requireAuth,
+  requireRole('polyfit_ops', 'super_admin'),
+  async (req, res) => {
+    try {
+      const result = await refreshExecutiveAnalytics();
+      return res.status(200).json(result);
+    } catch (err) {
+      console.error('[reportingRoutes] Refresh executive analytics error:', err.message);
+      return res.status(500).json({ error: err.message, code: 'REPORTING_REFRESH_FAILED' });
+    }
+  }
+);
 
 module.exports = router;

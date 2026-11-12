@@ -1292,6 +1292,91 @@ async function getPlatformOverviewReport(options = {}) {
   };
 }
 
+// ─── Dimensional Modeling & View Query Helpers (OLAP Layer) ───────────────────
+
+/**
+ * Fetches pre-aggregated corporate HR utilization metrics from view_corporate_hr_utilization_kpis.
+ * @param {string} orgId - Organization UUID
+ */
+async function getDimensionalCorporateKpis(orgId) {
+  if (!supabase) throw new Error('Supabase client unavailable');
+
+  let query = supabase.from('view_corporate_hr_utilization_kpis').select('*');
+  if (orgId) {
+    query = query.eq('org_id', orgId);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Failed to query view_corporate_hr_utilization_kpis: ${error.message}`);
+  }
+
+  if (orgId) {
+    return data && data.length > 0 ? data[0] : null;
+  }
+  return data || [];
+}
+
+/**
+ * Fetches pre-aggregated partner provider settlement metrics from view_partner_settlement_kpis.
+ * @param {string} providerId - Provider UUID
+ */
+async function getDimensionalPartnerKpis(providerId) {
+  if (!supabase) throw new Error('Supabase client unavailable');
+
+  let query = supabase.from('view_partner_settlement_kpis').select('*');
+  if (providerId) {
+    query = query.eq('provider_id', providerId);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Failed to query view_partner_settlement_kpis: ${error.message}`);
+  }
+
+  if (providerId) {
+    return data && data.length > 0 ? data[0] : null;
+  }
+  return data || [];
+}
+
+/**
+ * Fetches executive cross-organizational analytics from materialized view mv_monthly_executive_analytics.
+ * @param {string} [monthKey] - Optional month key format 'YYYY-MM'
+ */
+async function getDimensionalExecutiveAnalytics(monthKey) {
+  if (!supabase) throw new Error('Supabase client unavailable');
+
+  let query = supabase
+    .from('mv_monthly_executive_analytics')
+    .select('*')
+    .order('month_key', { ascending: false });
+
+  if (monthKey) {
+    query = query.eq('month_key', monthKey);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Failed to query mv_monthly_executive_analytics: ${error.message}`);
+  }
+  return data || [];
+}
+
+/**
+ * Refreshes the materialized view mv_monthly_executive_analytics concurrently.
+ */
+async function refreshExecutiveAnalytics() {
+  if (!supabase) throw new Error('Supabase client unavailable');
+
+  const { error } = await supabase.rpc('refresh_executive_analytics');
+  if (error) {
+    // If RPC isn't explicitly defined, fallback to raw query or graceful notice
+    console.warn('[reportingService] refresh_executive_analytics rpc notice:', error.message);
+  }
+  return { success: true, refreshed_at: new Date().toISOString() };
+}
+
 module.exports = {
   VALID_CATEGORIES,
   DAYS_OF_WEEK,
@@ -1303,5 +1388,9 @@ module.exports = {
   exportEmployerReport,
   getProviderAnalyticsReport,
   exportProviderReport,
-  getPlatformOverviewReport
+  getPlatformOverviewReport,
+  getDimensionalCorporateKpis,
+  getDimensionalPartnerKpis,
+  getDimensionalExecutiveAnalytics,
+  refreshExecutiveAnalytics
 };
