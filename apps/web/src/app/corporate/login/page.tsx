@@ -193,53 +193,56 @@ function CorporateLoginContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#071521] text-white flex flex-col justify-between selection:bg-emerald-500/30 selection:text-emerald-200">
+    <div className="min-h-screen bg-[#F7F9FC] text-[#0B1F33] flex flex-col justify-between selection:bg-[#28D17C]/20 selection:text-[#0B1F33] relative overflow-x-hidden">
+      {/* Ambient Longevity & Wellness Glow */}
+      <div className="absolute top-0 inset-x-0 h-96 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(40,209,124,0.12),rgba(0,210,180,0.05)_50%,transparent_80%)] pointer-events-none" />
+
       {/* Top Navbar */}
-      <header className="h-16 px-6 bg-[#0B1F33]/80 backdrop-blur-md border-b border-slate-800/80 flex items-center justify-between sticky top-0 z-20">
+      <header className="h-16 px-6 bg-white/80 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center gap-4">
           <Link
             href="/"
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#0B1F33] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Back to website</span>
           </Link>
-          <div className="h-4 w-px bg-slate-800 hidden sm:block" />
+          <div className="h-4 w-px bg-slate-200 hidden sm:block" />
           <Link href="/" className="flex items-center gap-2">
-            <PolyFitLogo theme="dark" iconSize={26} />
+            <PolyFitLogo theme="light" iconSize={26} />
           </Link>
         </div>
 
         <div className="flex items-center gap-3">
           <Link
             href="/corporate/register"
-            className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
+            className="text-xs font-semibold text-[#008A4B] hover:text-[#006837] transition-colors"
           >
             New Employer? Enroll Team
           </Link>
-          <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-            <Building2 className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-1.5 text-xs text-[#008A4B] font-semibold bg-[#E9FAF2] px-3 py-1 rounded-full border border-[#B7F1D2]">
+            <Building2 className="w-3.5 h-3.5 text-[#28D17C]" />
             <span>Corporate HR Portal</span>
           </div>
         </div>
       </header>
 
       {/* Main Authentication Card */}
-      <main className="flex-1 flex items-center justify-center px-4 py-12 sm:py-16">
+      <main className="flex-1 flex items-center justify-center px-4 py-12 sm:py-16 relative z-10">
         <div className="w-full max-w-md space-y-6">
           {/* Header Title */}
           <div className="text-center space-y-2">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 mx-auto shadow-lg shadow-emerald-500/20 flex items-center justify-center">
-              <div className="w-full h-full bg-[#0B1F33] rounded-[14px] flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-emerald-400" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 mx-auto shadow-md shadow-emerald-500/15 flex items-center justify-center">
+              <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-[#28D17C]" />
               </div>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">
+            <h1 className="text-2xl font-extrabold tracking-tight text-[#0B1F33]">
               {mode === "signin" && "Corporate HR Portal"}
               {mode === "lookup" && "Check Registration Status"}
               {mode === "reset" && "Reset Administrator Password"}
             </h1>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
               {mode === "signin" &&
                 "Access employee benefit rosters, utilization analytics, and automated RRA EBM tax invoices."}
               {mode === "lookup" &&
@@ -250,7 +253,7 @@ function CorporateLoginContent() {
           </div>
 
           {/* Mode Switcher Tabs */}
-          <div className="flex p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-medium">
+          <div className="flex p-1 rounded-xl bg-slate-100 border border-slate-200/90 text-xs font-medium">
             <button
               type="button"
               onClick={() => {
@@ -260,8 +263,8 @@ function CorporateLoginContent() {
               }}
               className={`flex-1 py-2 rounded-lg transition-all ${
                 mode === "signin"
-                  ? "bg-emerald-500 text-slate-950 font-bold shadow-xs"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-[#0B1F33] text-white font-bold shadow-xs"
+                  : "text-slate-600 hover:text-[#0B1F33]"
               }`}
             >
               Sign In
@@ -275,8 +278,8 @@ function CorporateLoginContent() {
               }}
               className={`flex-1 py-2 rounded-lg transition-all ${
                 mode === "lookup"
-                  ? "bg-emerald-500 text-slate-950 font-bold shadow-xs"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-[#0B1F33] text-white font-bold shadow-xs"
+                  : "text-slate-600 hover:text-[#0B1F33]"
               }`}
             >
               Application Status
@@ -290,8 +293,8 @@ function CorporateLoginContent() {
               }}
               className={`flex-1 py-2 rounded-lg transition-all ${
                 mode === "reset"
-                  ? "bg-emerald-500 text-slate-950 font-bold shadow-xs"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-[#0B1F33] text-white font-bold shadow-xs"
+                  : "text-slate-600 hover:text-[#0B1F33]"
               }`}
             >
               Reset
@@ -302,15 +305,15 @@ function CorporateLoginContent() {
           {errorMsg && (
             <div
               role="alert"
-              className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-start gap-2.5 animate-in fade-in-50 duration-200"
+              className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2.5 animate-in fade-in-50 duration-200"
             >
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
               <div className="flex-1 space-y-1">
                 <p className="font-semibold">{errorMsg}</p>
                 {lookupResult?.status === "invite_pending" && lookupResult.invitation_token && (
                   <Link
                     href={`/corporate/activate?token=${lookupResult.invitation_token}`}
-                    className="inline-flex items-center gap-1 font-bold text-emerald-400 hover:underline pt-1"
+                    className="inline-flex items-center gap-1 font-bold text-[#008A4B] hover:underline pt-1"
                   >
                     <span>Click here to formulate password & activate</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -323,26 +326,26 @@ function CorporateLoginContent() {
           {successMsg && (
             <div
               role="status"
-              className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-start gap-2.5 animate-in fade-in-50 duration-200"
+              className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start gap-2.5 animate-in fade-in-50 duration-200"
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-4 h-4 text-[#28D17C] shrink-0 mt-0.5" />
               <p className="font-medium flex-1">{successMsg}</p>
             </div>
           )}
 
           {/* Form Container */}
-          <div className="bg-[#0B1F33] border border-slate-800 rounded-2xl p-6 shadow-xl shadow-black/40">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-[0_4px_24px_-4px_rgba(11,31,51,0.08),0_1px_3px_rgba(11,31,51,0.04)]">
             {mode === "signin" && (
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div>
                   <label
                     htmlFor={emailId}
-                    className="block text-xs font-semibold text-slate-300 mb-1.5"
+                    className="block text-xs font-semibold text-[#0B1F33] mb-1.5"
                   >
                     Official Corporate Email
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       id={emailId}
                       type="email"
@@ -350,7 +353,7 @@ function CorporateLoginContent() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="hr@company.rw"
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+                      className="w-full bg-slate-50/70 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#0B1F33] placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#28D17C] focus:ring-2 focus:ring-[#28D17C]/20 transition-all"
                     />
                   </div>
                 </div>
@@ -359,20 +362,20 @@ function CorporateLoginContent() {
                   <div className="flex items-center justify-between mb-1.5">
                     <label
                       htmlFor={passwordId}
-                      className="block text-xs font-semibold text-slate-300"
+                      className="block text-xs font-semibold text-[#0B1F33]"
                     >
                       Administrator Password
                     </label>
                     <button
                       type="button"
                       onClick={() => setMode("reset")}
-                      className="text-[11px] font-medium text-emerald-400 hover:text-emerald-300"
+                      className="text-[11px] font-semibold text-[#008A4B] hover:text-[#006837]"
                     >
                       Forgot?
                     </button>
                   </div>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       id={passwordId}
                       type={showPassword ? "text" : "password"}
@@ -380,12 +383,12 @@ function CorporateLoginContent() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••••••"
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-10 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+                      className="w-full bg-slate-50/70 border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-xs text-[#0B1F33] placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#28D17C] focus:ring-2 focus:ring-[#28D17C]/20 transition-all"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-0.5"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -400,16 +403,16 @@ function CorporateLoginContent() {
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="rounded border-slate-700 bg-slate-900 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-900 w-3.5 h-3.5"
+                      className="rounded border-slate-300 text-[#28D17C] focus:ring-[#28D17C] w-3.5 h-3.5"
                     />
-                    <span className="text-xs text-slate-400">Remember session</span>
+                    <span className="text-xs text-slate-600">Remember session</span>
                   </label>
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full mt-2 py-3 px-4 rounded-xl font-bold text-xs bg-emerald-500 text-slate-950 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2"
+                  className="w-full mt-2 py-3 px-4 rounded-xl font-bold text-xs bg-[#28D17C] text-slate-950 hover:bg-[#22bf6f] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-emerald-500/15 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {loading ? (
                     <>
@@ -431,12 +434,12 @@ function CorporateLoginContent() {
                 <div>
                   <label
                     htmlFor={emailId}
-                    className="block text-xs font-semibold text-slate-300 mb-1.5"
+                    className="block text-xs font-semibold text-[#0B1F33] mb-1.5"
                   >
                     Registered Work Email
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       id={emailId}
                       type="email"
@@ -444,7 +447,7 @@ function CorporateLoginContent() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="contact@company.rw"
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+                      className="w-full bg-slate-50/70 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#0B1F33] placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#28D17C] focus:ring-2 focus:ring-[#28D17C]/20 transition-all"
                     />
                   </div>
                 </div>
@@ -452,7 +455,7 @@ function CorporateLoginContent() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-emerald-500 text-slate-950 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-[#28D17C] text-slate-950 hover:bg-[#22bf6f] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-emerald-500/15"
                 >
                   {loading ? (
                     <>
@@ -468,23 +471,23 @@ function CorporateLoginContent() {
                 </button>
 
                 {lookupResult && (
-                  <div className="mt-4 p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-3">
+                  <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-slate-400">Organization:</span>
-                      <span className="text-xs font-bold text-white">
+                      <span className="text-xs text-slate-500">Organization:</span>
+                      <span className="text-xs font-bold text-[#0B1F33]">
                         {lookupResult.organization_name || "Enterprise Client"}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-slate-400">Status:</span>
+                      <span className="text-xs text-slate-500">Status:</span>
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                           lookupResult.status === "active"
-                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                             : lookupResult.status === "invite_pending"
-                            ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                            : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                            ? "bg-blue-50 text-blue-700 border border-blue-200"
+                            : "bg-amber-50 text-amber-700 border border-amber-200"
                         }`}
                       >
                         {lookupResult.status === "active"
@@ -496,8 +499,8 @@ function CorporateLoginContent() {
                     </div>
 
                     {lookupResult.status === "pending_review" && (
-                      <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-start gap-2">
-                        <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2">
+                        <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                         <p className="text-[11px] leading-relaxed">
                           Your application is currently being verified by PolyFit Compliance (SLA: 24h
                           max). Once approved, an activation link will be sent to your email.
@@ -508,7 +511,7 @@ function CorporateLoginContent() {
                     {lookupResult.status === "invite_pending" && lookupResult.invitation_token && (
                       <Link
                         href={`/corporate/activate?token=${lookupResult.invitation_token}`}
-                        className="w-full py-2.5 px-3 rounded-lg bg-emerald-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-emerald-400 transition-colors"
+                        className="w-full py-2.5 px-3 rounded-lg bg-[#28D17C] text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-[#22bf6f] transition-colors shadow-xs"
                       >
                         <span>Activate & Formulate Password Now</span>
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -519,7 +522,7 @@ function CorporateLoginContent() {
                       <button
                         type="button"
                         onClick={() => setMode("signin")}
-                        className="w-full py-2.5 px-3 rounded-lg bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-slate-700 transition-colors"
+                        className="w-full py-2.5 px-3 rounded-lg bg-[#0B1F33] text-white font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-slate-800 transition-colors"
                       >
                         <span>Switch to Sign In & Enter Password</span>
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -535,12 +538,12 @@ function CorporateLoginContent() {
                 <div>
                   <label
                     htmlFor={emailId}
-                    className="block text-xs font-semibold text-slate-300 mb-1.5"
+                    className="block text-xs font-semibold text-[#0B1F33] mb-1.5"
                   >
                     Work Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       id={emailId}
                       type="email"
@@ -548,7 +551,7 @@ function CorporateLoginContent() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="hr@company.rw"
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+                      className="w-full bg-slate-50/70 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#0B1F33] placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#28D17C] focus:ring-2 focus:ring-[#28D17C]/20 transition-all"
                     />
                   </div>
                 </div>
@@ -556,7 +559,7 @@ function CorporateLoginContent() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-emerald-500 text-slate-950 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-[#28D17C] text-slate-950 hover:bg-[#22bf6f] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-emerald-500/15"
                 >
                   {loading ? (
                     <>
@@ -575,7 +578,7 @@ function CorporateLoginContent() {
                   <button
                     type="button"
                     onClick={() => setMode("signin")}
-                    className="text-xs text-slate-400 hover:text-white transition-colors"
+                    className="text-xs text-slate-500 hover:text-[#0B1F33] transition-colors"
                   >
                     Remember your password? Return to Sign In
                   </button>
@@ -588,22 +591,22 @@ function CorporateLoginContent() {
           <div className="text-center space-y-3 pt-2">
             <p className="text-xs text-slate-500">
               Need assistance? Contact your dedicated corporate account executive at{" "}
-              <a href="tel:+250788123456" className="text-slate-300 font-semibold hover:underline">
+              <a href="tel:+250788123456" className="text-[#0B1F33] font-semibold hover:underline">
                 +250 788 123 456
               </a>{" "}
               or via WhatsApp.
             </p>
 
-            <div className="flex items-center justify-center gap-4 text-[11px] text-slate-500 pt-2 border-t border-slate-900">
-              <Link href="/partner/login" className="hover:text-slate-400 transition-colors">
+            <div className="flex items-center justify-center gap-4 text-[11px] text-slate-500 pt-2 border-t border-slate-200">
+              <Link href="/partner/login" className="hover:text-[#0B1F33] transition-colors">
                 Partner Facility Login
               </Link>
               <span>•</span>
-              <Link href="/operations/login" className="hover:text-slate-400 transition-colors">
+              <Link href="/operations/login" className="hover:text-[#0B1F33] transition-colors">
                 PolyFit Operations
               </Link>
               <span>•</span>
-              <Link href="/privacy" className="hover:text-slate-400 transition-colors">
+              <Link href="/privacy" className="hover:text-[#0B1F33] transition-colors">
                 Privacy Policy
               </Link>
             </div>
@@ -618,10 +621,10 @@ export default function CorporateLoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#071521] flex items-center justify-center">
+        <div className="min-h-screen bg-[#F7F9FC] flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-8 h-8 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin" />
-            <p className="text-xs font-semibold text-slate-400">Loading Corporate Portal...</p>
+            <div className="w-8 h-8 rounded-full border-2 border-[#28D17C] border-t-transparent animate-spin" />
+            <p className="text-xs font-semibold text-slate-500">Loading Corporate Portal...</p>
           </div>
         </div>
       }

@@ -357,7 +357,7 @@ export default function SupportOperationsPage() {
   }, [auditLogs, auditSearch]);
 
   return (
-    <div className="min-h-screen bg-[#071521] text-white p-6 space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Top Header & Role Simulator */}
       <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 pb-6 border-b border-[#21405A]">
         <div>

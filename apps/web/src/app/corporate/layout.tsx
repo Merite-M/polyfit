@@ -46,10 +46,10 @@ function CorporateLayoutContent({ children }: { children: React.ReactNode }) {
   // Loading indicator while verifying authentication or fetching organization state
   if (authLoading || (!user && !isAuthPage) || organizationStatus === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#07131F] text-slate-300">
+      <div className="flex min-h-screen items-center justify-center bg-[#F7F9FC] text-[#0B1F33]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-medium text-slate-400">Verifying corporate workspace access...</p>
+          <div className="w-8 h-8 border-2 border-[#28D17C] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-semibold text-slate-500">Verifying corporate workspace access...</p>
         </div>
       </div>
     );
@@ -70,35 +70,38 @@ function CorporateLayoutContent({ children }: { children: React.ReactNode }) {
   // No Corporate Account Linked
   if (organizationStatus === "not_found" || !organization || !organization.id) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#07131F] text-white p-6">
-        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-5 shadow-2xl">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto border border-amber-500/20">
+      <div className="flex min-h-screen items-center justify-center bg-[#F7F9FC] text-[#0B1F33] p-6 relative overflow-x-hidden">
+        {/* Ambient Longevity Glow */}
+        <div className="absolute top-0 inset-x-0 h-96 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(245,158,11,0.08),rgba(247,249,252,0)_70%)] pointer-events-none" />
+
+        <div className="max-w-md w-full bg-white border border-slate-200/90 rounded-3xl p-8 text-center space-y-5 shadow-[0_4px_24px_-4px_rgba(11,31,51,0.08),0_1px_3px_rgba(11,31,51,0.04)] relative z-10">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200">
             <Building2 className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold tracking-tight">No Corporate Account Linked</h2>
-            <p className="text-sm text-slate-400 mt-2">
+            <h2 className="text-xl font-extrabold tracking-tight text-[#0B1F33]">No Corporate Account Linked</h2>
+            <p className="text-xs text-slate-500 mt-2 leading-relaxed">
               We couldn&apos;t find an active corporate employer account linked to{" "}
-              <span className="text-emerald-400 font-medium">{user?.email}</span>.
+              <span className="text-[#0B1F33] font-semibold">{user?.email}</span>.
             </p>
           </div>
           <div className="pt-2 flex flex-col gap-2.5">
             <Link
               href="/corporate/activate"
-              className="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm transition-all flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 rounded-xl bg-[#28D17C] hover:bg-[#22bf6f] text-slate-950 font-bold text-xs transition-all shadow-md shadow-emerald-500/15 flex items-center justify-center gap-2 cursor-pointer"
             >
               Enter Corporate Activation Token
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/corporate/register"
-              className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-sm transition-all"
+              className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0B1F33] font-semibold text-xs transition-all border border-slate-200/80"
             >
               Register New Organization
             </Link>
             <button
               onClick={() => signOut("/corporate/login")}
-              className="w-full py-2 text-xs text-slate-500 hover:text-slate-300 flex items-center justify-center gap-1.5 transition-colors"
+              className="w-full py-2 text-xs text-slate-500 hover:text-[#0B1F33] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               Sign Out & Switch Account

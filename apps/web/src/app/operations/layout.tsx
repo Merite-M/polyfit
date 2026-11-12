@@ -35,7 +35,7 @@ export default function OperationsLayout({
   // Login page renders without the operations navigation frame
   if (isLoginPage) {
     return (
-      <main className="min-h-screen bg-[#07131F] text-slate-100">
+      <main className="min-h-screen bg-[#F7F9FC] text-[#0B1F33]">
         {children}
       </main>
     );
@@ -44,10 +44,10 @@ export default function OperationsLayout({
   // Loading security check
   if (authLoading || (!user && !isLoginPage)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#07131F] text-slate-300">
+      <div className="flex min-h-screen items-center justify-center bg-[#F7F9FC] text-[#0B1F33]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-medium text-slate-400">Verifying PolyFit Operations clearance...</p>
+          <div className="w-8 h-8 border-2 border-[#28D17C] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-semibold text-slate-500">Verifying PolyFit Operations clearance...</p>
         </div>
       </div>
     );
@@ -57,34 +57,37 @@ export default function OperationsLayout({
   const hasClearance = isSuperAdmin || isDemoMode || role === "super_admin" || role === "polyfit_ops";
   if (!hasClearance) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#07131F] text-white p-6">
-        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-5 shadow-2xl">
-          <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto">
+      <div className="flex min-h-screen items-center justify-center bg-[#F7F9FC] text-[#0B1F33] p-6 relative overflow-x-hidden">
+        {/* Ambient Longevity & Security Glow */}
+        <div className="absolute top-0 inset-x-0 h-96 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(239,68,68,0.08),rgba(247,249,252,0)_70%)] pointer-events-none" />
+
+        <div className="max-w-md w-full bg-white border border-slate-200/90 rounded-3xl p-8 text-center space-y-5 shadow-[0_4px_24px_-4px_rgba(11,31,51,0.08),0_1px_3px_rgba(11,31,51,0.04)] relative z-10">
+          <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto">
             <ShieldAlert className="w-7 h-7" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-bold tracking-widest text-red-400 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
               403 Forbidden
             </span>
-            <h2 className="text-xl font-bold tracking-tight text-white mt-2">
+            <h2 className="text-xl font-extrabold tracking-tight text-[#0B1F33] mt-2">
               PolyFit Operations Clearance Required
             </h2>
-            <p className="text-xs text-slate-400 mt-2">
-              Your account <span className="text-white font-medium">{user?.email}</span> is authenticated, but does not hold PolyFit Operations or Super Admin clearance.
+            <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+              Your account <span className="text-[#0B1F33] font-semibold">{user?.email}</span> is authenticated, but does not hold PolyFit Operations or Super Admin clearance.
             </p>
           </div>
 
           <div className="pt-2 flex flex-col gap-2.5">
             <button
               onClick={() => signOut("/operations/login")}
-              className="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs transition-all flex items-center justify-center gap-1.5"
+              className="w-full py-2.5 px-4 rounded-xl bg-[#28D17C] hover:bg-[#22bf6f] text-slate-950 font-bold text-xs transition-all shadow-md shadow-emerald-500/15 flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
               Sign In with Authorized Staff Account
             </button>
             <Link
               href="/"
-              className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all"
+              className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0B1F33] font-semibold text-xs transition-all border border-slate-200/80"
             >
               Return to Public Website
             </Link>
