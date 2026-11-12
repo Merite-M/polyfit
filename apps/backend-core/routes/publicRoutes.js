@@ -669,6 +669,31 @@ router.get('/pricing', (req, res) => {
 });
 
 /**
+ * GET /api/public/enrolled-organizations
+ * Public list of active sponsored corporate clients for landing page exploration
+ */
+router.get('/enrolled-organizations', async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit || '6', 10), 20);
+    if (!supabase) {
+      return res.status(200).json({ organizations: [] });
+    }
+
+    const { data, error } = await supabase
+      .from('organizations')
+      .select('id, name, slug, allowed_domains, industry, logo_url')
+      .eq('status', 'active')
+      .limit(limit);
+
+    if (error) throw error;
+    return res.status(200).json({ organizations: data || [] });
+  } catch (err) {
+    console.error('[publicRoutes/enrolled-organizations] Error:', err);
+    return res.status(200).json({ organizations: [] });
+  }
+});
+
+/**
  * GET /api/public/verify-company
  * Instant corporate eligibility search for public site & employee onboarding
  */

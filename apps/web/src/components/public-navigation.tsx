@@ -132,6 +132,7 @@ export default function PublicNavigation({ onOpenLeadForm }: PublicNavigationPro
         )}
       </nav>
 
+
       {/* Global 3-Actor Intent Gateway Modal */}
       <VisitorIntentModal isOpen={isIntentOpen} onClose={closeIntent} />
     </>

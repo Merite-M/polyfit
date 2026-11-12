@@ -59,7 +59,7 @@ export default function UniversalJoinPage() {
   const sampleCompanies = [
     { label: "Bank of Kigali", query: "bk.rw" },
     { label: "BK Phone (+250 788 123 456)", query: "+250788123456" },
-    { label: "TechCorp Rwanda", query: "techcorp-rwanda" },
+    { label: "TechCorp Rwanda", query: "techcorp.rw" },
     { label: "Irembo", query: "irembo.gov.rw" },
     { label: "Equity Bank", query: "equitybank.co.ke" }
   ];

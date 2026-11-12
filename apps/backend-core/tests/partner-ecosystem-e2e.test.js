@@ -130,12 +130,11 @@ describe('PolyFit Partner Ecosystem End-to-End Audit & Hardening', () => {
         return;
       }
 
-      // Clear any recent visits for altEmp
+      // Clear any visits for altEmp to prevent stale anti-passback locks
       await supabase
         .from('visits')
         .delete()
-        .eq('employee_id', altEmp.id)
-        .gte('created_at', new Date(Date.now() - 3600000).toISOString());
+        .eq('employee_id', altEmp.id);
 
       const altSecret = deriveEmployeeSecret(altEmp.id);
       const altToken = generateTotp(altSecret);

@@ -58,7 +58,7 @@ export function CompanySponsorLookup() {
   useEffect(() => {
     async function fetchEnrolledCompanies() {
       try {
-        const res = await apiFetch<any>('/api/organizations?limit=4');
+        const res = await apiFetch<any>('/api/public/enrolled-organizations?limit=4');
         const list = res?.organizations || res?.data || (Array.isArray(res) ? res : []);
         if (Array.isArray(list) && list.length > 0) {
           const mapped = list.map((org: any) => ({
@@ -136,8 +136,13 @@ export function CompanySponsorLookup() {
         >
           <div className="relative flex flex-col sm:flex-row items-center gap-2.5 p-1.5 bg-background border border-border rounded-2xl shadow-sm focus-within:ring-2 focus-within:ring-emerald-500/30 focus-within:border-emerald-500 transition-all">
             <div className="relative flex-1 w-full flex items-center pl-3.5">
+              <label htmlFor="sponsor-lookup-input" className="sr-only">
+                Work email or corporate domain
+              </label>
               <Search className="w-5 h-5 text-muted-foreground shrink-0" />
               <input
+                id="sponsor-lookup-input"
+                name="sponsor_lookup_query"
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
