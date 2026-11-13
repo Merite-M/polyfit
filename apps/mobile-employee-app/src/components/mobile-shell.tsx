@@ -4,7 +4,8 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, useWindowDimensions, Platform, StatusBar } from 'react-native';
+import { View, StyleSheet, useWindowDimensions, Platform } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { Palette, Radius } from '@/constants/theme';
 
 interface MobileShellProps {
@@ -18,7 +19,7 @@ export function MobileShell({ children }: MobileShellProps) {
   if (!isDesktopWeb) {
     return (
       <View style={styles.nativeContainer}>
-        <StatusBar barStyle="light-content" backgroundColor="#0B1F33" />
+        <StatusBar style="light" />
         {children}
         {Platform.OS === 'web' && (
           <View
@@ -49,7 +50,7 @@ export function MobileShell({ children }: MobileShellProps) {
 
           {/* Screen Content Viewport */}
           <View style={styles.screenViewport}>
-            <StatusBar barStyle="light-content" />
+            <StatusBar style="light" />
             {children}
           </View>
 

@@ -35,7 +35,7 @@ export const OtpCodeStep: React.FC = () => {
 
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [resendCooldown, setResendCooldown] = useState(45);
-  const inputRefs = useRef<Array<TextInput | null>>([]);
+  const inputRefs = useRef<Array<any>>([]);
 
   const isPhoneDestination = authIdentifierType === 'phone' || (Boolean(phone) && !email);
   const displayTarget = phone || email || identifier || 'your phone or work email';

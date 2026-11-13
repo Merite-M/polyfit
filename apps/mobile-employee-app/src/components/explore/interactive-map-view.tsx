@@ -81,7 +81,7 @@ export function InteractiveMapView({
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
-  const carouselRef = useRef<ScrollView>(null);
+  const carouselRef = useRef<any>(null);
   const panStartRef = useRef({ x: 0, y: 0 });
   const touchStartPos = useRef({ x: 0, y: 0 });
 
