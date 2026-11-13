@@ -12,10 +12,7 @@ import {
 } from '@/types/discovery';
 
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ||
-  (process.env.NODE_ENV === 'production'
-    ? 'https://polyfit-backend.onrender.com'
-    : 'http://localhost:3001');
+  process.env.EXPO_PUBLIC_API_URL || 'https://polyfit-backend.onrender.com';
 
 const STORAGE_KEY_FACILITIES_CACHE = 'polyfit_cached_facilities';
 
@@ -653,8 +650,24 @@ export class DiscoveryService {
         const json = await res.json();
         const rawResults: any[] = json.results || [];
 
+        // Filter out test artifact locations and deduplicate by location_name
+        const seenNames = new Set<string>();
+        const sanitizedResults = rawResults.filter((item) => {
+          const name = String(item.location_name || item.name || '').trim();
+          const email = String(item.provider?.contact_email || '').toLowerCase();
+          if (name.includes('179') || email.includes('test') || email.includes('polyfit-test')) {
+            return false;
+          }
+          const normalized = name.toLowerCase();
+          if (seenNames.has(normalized)) {
+            return false;
+          }
+          seenNames.add(normalized);
+          return true;
+        });
+
         // Enrich results with neighborhood and photos if needed
-        const enriched: DiscoveredFacility[] = rawResults.map((item, index) => {
+        const enriched: DiscoveredFacility[] = sanitizedResults.map((item, index) => {
           const fallbackCurated = CURATED_KIGALI_FACILITIES[index % CURATED_KIGALI_FACILITIES.length];
           const itemPhotos = item.photos && item.photos.length > 0 ? item.photos : fallbackCurated.photos;
           const neighborhood = extractNeighborhood(item.address, item.location_name, item.city);

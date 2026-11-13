@@ -15,7 +15,7 @@ export default function TabLayout() {
   const isBenefitActivated = useAuthStore((s) => s.isBenefitActivated);
 
   if (!isBenefitActivated) {
-    return <Redirect href={'/auth' as any} />;
+    return <Redirect href={'/(auth)' as any} />;
   }
 
   return (

@@ -215,7 +215,12 @@ export function FilterBottomSheet({ visible, onClose }: FilterBottomSheetProps) 
 
           {/* Sticky Bottom Apply Button */}
           <View style={styles.footerBar}>
-            <Pressable style={styles.applyBtn} onPress={onClose}>
+            <Pressable
+              style={styles.applyBtn}
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel={count > 0 ? `Show Results with ${count} Filters` : 'Show All Facilities'}
+            >
               <Text style={styles.applyBtnText}>
                 {count > 0 ? `Show Results (${count} Filters)` : 'Show All Facilities'}
               </Text>

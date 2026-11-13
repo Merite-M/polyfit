@@ -187,9 +187,13 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
           </View>
           <View style={styles.tierBadge}>
             <Text style={styles.tierBadgeText} numberOfLines={1}>
-              {tierName.includes('Tier')
-                ? tierName.replace(orgName, '').replace(/Standard Corporate/i, 'Corporate').trim() || 'Corporate Tier'
-                : tierName}
+              {tierName
+                .replace(new RegExp(orgName, 'gi'), '')
+                .replace(/Corporate Tier/gi, 'Standard')
+                .replace(/Corporate/gi, '')
+                .trim()
+                ? `${tierName.replace(new RegExp(orgName, 'gi'), '').replace(/Corporate/gi, '').trim().toUpperCase()} TIER`
+                : 'STANDARD TIER'}
             </Text>
           </View>
         </View>
@@ -455,14 +459,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(40, 209, 124, 0.12)',
     borderWidth: 1,
     borderColor: 'rgba(40, 209, 124, 0.3)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 8,
-    maxWidth: '45%',
+    alignSelf: 'flex-start',
+    flexShrink: 0,
   },
   tierBadgeText: {
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '800',
     color: Palette.green,
     textTransform: 'uppercase',
     letterSpacing: 0.5,

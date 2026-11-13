@@ -140,9 +140,21 @@ export function FacilityDetailSheet({
       onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
+        <Pressable
+          style={styles.dismissOverlay}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss facility details backdrop"
+        />
         <View style={styles.sheetContainer}>
           {/* Close Floating Button */}
-          <Pressable style={styles.floatingCloseBtn} onPress={onClose} hitSlop={8}>
+          <Pressable
+            style={styles.floatingCloseBtn}
+            onPress={onClose}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Close facility details"
+          >
             <X size={18} color="#FFFFFF" />
           </Pressable>
 
@@ -392,6 +404,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
     alignItems: 'center',
+  },
+  dismissOverlay: {
+    flex: 1,
+    width: '100%',
   },
   sheetContainer: {
     width: '100%',

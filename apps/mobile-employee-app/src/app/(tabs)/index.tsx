@@ -16,7 +16,7 @@ import {
   Pressable,
   RefreshControl,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { MapPin, X } from 'lucide-react-native';
 import { Palette, Spacing, Radius } from '@/constants/theme';
@@ -31,6 +31,7 @@ import { CheckinSuccessModal } from '@/components/pass/checkin-success-modal';
 import { OfflineVaultService } from '@/services/offline-vault';
 
 export default function AccessPassScreen() {
+  const router = useRouter();
   const {
     employee,
     organization,
@@ -63,6 +64,14 @@ export default function AccessPassScreen() {
   const [inCooldown, setInCooldown] = useState(false);
   const [cooldownRemainingSeconds, setCooldownRemainingSeconds] = useState(0);
   const [isOffline, setIsOffline] = useState(false);
+  const [isTargetBannerDismissed, setIsTargetBannerDismissed] = useState(false);
+
+  // Reset target banner dismissal when a new facility target is selected
+  useEffect(() => {
+    if (params.facilityId || preselectedFacility?.location_id) {
+      setIsTargetBannerDismissed(false);
+    }
+  }, [params.facilityId, preselectedFacility?.location_id]);
 
   // Centralized visits from store
   const monthlyVisits = benefit?.max_monthly_visits || 12;
@@ -98,6 +107,34 @@ export default function AccessPassScreen() {
     }
   }, [offlineTokenSeed, employee?.id, organization?.id]);
 
+  // Real-time network connectivity listener (Fix for basement gym transitions)
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const handleOnline = () => {
+        setIsOffline(false);
+        const apiBaseUrl = process.env.EXPO_PUBLIC_API_URL || 'https://polyfit-backend.onrender.com';
+        if (session?.access_token) {
+          OfflineVaultService.syncOfflineVisits(apiBaseUrl, session.access_token).catch(() => {});
+        }
+      };
+      const handleOffline = () => {
+        setIsOffline(true);
+      };
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setIsOffline(true);
+      }
+
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
+    }
+  }, [session?.access_token]);
+
   // Pull-to-refresh on Pass screen (Fix H2)
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -107,10 +144,7 @@ export default function AccessPassScreen() {
       }
 
       const apiBaseUrl =
-        process.env.EXPO_PUBLIC_API_URL ||
-        (process.env.NODE_ENV === 'production'
-          ? 'https://polyfit-backend.onrender.com'
-          : 'http://localhost:3001');
+        process.env.EXPO_PUBLIC_API_URL || 'https://polyfit-backend.onrender.com';
 
       // 1. Sync any pending offline visits queued in local SecureStore vault
       if (session?.access_token) {
@@ -225,10 +259,7 @@ export default function AccessPassScreen() {
 
     // Online verification
     const apiBaseUrl =
-      process.env.EXPO_PUBLIC_API_URL ||
-      (process.env.NODE_ENV === 'production'
-        ? 'https://polyfit-backend.onrender.com'
-        : 'http://localhost:3001');
+      process.env.EXPO_PUBLIC_API_URL || 'https://polyfit-backend.onrender.com';
 
     try {
       if (session?.access_token) {
@@ -268,12 +299,12 @@ export default function AccessPassScreen() {
   const tierName = benefit?.name || 'Standard Corporate Tier';
   const isFullySponsored = benefit?.is_fully_sponsored ?? true;
 
-  const targetFacility = preselectedFacility || (params.facilityName ? {
+  const targetFacility = !isTargetBannerDismissed && (preselectedFacility || (params.facilityName ? {
     id: params.facilityId || 'target-facility',
     location_name: params.facilityName,
     neighborhood: 'Kigali',
     distance_meters: 250,
-  } as any : null);
+  } as any : null));
 
   return (
     <ScreenContainer edges={['top', 'left', 'right']}>
@@ -319,7 +350,9 @@ export default function AccessPassScreen() {
             <Pressable
               style={styles.selectedFacilityDismiss}
               onPress={() => {
+                setIsTargetBannerDismissed(true);
                 clearPreselectedFacility();
+                router.setParams({ facilityId: undefined, facilityName: undefined });
               }}
               hitSlop={8}
               accessibilityRole="button"
@@ -458,7 +491,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   scrollContent: {
-    paddingBottom: Spacing.eight,
+    paddingBottom: 110,
   },
   selectedFacilityBanner: {
     flexDirection: 'row',

@@ -285,7 +285,7 @@ export default function ExploreNetworkScreen() {
           >
             <SlidersHorizontal
               size={17}
-              color={filterCount > 0 ? '#0B1F33' : Palette.textInverse}
+              color="#0B1F33"
             />
             {filterCount > 0 && (
               <View style={styles.filterBadge}>
@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingBottom: Spacing.eight,
+    paddingBottom: 120,
     gap: Spacing.three,
   },
   emptyContainer: {

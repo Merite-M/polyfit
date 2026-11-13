@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   scrollContent: {
-    paddingBottom: Spacing.eight,
+    paddingBottom: 120,
     gap: Spacing.three,
   },
 });
