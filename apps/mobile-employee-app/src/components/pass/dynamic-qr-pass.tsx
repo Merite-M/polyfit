@@ -1,17 +1,26 @@
 /**
  * PolyFit Corporate Employee App - Tab 1: Hero Dynamic TOTP Access Pass (PF-101)
- * Compliant with Stitch Design Center, Apple HIG, Reanimated physics, and Offline Vault
+ * Upgraded to pure Reanimated 4 UI-thread worklets, Apple Wallet aesthetic,
+ * "Hide Code" toggle (ClassPass/Wellhub inspired), and 100% offline vault resilience.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
   Platform,
-  Animated,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withRepeat,
+  withSequence,
+  Easing,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import {
   ShieldCheck,
   Building2,
@@ -19,6 +28,10 @@ import {
   Camera,
   WifiOff,
   RefreshCw,
+  Eye,
+  EyeOff,
+  Lock,
+  Sparkles,
 } from 'lucide-react-native';
 import { Palette, Spacing, Radius } from '@/constants/theme';
 import { QrCodeMatrix } from '@/components/pass/qr-code-matrix';
@@ -45,6 +58,8 @@ interface DynamicQrPassProps {
   onOpenScanner: () => void;
 }
 
+const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
+
 export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
   employeeId,
   employeeName,
@@ -64,11 +79,11 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
   const [secondsRemaining, setSecondsRemaining] = useState(TOTP_STEP_SECONDS);
   const [liveTimestamp, setLiveTimestamp] = useState(new Date().toLocaleTimeString());
   const [vaultSeed, setVaultSeed] = useState<string | null>(null);
+  const [isCodeHidden, setIsCodeHidden] = useState(false);
 
-  // Animation value for smooth 60/120 FPS progress bar
-  const progressAnim = useRef(new Animated.Value(1)).current;
-  // Animation value for anti-screenshot shimmer ribbon
-  const shimmerAnim = useRef(new Animated.Value(0)).current;
+  // Reanimated 4 Shared Values for 60/120 FPS UI Thread Performance
+  const progressRatio = useSharedValue(1);
+  const shimmerTranslateY = useSharedValue(-25);
 
   // Retrieve seed from SecureStore vault if prop is missing
   useEffect(() => {
@@ -79,25 +94,19 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
     }
   }, [offlineSeed]);
 
-  // Shimmer loop to prevent static screenshot spoofing
+  // Anti-screenshot animated watermark shimmer loop on UI thread
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(shimmerAnim, {
-          toValue: 1,
-          duration: 3000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shimmerAnim, {
-          toValue: 0,
-          duration: 3000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, [shimmerAnim]);
+    shimmerTranslateY.value = withRepeat(
+      withSequence(
+        withTiming(25, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(-25, { duration: 3000, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      true
+    );
+  }, []);
 
-  // 30-second RFC 6238 TOTP rotation timer with smooth 60/120 FPS progress animation
+  // 30-second RFC 6238 TOTP rotation timer with smooth progress animation
   useEffect(() => {
     const updateTotp = () => {
       const now = Date.now();
@@ -116,32 +125,39 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
       });
       setQrPayload(payload);
 
-      // Calculate exact remaining milliseconds for smooth sub-second bar animation
+      // Smooth progress bar animation over exact remaining window
       const remMs = (rem * 1000) - (now % 1000);
-      const startRatio = rem / TOTP_STEP_SECONDS;
-      progressAnim.setValue(startRatio);
-
-      Animated.timing(progressAnim, {
-        toValue: 0,
+      const ratio = rem / TOTP_STEP_SECONDS;
+      progressRatio.value = ratio;
+      progressRatio.value = withTiming(0, {
         duration: Math.max(0, remMs),
-        useNativeDriver: false,
-      }).start();
+        easing: Easing.linear,
+      });
     };
 
     updateTotp();
     const interval = setInterval(updateTotp, 1000);
     return () => clearInterval(interval);
-  }, [employeeId, offlineSeed, vaultSeed, isOffline, progressAnim]);
+  }, [employeeId, offlineSeed, vaultSeed, isOffline]);
 
-  const shimmerTranslate = shimmerAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-30, 30],
+  const animatedProgressStyle = useAnimatedStyle(() => {
+    return {
+      width: `${Math.max(0, Math.min(100, progressRatio.value * 100))}%`,
+    };
   });
 
-  const animatedBarWidth = progressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0%', '100%'],
+  const animatedShimmerStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: shimmerTranslateY.value }],
+    };
   });
+
+  const handleToggleCode = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
+    setIsCodeHidden((prev) => !prev);
+  };
 
   return (
     <View style={styles.container}>
@@ -180,25 +196,61 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
 
         {/* Dynamic QR Pass Display Frame */}
         <View style={styles.qrFrameWrapper}>
-          <View style={styles.qrInnerBox}>
-            {/* The Dynamic RFC 6238 QR Matrix */}
-            <QrCodeMatrix
-              value={qrPayload}
-              size={180}
-              color="#0B1F33"
-              backgroundColor="#FFFFFF"
-            />
+          {/* Hide Code / Show Code Toggle Pill (ClassPass Screenshot Inspired) */}
+          <Pressable
+            style={styles.hideCodePill}
+            onPress={handleToggleCode}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={isCodeHidden ? 'Show Pass Code' : 'Hide Pass Code'}
+          >
+            {isCodeHidden ? (
+              <>
+                <Eye size={13} color="#0B1F33" />
+                <Text style={styles.hideCodePillText}>Show Code</Text>
+              </>
+            ) : (
+              <>
+                <EyeOff size={13} color="#0B1F33" />
+                <Text style={styles.hideCodePillText}>Hide Code</Text>
+              </>
+            )}
+          </Pressable>
 
-            {/* Anti-Screenshot Moving Shimmer Ribbon */}
-            <Animated.View
-              style={[
-                styles.antiScreenshotRibbon,
-                { transform: [{ translateY: shimmerTranslate }] },
-              ]}
-              pointerEvents="none"
-            >
-              <View style={styles.ribbonBar} />
-            </Animated.View>
+          <View style={styles.qrInnerBox}>
+            {isCodeHidden ? (
+              /* Privacy Masked Frame */
+              <Pressable
+                style={styles.hiddenMatrixPlaceholder}
+                onPress={handleToggleCode}
+                accessibilityRole="button"
+                accessibilityLabel="Pass hidden. Tap to reveal QR code."
+              >
+                <View style={styles.hiddenLockIconCircle}>
+                  <Lock size={28} color={Palette.teal} />
+                </View>
+                <Text style={styles.hiddenNoticeTitle}>Pass Hidden</Text>
+                <Text style={styles.hiddenNoticeSub}>Tap to reveal QR</Text>
+              </Pressable>
+            ) : (
+              /* High-Contrast Dynamic RFC 6238 QR Matrix */
+              <>
+                <QrCodeMatrix
+                  value={qrPayload}
+                  size={180}
+                  color="#0B1F33"
+                  backgroundColor="#FFFFFF"
+                />
+
+                {/* Anti-Screenshot Moving Shimmer Ribbon */}
+                <Animated.View
+                  style={[styles.antiScreenshotRibbon, animatedShimmerStyle]}
+                  pointerEvents="none"
+                >
+                  <View style={styles.ribbonBar} />
+                </Animated.View>
+              </>
+            )}
           </View>
 
           {/* Embedded Dynamic Anti-Screenshot Watermark */}
@@ -219,19 +271,21 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
               <Text style={styles.countdownSub}>window</Text>
             </View>
 
-            {/* Large 6-Digit TOTP Code in Mono Font */}
+            {/* Large 6-Digit TOTP Code in Mono Font with Hide Masking */}
             <View style={styles.codeBlock}>
               <Text style={styles.totpLabel}>FRONT DESK ENTRY CODE</Text>
-              <Text style={styles.totpCodeText}>{totpCode}</Text>
+              <Text style={styles.totpCodeText}>
+                {isCodeHidden ? '•••• ••••' : totpCode}
+              </Text>
             </View>
           </View>
 
-          {/* Linear Progress Bar for 30s Window (60/120 FPS Animation) */}
+          {/* Linear Progress Bar for 30s Window (60/120 FPS Reanimated Worklet) */}
           <View style={styles.progressTrack}>
             <Animated.View
               style={[
                 styles.progressBar,
-                { width: animatedBarWidth },
+                animatedProgressStyle,
                 secondsRemaining <= 5 && { backgroundColor: '#FF5A65' },
               ]}
             />
@@ -261,6 +315,8 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
           pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] },
         ]}
         onPress={onOpenScanner}
+        accessibilityRole="button"
+        accessibilityLabel="Scan desk plaque at partner facility"
       >
         <View style={styles.scanBtnIconCircle}>
           <Camera size={20} color="#0B1F33" />
@@ -304,7 +360,7 @@ const styles = StyleSheet.create({
   },
   heroPassCard: {
     backgroundColor: '#0B1F33',
-    borderRadius: Radius.lg,
+    borderRadius: Radius.card,
     padding: Spacing.four,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
@@ -416,18 +472,77 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#071521',
-    borderRadius: Radius.md,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.06)',
     marginBottom: Spacing.three,
+    position: 'relative',
+  },
+  hideCodePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: Radius.full,
+    marginBottom: 10,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        elevation: 2,
+      },
+    }),
+  },
+  hideCodePillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0B1F33',
   },
   qrInnerBox: {
     position: 'relative',
     backgroundColor: '#FFFFFF',
     padding: 8,
-    borderRadius: Radius.md,
+    borderRadius: Radius.card,
     overflow: 'hidden',
+    width: 196,
+    height: 196,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hiddenMatrixPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#0D2235',
+    borderRadius: Radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  hiddenLockIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0, 210, 180, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  hiddenNoticeTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  hiddenNoticeSub: {
+    fontSize: 11,
+    color: Palette.textMuted,
   },
   antiScreenshotRibbon: {
     position: 'absolute',
@@ -567,7 +682,7 @@ const styles = StyleSheet.create({
   scanBtnTitle: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#0B1F33', // Midnight Navy on Electric Green (contrast rule)
+    color: '#0B1F33',
     letterSpacing: -0.2,
   },
   scanBtnSub: {

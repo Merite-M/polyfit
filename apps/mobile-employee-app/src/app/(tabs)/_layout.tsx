@@ -27,7 +27,7 @@ export default function TabLayout() {
         tabBarInactiveTintColor: Palette.textMuted,
         tabBarLabelStyle: styles.tabLabel,
         tabBarItemStyle: styles.tabItem,
-        animation: 'shift',
+        animation: 'none',
       }}
     >
       <Tabs.Screen

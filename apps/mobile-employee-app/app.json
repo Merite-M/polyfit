@@ -9,9 +9,23 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "rw.polyfit.employee",
+      "buildNumber": "1",
+      "infoPlist": {
+        "CADisableMinimumFrameDurationOnPhone": true,
+        "NSCameraUsageDescription": "PolyFit uses your camera to scan QR plaques at partner wellness check-in counters.",
+        "NSLocationWhenInUseUsageDescription": "PolyFit uses your location to discover nearby wellness facilities and verify check-in proximity."
+      }
     },
     "android": {
+      "package": "rw.polyfit.employee",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#0B1F33",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

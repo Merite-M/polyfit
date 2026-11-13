@@ -272,22 +272,22 @@ export const FacilityCard = memo(function FacilityCard({
 
 const styles = StyleSheet.create({
   cardContainer: {
-    backgroundColor: '#0B1F33',
+    backgroundColor: '#FFFFFF',
     borderRadius: Radius.card,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#E2E8F0',
     overflow: 'hidden',
     marginBottom: Spacing.three,
     ...Platform.select({
       web: {
-        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+        boxShadow: '0 4px 20px -2px rgba(11, 31, 51, 0.06), 0 2px 6px -1px rgba(11, 31, 51, 0.04)',
       },
       default: {
-        shadowColor: '#000',
+        shadowColor: '#0B1F33',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        elevation: 3,
       },
     }),
   },
@@ -298,8 +298,8 @@ const styles = StyleSheet.create({
 
   imageWrapper: {
     width: '100%',
-    height: 140,
-    backgroundColor: '#071521',
+    height: 145,
+    backgroundColor: '#F1F5F9',
     position: 'relative',
   },
   coverImage: {
@@ -420,14 +420,15 @@ const styles = StyleSheet.create({
   },
   facilityName: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: '800',
+    color: '#0B1F33',
     letterSpacing: -0.3,
     marginBottom: 2,
   },
   neighborhoodText: {
     fontSize: 12,
     color: Palette.textSecondary,
+    fontWeight: '500',
   },
 
   amenitiesRow: {
@@ -440,22 +441,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#F8FAFC',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#E2E8F0',
   },
   amenityText: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: '#475569',
     textTransform: 'capitalize',
+    fontWeight: '500',
   },
   amenityMoreChip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#F1F5F9',
     paddingHorizontal: 6,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 6,
     justifyContent: 'center',
   },
@@ -470,8 +472,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
-    paddingTop: 8,
+    borderTopColor: '#F1F5F9',
+    paddingTop: 10,
+    marginTop: 2,
   },
   statusRow: {
     flexDirection: 'row',
@@ -486,7 +489,7 @@ const styles = StyleSheet.create({
     backgroundColor: Palette.textMuted,
   },
   statusDotOpen: {
-    backgroundColor: Palette.green,
+    backgroundColor: '#10B981',
   },
   statusDotClosing: {
     backgroundColor: '#F59E0B',
@@ -501,15 +504,15 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   statusTextOpen: {
-    color: '#A7F3D0',
+    color: '#065F46',
     fontWeight: '600',
   },
   statusTextClosing: {
-    color: '#FDE68A',
+    color: '#92400E',
     fontWeight: '600',
   },
   statusTextClosed: {
-    color: '#FCA5A5',
+    color: '#991B1B',
   },
   cardQuickActionsGroup: {
     flexDirection: 'row',
@@ -521,25 +524,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     backgroundColor: 'rgba(0, 210, 180, 0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: Radius.inner,
     borderWidth: 1,
-    borderColor: 'rgba(0, 210, 180, 0.25)',
+    borderColor: 'rgba(0, 210, 180, 0.3)',
   },
   cardQuickRouteText: {
     fontSize: 11,
     fontWeight: '700',
-    color: Palette.teal,
+    color: '#007A68',
   },
   cardQuickCheckinBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     backgroundColor: Palette.green,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: Radius.inner,
   },
   cardQuickCheckinBtnDisabled: {
     backgroundColor: '#F59E0B',

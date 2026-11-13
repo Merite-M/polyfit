@@ -1,28 +1,30 @@
 /**
  * PolyFit Corporate Employee App - Interactive Cross-Platform Map View (PF-100)
  * Native & Web compatible interactive cartography with category pins, GPS radar beacon,
- * neighborhood clusters, and slide-up facility preview cards.
+ * pin clustering, and horizontal swipeable facility preview carousel (ClassPass / Wellhub standard).
  */
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
   useWindowDimensions,
-  PanResponder,
   Platform,
+  ScrollView,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
+import * as Haptics from 'expo-haptics';
 import {
   MapPin,
   Crosshair,
   Plus,
   Minus,
   Star,
-  ChevronRight,
   ShieldCheck,
   Dumbbell,
   Waves,
@@ -32,6 +34,7 @@ import {
   Layers,
   Navigation,
   QrCode,
+  RotateCw,
 } from 'lucide-react-native';
 import { Palette, Spacing, Radius } from '@/constants/theme';
 import { DiscoveredFacility, ProviderCategory } from '@/types/discovery';
@@ -58,6 +61,10 @@ const REGIONAL_ANCHORS = [
   { name: 'Rwamagana', lat: -1.95, lng: 30.434 },
 ];
 
+const CARD_WIDTH = 290;
+const CARD_GAP = 12;
+const CARD_TOTAL_INTERVAL = CARD_WIDTH + CARD_GAP;
+
 export function InteractiveMapView({
   facilities,
   userLocation,
@@ -67,17 +74,18 @@ export function InteractiveMapView({
   const { width } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === 'web' && width > 600;
   const mapWidth = isDesktopWeb ? 378 : Math.min(width, 600);
-  const mapHeight = 440;
+  const mapHeight = 460;
 
   const { navigateToPassWithFacility } = useTabStore();
   const [zoomLevel, setZoomLevel] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
 
+  const carouselRef = useRef<ScrollView>(null);
   const panStartRef = useRef({ x: 0, y: 0 });
-  const panOffsetRef = useRef({ x: 0, y: 0 });
-  panOffsetRef.current = panOffset;
+  const touchStartPos = useRef({ x: 0, y: 0 });
 
-  // Dynamically compute bounding box based on visible facilities or default to nationwide Rwanda
+  // Dynamically compute bounding box based on visible facilities
   const computedBounds = useMemo(() => {
     const validCoords = facilities.filter((f) => f.lat && f.lng);
     if (validCoords.length === 0) {
@@ -92,26 +100,79 @@ export function InteractiveMapView({
     return { minLat, maxLat, minLng, maxLng };
   }, [facilities]);
 
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => false,
-        onMoveShouldSetPanResponder: (_, gestureState) =>
-          Math.abs(gestureState.dx) > 6 || Math.abs(gestureState.dy) > 6,
-        onPanResponderGrant: () => {
-          panStartRef.current = { ...panOffsetRef.current };
-        },
-        onPanResponderMove: (_, gestureState) => {
-          setPanOffset({
-            x: panStartRef.current.x + gestureState.dx,
-            y: panStartRef.current.y + gestureState.dy,
-          });
-        },
-      }),
-    []
-  );
+  // Map latitude/longitude to X/Y pixel coordinates with dynamic bounding box
+  const projectCoords = (lat: number, lng: number) => {
+    const latSpan = Math.max(0.04, computedBounds.maxLat - computedBounds.minLat);
+    const lngSpan = Math.max(0.04, computedBounds.maxLng - computedBounds.minLng);
+
+    // Normalization (0 to 1)
+    const normX = Math.max(0, Math.min(1, (lng - computedBounds.minLng) / lngSpan));
+    const normY = Math.max(0, Math.min(1, (computedBounds.maxLat - lat) / latSpan));
+
+    // Scaled coordinates with zoom and pan
+    const centerX = mapWidth / 2;
+    const centerY = (mapHeight - 80) / 2;
+
+    const x = centerX + (normX * (mapWidth - 80) + 40 - centerX) * zoomLevel + panOffset.x;
+    const y = centerY + (normY * (mapHeight - 160) + 40 - centerY) * zoomLevel + panOffset.y;
+
+    return { x, y };
+  };
+
+  // Scroll carousel to selected facility when selected externally or via pin
+  useEffect(() => {
+    if (selectedFacility && carouselRef.current) {
+      const index = facilities.findIndex((f) => f.location_id === selectedFacility.location_id);
+      if (index >= 0) {
+        carouselRef.current.scrollTo({
+          x: index * CARD_TOTAL_INTERVAL,
+          animated: true,
+        });
+      }
+    }
+  }, [selectedFacility, facilities]);
+
+  // Touch drag handlers
+  const handleTouchStart = (e: any) => {
+    const touch = e.nativeEvent.touches ? e.nativeEvent.touches[0] : e.nativeEvent;
+    touchStartPos.current = { x: touch.pageX, y: touch.pageY };
+    panStartRef.current = { ...panOffset };
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: any) => {
+    if (!isDragging) return;
+    const touch = e.nativeEvent.touches ? e.nativeEvent.touches[0] : e.nativeEvent;
+    const dx = touch.pageX - touchStartPos.current.x;
+    const dy = touch.pageY - touchStartPos.current.y;
+    setPanOffset({
+      x: panStartRef.current.x + dx,
+      y: panStartRef.current.y + dy,
+    });
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
+  const handleZoomIn = () => {
+    if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
+    setZoomLevel((z) => Math.min(2.5, z + 0.3));
+  };
+
+  const handleZoomOut = () => {
+    if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
+    setZoomLevel((z) => Math.max(0.8, z - 0.3));
+  };
+
+  const handleCenterUser = () => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setZoomLevel(1.2);
+    setPanOffset({ x: 0, y: 0 });
+  };
 
   const handleOpenDirections = (fac: DiscoveredFacility) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     if (!fac.lat || !fac.lng) {
       const query = encodeURIComponent(`${fac.location_name}, Rwanda`);
       Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
@@ -128,36 +189,23 @@ export function InteractiveMapView({
   };
 
   const handleQuickCheckIn = (fac: DiscoveredFacility) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     navigateToPassWithFacility(fac);
   };
 
-  // Map latitude/longitude to X/Y pixel coordinates with dynamic bounding box
-  const projectCoords = (lat: number, lng: number) => {
-    const latSpan = Math.max(0.04, computedBounds.maxLat - computedBounds.minLat);
-    const lngSpan = Math.max(0.04, computedBounds.maxLng - computedBounds.minLng);
-
-    // Normalization (0 to 1)
-    const normX = Math.max(0, Math.min(1, (lng - computedBounds.minLng) / lngSpan));
-    const normY = Math.max(0, Math.min(1, (computedBounds.maxLat - lat) / latSpan)); // Invert Y because latitude goes north
-
-    // Scaled coordinates with zoom and pan
-    const centerX = mapWidth / 2;
-    const centerY = mapHeight / 2;
-
-    const x = centerX + (normX * (mapWidth - 80) + 40 - centerX) * zoomLevel + panOffset.x;
-    const y = centerY + (normY * (mapHeight - 80) + 40 - centerY) * zoomLevel + panOffset.y;
-
-    return { x, y };
+  // Carousel horizontal scroll snap handler
+  const handleCarouselScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const activeIndex = Math.round(offsetX / CARD_TOTAL_INTERVAL);
+    if (activeIndex >= 0 && activeIndex < facilities.length) {
+      const activeFac = facilities[activeIndex];
+      if (activeFac && activeFac.location_id !== selectedFacility?.location_id) {
+        onSelectFacility(activeFac);
+      }
+    }
   };
 
-  const handleZoomIn = () => setZoomLevel((z) => Math.min(2.2, z + 0.3));
-  const handleZoomOut = () => setZoomLevel((z) => Math.max(0.8, z - 0.3));
-  const handleCenterUser = () => {
-    setZoomLevel(1.2);
-    setPanOffset({ x: 0, y: 0 });
-  };
-
-  // Render category icon
+  // Category pin icon generator
   const getCategoryPinIcon = (category: ProviderCategory) => {
     switch (category) {
       case 'gym':
@@ -182,22 +230,19 @@ export function InteractiveMapView({
       {/* Visual Cartographic Canvas */}
       <View
         style={[styles.canvasSurface, { width: mapWidth, height: mapHeight }]}
-        {...panResponder.panHandlers}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={() => onSelectFacility(null as any)}
-        />
-        {/* Cartographic Grid & Roads Background Graphic */}
+        {/* Background Grid & Simulated Geography */}
         <View style={styles.gridOverlay}>
-          {/* Main Boulevards Graphic */}
           <View style={styles.roadKN3} />
           <View style={styles.roadKG9} />
           <View style={styles.roadAirportRd} />
           <View style={styles.lakeWaterBody} />
         </View>
 
-        {/* Regional Ambient Labels */}
+        {/* Regional Ambient Geography Labels */}
         {REGIONAL_ANCHORS.map((anchor) => {
           const { x, y } = projectCoords(anchor.lat, anchor.lng);
           return (
@@ -222,7 +267,7 @@ export function InteractiveMapView({
           })()
         )}
 
-        {/* Provider Category Pins */}
+        {/* Provider Category Pins with Selected Elevation */}
         {facilities.map((fac) => {
           if (!fac.lat || !fac.lng) return null;
           const { x, y } = projectCoords(fac.lat, fac.lng);
@@ -237,18 +282,21 @@ export function InteractiveMapView({
                 { left: x - 18, top: y - 36 },
                 isSelected && styles.pinWrapperSelected,
               ]}
-              onPress={(e) => {
-                e.stopPropagation();
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
                 onSelectFacility(fac);
               }}
+              hitSlop={8}
             >
               {isSelected && <View style={[styles.selectedPulseRing, { borderColor: pinColor }]} />}
 
-              {/* Pin Teardrop Shape */}
               <View
                 style={[
                   styles.pinMarker,
-                  { backgroundColor: pinColor, borderColor: isSelected ? '#FFFFFF' : 'rgba(11, 31, 51, 0.8)' },
+                  {
+                    backgroundColor: pinColor,
+                    borderColor: isSelected ? '#FFFFFF' : 'rgba(11, 31, 51, 0.8)',
+                  },
                 ]}
               >
                 {getCategoryPinIcon(fac.provider.category)}
@@ -259,127 +307,154 @@ export function InteractiveMapView({
         })}
       </View>
 
-      {/* Floating Map Controls */}
+      {/* Floating Map Controls Top Bar */}
       <View style={styles.controlsTopRow}>
         <View style={styles.countBadge}>
           <Layers size={13} color={Palette.green} />
           <Text style={styles.countBadgeText}>
-            {facilities.length} Verified Facilities
+            {facilities.length} In-Network
           </Text>
         </View>
 
+        {/* Floating "Redo Search in this Area" Pill (ClassPass Screenshot Inspired) */}
+        <Pressable
+          style={styles.redoSearchBtn}
+          onPress={() => {
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+          }}
+          hitSlop={6}
+        >
+          <RotateCw size={11} color="#0B1F33" />
+          <Text style={styles.redoSearchText}>Search this area</Text>
+        </Pressable>
+
         <View style={styles.controlsGroup}>
-          <Pressable style={styles.controlBtn} onPress={handleZoomIn}>
-            <Plus size={16} color="#FFFFFF" />
+          <Pressable style={styles.controlBtn} onPress={handleZoomIn} hitSlop={6}>
+            <Plus size={15} color="#FFFFFF" />
           </Pressable>
-          <Pressable style={styles.controlBtn} onPress={handleZoomOut}>
-            <Minus size={16} color="#FFFFFF" />
+          <Pressable style={styles.controlBtn} onPress={handleZoomOut} hitSlop={6}>
+            <Minus size={15} color="#FFFFFF" />
           </Pressable>
-          <Pressable style={[styles.controlBtn, styles.controlBtnActive]} onPress={handleCenterUser}>
-            <Crosshair size={16} color={Palette.green} />
+          <Pressable style={[styles.controlBtn, styles.controlBtnActive]} onPress={handleCenterUser} hitSlop={6}>
+            <Crosshair size={15} color={Palette.green} />
           </Pressable>
         </View>
       </View>
 
-      {/* Bottom Floating Facility Preview Slide Card */}
-      {selectedFacility && (
-        <View style={styles.previewCardContainer}>
-          <Pressable
-            style={styles.previewCard}
-            onPress={() => onSelectFacility(selectedFacility)}
-          >
-            {/* Thumbnail */}
-            <Image
-              source={{
-                uri: selectedFacility.photos[0] ||
-                  'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=400&q=80',
-              }}
-              style={styles.previewImage}
-              contentFit="cover"
-              transition={150}
-            />
+      {/* Floating Horizontal Swipeable Facility Carousel (ClassPass Screenshot 1 & 4 Inspired) */}
+      <View style={styles.carouselContainer} pointerEvents="box-none">
+        <ScrollView
+          ref={carouselRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={CARD_TOTAL_INTERVAL}
+          decelerationRate="fast"
+          onMomentumScrollEnd={handleCarouselScroll}
+          contentContainerStyle={styles.carouselScrollContent}
+        >
+          {facilities.map((fac) => {
+            const isSelected = selectedFacility?.location_id === fac.location_id;
+            const categoryColor = getCategoryColor(fac.provider.category);
+            const categoryLabel = getCategoryLabel(fac.provider.category);
+            const isIncluded = fac.isIncludedInPlan !== false;
+            const photoUrl = fac.photos && fac.photos.length > 0
+              ? fac.photos[0]
+              : 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=400&q=80';
 
-            {/* Info */}
-            <View style={styles.previewInfo}>
-              <View style={styles.previewTopRow}>
-                <View
-                  style={[
-                    styles.previewCategoryPill,
-                    { backgroundColor: `${getCategoryColor(selectedFacility.provider.category)}22` },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.previewCategoryText,
-                      { color: getCategoryColor(selectedFacility.provider.category) },
-                    ]}
-                  >
-                    {getCategoryLabel(selectedFacility.provider.category)}
-                  </Text>
-                </View>
-
-                {selectedFacility.isIncludedInPlan !== false ? (
-                  <View style={styles.previewIncludedBadge}>
-                    <ShieldCheck size={10} color="#0B1F33" strokeWidth={2.5} />
-                    <Text style={styles.previewIncludedText}>INCLUDED</Text>
-                  </View>
-                ) : (
-                  <View style={styles.previewUpgradeBadge}>
-                    <Text style={styles.previewUpgradeText}>TIER 2</Text>
-                  </View>
-                )}
-              </View>
-
-              <Text style={styles.previewTitle} numberOfLines={1}>
-                {selectedFacility.location_name}
-              </Text>
-
-              <View style={styles.previewBottomRow}>
-                <View style={styles.previewDistanceRow}>
-                  <MapPin size={11} color={Palette.teal} />
-                  <Text style={styles.previewDistanceText}>
-                    {selectedFacility.distance_km ? `${selectedFacility.distance_km} km` : selectedFacility.neighborhood}
-                  </Text>
-                </View>
-
-                <View style={styles.previewRatingRow}>
-                  <Star size={11} color="#FFB800" fill="#FFB800" />
-                  <Text style={styles.previewRatingText}>
-                    {selectedFacility.provider.rating ? selectedFacility.provider.rating.toFixed(1) : '4.8'}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Quick Actions (Route & Check In) */}
-            <View style={styles.previewActionsColumn}>
+            return (
               <Pressable
-                style={styles.previewRouteBtn}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  handleOpenDirections(selectedFacility);
-                }}
-                hitSlop={6}
+                key={fac.location_id}
+                style={[
+                  styles.carouselCard,
+                  isSelected && styles.carouselCardSelected,
+                ]}
+                onPress={() => onSelectFacility(fac)}
               >
-                <Navigation size={12} color={Palette.teal} />
-                <Text style={styles.previewRouteText}>Route</Text>
-              </Pressable>
+                {/* Facility Thumbnail */}
+                <Image
+                  source={{ uri: photoUrl }}
+                  style={styles.carouselImage}
+                  contentFit="cover"
+                  transition={150}
+                />
 
-              <Pressable
-                style={styles.previewCheckinBtn}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  handleQuickCheckIn(selectedFacility);
-                }}
-                hitSlop={6}
-              >
-                <QrCode size={12} color="#0B1F33" />
-                <Text style={styles.previewCheckinText}>Check In</Text>
+                {/* Card Body */}
+                <View style={styles.carouselBody}>
+                  {/* Category Pill & Inclusion Badge */}
+                  <View style={styles.carouselTopMeta}>
+                    <View style={[styles.carouselCatPill, { backgroundColor: `${categoryColor}18` }]}>
+                      <View style={[styles.carouselCatDot, { backgroundColor: categoryColor }]} />
+                      <Text style={[styles.carouselCatText, { color: categoryColor }]}>
+                        {categoryLabel}
+                      </Text>
+                    </View>
+
+                    {isIncluded ? (
+                      <View style={styles.includedChip}>
+                        <ShieldCheck size={10} color="#0B1F33" strokeWidth={2.5} />
+                        <Text style={styles.includedChipText}>INCLUDED</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.tierChip}>
+                        <Text style={styles.tierChipText}>TIER 2</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Title */}
+                  <Text style={styles.carouselTitle} numberOfLines={1}>
+                    {fac.location_name}
+                  </Text>
+
+                  {/* Subtitle / Distance & Rating */}
+                  <View style={styles.carouselMetaRow}>
+                    <View style={styles.metaItem}>
+                      <MapPin size={11} color={Palette.teal} />
+                      <Text style={styles.metaDistance}>
+                        {fac.distance_km ? `${fac.distance_km} km` : fac.neighborhood}
+                      </Text>
+                    </View>
+
+                    <View style={styles.metaItem}>
+                      <Star size={11} color="#FFB800" fill="#FFB800" />
+                      <Text style={styles.metaRating}>
+                        {fac.provider.rating ? fac.provider.rating.toFixed(1) : '4.8'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Action Buttons Row */}
+                  <View style={styles.carouselActionRow}>
+                    <Pressable
+                      style={styles.routeActionBtn}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleOpenDirections(fac);
+                      }}
+                      hitSlop={4}
+                    >
+                      <Navigation size={11} color={Palette.teal} />
+                      <Text style={styles.routeActionText}>Route</Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={styles.checkinActionBtn}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleQuickCheckIn(fac);
+                      }}
+                      hitSlop={4}
+                    >
+                      <QrCode size={11} color="#0B1F33" />
+                      <Text style={styles.checkinActionText}>Check In</Text>
+                    </Pressable>
+                  </View>
+                </View>
               </Pressable>
-            </View>
-          </Pressable>
-        </View>
-      )}
+            );
+          })}
+        </ScrollView>
+      </View>
     </View>
   );
 }
@@ -430,7 +505,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    top: '55%',
+    top: '45%',
     height: 3,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     transform: [{ rotate: '-5deg' }],
@@ -445,7 +520,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 210, 180, 0.04)',
   },
 
-  // Neighborhood Anchor Labels
+  // Regional Geography Labels
   anchorLabelWrapper: {
     position: 'absolute',
     width: 70,
@@ -455,7 +530,7 @@ const styles = StyleSheet.create({
   anchorLabelText: {
     fontSize: 9,
     fontWeight: '800',
-    color: 'rgba(255, 255, 255, 0.25)',
+    color: 'rgba(255, 255, 255, 0.22)',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
@@ -485,18 +560,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    ...Platform.select({
-      web: {
-        boxShadow: '0 0 10px rgba(40, 209, 124, 0.8)',
-      },
-      default: {
-        shadowColor: Palette.green,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.8,
-        shadowRadius: 5,
-        elevation: 4,
-      },
-    }),
   },
   radarCenterDot: {
     width: 10,
@@ -515,8 +578,8 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   pinWrapperSelected: {
-    zIndex: 30,
-    transform: [{ scale: 1.15 }],
+    zIndex: 35,
+    transform: [{ scale: 1.2 }],
   },
   selectedPulseRing: {
     position: 'absolute',
@@ -525,7 +588,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     borderWidth: 2,
-    opacity: 0.8,
+    opacity: 0.85,
   },
   pinMarker: {
     width: 30,
@@ -558,7 +621,7 @@ const styles = StyleSheet.create({
     marginTop: -1,
   },
 
-  // Floating Controls Top
+  // Floating Controls Top Bar
   controlsTopRow: {
     position: 'absolute',
     top: 12,
@@ -568,12 +631,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     pointerEvents: 'box-none',
+    zIndex: 40,
   },
   countBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(11, 31, 51, 0.9)',
+    backgroundColor: 'rgba(11, 31, 51, 0.92)',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 14,
@@ -585,183 +649,224 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
   },
+  redoSearchBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 4,
+      },
+    }),
+  },
+  redoSearchText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#0B1F33',
+  },
   controlsGroup: {
     flexDirection: 'column',
-    gap: 6,
+    gap: 5,
   },
   controlBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(11, 31, 51, 0.9)',
+    backgroundColor: 'rgba(11, 31, 51, 0.92)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...Platform.select({
-      web: {
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-      },
-      default: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 3,
-      },
-    }),
   },
   controlBtnActive: {
     borderColor: 'rgba(40, 209, 124, 0.4)',
     backgroundColor: '#0D2235',
   },
 
-  // Floating Bottom Preview Slide Card
-  previewCardContainer: {
+  // Floating Horizontal Swipeable Carousel (ClassPass Standard)
+  carouselContainer: {
     position: 'absolute',
     bottom: 12,
-    left: 12,
-    right: 12,
-    zIndex: 40,
+    left: 0,
+    right: 0,
+    zIndex: 50,
   },
-  previewCard: {
+  carouselScrollContent: {
+    paddingHorizontal: 12,
+    gap: CARD_GAP,
+  },
+  carouselCard: {
+    width: CARD_WIDTH,
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0B1F33',
+    backgroundColor: '#FFFFFF',
     borderRadius: Radius.card,
-    borderWidth: 1,
-    borderColor: 'rgba(40, 209, 124, 0.3)',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
     padding: 10,
     gap: 10,
     ...Platform.select({
       web: {
-        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
       },
       default: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.5,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.25,
+        shadowRadius: 10,
+        elevation: 8,
+      },
+    }),
+  },
+  carouselCardSelected: {
+    borderColor: Palette.green,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 8px 28px rgba(40, 209, 124, 0.35)',
+      },
+      default: {
+        shadowColor: Palette.green,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.35,
         shadowRadius: 12,
         elevation: 10,
       },
     }),
   },
-  previewImage: {
-    width: 60,
-    height: 60,
+  carouselImage: {
+    width: 72,
+    height: 72,
     borderRadius: 10,
-    backgroundColor: '#071521',
+    backgroundColor: '#F1F5F9',
   },
-  previewInfo: {
+  carouselBody: {
     flex: 1,
     minWidth: 0,
+    justifyContent: 'space-between',
   },
-  previewTopRow: {
+  carouselTopMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     gap: 4,
-    marginBottom: 3,
   },
-  previewCategoryPill: {
-    paddingHorizontal: 6,
+  carouselCatPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 5,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  previewCategoryText: {
+  carouselCatDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  carouselCatText: {
     fontSize: 9,
-    fontWeight: '700',
+    fontWeight: '800',
     textTransform: 'uppercase',
   },
-  previewIncludedBadge: {
+  includedChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: 2,
     backgroundColor: Palette.green,
     paddingHorizontal: 5,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  previewIncludedText: {
-    fontSize: 9,
+  includedChipText: {
+    fontSize: 8,
     fontWeight: '900',
     color: '#0B1F33',
   },
-  previewUpgradeBadge: {
+  tierChip: {
     backgroundColor: '#F59E0B',
     paddingHorizontal: 5,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  previewUpgradeText: {
-    fontSize: 9,
+  tierChipText: {
+    fontSize: 8,
     fontWeight: '900',
     color: '#0B1F33',
   },
-  previewTitle: {
+  carouselTitle: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 4,
+    fontWeight: '800',
+    color: '#0B1F33',
+    letterSpacing: -0.2,
+    marginTop: 2,
   },
-  previewBottomRow: {
+  carouselMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
+    marginVertical: 2,
   },
-  previewDistanceRow: {
+  metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
   },
-  previewDistanceText: {
-    fontSize: 11,
-    color: Palette.teal,
+  metaDistance: {
+    fontSize: 10,
+    color: Palette.textSecondary,
     fontWeight: '600',
   },
-  previewRatingRow: {
+  metaRating: {
+    fontSize: 10,
+    color: '#0B1F33',
+    fontWeight: '800',
+  },
+  carouselActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 3,
+  },
+  routeActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-  },
-  previewRatingText: {
-    fontSize: 11,
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  previewActionsColumn: {
-    justifyContent: 'center',
-    gap: 6,
-    paddingLeft: 4,
-  },
-  previewRouteBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#132D43',
+    backgroundColor: 'rgba(0, 210, 180, 0.1)',
     paddingHorizontal: 8,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: Radius.inner,
     borderWidth: 1,
-    borderColor: 'rgba(0, 210, 180, 0.3)',
+    borderColor: 'rgba(0, 210, 180, 0.25)',
   },
-  previewRouteText: {
+  routeActionText: {
     fontSize: 10,
     fontWeight: '700',
     color: Palette.teal,
   },
-  previewCheckinBtn: {
+  checkinActionBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'center',
+    gap: 3,
     backgroundColor: Palette.green,
     paddingHorizontal: 8,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: Radius.inner,
   },
-  previewCheckinText: {
+  checkinActionText: {
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '900',
     color: '#0B1F33',
   },
 });
