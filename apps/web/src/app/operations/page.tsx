@@ -52,6 +52,8 @@ interface OperationsOverviewData {
     openDisputesCount: number;
     pendingKycCount: number;
     pendingSettlementsCount: number;
+    pendingLeadsCount?: number;
+    pendingAmendmentsCount?: number;
   };
   financials: {
     currency: string;
@@ -145,6 +147,8 @@ export default function OperationsCommandCenterPage() {
   const openDisputesCount = overview.actionQueue?.openDisputesCount ?? overview.visits.activeDisputes ?? 0;
   const pendingKycCount = overview.actionQueue?.pendingKycCount ?? overview.network.providers.inReview ?? 0;
   const pendingSettlementsCount = overview.actionQueue?.pendingSettlementsCount ?? 0;
+  const pendingLeadsCount = overview.actionQueue?.pendingLeadsCount ?? 0;
+  const pendingAmendmentsCount = overview.actionQueue?.pendingAmendmentsCount ?? 0;
   const onboardingOrgsCount = overview.network.employers.onboarding ?? 0;
 
   return (
@@ -197,7 +201,7 @@ export default function OperationsCommandCenterPage() {
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-emerald-600" />
             <h2 className="text-xs uppercase tracking-wider font-bold text-[#0B1F33]">
-              Morning Priority Queue • Action Items
+              Morning Priority Queue • Daily Action Streams
             </h2>
           </div>
           <span className="text-[11px] text-slate-400 font-medium">
@@ -205,7 +209,7 @@ export default function OperationsCommandCenterPage() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {/* Item 1: Front-Desk Disputes */}
           <a
             href="/operations/visits"
@@ -225,21 +229,77 @@ export default function OperationsCommandCenterPage() {
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 leading-snug">
-                Front-desk complaints raised by partners or employees.
+                Front-desk complaints & turnstile verification anomalies.
               </p>
             </div>
             <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-semibold text-slate-700 group-hover:text-rose-700">
-              <span>Open Dispute Desk</span>
+              <span>Dispute Clearinghouse</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </div>
           </a>
 
-          {/* Item 2: Partner KYC Review */}
+          {/* Item 2: Inbound Corporate Leads */}
+          <a
+            href="/operations/clients?tab=leads"
+            className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between group ${
+              pendingLeadsCount > 0
+                ? "bg-blue-50/70 border-blue-200 hover:border-blue-300 hover:bg-blue-50"
+                : "bg-slate-50/50 border-slate-200 hover:bg-slate-50"
+            }`}
+          >
+            <div>
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <span className="font-semibold text-slate-700">Corporate Leads</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
+                  pendingLeadsCount > 0 ? "bg-blue-100 text-blue-700 border border-blue-200" : "bg-emerald-100 text-emerald-700"
+                }`}>
+                  {pendingLeadsCount > 0 ? `${pendingLeadsCount} Pending` : "Triage Done"}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-snug">
+                Inbound employer demo inquiries awaiting outreach.
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-semibold text-slate-700 group-hover:text-blue-700">
+              <span>Inbound Leads Desk</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </div>
+          </a>
+
+          {/* Item 3: Rate Amendments Desk */}
+          <a
+            href="/operations/providers?tab=amendments"
+            className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between group ${
+              pendingAmendmentsCount > 0
+                ? "bg-amber-50/70 border-amber-200 hover:border-amber-300 hover:bg-amber-50"
+                : "bg-slate-50/50 border-slate-200 hover:bg-slate-50"
+            }`}
+          >
+            <div>
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <span className="font-semibold text-slate-700">Rate Amendments</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
+                  pendingAmendmentsCount > 0 ? "bg-amber-100 text-amber-800 border border-amber-200" : "bg-emerald-100 text-emerald-700"
+                }`}>
+                  {pendingAmendmentsCount > 0 ? `${pendingAmendmentsCount} Reviewing` : "Current"}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-snug">
+                Provider payout rate change requests from portal.
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-semibold text-slate-700 group-hover:text-amber-800">
+              <span>Review Amendments</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </div>
+          </a>
+
+          {/* Item 4: Partner KYC & Quality */}
           <a
             href="/operations/providers"
             className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between group ${
               pendingKycCount > 0 
-                ? "bg-amber-50/70 border-amber-200 hover:border-amber-300 hover:bg-amber-50" 
+                ? "bg-indigo-50/70 border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50" 
                 : "bg-slate-50/50 border-slate-200 hover:bg-slate-50"
             }`}
           >
@@ -247,44 +307,22 @@ export default function OperationsCommandCenterPage() {
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <span className="font-semibold text-slate-700">Provider KYC</span>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
-                  pendingKycCount > 0 ? "bg-amber-100 text-amber-800 border border-amber-200" : "bg-emerald-100 text-emerald-700"
+                  pendingKycCount > 0 ? "bg-indigo-100 text-indigo-700 border border-indigo-200" : "bg-emerald-100 text-emerald-700"
                 }`}>
                   {pendingKycCount > 0 ? `${pendingKycCount} Reviewing` : "Up to date"}
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 leading-snug">
-                New wellness facilities awaiting registration approval.
+                New facilities awaiting registration & hygiene audit.
               </p>
             </div>
-            <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-semibold text-slate-700 group-hover:text-amber-800">
-              <span>Review Applications</span>
+            <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-semibold text-slate-700 group-hover:text-indigo-700">
+              <span>Review Fleet</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </div>
           </a>
 
-          {/* Item 3: Corporate Capacity */}
-          <a
-            href="/operations/clients"
-            className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300 transition-all flex flex-col justify-between group"
-          >
-            <div>
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="font-semibold text-slate-700">Employer Roster</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-blue-100 text-blue-700 border border-blue-200">
-                  {overview.network.employers.total} Active
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 leading-snug">
-                Employee rosters and corporate subsidy plan allocations.
-              </p>
-            </div>
-            <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-semibold text-slate-700 group-hover:text-blue-700">
-              <span>Manage Employers</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </div>
-          </a>
-
-          {/* Item 4: Settlements Sign-Off */}
+          {/* Item 5: Monthly Settlements */}
           <a
             href="/operations/finance"
             className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between group ${
@@ -303,7 +341,7 @@ export default function OperationsCommandCenterPage() {
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 leading-snug">
-                Provider settlements ready for MoMo / Bank disbursement.
+                Provider settlements ready for MoMo / Bank clearing.
               </p>
             </div>
             <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-semibold text-slate-700 group-hover:text-purple-700">

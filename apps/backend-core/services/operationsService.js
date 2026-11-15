@@ -42,7 +42,9 @@ async function getOperationsOverview() {
     { data: monthVisits, error: monthVisitsErr },
     { data: recent24hVisits, error: recent24hErr },
     { data: recentLiveFeed, error: feedErr },
-    { data: openDisputes, error: disputesErr }
+    { data: openDisputes, error: disputesErr },
+    { count: pendingLeadsCount },
+    { count: pendingAmendmentsCount }
   ] = await Promise.all([
     supabase.from('organizations').select('id, name, status, created_at'),
     supabase.from('providers').select('id, name, category, status, created_at'),
@@ -72,7 +74,9 @@ async function getOperationsOverview() {
       `)
       .order('check_in_at', { ascending: false })
       .limit(10),
-    supabase.from('visit_disputes').select('id, status').eq('status', 'open')
+    supabase.from('visit_disputes').select('id, status').eq('status', 'open'),
+    supabase.from('demo_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('contract_amendment_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending')
   ]);
 
   if (orgsErr) console.warn('[operationsService] orgs query warning:', orgsErr.message);
@@ -207,6 +211,8 @@ async function getOperationsOverview() {
       openDisputesCount: (openDisputes && openDisputes.length > 0) ? openDisputes.length : disputedCount,
       pendingKycCount: inReviewProviders,
       pendingSettlementsCount: setList.filter(s => s.status === 'pending' || s.status === 'pending_approval').length,
+      pendingLeadsCount: pendingLeadsCount || 0,
+      pendingAmendmentsCount: pendingAmendmentsCount || 0
     },
     financials: {
       currency: 'RWF',
@@ -4449,6 +4455,553 @@ async function deleteOperationsPlan(planId) {
   return data;
 }
 
+/**
+ * -----------------------------------------------------------------------------
+ * OPERATIONS DEMO REQUESTS & INBOUND CORPORATE LEADS
+ * -----------------------------------------------------------------------------
+ */
+
+/**
+ * Paginated list of inbound corporate demo inquiries with status breakdown counts.
+ */
+async function getOperationsDemoRequests({ status, search, companySize, page = 1, limit = 50 } = {}) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const offset = (Math.max(1, parseInt(page, 10)) - 1) * parseInt(limit, 10);
+
+  // Status breakdown counts in parallel
+  const [
+    { count: totalCount },
+    { count: pendingCount },
+    { count: contactedCount },
+    { count: approvedCount },
+    { count: disqualifiedCount }
+  ] = await Promise.all([
+    supabase.from('demo_requests').select('id', { count: 'exact', head: true }),
+    supabase.from('demo_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('demo_requests').select('id', { count: 'exact', head: true }).eq('status', 'contacted'),
+    supabase.from('demo_requests').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
+    supabase.from('demo_requests').select('id', { count: 'exact', head: true }).eq('status', 'disqualified')
+  ]);
+
+  let query = supabase
+    .from('demo_requests')
+    .select('*', { count: 'exact' });
+
+  if (status && status !== 'all') {
+    query = query.eq('status', status);
+  }
+  if (companySize && companySize !== 'all') {
+    query = query.eq('company_size', companySize);
+  }
+  if (search && search.trim()) {
+    const s = sanitizePostgrestFilter(search.trim());
+    query = query.or(`company_name.ilike.%${s}%,contact_name.ilike.%${s}%,work_email.ilike.%${s}%,phone.ilike.%${s}%`);
+  }
+
+  query = query
+    .order('created_at', { ascending: false })
+    .range(offset, offset + parseInt(limit, 10) - 1);
+
+  const { data, count, error } = await query;
+  if (error) {
+    throw new Error(`Failed to fetch demo requests: ${error.message}`);
+  }
+
+  return {
+    success: true,
+    data: data || [],
+    pagination: {
+      total: count || 0,
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
+      pages: Math.ceil((count || 0) / parseInt(limit, 10))
+    },
+    counts: {
+      total: totalCount || 0,
+      pending: pendingCount || 0,
+      contacted: contactedCount || 0,
+      approved: approvedCount || 0,
+      disqualified: disqualifiedCount || 0
+    }
+  };
+}
+
+/**
+ * Update an inbound corporate demo request status and operational notes.
+ */
+async function updateOperationsDemoRequest(id, payload, adminUserId) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const { status, notes, converted_org_id } = payload;
+  const updateData = {
+    updated_at: new Date().toISOString()
+  };
+
+  if (status) {
+    updateData.status = status;
+    if (status === 'contacted') {
+      updateData.contacted_at = new Date().toISOString();
+    }
+  }
+  if (notes !== undefined) updateData.notes = notes;
+  if (converted_org_id !== undefined) updateData.converted_org_id = converted_org_id;
+
+  const { data, error } = await supabase
+    .from('demo_requests')
+    .update(updateData)
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update demo request: ${error.message}`);
+  }
+
+  await logAuthEvent({
+    userId: adminUserId || 'system',
+    action: 'DEMO_REQUEST_UPDATED',
+    details: { requestId: id, status, updatedBy: adminUserId }
+  });
+
+  return data;
+}
+
+/**
+ * -----------------------------------------------------------------------------
+ * OPERATIONS RATE AMENDMENT REQUESTS DESK
+ * -----------------------------------------------------------------------------
+ */
+
+/**
+ * Paginated list of provider contract amendment requests joined with provider details.
+ */
+async function getOperationsAmendmentRequests({ status, search, page = 1, limit = 50 } = {}) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const offset = (Math.max(1, parseInt(page, 10)) - 1) * parseInt(limit, 10);
+
+  // Breakdown counts
+  const [
+    { count: totalCount },
+    { count: pendingCount },
+    { count: approvedCount },
+    { count: rejectedCount },
+    { count: counterOfferedCount }
+  ] = await Promise.all([
+    supabase.from('contract_amendment_requests').select('id', { count: 'exact', head: true }),
+    supabase.from('contract_amendment_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('contract_amendment_requests').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
+    supabase.from('contract_amendment_requests').select('id', { count: 'exact', head: true }).eq('status', 'rejected'),
+    supabase.from('contract_amendment_requests').select('id', { count: 'exact', head: true }).eq('status', 'counter_offered')
+  ]);
+
+  let query = supabase
+    .from('contract_amendment_requests')
+    .select(`
+      id,
+      provider_id,
+      contract_id,
+      request_type,
+      current_rate,
+      requested_rate,
+      justification,
+      contact_phone,
+      contact_email,
+      status,
+      reviewed_by,
+      reviewed_at,
+      admin_notes,
+      counter_offer_rate,
+      created_at,
+      updated_at,
+      providers (
+        id,
+        name,
+        category,
+        status,
+        contact_email
+      )
+    `, { count: 'exact' });
+
+  if (status && status !== 'all') {
+    query = query.eq('status', status);
+  }
+  if (search && search.trim()) {
+    const s = sanitizePostgrestFilter(search.trim());
+    query = query.or(`justification.ilike.%${s}%,contact_phone.ilike.%${s}%,contact_email.ilike.%${s}%`);
+  }
+
+  query = query
+    .order('created_at', { ascending: false })
+    .range(offset, offset + parseInt(limit, 10) - 1);
+
+  const { data, count, error } = await query;
+  if (error) {
+    throw new Error(`Failed to fetch amendment requests: ${error.message}`);
+  }
+
+  const formatted = (data || []).map((req) => {
+    const current = Number(req.current_rate || 0);
+    const requested = Number(req.requested_rate || 0);
+    const deltaAmount = requested - current;
+    const deltaPercentage = current > 0 ? Number(((deltaAmount / current) * 100).toFixed(1)) : 0;
+
+    return {
+      id: req.id,
+      providerId: req.provider_id,
+      providerName: req.providers?.name || 'Partner Provider',
+      category: req.providers?.category || 'gym',
+      providerStatus: req.providers?.status || 'active',
+      contractId: req.contract_id,
+      requestType: req.request_type,
+      currentRate: current,
+      requestedRate: requested,
+      deltaAmount,
+      deltaPercentage,
+      justification: req.justification,
+      contactPhone: req.contact_phone,
+      contactEmail: req.contact_email,
+      status: req.status,
+      reviewedBy: req.reviewed_by,
+      reviewedAt: req.reviewed_at,
+      adminNotes: req.admin_notes,
+      counterOfferRate: req.counter_offer_rate ? Number(req.counter_offer_rate) : null,
+      createdAt: req.created_at,
+      updatedAt: req.updated_at
+    };
+  });
+
+  return {
+    success: true,
+    data: formatted,
+    pagination: {
+      total: count || 0,
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
+      pages: Math.ceil((count || 0) / parseInt(limit, 10))
+    },
+    counts: {
+      total: totalCount || 0,
+      pending: pendingCount || 0,
+      approved: approvedCount || 0,
+      rejected: rejectedCount || 0,
+      counterOffered: counterOfferedCount || 0
+    }
+  };
+}
+
+/**
+ * 1-Click Adjudication for Partner Rate Amendment Requests.
+ * Action: 'approved' | 'rejected' | 'counter_offered'
+ */
+async function adjudicateAmendmentRequest(requestId, payload, adminUserId) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const { action, admin_notes, counter_offer_rate } = payload;
+  if (!action || !['approved', 'rejected', 'counter_offered'].includes(action)) {
+    throw new Error('Valid action required: approved, rejected, or counter_offered');
+  }
+
+  // Fetch amendment request
+  const { data: request, error: reqErr } = await supabase
+    .from('contract_amendment_requests')
+    .select('*')
+    .eq('id', requestId)
+    .single();
+
+  if (reqErr || !request) {
+    throw new Error(`Amendment request not found: ${reqErr?.message || 'Invalid ID'}`);
+  }
+
+  const now = new Date().toISOString();
+  const updatePayload = {
+    status: action,
+    reviewed_by: adminUserId || 'system',
+    reviewed_at: now,
+    admin_notes: admin_notes || null,
+    updated_at: now
+  };
+
+  if (action === 'counter_offered') {
+    if (!counter_offer_rate || Number(counter_offer_rate) <= 0) {
+      throw new Error('counter_offer_rate is required when counter-offering');
+    }
+    updatePayload.counter_offer_rate = Number(counter_offer_rate);
+  }
+
+  // 1. Update the amendment request
+  const { data: updatedRequest, error: updateErr } = await supabase
+    .from('contract_amendment_requests')
+    .update(updatePayload)
+    .eq('id', requestId)
+    .select('*')
+    .single();
+
+  if (updateErr) {
+    throw new Error(`Failed to update amendment request: ${updateErr.message}`);
+  }
+
+  // 2. If approved, apply the new rate to provider_contracts and location payout rates
+  if (action === 'approved') {
+    const newRate = Number(request.requested_rate);
+    if (newRate > 0) {
+      // Update provider_contracts
+      if (request.contract_id) {
+        await supabase
+          .from('provider_contracts')
+          .update({ per_visit_rate: newRate, updated_at: now })
+          .eq('id', request.contract_id);
+      } else {
+        await supabase
+          .from('provider_contracts')
+          .update({ per_visit_rate: newRate, updated_at: now })
+          .eq('provider_id', request.provider_id);
+      }
+
+      // Update provider locations metadata
+      const { data: locs } = await supabase
+        .from('provider_locations')
+        .select('id, metadata')
+        .eq('provider_id', request.provider_id);
+
+      if (locs && locs.length > 0) {
+        for (const loc of locs) {
+          const meta = loc.metadata || {};
+          meta.per_visit_payout_rate = newRate;
+          await supabase
+            .from('provider_locations')
+            .update({ metadata: meta, updated_at: now })
+            .eq('id', loc.id);
+        }
+      }
+    }
+  }
+
+  // 3. Audit trail log
+  await logAuthEvent({
+    userId: adminUserId || 'system',
+    action: `CONTRACT_AMENDMENT_${action.toUpperCase()}`,
+    details: {
+      requestId,
+      providerId: request.provider_id,
+      action,
+      requestedRate: request.requested_rate,
+      counterOfferRate: counter_offer_rate || null,
+      adminNotes: admin_notes,
+      adjudicatedBy: adminUserId
+    }
+  });
+
+  return updatedRequest;
+}
+
+/**
+ * -----------------------------------------------------------------------------
+ * CREDITS & PULSES CONFIGURATION RULES
+ * -----------------------------------------------------------------------------
+ */
+
+/**
+ * Retrieve platform credits & pulses access rules.
+ */
+async function getOperationsPulsesRules() {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const { data: settings, error } = await supabase
+    .from('platform_settings')
+    .select('*');
+
+  if (error) {
+    throw new Error(`Failed to fetch pulses settings: ${error.message}`);
+  }
+
+  const settingsMap = {};
+  (settings || []).forEach((s) => {
+    settingsMap[s.key] = s.value;
+  });
+
+  return {
+    success: true,
+    categoryPulsesWeight: settingsMap['category_pulses_weight'] || {
+      gym: 1,
+      studio: 2,
+      pool: 2,
+      clinic: 3,
+      wellness_center: 3,
+      sports: 2
+    },
+    dailyVisitLimit: typeof settingsMap['daily_visit_limit'] === 'number'
+      ? settingsMap['daily_visit_limit']
+      : 1,
+    allowMultiVenueDifferentCategory: settingsMap['allow_multi_venue_different_category'] !== undefined
+      ? Boolean(settingsMap['allow_multi_venue_different_category'])
+      : true,
+    tierMonthlyCredits: settingsMap['tier_monthly_credits'] || {
+      starter: 10,
+      standard: 25,
+      executive: 50
+    }
+  };
+}
+
+/**
+ * Update platform credits & pulses access rules.
+ */
+async function updateOperationsPulsesRules(payload, adminUserId) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const { categoryPulsesWeight, dailyVisitLimit, allowMultiVenueDifferentCategory, tierMonthlyCredits } = payload;
+  const now = new Date().toISOString();
+
+  const upserts = [];
+
+  if (categoryPulsesWeight && typeof categoryPulsesWeight === 'object') {
+    upserts.push({
+      key: 'category_pulses_weight',
+      value: categoryPulsesWeight,
+      description: 'Credits/pulses deducted per visit for each wellness category',
+      updated_at: now
+    });
+  }
+
+  if (dailyVisitLimit !== undefined) {
+    upserts.push({
+      key: 'daily_visit_limit',
+      value: Number(dailyVisitLimit),
+      description: 'Maximum verified visits permitted per beneficiary per calendar day',
+      updated_at: now
+    });
+  }
+
+  if (allowMultiVenueDifferentCategory !== undefined) {
+    upserts.push({
+      key: 'allow_multi_venue_different_category',
+      value: Boolean(allowMultiVenueDifferentCategory),
+      description: 'Allow employee to visit multiple venues in a single day if categories differ',
+      updated_at: now
+    });
+  }
+
+  if (tierMonthlyCredits && typeof tierMonthlyCredits === 'object') {
+    upserts.push({
+      key: 'tier_monthly_credits',
+      value: tierMonthlyCredits,
+      description: 'Monthly credits allocated to employees based on their corporate tier',
+      updated_at: now
+    });
+  }
+
+  for (const item of upserts) {
+    const { error: upsertErr } = await supabase
+      .from('platform_settings')
+      .upsert(item, { onConflict: 'key' });
+    if (upsertErr) {
+      throw new Error(`Failed to update setting ${item.key}: ${upsertErr.message}`);
+    }
+  }
+
+  await logAuthEvent({
+    userId: adminUserId || 'system',
+    action: 'PULSES_RULES_UPDATED',
+    details: { payload, updatedBy: adminUserId }
+  });
+
+  return getOperationsPulsesRules();
+}
+
+/**
+ * -----------------------------------------------------------------------------
+ * PROVIDER QUALITY SCORECARD & HYGIENE AUDIT
+ * -----------------------------------------------------------------------------
+ */
+
+/**
+ * Update provider quality scorecard (rating, hygiene certification, amenities verified, audit notes).
+ */
+async function updateOperationsProviderQuality(providerId, payload, adminUserId) {
+  if (!supabase) {
+    throw new Error('Supabase client unavailable');
+  }
+
+  const { rating, hygiene_status, amenities_verified, last_inspected_at, inspection_notes, inspector_name } = payload;
+
+  // Fetch current provider
+  const { data: provider, error: provErr } = await supabase
+    .from('providers')
+    .select('id, rating, onboarding_details')
+    .eq('id', providerId)
+    .single();
+
+  if (provErr || !provider) {
+    throw new Error(`Provider not found: ${provErr?.message || 'Invalid ID'}`);
+  }
+
+  const currentDetails = provider.onboarding_details || {};
+  const currentScorecard = currentDetails.quality_scorecard || {};
+
+  const updatedScorecard = {
+    ...currentScorecard,
+    hygiene_status: hygiene_status !== undefined ? hygiene_status : currentScorecard.hygiene_status || 'verified_passed',
+    amenities_verified: amenities_verified !== undefined ? amenities_verified : currentScorecard.amenities_verified || [],
+    last_inspected_at: last_inspected_at || new Date().toISOString(),
+    inspection_notes: inspection_notes !== undefined ? inspection_notes : currentScorecard.inspection_notes || '',
+    inspector_name: inspector_name || currentScorecard.inspector_name || 'PolyFit Operations Staff',
+    updated_at: new Date().toISOString()
+  };
+
+  const updateFields = {
+    onboarding_details: {
+      ...currentDetails,
+      quality_scorecard: updatedScorecard
+    },
+    updated_at: new Date().toISOString()
+  };
+
+  if (rating !== undefined && rating !== null) {
+    const numRating = Number(rating);
+    if (!isNaN(numRating) && numRating >= 1 && numRating <= 5) {
+      updateFields.rating = numRating;
+    }
+  }
+
+  const { data: updatedProvider, error: updateErr } = await supabase
+    .from('providers')
+    .update(updateFields)
+    .eq('id', providerId)
+    .select('id, name, category, status, rating, onboarding_details')
+    .single();
+
+  if (updateErr) {
+    throw new Error(`Failed to update provider quality: ${updateErr.message}`);
+  }
+
+  await logAuthEvent({
+    userId: adminUserId || 'system',
+    action: 'PROVIDER_QUALITY_UPDATED',
+    details: {
+      providerId,
+      rating: updateFields.rating,
+      scorecard: updatedScorecard,
+      updatedBy: adminUserId
+    }
+  });
+
+  return updatedProvider;
+}
+
 module.exports = {
   getOperationsOverview,
   searchOperationsUniversal,
@@ -4499,7 +5052,15 @@ module.exports = {
   getOperationsPlans,
   createOperationsPlan,
   updateOperationsPlan,
-  deleteOperationsPlan
+  deleteOperationsPlan,
+  // Inbound Corporate Leads & Rate Amendments
+  getOperationsDemoRequests,
+  updateOperationsDemoRequest,
+  getOperationsAmendmentRequests,
+  adjudicateAmendmentRequest,
+  getOperationsPulsesRules,
+  updateOperationsPulsesRules,
+  updateOperationsProviderQuality
 };
 
 

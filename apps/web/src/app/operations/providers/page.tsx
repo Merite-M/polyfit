@@ -22,12 +22,43 @@ import {
   Radio,
   Clock,
   Layers,
-  Sparkles
+  Sparkles,
+  ArrowUpRight,
+  ArrowDownRight,
+  MessageSquare,
+  Phone,
+  Mail,
+  X,
+  Check,
+  Edit3
 } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 import { formatCurrencyDisplay } from "@/lib/utils";
 import { useOperationsDrawer } from "@/contexts/OperationsDrawerContext";
 import { CreateProviderDrawer } from "@/components/operations/drawers/CreateProviderDrawer";
+
+interface AmendmentRequestItem {
+  id: string;
+  providerId: string;
+  providerName: string;
+  category: string;
+  providerStatus: string;
+  contractId: string | null;
+  requestType: string;
+  currentRate: number;
+  requestedRate: number;
+  deltaAmount: number;
+  deltaPercentage: number;
+  justification: string;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  status: string; // 'pending' | 'approved' | 'rejected' | 'counter_offered'
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  adminNotes: string | null;
+  counterOfferRate: number | null;
+  createdAt: string;
+}
 
 interface ProviderLocationItem {
   id: string;
@@ -112,6 +143,39 @@ function ProviderNetworkContent() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { openDrawer, refreshKey } = useOperationsDrawer();
 
+  // Tab state: "fleet" | "amendments"
+  const [activeTab, setActiveTab] = useState<"fleet" | "amendments">(() => 
+    searchParams.get("tab") === "amendments" ? "amendments" : "fleet"
+  );
+
+  // Rate Amendments State
+  const [amendments, setAmendments] = useState<AmendmentRequestItem[]>([]);
+  const [amendmentsLoading, setAmendmentsLoading] = useState(false);
+  const [amendmentsStatusFilter, setAmendmentsStatusFilter] = useState("all");
+  const [amendmentsSearchQuery, setAmendmentsSearchQuery] = useState("");
+  const [amendmentsCounts, setAmendmentsCounts] = useState({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    counterOffered: 0
+  });
+  const [processingAmendmentId, setProcessingAmendmentId] = useState<string | null>(null);
+
+  // Inline Modals for Counter-Offer and Rejection
+  const [counterModal, setCounterModal] = useState<{
+    isOpen: boolean;
+    req: AmendmentRequestItem | null;
+    rate: string;
+    notes: string;
+  }>({ isOpen: false, req: null, rate: "", notes: "" });
+
+  const [rejectModal, setRejectModal] = useState<{
+    isOpen: boolean;
+    req: AmendmentRequestItem | null;
+    notes: string;
+  }>({ isOpen: false, req: null, notes: "" });
+
   const fetchProviders = async () => {
     setLoading(true);
     setError(null);
@@ -131,15 +195,69 @@ function ProviderNetworkContent() {
     }
   };
 
+  const fetchAmendments = async () => {
+    setAmendmentsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (amendmentsStatusFilter !== "all") params.append("status", amendmentsStatusFilter);
+      if (amendmentsSearchQuery.trim()) params.append("search", amendmentsSearchQuery.trim());
+      params.append("limit", "100");
+
+      const res = await apiFetch<any>(`/api/operations/amendment-requests?${params.toString()}`);
+      if (res && Array.isArray(res.data)) {
+        setAmendments(res.data);
+        if (res.counts) setAmendmentsCounts(res.counts);
+      }
+    } catch (err: any) {
+      console.error("[ProviderNetworkPage] Fetch amendments error:", err);
+    } finally {
+      setAmendmentsLoading(false);
+    }
+  };
+
+  const handleAdjudicateAmendment = async (
+    requestId: string,
+    action: "approved" | "rejected" | "counter_offered",
+    notes?: string,
+    counterRate?: number
+  ) => {
+    setProcessingAmendmentId(requestId);
+    try {
+      const payload: any = { action };
+      if (notes) payload.admin_notes = notes;
+      if (counterRate) payload.counter_offer_rate = counterRate;
+
+      await apiFetch<any>(`/api/operations/amendment-requests/${requestId}/adjudicate`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+
+      fetchAmendments();
+      fetchProviders();
+    } catch (err: any) {
+      alert("Failed to adjudicate rate amendment: " + (err?.message || "Unknown error"));
+    } finally {
+      setProcessingAmendmentId(null);
+    }
+  };
+
   useEffect(() => {
     fetchProviders();
   }, [refreshKey]);
 
-  // Deep-linking: sync URL query param `?id=...`
+  useEffect(() => {
+    fetchAmendments();
+  }, [refreshKey, amendmentsStatusFilter]);
+
+  // Deep-linking: sync URL query param `?id=...` and `?tab=...`
   useEffect(() => {
     const idParam = searchParams.get("id");
     if (idParam) {
       openDrawer("provider", idParam);
+    }
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "amendments") {
+      setActiveTab("amendments");
     }
   }, [searchParams, openDrawer]);
 
@@ -283,23 +401,26 @@ function ProviderNetworkContent() {
             Provider Network Operations &amp; Payout Matrix
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Wellness network fleet management, KYC compliance verification, geofenced facility gates, and per-visit settlement rates.
+            Wellness network fleet management, KYC compliance verification, geofenced facility gates, and partner rate amendments.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
           <button
-            onClick={fetchProviders}
-            disabled={loading}
+            onClick={() => {
+              if (activeTab === "fleet") fetchProviders();
+              else fetchAmendments();
+            }}
+            disabled={loading || amendmentsLoading}
             className="p-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 transition-colors"
-            title="Refresh network fleet"
+            title="Refresh current view"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-[#28D17C]" : ""}`} />
+            <RefreshCw className={`w-4 h-4 ${(loading || amendmentsLoading) ? "animate-spin text-[#28D17C]" : ""}`} />
           </button>
 
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0B1F33] hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0B1F33] hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4 text-[#28D17C]" />
             <span>Onboard Provider Network</span>
@@ -307,6 +428,47 @@ function ProviderNetworkContent() {
         </div>
       </div>
 
+      {/* Primary Tab Switcher */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveTab("fleet")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeTab === "fleet"
+              ? "bg-[#0B1F33] text-white shadow-xs"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+          }`}
+        >
+          <Network className="w-3.5 h-3.5" />
+          <span>Wellness Fleet Registry</span>
+          <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-white/20 text-white font-mono">
+            {totalProviders}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("amendments")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeTab === "amendments"
+              ? "bg-[#0B1F33] text-white shadow-xs"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+          }`}
+        >
+          <DollarSign className="w-3.5 h-3.5 text-amber-400" />
+          <span>Rate Amendment Requests</span>
+          <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+            amendmentsCounts.pending > 0 
+              ? "bg-amber-500 text-slate-950" 
+              : "bg-slate-200 text-slate-700"
+          }`}>
+            {amendmentsCounts.pending > 0 ? `${amendmentsCounts.pending} Reviewing` : amendmentsCounts.total}
+          </span>
+        </button>
+      </div>
+
+      {activeTab === "fleet" && (
+        <>
       {/* 4-KPI Fleet Telemetry Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Provider Network Fleet */}
@@ -741,6 +903,445 @@ function ProviderNetworkContent() {
           </>
         )}
       </div>
+      </>
+      )}
+
+      {/* Rate Amendment Requests Review Desk */}
+      {activeTab === "amendments" && (
+        <div className="space-y-6">
+          {/* Top Amendments KPI Strip */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-2">
+              <div className="flex items-center justify-between text-slate-500 text-xs">
+                <span className="font-semibold uppercase tracking-wider text-[10px]">Total Amendment Inquiries</span>
+                <DollarSign className="w-4 h-4 text-slate-400" />
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-slate-900 font-mono">{amendmentsCounts.total}</span>
+                <span className="text-xs text-slate-400">All submissions</span>
+              </div>
+              <div className="text-[11px] text-slate-400 pt-1 border-t border-slate-100">
+                Rate adjustment requests submitted by partner facilities
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 shadow-xs space-y-2">
+              <div className="flex items-center justify-between text-amber-800 text-xs">
+                <span className="font-semibold uppercase tracking-wider text-[10px]">Awaiting Adjudication</span>
+                <Clock className="w-4 h-4 text-amber-600" />
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-amber-900 font-mono">{amendmentsCounts.pending}</span>
+                <span className="text-xs text-amber-700 font-semibold">Requires Action</span>
+              </div>
+              <div className="text-[11px] text-amber-700 pt-1 border-t border-amber-200/60">
+                Partner contracts awaiting operator rate decision
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200 shadow-xs space-y-2">
+              <div className="flex items-center justify-between text-blue-800 text-xs">
+                <span className="font-semibold uppercase tracking-wider text-[10px]">In Negotiation</span>
+                <MessageSquare className="w-4 h-4 text-blue-600" />
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-blue-900 font-mono">{amendmentsCounts.counterOffered}</span>
+                <span className="text-xs text-blue-700 font-medium">Counter-Offered</span>
+              </div>
+              <div className="text-[11px] text-blue-700 pt-1 border-t border-blue-200/60">
+                Counter-proposals sent to partner facilities
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 shadow-xs space-y-2">
+              <div className="flex items-center justify-between text-emerald-800 text-xs">
+                <span className="font-semibold uppercase tracking-wider text-[10px]">Applied &amp; Contracted</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-emerald-900 font-mono">{amendmentsCounts.approved}</span>
+                <span className="text-xs text-emerald-700 font-medium">Active Rates</span>
+              </div>
+              <div className="text-[11px] text-emerald-700 pt-1 border-t border-emerald-200/60">
+                Updated rates live in check-in verification engine
+              </div>
+            </div>
+          </div>
+
+          {/* Filter and Search Bar */}
+          <div className="p-4 rounded-xl bg-white border border-slate-200 space-y-3">
+            <div className="flex flex-col md:flex-row md:items-center gap-3">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  placeholder="Search amendments by provider name, justification notes, phone, or email..."
+                  value={amendmentsSearchQuery}
+                  onChange={(e) => setAmendmentsSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && fetchAmendments()}
+                  className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#28D17C] focus:border-transparent"
+                />
+              </div>
+
+              {/* Status Tabs */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs font-semibold overflow-x-auto">
+                {[
+                  { id: "all", label: `All (${amendmentsCounts.total})` },
+                  { id: "pending", label: `Pending (${amendmentsCounts.pending})` },
+                  { id: "counter_offered", label: `Counter-Offered (${amendmentsCounts.counterOffered})` },
+                  { id: "approved", label: `Approved (${amendmentsCounts.approved})` },
+                  { id: "rejected", label: `Declined (${amendmentsCounts.rejected})` }
+                ].map((st) => (
+                  <button
+                    key={st.id}
+                    onClick={() => setAmendmentsStatusFilter(st.id)}
+                    className={`px-3 py-1.5 rounded-md transition-all cursor-pointer whitespace-nowrap ${
+                      amendmentsStatusFilter === st.id
+                        ? "bg-white text-slate-900 shadow-xs font-bold"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    {st.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Amendments Table */}
+          <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-xs">
+            {amendmentsLoading ? (
+              <div className="p-12 text-center text-slate-400">
+                <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-[#28D17C]" />
+                <span className="text-xs">Loading rate amendment requests...</span>
+              </div>
+            ) : amendments.length === 0 ? (
+              <div className="p-12 text-center text-slate-400">
+                <DollarSign className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                <div className="text-sm font-semibold text-slate-700">No Rate Amendment Requests Found</div>
+                <div className="text-xs text-slate-400 mt-1">
+                  Partner renegotiation requests submitted from their portal desk will appear here.
+                </div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="py-3 px-4">Provider Partner</th>
+                      <th className="py-3 px-4">Rate Comparison</th>
+                      <th className="py-3 px-4">Business Case &amp; Justification</th>
+                      <th className="py-3 px-4">Partner Contact</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4 text-right">Adjudication</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {amendments.map((req) => {
+                      const isPending = req.status === "pending";
+                      const isCounter = req.status === "counter_offered";
+                      const isApproved = req.status === "approved";
+                      const isRejected = req.status === "rejected";
+
+                      return (
+                        <tr key={req.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3.5 px-4">
+                            <div className="font-bold text-slate-900 text-xs">{req.providerName}</div>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-slate-100 text-slate-600">
+                                {req.category}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                Req: {req.requestType.replace("_", " ")}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-slate-400 line-through font-mono text-[11px]">
+                                {formatCurrencyDisplay(req.currentRate)}
+                              </span>
+                              <span className="font-bold font-mono text-xs text-slate-900">
+                                {formatCurrencyDisplay(req.requestedRate)}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <span className={`inline-flex items-center text-[10px] font-bold font-mono px-1.5 py-0.2 rounded ${
+                                req.deltaAmount > 0 ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"
+                              }`}>
+                                {req.deltaAmount > 0 ? `+${formatCurrencyDisplay(req.deltaAmount)}` : formatCurrencyDisplay(req.deltaAmount)}
+                                {" "}({req.deltaPercentage > 0 ? `+${req.deltaPercentage}%` : `${req.deltaPercentage}%`})
+                              </span>
+                            </div>
+                            {req.counterOfferRate && (
+                              <div className="mt-1 text-[11px] font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                                Counter: {formatCurrencyDisplay(req.counterOfferRate)}
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="py-3.5 px-4 max-w-xs">
+                            <p className="text-[11px] text-slate-700 italic line-clamp-2">
+                              "{req.justification || "No written justification provided"}"
+                            </p>
+                            {req.adminNotes && (
+                              <div className="mt-1 text-[10px] text-slate-500 font-mono bg-slate-100 p-1 rounded">
+                                Ops note: {req.adminNotes}
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="py-3.5 px-4">
+                            {req.contactPhone && (
+                              <div className="flex items-center gap-1 text-[11px] text-slate-700 font-mono">
+                                <Phone className="w-3 h-3 text-slate-400" />
+                                <span>{req.contactPhone}</span>
+                              </div>
+                            )}
+                            {req.contactEmail && (
+                              <div className="flex items-center gap-1 text-[11px] text-slate-500 font-mono">
+                                <Mail className="w-3 h-3 text-slate-400" />
+                                <span>{req.contactEmail}</span>
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="py-3.5 px-4">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 ${
+                              isApproved
+                                ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                : isCounter
+                                ? "bg-blue-100 text-blue-800 border border-blue-200"
+                                : isRejected
+                                ? "bg-rose-100 text-rose-800 border border-rose-200"
+                                : "bg-amber-100 text-amber-800 border border-amber-200 animate-pulse"
+                            }`}>
+                              {req.status.replace("_", " ")}
+                            </span>
+                          </td>
+
+                          <td className="py-3.5 px-4 text-right">
+                            {isPending ? (
+                              <div className="flex items-center justify-end gap-1.5">
+                                {/* 1-Click Approve */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleAdjudicateAmendment(req.id, "approved", "Approved via Operations Clearinghouse")}
+                                  disabled={processingAmendmentId === req.id}
+                                  className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors flex items-center gap-1 cursor-pointer"
+                                  title="Approve requested rate and update provider contract immediately"
+                                >
+                                  <Check className="w-3 h-3" />
+                                  <span>Approve Rate</span>
+                                </button>
+
+                                {/* Counter-Offer */}
+                                <button
+                                  type="button"
+                                  onClick={() => setCounterModal({
+                                    isOpen: true,
+                                    req,
+                                    rate: String(Math.round((req.currentRate + req.requestedRate) / 2)),
+                                    notes: "PolyFit benchmark counter-offer"
+                                  })}
+                                  disabled={processingAmendmentId === req.id}
+                                  className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-semibold text-xs transition-colors flex items-center gap-1 cursor-pointer"
+                                  title="Offer a compromise rate"
+                                >
+                                  <Edit3 className="w-3 h-3" />
+                                  <span>Counter</span>
+                                </button>
+
+                                {/* Decline */}
+                                <button
+                                  type="button"
+                                  onClick={() => setRejectModal({
+                                    isOpen: true,
+                                    req,
+                                    notes: "Rate exceeds regional category cap"
+                                  })}
+                                  disabled={processingAmendmentId === req.id}
+                                  className="px-2 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs transition-colors cursor-pointer"
+                                  title="Decline amendment request"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="text-[11px] text-slate-400 font-mono">
+                                {req.reviewedBy ? `Adjudicated by ${req.reviewedBy}` : "Processed"}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Counter-Offer Native Dialog Modal */}
+          {counterModal.isOpen && counterModal.req && (
+            <dialog
+              open
+              className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 w-full h-full"
+            >
+              <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full p-5 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <Edit3 className="w-4 h-4 text-blue-600" />
+                    <h3 className="text-sm font-bold text-slate-900">Counter-Offer Payout Rate</h3>
+                  </div>
+                  <button
+                    onClick={() => setCounterModal({ isOpen: false, req: null, rate: "", notes: "" })}
+                    className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div className="p-3 bg-slate-50 rounded-xl space-y-1">
+                    <div className="font-bold text-slate-900">{counterModal.req.providerName}</div>
+                    <div className="flex items-center justify-between text-slate-500">
+                      <span>Current Contract Rate:</span>
+                      <strong className="font-mono text-slate-700">{formatCurrencyDisplay(counterModal.req.currentRate)}</strong>
+                    </div>
+                    <div className="flex items-center justify-between text-amber-800">
+                      <span>Requested Rate:</span>
+                      <strong className="font-mono">{formatCurrencyDisplay(counterModal.req.requestedRate)}</strong>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Counter-Offer Rate (RWF per visit)
+                    </label>
+                    <input
+                      type="number"
+                      value={counterModal.rate}
+                      onChange={(e) => setCounterModal((prev) => ({ ...prev, rate: e.target.value }))}
+                      placeholder="e.g. 4000"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Commercial Reasoning / Note to Partner
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={counterModal.notes}
+                      onChange={(e) => setCounterModal((prev) => ({ ...prev, notes: e.target.value }))}
+                      placeholder="Explain the platform commercial benchmark..."
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setCounterModal({ isOpen: false, req: null, rate: "", notes: "" })}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!counterModal.rate || Number(counterModal.rate) <= 0) {
+                        alert("Please enter a valid counter-offer rate");
+                        return;
+                      }
+                      handleAdjudicateAmendment(
+                        counterModal.req!.id,
+                        "counter_offered",
+                        counterModal.notes,
+                        Number(counterModal.rate)
+                      );
+                      setCounterModal({ isOpen: false, req: null, rate: "", notes: "" });
+                    }}
+                    className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                  >
+                    Submit Counter-Offer
+                  </button>
+                </div>
+              </div>
+            </dialog>
+          )}
+
+          {/* Rejection Native Dialog Modal */}
+          {rejectModal.isOpen && rejectModal.req && (
+            <dialog
+              open
+              className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 w-full h-full"
+            >
+              <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full p-5 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2 text-rose-600">
+                    <AlertTriangle className="w-4 h-4" />
+                    <h3 className="text-sm font-bold text-slate-900">Decline Rate Amendment</h3>
+                  </div>
+                  <button
+                    onClick={() => setRejectModal({ isOpen: false, req: null, notes: "" })}
+                    className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <p className="text-slate-600">
+                    Are you sure you want to decline the rate increase for <strong>{rejectModal.req.providerName}</strong> ({formatCurrencyDisplay(rejectModal.req.currentRate)} → {formatCurrencyDisplay(rejectModal.req.requestedRate)})?
+                  </p>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Decline Reason &amp; Formal Feedback
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={rejectModal.notes}
+                      onChange={(e) => setRejectModal((prev) => ({ ...prev, notes: e.target.value }))}
+                      placeholder="Specify decline rationale..."
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setRejectModal({ isOpen: false, req: null, notes: "" })}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleAdjudicateAmendment(
+                        rejectModal.req!.id,
+                        "rejected",
+                        rejectModal.notes || "Rate adjustment declined based on platform benchmarks"
+                      );
+                      setRejectModal({ isOpen: false, req: null, notes: "" });
+                    }}
+                    className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                  >
+                    Confirm Decline
+                  </button>
+                </div>
+              </div>
+            </dialog>
+          )}
+        </div>
+      )}
 
       {/* Onboarding Drawer Wizard */}
       <CreateProviderDrawer

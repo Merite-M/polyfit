@@ -15,7 +15,18 @@ import {
   Sparkles,
   Edit2,
   Lock,
-  Filter
+  Filter,
+  Sliders,
+  Check,
+  Save,
+  Zap,
+  Activity,
+  AlertCircle,
+  Info,
+  Clock,
+  ArrowRight,
+  ShieldCheck,
+  Trophy
 } from "lucide-react";
 import { cn, rwfLocaleFormatter } from "@/lib/utils";
 import { apiFetch } from "@/lib/api-client";
@@ -29,6 +40,17 @@ interface PlanSummary {
   activePlans: number;
   totalEnrolled: number;
   avgVisits: number;
+}
+
+interface PulsesRulesData {
+  categoryPulsesWeight: Record<string, number>;
+  dailyVisitLimit: number;
+  allowMultiVenueDifferentCategory: boolean;
+  tierMonthlyCredits: {
+    starter: number;
+    standard: number;
+    executive: number;
+  };
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -57,9 +79,40 @@ function OperationsPlansContent() {
   const [selectedTierFilter, setSelectedTierFilter] = useState("all");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState("all");
 
+  // Tab state
+  const [activeTab, setActiveTab] = useState<"plans" | "pulses">("plans");
+
   // Drawer state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<MasterPlanData | null>(null);
+
+  // Pulses & Access Knobs State
+  const [pulsesRules, setPulsesRules] = useState<PulsesRulesData>({
+    categoryPulsesWeight: {
+      gym: 1,
+      pool: 2,
+      studio: 2,
+      clinic: 3,
+      wellness_center: 3,
+      sports: 2
+    },
+    dailyVisitLimit: 1,
+    allowMultiVenueDifferentCategory: true,
+    tierMonthlyCredits: {
+      starter: 10,
+      standard: 25,
+      executive: 50
+    }
+  });
+  const [initialPulsesRules, setInitialPulsesRules] = useState<PulsesRulesData | null>(null);
+  const [isLoadingPulses, setIsLoadingPulses] = useState(false);
+  const [isSavingPulses, setIsSavingPulses] = useState(false);
+  const [pulsesFeedback, setPulsesFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const isPulsesDirty = useMemo(() => {
+    if (!initialPulsesRules) return false;
+    return JSON.stringify(pulsesRules) !== JSON.stringify(initialPulsesRules);
+  }, [pulsesRules, initialPulsesRules]);
 
   // Fetch plans and organizations
   const loadData = async () => {
@@ -91,8 +144,48 @@ function OperationsPlansContent() {
     }
   };
 
+  const loadPulsesRules = async () => {
+    setIsLoadingPulses(true);
+    try {
+      const res = await apiFetch<PulsesRulesData>("/api/operations/plans/pulses-rules");
+      if (res) {
+        setPulsesRules(res);
+        setInitialPulsesRules(res);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to load pulses access rules.";
+      setPulsesFeedback({ type: "error", message: msg });
+    } finally {
+      setIsLoadingPulses(false);
+    }
+  };
+
+  const handleSavePulsesRules = async () => {
+    setIsSavingPulses(true);
+    setPulsesFeedback(null);
+    try {
+      await apiFetch("/api/operations/plans/pulses-rules", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pulsesRules)
+      });
+      setInitialPulsesRules(pulsesRules);
+      setPulsesFeedback({
+        type: "success",
+        message: "Platform Pulses access rules & category deduction weights saved successfully!"
+      });
+      setTimeout(() => setPulsesFeedback(null), 5000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to save pulses access rules.";
+      setPulsesFeedback({ type: "error", message: msg });
+    } finally {
+      setIsSavingPulses(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
+    loadPulsesRules();
   }, []);
 
   // Filtered plans
@@ -151,26 +244,100 @@ function OperationsPlansContent() {
         <div className="flex items-center gap-2.5 shrink-0">
           <button
             type="button"
-            onClick={loadData}
+            onClick={activeTab === "plans" ? loadData : loadPulsesRules}
             className="p-2.5 rounded-xl border border-[#21405A] bg-[#071521] text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-            title="Refresh Plans"
+            title={activeTab === "plans" ? "Refresh Plans" : "Reload Pulses Rules"}
           >
-            <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin text-[#28D17C]")} />
+            <RefreshCw
+              className={cn(
+                "w-4 h-4",
+                (isLoading || isLoadingPulses) && "animate-spin text-[#28D17C]"
+              )}
+            />
           </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setEditingPlan(null);
-              setIsDrawerOpen(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] font-bold text-xs transition-all shadow-md cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create Master Plan</span>
-          </button>
+          {activeTab === "plans" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setEditingPlan(null);
+                setIsDrawerOpen(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] font-bold text-xs transition-all shadow-md cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create Master Plan</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSavePulsesRules}
+              disabled={isSavingPulses || !isPulsesDirty}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer",
+                isPulsesDirty
+                  ? "bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33]"
+                  : "bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed"
+              )}
+            >
+              {isSavingPulses ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Save Pulses Rules</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Top Level Nav Tabs */}
+      <div className="flex items-center gap-2 border-b border-[#21405A]">
+        <button
+          type="button"
+          onClick={() => setActiveTab("plans")}
+          className={cn(
+            "flex items-center gap-2 pb-3 px-3 text-sm font-semibold transition-all relative border-b-2 cursor-pointer",
+            activeTab === "plans"
+              ? "border-[#28D17C] text-white"
+              : "border-transparent text-slate-400 hover:text-slate-200"
+          )}
+        >
+          <Layers className="w-4 h-4 text-[#28D17C]" />
+          <span>Master Benefit Plans</span>
+          <span className="px-2 py-0.5 rounded-full text-[11px] font-mono bg-[#28D17C]/15 text-[#28D17C] border border-[#28D17C]/30">
+            {plans.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("pulses")}
+          className={cn(
+            "flex items-center gap-2 pb-3 px-3 text-sm font-semibold transition-all relative border-b-2 cursor-pointer",
+            activeTab === "pulses"
+              ? "border-[#28D17C] text-white"
+              : "border-transparent text-slate-400 hover:text-slate-200"
+          )}
+        >
+          <Coins className="w-4 h-4 text-amber-400" />
+          <span>Credits, Pulses & Access Knobs</span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
+            NETWORK GOVERNOR
+          </span>
+          {isPulsesDirty && (
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="Unsaved changes" />
+          )}
+        </button>
+      </div>
+
+      {activeTab === "plans" ? (
+        <>
 
       {/* Real-time Platform KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -486,6 +653,514 @@ function OperationsPlansContent() {
           </table>
         </div>
       </div>
+        </>
+      ) : (
+        <div className="space-y-6">
+          {/* Status / Feedback Banner */}
+          {pulsesFeedback && (
+            <div
+              className={cn(
+                "p-4 rounded-xl border flex items-center justify-between transition-all",
+                pulsesFeedback.type === "success"
+                  ? "bg-[#28D17C]/10 border-[#28D17C]/30 text-[#28D17C]"
+                  : "bg-rose-500/10 border-rose-500/30 text-rose-400"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                {pulsesFeedback.type === "success" ? (
+                  <CheckCircle2 className="w-5 h-5 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 shrink-0" />
+                )}
+                <span className="text-xs font-semibold">{pulsesFeedback.message}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPulsesFeedback(null)}
+                className="text-xs opacity-75 hover:opacity-100 cursor-pointer"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {/* Aggregator Pulses Model Explainer Banner */}
+          <div className="p-5 rounded-2xl bg-gradient-to-r from-[#0B1F33] via-[#0E2845] to-[#0B1F33] border border-[#21405A] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
+                <Coins className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>Network Credits (&quot;Pulses&quot;) &amp; Multi-Category Governor</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30">
+                    LIVE POLICY
+                  </span>
+                </h2>
+                <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                  Calibrate the currency weights that convert corporate monthly plan allowances into verified provider check-ins. Premium facilities (Clinics, Thermal Spas) deduct higher pulses per visit to protect provider reimbursement economics while allowing employees complete cross-category freedom.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
+              <button
+                type="button"
+                onClick={loadPulsesRules}
+                disabled={isLoadingPulses}
+                className="px-3 py-2 rounded-xl border border-[#21405A] bg-[#071521] text-slate-300 hover:text-white text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={cn("w-3.5 h-3.5", isLoadingPulses && "animate-spin text-amber-400")} />
+                <span>Reset to Saved</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSavePulsesRules}
+                disabled={isSavingPulses || !isPulsesDirty}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-2 shadow-md cursor-pointer",
+                  isPulsesDirty
+                    ? "bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33]"
+                    : "bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed"
+                )}
+              >
+                {isSavingPulses ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving Rules...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Platform Pulses Rules</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Section 1: Category Pulses Weights (Deduction per Visit) */}
+          <div className="p-6 rounded-2xl bg-[#0B1F33] border border-[#21405A] space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#21405A] pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-[#28D17C]" />
+                  <span>Category Pulses Weight (Cost per Visit)</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Set how many credits/pulses an employee expends when checking in at each provider category.
+                </p>
+              </div>
+              <span className="text-[11px] font-mono text-slate-400">
+                Default: Gym = 1x | Pool/Studio = 2x | Clinic/Spa = 3x
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                {
+                  key: "gym",
+                  label: "Fitness & Gyms",
+                  tag: "Standard Category",
+                  desc: "Weight rooms, cardio zones, standard gym floors",
+                  icon: Activity,
+                  color: "text-emerald-400",
+                  bg: "bg-emerald-500/10 border-emerald-500/20"
+                },
+                {
+                  key: "pool",
+                  label: "Aquatic Pools",
+                  tag: "Aquatics Category",
+                  desc: "Lap swimming, aqua fitness, hydrotherapy pools",
+                  icon: Sparkles,
+                  color: "text-cyan-400",
+                  bg: "bg-cyan-500/10 border-cyan-500/20"
+                },
+                {
+                  key: "studio",
+                  label: "Yoga & Boutique Studios",
+                  tag: "Instructor-Led",
+                  desc: "Yoga classes, Reformer Pilates, spinning studios",
+                  icon: Users,
+                  color: "text-purple-400",
+                  bg: "bg-purple-500/10 border-purple-500/20"
+                },
+                {
+                  key: "clinic",
+                  label: "Physiotherapy Clinics",
+                  tag: "Medical Wellness",
+                  desc: "Physio consults, sports recovery, clinical therapy",
+                  icon: ShieldCheck,
+                  color: "text-rose-400",
+                  bg: "bg-rose-500/10 border-rose-500/20"
+                },
+                {
+                  key: "wellness_center",
+                  label: "Thermal Spas & Recovery",
+                  tag: "Thermal Wellness",
+                  desc: "Sauna, steam rooms, cold plunge, relaxation areas",
+                  icon: Zap,
+                  color: "text-amber-400",
+                  bg: "bg-amber-500/10 border-amber-500/20"
+                },
+                {
+                  key: "sports",
+                  label: "Padel & Racquet Courts",
+                  tag: "Sports Facilities",
+                  desc: "Padel courts, tennis courts, badminton & squash",
+                  icon: Trophy,
+                  color: "text-blue-400",
+                  bg: "bg-blue-500/10 border-blue-500/20"
+                }
+              ].map((cat) => {
+                const currentWeight = pulsesRules.categoryPulsesWeight[cat.key] || 1;
+                const IconComp = cat.icon;
+
+                return (
+                  <div
+                    key={cat.key}
+                    className="p-4 rounded-xl bg-[#071521] border border-[#21405A] flex flex-col justify-between hover:border-slate-600 transition-all space-y-4"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center border", cat.bg, cat.color)}>
+                            <IconComp className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="text-xs font-bold text-white">{cat.label}</span>
+                        </div>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                          {cat.tag}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-tight">
+                        {cat.desc}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-[#21405A]/50 flex items-center justify-between">
+                      <div className="text-[11px] font-semibold text-slate-400">
+                        Deduction per check-in:
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        {[1, 2, 3, 4, 5].map((val) => (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => {
+                              setPulsesRules((prev) => ({
+                                ...prev,
+                                categoryPulsesWeight: {
+                                  ...prev.categoryPulsesWeight,
+                                  [cat.key]: val
+                                }
+                              }));
+                            }}
+                            className={cn(
+                              "w-7 h-7 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer",
+                              currentWeight === val
+                                ? "bg-[#28D17C] text-[#0B1F33] shadow"
+                                : "bg-[#0B1F33] text-slate-400 hover:text-white hover:bg-slate-800 border border-[#21405A]"
+                            )}
+                          >
+                            {val}x
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Section 2: Platform Daily Check-in & Anti-Passback Policy */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Daily Visit Limit */}
+            <div className="p-6 rounded-2xl bg-[#0B1F33] border border-[#21405A] space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-400" />
+                  <span>Daily Verified Visit Cap</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Maximum number of distinct facility check-ins permitted per employee in a single calendar day (00:00 - 23:59).
+                </p>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  {
+                    val: 1,
+                    title: "1 Visit / Day",
+                    subtitle: "Strict Anti-Passback",
+                    desc: "Optimal fraud guard. Employee can only check in once per day across the network."
+                  },
+                  {
+                    val: 2,
+                    title: "2 Visits / Day",
+                    subtitle: "Recommended",
+                    desc: "Enables active staff to take a morning gym session and evening pool or spa recovery."
+                  },
+                  {
+                    val: 3,
+                    title: "3 Visits / Day",
+                    subtitle: "High Frequency",
+                    desc: "Generous allowance for executive tier beneficiaries with multiple wellness sessions."
+                  }
+                ].map((option) => {
+                  const isSelected = pulsesRules.dailyVisitLimit === option.val;
+                  return (
+                    <button
+                      key={option.val}
+                      type="button"
+                      onClick={() =>
+                        setPulsesRules((prev) => ({
+                          ...prev,
+                          dailyVisitLimit: option.val
+                        }))
+                      }
+                      className={cn(
+                        "p-4 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between space-y-2",
+                        isSelected
+                          ? "bg-[#28D17C]/10 border-[#28D17C] text-white shadow-md ring-1 ring-[#28D17C]/30"
+                          : "bg-[#071521] border-[#21405A] text-slate-400 hover:border-slate-600 hover:text-slate-200"
+                      )}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className={cn("text-xs font-bold font-mono", isSelected ? "text-[#28D17C]" : "text-white")}>
+                            {option.title}
+                          </span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-[#28D17C]" />}
+                        </div>
+                        <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">
+                          {option.subtitle}
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-snug">
+                        {option.desc}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Same-day Multi-Venue Cross-Category Policy */}
+            <div className="p-6 rounded-2xl bg-[#0B1F33] border border-[#21405A] space-y-4 flex flex-col justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-purple-400" />
+                  <span>Cross-Category Multi-Venue Policy</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Govern whether an employee who has reached 1 visit today can check into another venue of a different category.
+                </p>
+              </div>
+
+              <div
+                onClick={() =>
+                  setPulsesRules((prev) => ({
+                    ...prev,
+                    allowMultiVenueDifferentCategory: !prev.allowMultiVenueDifferentCategory
+                  }))
+                }
+                className={cn(
+                  "p-4 rounded-xl border flex items-center justify-between cursor-pointer transition-all",
+                  pulsesRules.allowMultiVenueDifferentCategory
+                    ? "bg-[#28D17C]/10 border-[#28D17C]/40"
+                    : "bg-[#071521] border-[#21405A]"
+                )}
+              >
+                <div className="space-y-1 pr-4">
+                  <div className="text-xs font-bold text-white flex items-center gap-2">
+                    <span>Allow Same-Day Visits Across Different Categories</span>
+                    {pulsesRules.allowMultiVenueDifferentCategory ? (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#28D17C]/20 text-[#28D17C] font-bold">
+                        ACTIVE
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-bold">
+                        DISABLED
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    {pulsesRules.allowMultiVenueDifferentCategory
+                      ? "Employees can visit 1 Gym + 1 Pool/Spa on the same day without being blocked. Same-category repeat visits are strictly blocked."
+                      : "Strict 1-facility lock: once an employee visits any facility today, all check-ins are locked until midnight."}
+                  </p>
+                </div>
+
+                <div
+                  className={cn(
+                    "w-12 h-6 rounded-full p-1 transition-colors relative shrink-0",
+                    pulsesRules.allowMultiVenueDifferentCategory ? "bg-[#28D17C]" : "bg-slate-700"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "w-4 h-4 rounded-full bg-white transition-transform shadow-md",
+                      pulsesRules.allowMultiVenueDifferentCategory ? "translate-x-6" : "translate-x-0"
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-[#071521] border border-[#21405A] text-[11px] text-slate-400 flex items-start gap-2">
+                <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                <span>
+                  Anti-Passback window of 3 hours per facility location remains active at all times regardless of daily limit settings.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Monthly Tier Credits Allotments */}
+          <div className="p-6 rounded-2xl bg-[#0B1F33] border border-[#21405A] space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#21405A] pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Coins className="w-4 h-4 text-amber-400" />
+                  <span>Corporate Tier Monthly Credits Allotments</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Default pulses replenished into employee digital wallets on the 1st of each calendar month.
+                </p>
+              </div>
+              <span className="text-[11px] font-mono text-slate-400">
+                Purchasing power calculates automatically based on category weights
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                {
+                  tier: "starter" as const,
+                  name: "Starter Benefit Tier",
+                  subtitle: "Base Wellness Package",
+                  color: "border-slate-700 bg-slate-900/50",
+                  icon: Shield,
+                  badge: "bg-slate-800 text-slate-300"
+                },
+                {
+                  tier: "standard" as const,
+                  name: "Standard Benefit Tier",
+                  subtitle: "Most Popular Corporate Plan",
+                  color: "border-blue-500/30 bg-blue-950/20",
+                  icon: Sparkles,
+                  badge: "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                },
+                {
+                  tier: "executive" as const,
+                  name: "Executive Benefit Tier",
+                  subtitle: "Full-Spectrum Premium Package",
+                  color: "border-amber-500/30 bg-amber-950/20",
+                  icon: Crown,
+                  badge: "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                }
+              ].map((tierItem) => {
+                const credits = pulsesRules.tierMonthlyCredits[tierItem.tier] || 10;
+                const gymWeight = pulsesRules.categoryPulsesWeight["gym"] || 1;
+                const poolWeight = pulsesRules.categoryPulsesWeight["pool"] || 2;
+                const clinicWeight = pulsesRules.categoryPulsesWeight["clinic"] || 3;
+
+                const maxGymVisits = Math.floor(credits / gymWeight);
+                const maxPoolVisits = Math.floor(credits / poolWeight);
+                const maxClinicVisits = Math.floor(credits / clinicWeight);
+
+                const TierIcon = tierItem.icon;
+
+                return (
+                  <div
+                    key={tierItem.tier}
+                    className={cn(
+                      "p-5 rounded-2xl border space-y-4 flex flex-col justify-between",
+                      tierItem.color
+                    )}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <TierIcon className="w-4 h-4 text-white" />
+                          <span className="text-xs font-bold text-white">{tierItem.name}</span>
+                        </div>
+                        <span className={cn("text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase", tierItem.badge)}>
+                          {tierItem.tier}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        {tierItem.subtitle}
+                      </p>
+
+                      <div className="pt-2">
+                        <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                          Monthly Credits / Pulses Allowance
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="1"
+                            max="200"
+                            value={credits}
+                            onChange={(e) => {
+                              const val = Math.max(1, parseInt(e.target.value) || 1);
+                              setPulsesRules((prev) => ({
+                                ...prev,
+                                tierMonthlyCredits: {
+                                  ...prev.tierMonthlyCredits,
+                                  [tierItem.tier]: val
+                                }
+                              }));
+                            }}
+                            className="w-full px-3 py-2 rounded-xl bg-[#071521] border border-[#21405A] text-white font-mono font-bold text-sm focus:outline-none focus:border-[#28D17C]"
+                          />
+                          <span className="text-xs font-mono text-slate-400 shrink-0">
+                            pulses/mo
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Purchasing Power Breakdown */}
+                    <div className="p-3.5 rounded-xl bg-[#071521] border border-[#21405A] space-y-2">
+                      <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                        Network Purchasing Power
+                      </div>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between text-slate-300">
+                          <span className="flex items-center gap-1.5">
+                            <Activity className="w-3 h-3 text-emerald-400" />
+                            <span>Gym Sessions</span>
+                          </span>
+                          <span className="font-mono font-bold text-white">~{maxGymVisits} visits</span>
+                        </div>
+                        <div className="flex items-center justify-between text-slate-300">
+                          <span className="flex items-center gap-1.5">
+                            <Sparkles className="w-3 h-3 text-cyan-400" />
+                            <span>Pool / Studio</span>
+                          </span>
+                          <span className="font-mono font-bold text-white">~{maxPoolVisits} visits</span>
+                        </div>
+                        <div className="flex items-center justify-between text-slate-300">
+                          <span className="flex items-center gap-1.5">
+                            <ShieldCheck className="w-3 h-3 text-rose-400" />
+                            <span>Physio / Spas</span>
+                          </span>
+                          <span className="font-mono font-bold text-white">~{maxClinicVisits} visits</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Master Plan Builder Drawer */}
       <MasterPlanBuilderDrawer

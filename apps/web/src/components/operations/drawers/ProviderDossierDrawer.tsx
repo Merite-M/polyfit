@@ -30,10 +30,11 @@ import {
   AlertCircle,
   Copy,
   MessageSquare,
-  Send
+  Send,
+  Star
 } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
-import { formatCurrencyDisplay } from "@/lib/utils";
+import { formatCurrencyDisplay, cn } from "@/lib/utils";
 
 export interface ProviderDossierDrawerProps {
   isOpen: boolean;
@@ -51,12 +52,28 @@ export function ProviderDossierDrawer({
   onProviderUpdated
 }: ProviderDossierDrawerProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [activeTab, setActiveTab] = useState<"commercial" | "kyc" | "locations" | "utilization">("commercial");
+  const [activeTab, setActiveTab] = useState<"commercial" | "kyc" | "locations" | "utilization" | "quality">("commercial");
 
   const [loading, setLoading] = useState(false);
   const [providerData, setProviderData] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
+
+  // Quality Scorecard & Hygiene Audit states
+  const [qualityRating, setQualityRating] = useState<number>(4.8);
+  const [hygieneStatus, setHygieneStatus] = useState<"verified_passed" | "pending_inspection" | "action_required">("verified_passed");
+  const [verifiedAmenities, setVerifiedAmenities] = useState<string[]>([
+    "lockers_showers",
+    "filtered_water",
+    "aed_first_aid",
+    "certified_staff",
+    "hvac_ventilation"
+  ]);
+  const [inspectorName, setInspectorName] = useState<string>("PolyFit Operations Staff");
+  const [inspectionDate, setInspectionDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [inspectionNotes, setInspectionNotes] = useState<string>("");
+  const [savingQuality, setSavingQuality] = useState<boolean>(false);
+  const [qualitySuccessMsg, setQualitySuccessMsg] = useState<string | null>(null);
 
   // Selected location for locations and commercial tab
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
@@ -127,6 +144,17 @@ export function ProviderDossierDrawer({
         setMomoProvider(bd.momoProvider || "MTN Mobile Money Rwanda");
         setMomoCode(bd.momoCode || "");
         setMomoPhone(bd.momoPhone || "");
+
+        // Scorecard initialization
+        const scorecard = data.provider?.onboarding_details?.quality_scorecard || {};
+        setQualityRating(data.provider?.rating ? Number(data.provider.rating) : 4.8);
+        setHygieneStatus(scorecard.hygiene_status || "verified_passed");
+        if (Array.isArray(scorecard.amenities_verified) && scorecard.amenities_verified.length > 0) {
+          setVerifiedAmenities(scorecard.amenities_verified);
+        }
+        setInspectorName(scorecard.inspector_name || "PolyFit Operations Staff");
+        setInspectionDate(scorecard.last_inspected_at ? scorecard.last_inspected_at.split("T")[0] : new Date().toISOString().split("T")[0]);
+        setInspectionNotes(scorecard.inspection_notes || "");
       }
     } catch (err) {
       console.error("[ProviderDossierDrawer] Failed to fetch provider details:", err);
@@ -323,6 +351,47 @@ export function ProviderDossierDrawer({
     }
   };
 
+  // Quality Scorecard Save Handler
+  const handleSaveQualityScorecard = async () => {
+    if (!providerId) return;
+    setSavingQuality(true);
+    setQualitySuccessMsg(null);
+    try {
+      const payload = {
+        rating: qualityRating,
+        hygiene_status: hygieneStatus,
+        amenities_verified: verifiedAmenities,
+        last_inspected_at: inspectionDate,
+        inspection_notes: inspectionNotes,
+        inspector_name: inspectorName
+      };
+      await apiFetch(`/api/operations/providers/${providerId}/quality-scorecard`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      setQualitySuccessMsg("Provider quality scorecard & hygiene audit updated successfully!");
+      setProviderData((prev: any) => ({
+        ...prev,
+        provider: {
+          ...prev?.provider,
+          rating: qualityRating,
+          onboarding_details: {
+            ...prev?.provider?.onboarding_details,
+            quality_scorecard: payload
+          }
+        }
+      }));
+      onProviderUpdated?.();
+      setTimeout(() => setQualitySuccessMsg(null), 4000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to update quality scorecard.";
+      console.error("[ProviderDossierDrawer] Failed to save quality scorecard:", err);
+    } finally {
+      setSavingQuality(false);
+    }
+  };
+
   const provider = providerData?.provider || initialData || {};
   const locations = providerData?.locations || [];
   const contracts = providerData?.contracts || [];
@@ -440,6 +509,7 @@ export function ProviderDossierDrawer({
             {[
               { id: "commercial", label: "Commercial Terms & Rates", icon: DollarSign },
               { id: "kyc", label: "KYC & Compliance Dossier", icon: ShieldCheck },
+              { id: "quality", label: "Quality & Hygiene Audit", icon: Sparkles },
               { id: "locations", label: `Facilities & Geofence (${locations.length})`, icon: MapPin },
               { id: "utilization", label: "Utilization & Capacity", icon: Activity }
             ].map((tab) => {
@@ -1252,6 +1322,227 @@ export function ProviderDossierDrawer({
                       <p className="text-[10px] text-slate-400 text-center font-mono">
                         Morning Rush (06h - 09h) | Lunch Break (12h - 14h) | Evening Rush (17h - 20h)
                       </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* ═══════════ TAB 5: QUALITY SCORECARD & HYGIENE AUDIT ═══════════ */}
+                {activeTab === "quality" && (
+                  <div className="space-y-6">
+                    {qualitySuccessMsg && (
+                      <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>{qualitySuccessMsg}</span>
+                      </div>
+                    )}
+
+                    {/* Section 1: Official Partner Rating & Hygiene Certification */}
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                        <div>
+                          <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                            <Sparkles className="w-4 h-4 text-amber-500" />
+                            <span>Platform Quality Grade &amp; Beneficiary Trust Score</span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            Published on employee mobile app and used by corporate procurement algorithms to recommend facilities.
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-200 text-slate-700 font-bold">
+                          NETWORK SCORECARD
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Star Rating Picker */}
+                        <div className="p-3 rounded-lg bg-white border border-slate-200 space-y-2">
+                          <label className="text-[11px] font-bold text-slate-700 block">
+                            Quality Star Rating (1.0 - 5.0)
+                          </label>
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                  key={star}
+                                  type="button"
+                                  onClick={() => setQualityRating(star)}
+                                  className="p-1 text-amber-400 hover:scale-110 transition-transform cursor-pointer"
+                                  title={`${star} Stars`}
+                                >
+                                  <Star
+                                    className={cn(
+                                      "w-5 h-5",
+                                      qualityRating >= star
+                                        ? "fill-amber-400 text-amber-400"
+                                        : qualityRating >= star - 0.5
+                                        ? "fill-amber-200 text-amber-400"
+                                        : "text-slate-300"
+                                    )}
+                                  />
+                                </button>
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="1.0"
+                                max="5.0"
+                                value={qualityRating}
+                                onChange={(e) => setQualityRating(Math.min(5, Math.max(1, parseFloat(e.target.value) || 1)))}
+                                className="w-16 px-2 py-1 rounded bg-slate-50 border border-slate-300 font-mono font-bold text-xs text-slate-900 text-center"
+                              />
+                              <span className="text-xs font-mono text-slate-500">/ 5.0</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Hygiene Certification Dropdown */}
+                        <div className="p-3 rounded-lg bg-white border border-slate-200 space-y-2">
+                          <label className="text-[11px] font-bold text-slate-700 block">
+                            Hygiene &amp; Sanitation Status
+                          </label>
+                          <select
+                            value={hygieneStatus}
+                            onChange={(e) => setHygieneStatus(e.target.value as any)}
+                            className="w-full px-3 py-1.5 rounded-lg border text-xs font-semibold bg-white text-slate-800 border-slate-300 cursor-pointer"
+                          >
+                            <option value="verified_passed">Passed - Certified Hygienic &amp; Sanitized</option>
+                            <option value="pending_inspection">Pending Inspection - Field Audit Due</option>
+                            <option value="action_required">Action Required - Sanitation Remedy Notice Issued</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Section 2: Verified Amenities Checklist */}
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <div>
+                          <div className="text-xs font-bold text-slate-900">
+                            Verified On-Site Amenities (Field Audit)
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            Amenities physically verified by PolyFit operations staff during on-site visit.
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-mono text-slate-500">
+                          {verifiedAmenities.length} Verified
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        {[
+                          { id: "lockers_showers", label: "Locker Rooms & Private Showers", desc: "Clean changing facilities with secure lockers" },
+                          { id: "filtered_water", label: "Filtered Drinking Water Station", desc: "Free cold water hydration point available" },
+                          { id: "aed_first_aid", label: "AED / First Aid Certified Station", desc: "Emergency defibrillator & first aid kit on premise" },
+                          { id: "certified_staff", label: "Certified Instructors / Lifeguards", desc: "Qualified trainers or lifeguards active on floor" },
+                          { id: "hvac_ventilation", label: "Air Conditioning & Active HVAC", desc: "Fresh air circulation & climate control verified" },
+                          { id: "towel_service", label: "Sanitized Towel Service", desc: "Fresh workout / bath towels provided to members" },
+                          { id: "parking_security", label: "Dedicated Parking & Security", desc: "Secure facility parking with on-site guard" },
+                          { id: "wheelchair_accessible", label: "Wheelchair & Disability Accessible", desc: "Ramps, wide doors, and accessible washroom" }
+                        ].map((amenity) => {
+                          const isChecked = verifiedAmenities.includes(amenity.id);
+                          return (
+                            <label
+                              key={amenity.id}
+                              className={cn(
+                                "p-2.5 rounded-lg border flex items-start gap-2.5 cursor-pointer transition-all",
+                                isChecked
+                                  ? "bg-white border-emerald-300 shadow-xs"
+                                  : "bg-slate-100/70 border-slate-200 text-slate-500"
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  setVerifiedAmenities((prev) =>
+                                    isChecked ? prev.filter((id) => id !== amenity.id) : [...prev, amenity.id]
+                                  );
+                                }}
+                                className="mt-0.5 rounded text-[#28D17C] focus:ring-[#28D17C]"
+                              />
+                              <div className="space-y-0.5">
+                                <div className={cn("text-xs font-semibold", isChecked ? "text-slate-900" : "text-slate-600")}>
+                                  {amenity.label}
+                                </div>
+                                <div className="text-[10px] text-slate-400 leading-tight">
+                                  {amenity.desc}
+                                </div>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Section 3: Field Inspection Audit Log */}
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                      <div className="text-xs font-bold text-slate-900">
+                        Field Inspection &amp; Hygiene Audit Log
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                            Inspector Name / Field Ops Officer
+                          </label>
+                          <input
+                            type="text"
+                            value={inspectorName}
+                            onChange={(e) => setInspectorName(e.target.value)}
+                            placeholder="e.g. Jean-Paul Habimana (PolyFit Field Ops)"
+                            className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-xs text-slate-800 focus:outline-none focus:border-[#28D17C]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                            Audit Date
+                          </label>
+                          <input
+                            type="date"
+                            value={inspectionDate}
+                            onChange={(e) => setInspectionDate(e.target.value)}
+                            className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-xs text-slate-800 focus:outline-none focus:border-[#28D17C]"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                          Inspection Observations &amp; Hygiene Remedy Notes
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={inspectionNotes}
+                          onChange={(e) => setInspectionNotes(e.target.value)}
+                          placeholder="Record notes on locker room cleanliness, water filter testing, emergency equipment status, ventilation airflow, or required maintenance remedials..."
+                          className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-xs text-slate-800 focus:outline-none focus:border-[#28D17C] leading-relaxed"
+                        />
+                      </div>
+
+                      <div className="flex justify-end pt-2 border-t border-slate-200">
+                        <button
+                          type="button"
+                          onClick={handleSaveQualityScorecard}
+                          disabled={savingQuality}
+                          className="px-4 py-2 bg-[#28D17C] text-[#0B1F33] rounded-lg font-bold text-xs flex items-center gap-2 hover:bg-[#22BC6E] transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                        >
+                          {savingQuality ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Saving Scorecard...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-3.5 h-3.5" />
+                              <span>Save Quality Scorecard &amp; Audit</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

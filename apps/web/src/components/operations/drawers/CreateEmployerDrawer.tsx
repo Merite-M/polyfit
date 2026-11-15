@@ -26,6 +26,14 @@ interface CreateEmployerDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (newClient: any) => void;
+  initialLeadData?: {
+    companyName?: string;
+    contactName?: string;
+    workEmail?: string;
+    country?: string;
+    companySize?: string;
+    interestTier?: string;
+  } | null;
 }
 
 const INDUSTRY_OPTIONS = [
@@ -56,7 +64,8 @@ const PLAN_TIER_BENCHMARKS: Record<string, { label: string; monthlyCost: number;
 export function CreateEmployerDrawer({
   isOpen,
   onClose,
-  onSuccess
+  onSuccess,
+  initialLeadData
 }: CreateEmployerDrawerProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -104,6 +113,38 @@ export function CreateEmployerDrawer({
       setError(null);
     }
   }, [isOpen]);
+
+  // Pre-fill from initialLeadData when drawer is opened with a lead
+  useEffect(() => {
+    if (initialLeadData && isOpen) {
+      if (initialLeadData.companyName) setName(initialLeadData.companyName);
+      if (initialLeadData.workEmail) {
+        setContactEmail(initialLeadData.workEmail);
+        setBillingEmail(initialLeadData.workEmail);
+      }
+      if (initialLeadData.contactName) setAdminName(initialLeadData.contactName);
+      if (initialLeadData.country) setCountry(initialLeadData.country);
+      if (initialLeadData.companySize) {
+        const sizeMap: Record<string, string> = {
+          "1-50": "1-50",
+          "51-200": "51-250",
+          "51-250": "51-250",
+          "201-500": "251-1000",
+          "251-1000": "251-1000",
+          "500+": "1000+",
+          "1000+": "1000+"
+        };
+        const mapped = sizeMap[initialLeadData.companySize];
+        if (mapped) setHeadcountTier(mapped);
+      }
+      if (initialLeadData.interestTier) {
+        const tier = initialLeadData.interestTier.toLowerCase();
+        if (PLAN_TIER_BENCHMARKS[tier]) {
+          setPlanTier(tier);
+        }
+      }
+    }
+  }, [initialLeadData, isOpen]);
 
   // Keep admin email in sync with contact email if not edited
   useEffect(() => {

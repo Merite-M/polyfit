@@ -48,7 +48,15 @@ const {
   getOperationsPlans,
   createOperationsPlan,
   updateOperationsPlan,
-  deleteOperationsPlan
+  deleteOperationsPlan,
+  // Inbound Corporate Leads & Rate Amendments
+  getOperationsDemoRequests,
+  updateOperationsDemoRequest,
+  getOperationsAmendmentRequests,
+  adjudicateAmendmentRequest,
+  getOperationsPulsesRules,
+  updateOperationsPulsesRules,
+  updateOperationsProviderQuality
 } = require('../services/operationsService');
 
 const { requireAuth, requireRole } = require('../middleware/authMiddleware');
@@ -1174,6 +1182,150 @@ router.delete('/plans/:id', async (req, res) => {
     return res.status(400).json({
       error: error.message,
       code: 'OPERATIONS_PLAN_DELETE_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/operations/demo-requests
+ * Paginated list of inbound corporate demo inquiries with status breakdown
+ */
+router.get('/demo-requests', async (req, res) => {
+  try {
+    const { status, search, companySize, page, limit } = req.query;
+    const result = await getOperationsDemoRequests({ status, search, companySize, page, limit });
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] List demo requests error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_DEMO_REQUESTS_FAILED'
+    });
+  }
+});
+
+/**
+ * PATCH /api/operations/demo-requests/:id
+ * Update status, notes, or converted org for an inbound corporate demo request
+ */
+router.patch('/demo-requests/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminUserId = req.user?.id || req.user?.sub || 'operations-staff';
+    const updated = await updateOperationsDemoRequest(id, req.body, adminUserId);
+    return res.status(200).json({
+      success: true,
+      message: 'Demo request updated successfully',
+      data: updated
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Update demo request error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_DEMO_REQUEST_UPDATE_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/operations/amendment-requests
+ * Provider contract rate change requests review desk
+ */
+router.get('/amendment-requests', async (req, res) => {
+  try {
+    const { status, search, page, limit } = req.query;
+    const result = await getOperationsAmendmentRequests({ status, search, page, limit });
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] List amendment requests error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_AMENDMENTS_LIST_FAILED'
+    });
+  }
+});
+
+/**
+ * PATCH /api/operations/amendment-requests/:id/adjudicate
+ * 1-Click Adjudication for rate change requests (approved, counter_offered, rejected)
+ */
+router.patch('/amendment-requests/:id/adjudicate', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminUserId = req.user?.id || req.user?.sub || 'operations-staff';
+    const result = await adjudicateAmendmentRequest(id, req.body, adminUserId);
+    return res.status(200).json({
+      success: true,
+      message: `Amendment request ${req.body.action || 'processed'} successfully`,
+      data: result
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Adjudicate amendment error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_AMENDMENT_ADJUDICATION_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/operations/plans/pulses-rules
+ * Retrieve platform credits & pulses access rules
+ */
+router.get('/plans/pulses-rules', async (req, res) => {
+  try {
+    const rules = await getOperationsPulsesRules();
+    return res.status(200).json(rules);
+  } catch (error) {
+    console.error('[operationsRoutes] Get pulses rules error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_PULSES_RULES_FAILED'
+    });
+  }
+});
+
+/**
+ * PATCH /api/operations/plans/pulses-rules
+ * Update platform credits & pulses access rules
+ */
+router.patch('/plans/pulses-rules', async (req, res) => {
+  try {
+    const adminUserId = req.user?.id || req.user?.sub || 'operations-staff';
+    const updated = await updateOperationsPulsesRules(req.body, adminUserId);
+    return res.status(200).json({
+      success: true,
+      message: 'Platform pulses access rules updated successfully',
+      data: updated
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Update pulses rules error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_PULSES_UPDATE_FAILED'
+    });
+  }
+});
+
+/**
+ * PATCH /api/operations/providers/:id/quality-scorecard
+ * Update provider quality scorecard, star rating, and hygiene audit notes
+ */
+router.patch('/providers/:id/quality-scorecard', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminUserId = req.user?.id || req.user?.sub || 'operations-staff';
+    const updated = await updateOperationsProviderQuality(id, req.body, adminUserId);
+    return res.status(200).json({
+      success: true,
+      message: 'Provider quality scorecard updated successfully',
+      provider: updated
+    });
+  } catch (error) {
+    console.error('[operationsRoutes] Update provider quality error:', error.message);
+    return res.status(400).json({
+      error: error.message,
+      code: 'OPERATIONS_PROVIDER_QUALITY_FAILED'
     });
   }
 });
