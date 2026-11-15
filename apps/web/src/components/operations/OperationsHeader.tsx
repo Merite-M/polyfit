@@ -19,11 +19,12 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
   const { openBypassModal } = useOperationsDrawer();
 
   const getSectionName = () => {
-    if (pathname?.includes("/operations/support")) return "User 360 & Security";
+    if (pathname?.includes("/operations/support")) return "Staff & Support";
     if (pathname?.includes("/operations/clients")) return "Corporate Clients";
-    if (pathname?.includes("/operations/providers")) return "Provider Network";
-    if (pathname?.includes("/operations/visits")) return "Live Visit Monitor";
-    if (pathname?.includes("/operations/finance")) return "Marketplace Finance";
+    if (pathname?.includes("/operations/providers")) return "Partner Network";
+    if (pathname?.includes("/operations/visits")) return "Visits & Disputes";
+    if (pathname?.includes("/operations/finance")) return "Finance & Clearing";
+    if (pathname?.includes("/operations/plans")) return "Benefit Plans";
     return "Command Center";
   };
 

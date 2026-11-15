@@ -28,14 +28,14 @@ export function LiveTelemetryStrip({
         <div>
           <div className="flex items-center gap-2">
             <span className="font-bold text-xs tracking-wide text-white">
-              LIVE NETWORK PULSE
+              NETWORK CHECK-IN STREAM
             </span>
             <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-[#28D17C]/20 text-[#28D17C] font-semibold border border-[#28D17C]/30">
-              KIGALI AGGREGATOR RUNTIME
+              KIGALI OPERATIONAL HUB
             </span>
           </div>
           <p className="text-[11px] text-slate-300 mt-0.5">
-            Real-time biometric IoT turnstiles & dynamic TOTP QR stream nominal.
+            Live dynamic QR pass verification and partner facility access nominal.
           </p>
         </div>
       </div>
@@ -51,10 +51,10 @@ export function LiveTelemetryStrip({
         </div>
 
         <div className="pl-4 sm:pl-6">
-          <div className="text-[10px] text-slate-400 uppercase font-medium">Turnstiles IoT</div>
+          <div className="text-[10px] text-slate-400 uppercase font-medium">Front-Desk Scanners</div>
           <div className="font-mono text-sm font-semibold text-[#00D2B4] flex items-center gap-1 mt-0.5">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>108 Online</span>
+            <span>Active & Online</span>
           </div>
         </div>
 

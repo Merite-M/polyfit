@@ -264,7 +264,7 @@ export function VisitDetailDrawer({
                     }}
                     className="text-[#28D17C] hover:underline flex items-center gap-1 text-[11px] font-semibold"
                   >
-                    <span>PF-118 Drawer</span>
+                    <span>Client Profile</span>
                     <ExternalLink className="w-3 h-3" />
                   </button>
                 </div>
@@ -311,7 +311,7 @@ export function VisitDetailDrawer({
                     }}
                     className="text-[#28D17C] hover:underline flex items-center gap-1 text-[11px] font-semibold"
                   >
-                    <span>PF-119 Dossier</span>
+                    <span>Provider Dossier</span>
                     <ExternalLink className="w-3 h-3" />
                   </button>
                 </div>

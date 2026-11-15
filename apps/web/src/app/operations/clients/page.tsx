@@ -162,10 +162,10 @@ function CorporateClientsContent() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-1 rounded bg-[#28D17C]/20 text-[#28D17C] border border-[#28D17C]/30 font-mono text-[10px] font-bold">
-              PF-118
+            <span className="px-2 py-0.5 rounded-full bg-[#28D17C]/15 text-[#156d41] font-semibold text-[11px]">
+              Corporate Client Management
             </span>
-            <span className="text-xs text-slate-400 font-medium">Super Admin Modules</span>
+            <span className="text-xs text-slate-400 font-medium">• Roster &amp; Benefit Contracts</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 mt-1">
             Corporate Clients &amp; Contract Lifecycle

@@ -349,7 +349,7 @@ export function SlideOverDrawerHost() {
                     href={`/operations/clients?id=${id}`}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#0B1F33] hover:bg-slate-800 text-white font-semibold transition-colors"
                   >
-                    <span>Open in Contract Builder (PF-118)</span>
+                    <span>Open in Corporate Client Profile</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 )}
@@ -358,7 +358,7 @@ export function SlideOverDrawerHost() {
                     href={`/operations/providers?id=${id}`}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#0B1F33] hover:bg-slate-800 text-white font-semibold transition-colors"
                   >
-                    <span>Open Provider Dossier & Payout Matrix (PF-119)</span>
+                    <span>Open Provider Network Dossier</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 )}
@@ -367,7 +367,7 @@ export function SlideOverDrawerHost() {
                     href={`/operations/support?id=${id}`}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#0B1F33] hover:bg-slate-800 text-white font-semibold transition-colors"
                   >
-                    <span>Open User 360 & Device Lock (PF-122)</span>
+                    <span>Open Beneficiary Support &amp; Security</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 )}
@@ -376,7 +376,7 @@ export function SlideOverDrawerHost() {
                     href={`/operations/visits?id=${id}`}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#0B1F33] hover:bg-slate-800 text-white font-semibold transition-colors"
                   >
-                    <span>Inspect in Live Visit Monitor (PF-120)</span>
+                    <span>Inspect in Live Visit &amp; Dispute Desk</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 )}
@@ -385,7 +385,7 @@ export function SlideOverDrawerHost() {
                     href={`/operations/finance?id=${id}`}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#0B1F33] hover:bg-slate-800 text-white font-semibold transition-colors"
                   >
-                    <span>Inspect in Marketplace Finance (PF-121)</span>
+                    <span>Inspect in Marketplace Finance</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 )}
@@ -394,7 +394,7 @@ export function SlideOverDrawerHost() {
                     href={`/operations/providers?id=${data?.providerId}`}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#0B1F33] hover:bg-slate-800 text-white font-semibold transition-colors"
                   >
-                    <span>View Parent Provider Network (PF-119)</span>
+                    <span>View Parent Provider Network</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 )}

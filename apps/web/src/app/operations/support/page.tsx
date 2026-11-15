@@ -367,9 +367,9 @@ export default function SupportOperationsPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold tracking-tight text-white">User 360 & RBAC Governance</h1>
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#28D17C]/20 text-[#28D17C] border border-[#28D17C]/30">
-                  PF-122
+                <h1 className="text-xl font-bold tracking-tight text-white">Beneficiary Support &amp; Team Permissions</h1>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#28D17C]/20 text-[#28D17C] border border-[#28D17C]/30">
+                  Platform Operations
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
@@ -484,7 +484,7 @@ export default function SupportOperationsPage() {
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>Beneficiary Directory & 360 Cockpit</span>
+          <span>Beneficiary Support Directory</span>
         </button>
 
         <button
@@ -497,7 +497,7 @@ export default function SupportOperationsPage() {
           }`}
         >
           <Sliders className="w-4 h-4" />
-          <span>Platform Settings Knobs</span>
+          <span>Operational Rules &amp; Limits</span>
         </button>
 
         <button
@@ -510,7 +510,7 @@ export default function SupportOperationsPage() {
           }`}
         >
           <History className="w-4 h-4" />
-          <span>Immutable Audit Stream</span>
+          <span>System &amp; Security Audit Trail</span>
         </button>
 
         <button
@@ -523,7 +523,7 @@ export default function SupportOperationsPage() {
           }`}
         >
           <Shield className="w-4 h-4" />
-          <span>Team RBAC Roles</span>
+          <span>Staff Directory &amp; Permissions</span>
         </button>
       </div>
 

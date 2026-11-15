@@ -237,8 +237,8 @@ export function CreateEmployerDrawer({
                 <Building2 className="w-4 h-4" />
               </span>
               <h2 className="text-base font-bold tracking-tight">Provision Corporate Client</h2>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#28D17C]/20 text-[#28D17C] font-semibold">
-                PF-118
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#28D17C]/20 text-[#28D17C] border border-[#28D17C]/30">
+                New Client Setup
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1">

@@ -303,8 +303,8 @@ export function CreateProviderDrawer({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 uppercase">
-                    PF-119 Onboarding Engine
+                  <span className="text-[10px] font-semibold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 uppercase">
+                    Provider Network Setup
                   </span>
                   <span className="text-xs text-slate-400 font-mono">Step {currentStep} of 3</span>
                 </div>

@@ -191,7 +191,7 @@ export function SettlementReconciliationModal({
                   <span>Dispute Escrow Protection (Zero Cash Leakage)</span>
                 </div>
                 <p className="text-amber-800 leading-relaxed text-[11px]">
-                  Any visit involved in an active open dispute in the Live Visit Monitor (PF-120) is automatically held from the settlement batch. Once resolved by an ops lead, the adjustment will be released in the next cycle.
+                  Any visit involved in an active open dispute in the Live Visit &amp; Dispute Desk is automatically held from the settlement batch. Once resolved by an ops lead, the adjustment will be released in the next cycle.
                 </p>
               </div>
 

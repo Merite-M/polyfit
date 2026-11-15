@@ -129,8 +129,8 @@ export default function MarketplaceFinancePage() {
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">
               Marketplace Finance & Clearinghouse
             </h1>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-              EPIC-05 • PF-121
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+              Corporate Clearing &amp; Payouts
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">

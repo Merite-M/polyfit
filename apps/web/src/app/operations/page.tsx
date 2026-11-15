@@ -48,6 +48,11 @@ interface OperationsOverviewData {
     activeDisputes: number;
     velocityAlerts: number;
   };
+  actionQueue?: {
+    openDisputesCount: number;
+    pendingKycCount: number;
+    pendingSettlementsCount: number;
+  };
   financials: {
     currency: string;
     invoicedMtd: number;
@@ -100,6 +105,11 @@ const DEFAULT_OVERVIEW: OperationsOverviewData = {
     activeDisputes: 0,
     velocityAlerts: 0,
   },
+  actionQueue: {
+    openDisputesCount: 0,
+    pendingKycCount: 0,
+    pendingSettlementsCount: 0,
+  },
   financials: {
     currency: "RWF",
     invoicedMtd: 0,
@@ -113,7 +123,7 @@ const DEFAULT_OVERVIEW: OperationsOverviewData = {
 export default function OperationsCommandCenterPage() {
   const [overview, setOverview] = useState<OperationsOverviewData>(DEFAULT_OVERVIEW);
   const [loading, setLoading] = useState(true);
-  const { openDrawer } = useOperationsDrawer();
+  const { openDrawer, openBypassModal } = useOperationsDrawer();
 
   useEffect(() => {
     async function loadOverview() {
@@ -132,39 +142,174 @@ export default function OperationsCommandCenterPage() {
     loadOverview();
   }, []);
 
+  const openDisputesCount = overview.actionQueue?.openDisputesCount ?? overview.visits.activeDisputes ?? 0;
+  const pendingKycCount = overview.actionQueue?.pendingKycCount ?? overview.network.providers.inReview ?? 0;
+  const pendingSettlementsCount = overview.actionQueue?.pendingSettlementsCount ?? 0;
+  const onboardingOrgsCount = overview.network.employers.onboarding ?? 0;
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* Page Title & Mission Banner */}
+      {/* Page Title & Operational Mission Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl md:text-2xl font-bold text-[#0B1F33] tracking-tight">
-              Executive Network Command Center
+              Network Operations Command Center
             </h1>
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-[#E9FAF2] text-[#008A4B] font-semibold border border-[#B7F1D2]">
-              EPIC-05
+            <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-[#E9FAF2] text-[#008A4B] font-semibold border border-[#B7F1D2]">
+              Kigali Hub • Active
             </span>
           </div>
           <p className="text-xs md:text-sm text-slate-500 mt-1">
-            Aggregator health, real-time visit stream & marketplace gross margin clearinghouse.
+            Real-time aggregator health, front-desk visit telemetry & marketplace gross margin clearinghouse.
           </p>
         </div>
 
         {/* Global Action Shortcuts */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => openBypassModal()}
+            className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-xs font-bold text-slate-950 shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer"
+          >
+            <Zap className="w-3.5 h-3.5 text-slate-950 fill-slate-950" />
+            <span>Emergency Pass</span>
+          </button>
           <a
             href="/operations/clients"
             className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-slate-300 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors flex items-center gap-1.5"
           >
             <Building2 className="w-3.5 h-3.5 text-indigo-500" />
-            <span>Add Employer</span>
+            <span>New Employer</span>
           </a>
           <a
             href="/operations/providers"
             className="px-3.5 py-2 rounded-xl bg-[#0B1F33] hover:bg-slate-800 text-xs font-semibold text-white shadow-2xs transition-colors flex items-center gap-1.5"
           >
             <Network className="w-3.5 h-3.5 text-[#28D17C]" />
-            <span>Approve Providers</span>
+            <span>Review Providers</span>
+          </a>
+        </div>
+      </div>
+
+      {/* Morning Operations Priority Queue ("Inbox Zero" for Operations) */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-emerald-600" />
+            <h2 className="text-xs uppercase tracking-wider font-bold text-[#0B1F33]">
+              Morning Priority Queue • Action Items
+            </h2>
+          </div>
+          <span className="text-[11px] text-slate-400 font-medium">
+            Requires operational decision today
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Item 1: Front-Desk Disputes */}
+          <a
+            href="/operations/visits"
+            className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between group ${
+              openDisputesCount > 0 
+                ? "bg-rose-50/70 border-rose-200 hover:border-rose-300 hover:bg-rose-50" 
+                : "bg-slate-50/50 border-slate-200 hover:bg-slate-50"
+            }`}
+          >
+            <div>
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <span className="font-semibold text-slate-700">Check-in Disputes</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
+                  openDisputesCount > 0 ? "bg-rose-100 text-rose-700 border border-rose-200" : "bg-emerald-100 text-emerald-700"
+                }`}>
+                  {openDisputesCount > 0 ? `${openDisputesCount} Open` : "Clear"}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-snug">
+                Front-desk complaints raised by partners or employees.
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-semibold text-slate-700 group-hover:text-rose-700">
+              <span>Open Dispute Desk</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </div>
+          </a>
+
+          {/* Item 2: Partner KYC Review */}
+          <a
+            href="/operations/providers"
+            className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between group ${
+              pendingKycCount > 0 
+                ? "bg-amber-50/70 border-amber-200 hover:border-amber-300 hover:bg-amber-50" 
+                : "bg-slate-50/50 border-slate-200 hover:bg-slate-50"
+            }`}
+          >
+            <div>
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <span className="font-semibold text-slate-700">Provider KYC</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
+                  pendingKycCount > 0 ? "bg-amber-100 text-amber-800 border border-amber-200" : "bg-emerald-100 text-emerald-700"
+                }`}>
+                  {pendingKycCount > 0 ? `${pendingKycCount} Reviewing` : "Up to date"}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-snug">
+                New wellness facilities awaiting registration approval.
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-semibold text-slate-700 group-hover:text-amber-800">
+              <span>Review Applications</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </div>
+          </a>
+
+          {/* Item 3: Corporate Capacity */}
+          <a
+            href="/operations/clients"
+            className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300 transition-all flex flex-col justify-between group"
+          >
+            <div>
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <span className="font-semibold text-slate-700">Employer Roster</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-blue-100 text-blue-700 border border-blue-200">
+                  {overview.network.employers.total} Active
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-snug">
+                Employee rosters and corporate subsidy plan allocations.
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-semibold text-slate-700 group-hover:text-blue-700">
+              <span>Manage Employers</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </div>
+          </a>
+
+          {/* Item 4: Settlements Sign-Off */}
+          <a
+            href="/operations/finance"
+            className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between group ${
+              pendingSettlementsCount > 0 
+                ? "bg-purple-50/70 border-purple-200 hover:border-purple-300 hover:bg-purple-50" 
+                : "bg-slate-50/50 border-slate-200 hover:bg-slate-50"
+            }`}
+          >
+            <div>
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <span className="font-semibold text-slate-700">Monthly Payouts</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
+                  pendingSettlementsCount > 0 ? "bg-purple-100 text-purple-700 border border-purple-200" : "bg-emerald-100 text-emerald-700"
+                }`}>
+                  {pendingSettlementsCount > 0 ? `${pendingSettlementsCount} Pending` : "Current"}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-snug">
+                Provider settlements ready for MoMo / Bank disbursement.
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-semibold text-slate-700 group-hover:text-purple-700">
+              <span>Finance Clearing</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </div>
           </a>
         </div>
       </div>
@@ -306,7 +451,7 @@ export default function OperationsCommandCenterPage() {
                 href="/operations/finance"
                 className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0B1F33] hover:bg-slate-800 text-white font-semibold text-xs transition-colors"
               >
-                <span>Open Financial Clearinghouse (PF-121)</span>
+                <span>Open Financial Clearinghouse</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
               </a>
             </div>
@@ -353,15 +498,15 @@ export default function OperationsCommandCenterPage() {
               <h4 className="font-bold text-xs text-[#0B1F33]">Emergency Operations Desk</h4>
             </div>
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              When an employee is stuck at facility front desk or turnstile firmware encounters an outage, issue an instant bypass.
+              When an employee is stuck at facility front desk or turnstile relay encounters a temporary glitch, issue an instant verified pass.
             </p>
-            <a
-              href="/operations/visits"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-semibold text-xs hover:bg-amber-100 transition-colors"
+            <button
+              onClick={() => openBypassModal()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-semibold text-xs hover:bg-amber-100 transition-colors cursor-pointer"
             >
-              <span>1-Click Emergency Bypass (PF-120)</span>
+              <span>Issue Front-Desk Pass</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
-            </a>
+            </button>
           </div>
         </div>
       </div>

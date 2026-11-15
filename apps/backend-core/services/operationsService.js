@@ -41,7 +41,8 @@ async function getOperationsOverview() {
     { data: weekVisits, error: weekVisitsErr },
     { data: monthVisits, error: monthVisitsErr },
     { data: recent24hVisits, error: recent24hErr },
-    { data: recentLiveFeed, error: feedErr }
+    { data: recentLiveFeed, error: feedErr },
+    { data: openDisputes, error: disputesErr }
   ] = await Promise.all([
     supabase.from('organizations').select('id, name, status, created_at'),
     supabase.from('providers').select('id, name, category, status, created_at'),
@@ -70,7 +71,8 @@ async function getOperationsOverview() {
         )
       `)
       .order('check_in_at', { ascending: false })
-      .limit(10)
+      .limit(10),
+    supabase.from('visit_disputes').select('id, status').eq('status', 'open')
   ]);
 
   if (orgsErr) console.warn('[operationsService] orgs query warning:', orgsErr.message);
@@ -198,8 +200,13 @@ async function getOperationsOverview() {
       thisMonth: monthCount,
       hourlyTrend24h: hourlyBuckets,
       verificationSuccessRate,
-      activeDisputes: disputedCount,
+      activeDisputes: (openDisputes && openDisputes.length > 0) ? openDisputes.length : disputedCount,
       velocityAlerts: 0
+    },
+    actionQueue: {
+      openDisputesCount: (openDisputes && openDisputes.length > 0) ? openDisputes.length : disputedCount,
+      pendingKycCount: inReviewProviders,
+      pendingSettlementsCount: setList.filter(s => s.status === 'pending' || s.status === 'pending_approval').length,
     },
     financials: {
       currency: 'RWF',

@@ -156,6 +156,63 @@ function LiveVisitMonitorContent() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [anomalyOnly, setAnomalyOnly] = useState(false);
 
+  // Dedicated Dispute Clearinghouse State
+  const [disputesList, setDisputesList] = useState<any[]>([]);
+  const [loadingDisputes, setLoadingDisputes] = useState(false);
+  const [disputeFilter, setDisputeFilter] = useState<"open" | "resolved" | "all">("open");
+  const [adjudicatingId, setAdjudicatingId] = useState<string | null>(null);
+  const [feedbackToast, setFeedbackToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  // Fetch dispute queue directly from dedicated endpoint
+  const fetchDisputes = async () => {
+    try {
+      setLoadingDisputes(true);
+      const res = await apiFetch<any>(`/api/operations/visits/disputes?status=${disputeFilter}`);
+      if (res?.disputes && Array.isArray(res.disputes)) {
+        setDisputesList(res.disputes);
+      }
+    } catch (err: any) {
+      console.warn("[Visits] Disputes fetch error:", err.message);
+    } finally {
+      setLoadingDisputes(false);
+    }
+  };
+
+  // 1-Click Inline Dispute Adjudication
+  const handleInlineAdjudicate = async (
+    visitId: string,
+    action: "force_validate" | "void" | "split_resolution",
+    actionLabel: string
+  ) => {
+    try {
+      setAdjudicatingId(visitId);
+      const res = await apiFetch<any>(`/api/operations/visits/${visitId}/dispute/adjudicate`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          action,
+          notes: `Resolution (${actionLabel}) approved by PolyFit Operations Desk.`
+        })
+      });
+      if (res?.success) {
+        setFeedbackToast({
+          message: `Dispute resolved: ${actionLabel}.`,
+          type: "success"
+        });
+        setTimeout(() => setFeedbackToast(null), 4000);
+        fetchDisputes();
+        fetchVisits();
+      }
+    } catch (err: any) {
+      setFeedbackToast({
+        message: err.message || "Failed to adjudicate dispute",
+        type: "error"
+      });
+      setTimeout(() => setFeedbackToast(null), 5000);
+    } finally {
+      setAdjudicatingId(null);
+    }
+  };
+
   // Web Audio Synthesized Chime for Anomalies
   const playAnomalyChime = () => {
     if (!soundEnabled || typeof window === "undefined") return;
@@ -215,6 +272,13 @@ function LiveVisitMonitorContent() {
 
     return () => clearInterval(interval);
   }, [isPaused, methodFilter, statusFilter, anomalyOnly, searchQuery, refreshKey]);
+
+  // Fetch disputes whenever switching to clearinghouse tab or changing filter
+  useEffect(() => {
+    if (activeTab === "clearinghouse") {
+      fetchDisputes();
+    }
+  }, [activeTab, disputeFilter, refreshKey]);
 
   // Supabase Realtime channel subscription for instant check-in events
   useEffect(() => {
@@ -378,7 +442,7 @@ function LiveVisitMonitorContent() {
           <div className="flex items-center gap-2.5">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0B1F33] flex items-center gap-2">
               <Activity className="w-6 h-6 text-[#28D17C]" />
-              <span>Real-Time Visit Monitor & Access Control</span>
+              <span>Visits &amp; Front-Desk Clearance</span>
             </h1>
             <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-[#E9FAF2] text-[#008A4B] font-semibold border border-[#B7F1D2] flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[#28D17C] animate-pulse" />
@@ -386,7 +450,7 @@ function LiveVisitMonitorContent() {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-600 mt-1">
-            Real-time telemetry stream, automated anti-fraud anomaly engine & dispute clearinghouse across Kigali, Musanze & Nairobi.
+            Real-time verified visits, front-desk dispute clearinghouse, and emergency clearance overrides.
           </p>
         </div>
 
@@ -435,7 +499,7 @@ function LiveVisitMonitorContent() {
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] font-bold text-xs transition-colors shadow-sm"
           >
             <Zap className="w-4 h-4 fill-current" />
-            <span>Emergency Turnstile Pass</span>
+            <span>Issue Emergency Pass</span>
           </button>
         </div>
       </div>
@@ -829,7 +893,7 @@ function LiveVisitMonitorContent() {
                                 <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                                 <span className="truncate max-w-[130px]">{org?.name || "Corporate Client"}</span>
                               </div>
-                              <span className="text-[10px] text-slate-400 block">PF-118 Contract</span>
+                              <span className="text-[10px] text-slate-400 block">Corporate Employer</span>
                             </button>
                           </td>
 
@@ -917,81 +981,262 @@ function LiveVisitMonitorContent() {
       {/* ─── TAB 2: DISPUTE ADJUDICATION CLEARINGHOUSE ─── */}
       {activeTab === "clearinghouse" && (
         <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-[#0B1F33] border border-[#21405A] flex items-center justify-between">
+          {/* Action Feedback Banner */}
+          {feedbackToast && (
+            <div
+              className={`p-3.5 rounded-xl border flex items-center justify-between text-xs font-semibold animate-in fade-in duration-200 ${
+                feedbackToast.type === "success"
+                  ? "bg-emerald-950/80 border-emerald-500/40 text-emerald-200"
+                  : "bg-rose-950/80 border-rose-500/40 text-rose-200"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {feedbackToast.type === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 text-[#28D17C]" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-rose-400" />
+                )}
+                <span>{feedbackToast.message}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFeedbackToast(null)}
+                className="text-slate-400 hover:text-white text-[11px]"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {/* Clearinghouse Header & Filter Bar */}
+          <div className="p-4 rounded-2xl bg-[#0B1F33] border border-[#21405A] flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
               <h3 className="font-bold text-white text-sm flex items-center gap-2">
                 <FileText className="w-4 h-4 text-purple-400" />
                 <span>Central Dispute Adjudication Queue</span>
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Review disputed visits raised by front-desk staff or employees. Tri-action overrides honor provider settlement, void visits, or execute split goodwill resolutions.
+                Front-desk and scanner claims requiring operational review. 1-click overrides honor partner settlement, void fraudulent claims, or apply goodwill coverage.
               </p>
             </div>
-            <span className="font-mono text-xs px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">
-              {disputedVisits.length} Pending Adjudication
-            </span>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Status Filter Pills */}
+              <div className="flex items-center p-1 rounded-xl bg-[#0E263E] border border-[#21405A] text-xs">
+                <button
+                  type="button"
+                  onClick={() => setDisputeFilter("open")}
+                  className={`px-3 py-1.5 rounded-lg font-semibold transition-colors flex items-center gap-1.5 ${
+                    disputeFilter === "open"
+                      ? "bg-purple-600 text-white shadow-sm"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <span>Open &amp; Reviewing</span>
+                  {disputesList.filter((d) => d.status === "open" || d.status === "investigating").length > 0 && (
+                    <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-white">
+                      {disputesList.filter((d) => d.status === "open" || d.status === "investigating").length}
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDisputeFilter("resolved")}
+                  className={`px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+                    disputeFilter === "resolved"
+                      ? "bg-purple-600 text-white shadow-sm"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <span>Resolved</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDisputeFilter("all")}
+                  className={`px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+                    disputeFilter === "all"
+                      ? "bg-purple-600 text-white shadow-sm"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <span>All</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={fetchDisputes}
+                disabled={loadingDisputes}
+                className="p-2 rounded-xl bg-[#0E263E] border border-[#21405A] text-slate-300 hover:text-white transition-colors"
+                title="Refresh Dispute Queue"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingDisputes ? "animate-spin text-[#28D17C]" : ""}`} />
+              </button>
+            </div>
           </div>
 
-          {disputedVisits.length === 0 ? (
+          {loadingDisputes && disputesList.length === 0 ? (
+            <div className="p-12 rounded-2xl bg-[#0B1F33] border border-[#21405A] text-center text-slate-400 space-y-2">
+              <Activity className="w-8 h-8 animate-spin text-purple-400 mx-auto" />
+              <span className="text-xs">Loading live disputes queue from aggregator database...</span>
+            </div>
+          ) : disputesList.length === 0 ? (
             <div className="p-12 rounded-2xl bg-[#0B1F33] border border-[#21405A] text-center text-slate-400 space-y-2">
               <CheckCircle2 className="w-10 h-10 text-[#28D17C] mx-auto" />
-              <h4 className="font-bold text-white text-base">No Open Disputes in Queue</h4>
+              <h4 className="font-bold text-white text-base">No Disputes Found</h4>
               <p className="text-xs text-slate-400 max-w-md mx-auto">
-                All check-in transactions across partner facilities are reconciled and undisputed. Incoming front-desk claims will appear here automatically.
+                {disputeFilter === "open"
+                  ? "Zero open disputes requiring staff intervention. All partner check-in transactions are reconciled."
+                  : "No dispute records match the selected filter."}
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {disputedVisits.map((v) => {
-                const dispute = v.visit_disputes?.[0];
-                const emp = v.employees;
-                const loc = v.provider_locations;
-                const org = v.organizations;
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {disputesList.map((dispute) => {
+                const visit = dispute.visits;
+                const emp = visit?.employees;
+                const loc = visit?.provider_locations;
+                const prov = loc?.providers;
+                const org = visit?.organizations;
+                const isOpen = dispute.status === "open" || dispute.status === "investigating";
+                const isActionLoading = adjudicatingId === dispute.visit_id;
 
                 return (
                   <div
-                    key={v.id}
-                    className="p-5 rounded-2xl bg-[#0B1F33] border border-[#21405A] hover:border-purple-500/50 transition-colors space-y-4 shadow-lg"
+                    key={dispute.id}
+                    className={`p-5 rounded-2xl bg-[#0B1F33] border transition-all space-y-4 shadow-lg ${
+                      isOpen
+                        ? "border-[#21405A] hover:border-purple-500/50"
+                        : "border-[#21405A]/60 opacity-90"
+                    }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[10px] uppercase px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">
-                          DISPUTE REF: {v.id.substring(0, 8)}
+                        <span
+                          className={`font-mono text-[10px] uppercase px-2 py-0.5 rounded-full font-bold border ${
+                            isOpen
+                              ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
+                              : "bg-emerald-500/20 text-[#28D17C] border-emerald-500/40"
+                          }`}
+                        >
+                          {isOpen ? "OPEN DISPUTE" : "RESOLVED"}
                         </span>
-                        <span className="text-[11px] text-slate-400">
-                          {formatRelativeTime(v.check_in_at)}
+                        <span className="font-mono text-[10px] text-slate-400">
+                          REF: {dispute.id.substring(0, 8)}
                         </span>
                       </div>
-                      <span className="text-xs font-bold text-amber-400">
-                        ~7,000 RWF Exposure
+                      <span className="text-[11px] text-slate-400 font-mono">
+                        {formatRelativeTime(dispute.created_at)}
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-[#0E263E] border border-[#21405A] space-y-1.5 text-xs">
-                      <div className="text-slate-400 text-[10px] uppercase font-semibold flex items-center justify-between">
-                        <span>Beneficiary & Employer</span>
-                        <span className="text-white font-mono">{emp?.tier || "STANDARD"}</span>
+                    {/* Venue & Beneficiary Summary */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                      <div className="p-3 rounded-xl bg-[#0E263E] border border-[#21405A] space-y-1">
+                        <div className="text-[9px] text-slate-400 uppercase font-semibold flex items-center justify-between">
+                          <span>Beneficiary &amp; Employer</span>
+                          <span className="font-mono text-[#28D17C]">{emp?.tier || "STANDARD"}</span>
+                        </div>
+                        <div className="font-bold text-white truncate">
+                          {emp?.full_name || "Corporate Beneficiary"}
+                        </div>
+                        <div className="text-slate-400 text-[11px] truncate">
+                          {org?.name || "Corporate Client"}
+                        </div>
                       </div>
-                      <div className="font-bold text-white">{emp?.full_name} ({org?.name})</div>
-                      <div className="text-slate-400 text-[11px]">Venue: <strong className="text-slate-200">{loc?.name}</strong></div>
+
+                      <div className="p-3 rounded-xl bg-[#0E263E] border border-[#21405A] space-y-1">
+                        <div className="text-[9px] text-slate-400 uppercase font-semibold">
+                          Partner Facility
+                        </div>
+                        <div className="font-bold text-white truncate">
+                          {loc?.name || "Provider Facility"}
+                        </div>
+                        <div className="text-slate-400 text-[11px] truncate">
+                          {prov?.name || "Wellness Provider"} ({loc?.city || "Kigali"})
+                        </div>
+                      </div>
                     </div>
 
+                    {/* Claim Reason */}
                     <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs space-y-1">
-                      <div className="text-purple-300 text-[10px] font-bold uppercase tracking-wider">
-                        Claim Reason ({dispute?.raised_by_role || "Provider"})
+                      <div className="text-purple-300 text-[10px] font-bold uppercase tracking-wider flex items-center justify-between">
+                        <span>Reported Claim ({dispute.raised_by_role || "Front-Desk Staff"})</span>
+                        <span className="text-amber-400 font-mono font-semibold">~3,800 RWF Exposure</span>
                       </div>
-                      <p className="text-slate-200 italic">
-                        "{dispute?.reason || "Front desk reported check-in scanner mismatch."}"
+                      <p className="text-slate-200 italic leading-relaxed text-[11px]">
+                        &quot;{dispute.reason || "Front desk reported check-in scanner mismatch."}&quot;
                       </p>
                     </div>
 
-                    <div className="pt-1 flex items-center justify-end gap-2">
+                    {/* Resolution Notes if Resolved */}
+                    {!isOpen && dispute.resolution_notes && (
+                      <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-[11px] text-emerald-200 space-y-0.5">
+                        <span className="text-[9px] uppercase font-bold text-emerald-400 tracking-wider">
+                          Resolution Outcome: {dispute.resolution_type || "Adjudicated"}
+                        </span>
+                        <p className="text-slate-300">{dispute.resolution_notes}</p>
+                      </div>
+                    )}
+
+                    {/* Actions Toolbar */}
+                    <div className="pt-1 flex flex-wrap items-center justify-between gap-2 border-t border-[#21405A]/70">
                       <button
-                        onClick={() => openDrawer("visit", v.id, v, "Visit Adjudication")}
-                        className="px-4 py-2 rounded-xl bg-[#142C44] hover:bg-slate-700 text-white font-semibold text-xs transition-colors"
+                        type="button"
+                        onClick={() => {
+                          if (visit?.id) {
+                            openDrawer("visit", visit.id, visit, "Dispute Inspection");
+                          }
+                        }}
+                        className="text-xs text-slate-300 hover:text-white font-medium inline-flex items-center gap-1 transition-colors"
                       >
-                        Open Full Adjudication Workspace
+                        <span>Full Trace</span>
+                        <ExternalLink className="w-3 h-3 text-[#28D17C]" />
                       </button>
+
+                      {isOpen ? (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            disabled={isActionLoading}
+                            onClick={() =>
+                              handleInlineAdjudicate(dispute.visit_id, "force_validate", "Approve & Pay Partner")
+                            }
+                            className="px-2.5 py-1.5 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 text-[#28D17C] border border-emerald-500/40 text-[11px] font-bold transition-all disabled:opacity-50"
+                            title="Honors partner reimbursement, validates visit"
+                          >
+                            Approve &amp; Pay
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={isActionLoading}
+                            onClick={() =>
+                              handleInlineAdjudicate(dispute.visit_id, "split_resolution", "Goodwill Split")
+                            }
+                            className="px-2.5 py-1.5 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40 text-[11px] font-bold transition-all disabled:opacity-50"
+                            title="Goodwill coverage (PolyFit absorbs liability, preserves employee quota)"
+                          >
+                            Goodwill
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={isActionLoading}
+                            onClick={() =>
+                              handleInlineAdjudicate(dispute.visit_id, "void", "Reject & Void")
+                            }
+                            className="px-2.5 py-1.5 rounded-lg bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 border border-rose-500/40 text-[11px] font-bold transition-all disabled:opacity-50"
+                            title="Cancels reimbursement, voids visit"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-slate-500 font-mono">
+                          Resolved {dispute.resolved_at ? formatRelativeTime(dispute.resolved_at) : "recently"}
+                        </span>
+                      )}
                     </div>
                   </div>
                 );

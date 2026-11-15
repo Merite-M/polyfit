@@ -27,50 +27,36 @@ const NAVIGATION_ITEMS = [
     name: "Command Center",
     href: "/operations",
     icon: LayoutDashboard,
-    badge: "LIVE",
-    badgeVariant: "emerald" as const,
   },
   {
     name: "Corporate Clients",
     href: "/operations/clients",
     icon: Building2,
-    badge: "LIVE",
-    badgeVariant: "emerald" as const,
+  },
+  {
+    name: "Partner Network",
+    href: "/operations/providers",
+    icon: Network,
+  },
+  {
+    name: "Visits & Disputes",
+    href: "/operations/visits",
+    icon: Activity,
+  },
+  {
+    name: "Finance & Clearing",
+    href: "/operations/finance",
+    icon: Coins,
   },
   {
     name: "Benefit Plans",
     href: "/operations/plans",
     icon: Layers,
-    badge: "MASTER",
-    badgeVariant: "emerald" as const,
   },
   {
-    name: "Provider Network",
-    href: "/operations/providers",
-    icon: Network,
-    badge: "LIVE",
-    badgeVariant: "emerald" as const,
-  },
-  {
-    name: "Live Visit Monitor",
-    href: "/operations/visits",
-    icon: Activity,
-    badge: "LIVE",
-    badgeVariant: "emerald" as const,
-  },
-  {
-    name: "Marketplace Finance",
-    href: "/operations/finance",
-    icon: Coins,
-    badge: "LIVE",
-    badgeVariant: "emerald" as const,
-  },
-  {
-    name: "User 360 & Security",
+    name: "Staff & Support",
     href: "/operations/support",
     icon: ShieldCheck,
-    badge: "LIVE",
-    badgeVariant: "emerald" as const,
   },
 ];
 
@@ -119,7 +105,7 @@ export function OperationsSidebar({ onCloseMobile }: OperationsSidebarProps) {
       {/* Navigation Links */}
       <div className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
         <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-          Super Admin Modules
+          Operations Navigation
         </div>
         {NAVIGATION_ITEMS.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/operations" && pathname.startsWith(item.href));
@@ -130,9 +116,9 @@ export function OperationsSidebar({ onCloseMobile }: OperationsSidebarProps) {
               key={item.href}
               href={item.href}
               onClick={onCloseMobile}
-              className={`group flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all duration-150 ${
+              className={`group flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 ${
                 isActive
-                  ? "bg-[#142C44] text-[#28D17C] border-l-4 border-[#28D17C] pl-2 font-semibold shadow-sm"
+                  ? "bg-[#142C44] text-[#28D17C] font-semibold shadow-xs"
                   : "text-slate-300 hover:bg-[#132D43] hover:text-white"
               }`}
             >
@@ -144,18 +130,7 @@ export function OperationsSidebar({ onCloseMobile }: OperationsSidebarProps) {
                 />
                 <span>{item.name}</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                {item.badgeVariant === "emerald" ? (
-                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-[#28D17C]/20 text-[#28D17C] border border-[#28D17C]/30">
-                    {item.badge}
-                  </span>
-                ) : (
-                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 group-hover:text-slate-300">
-                    {item.badge}
-                  </span>
-                )}
-                {isActive && <ChevronRight className="w-3.5 h-3.5 text-[#28D17C]" />}
-              </div>
+              {isActive && <ChevronRight className="w-3.5 h-3.5 text-[#28D17C]" />}
             </Link>
           );
         })}
