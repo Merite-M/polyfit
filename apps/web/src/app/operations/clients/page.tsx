@@ -120,6 +120,7 @@ function CorporateClientsContent() {
   });
   const [selectedLeadForOnboarding, setSelectedLeadForOnboarding] = useState<DemoRequestItem | null>(null);
   const [updatingLeadId, setUpdatingLeadId] = useState<string | null>(null);
+  const [leadActionFeedback, setLeadActionFeedback] = useState<{ type: "error" | "success"; message: string } | null>(null);
 
   // Creation drawer state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -166,15 +167,24 @@ function CorporateClientsContent() {
   // Update lead status
   const handleUpdateLeadStatus = async (id: string, newStatus: string) => {
     setUpdatingLeadId(id);
+    setLeadActionFeedback(null);
     try {
       await apiFetch<any>(`/api/operations/demo-requests/${id}`, {
         method: "PATCH",
         body: JSON.stringify({ status: newStatus })
       });
       setLeads((prev) => prev.map((l) => l.id === id ? { ...l, status: newStatus } : l));
+      setLeadActionFeedback({
+        type: "success",
+        message: `Lead status updated to ${newStatus.toUpperCase()}`
+      });
+      setTimeout(() => setLeadActionFeedback(null), 4000);
       fetchLeads();
     } catch (err: any) {
-      alert("Failed to update lead status: " + (err?.message || "Unknown error"));
+      setLeadActionFeedback({
+        type: "error",
+        message: "Failed to update lead status: " + (err?.message || "Unknown error")
+      });
     } finally {
       setUpdatingLeadId(null);
     }
@@ -730,6 +740,30 @@ function CorporateClientsContent() {
       {/* Inbound Employer Leads & Demos Desk */}
       {activeTab === "leads" && (
         <div className="space-y-6">
+          {leadActionFeedback && (
+            <div className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
+              leadActionFeedback.type === "success"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                : "bg-rose-50 border-rose-200 text-rose-800"
+            }`}>
+              <div className="flex items-center gap-2">
+                {leadActionFeedback.type === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                )}
+                <span>{leadActionFeedback.message}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLeadActionFeedback(null)}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {/* Top Inbound Leads KPI Strip */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-2">

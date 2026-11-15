@@ -4774,14 +4774,16 @@ async function adjudicateAmendmentRequest(requestId, payload, adminUserId) {
         .eq('provider_id', request.provider_id);
 
       if (locs && locs.length > 0) {
-        for (const loc of locs) {
-          const meta = loc.metadata || {};
-          meta.per_visit_payout_rate = newRate;
-          await supabase
-            .from('provider_locations')
-            .update({ metadata: meta, updated_at: now })
-            .eq('id', loc.id);
-        }
+        await Promise.all(
+          locs.map((loc) => {
+            const meta = loc.metadata || {};
+            meta.per_visit_payout_rate = newRate;
+            return supabase
+              .from('provider_locations')
+              .update({ metadata: meta, updated_at: now })
+              .eq('id', loc.id);
+          })
+        );
       }
     }
   }

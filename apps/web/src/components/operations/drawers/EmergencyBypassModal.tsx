@@ -95,27 +95,23 @@ export function EmergencyBypassModal({
     const loadData = async () => {
       try {
         const [empRes, locRes] = await Promise.all([
-          apiFetch<any>("/api/operations/clients").catch(() => null),
+          apiFetch<any>("/api/operations/support/beneficiaries?limit=100").catch(() => null),
           apiFetch<any>("/api/operations/locations").catch(() => null),
         ]);
 
         if (!isMounted) return;
 
-        // Flatten employee roster from corporate clients
+        // Populate employee roster from beneficiaries endpoint
         const empList: EmployeeOption[] = [];
-        if (empRes?.clients && Array.isArray(empRes.clients)) {
-          empRes.clients.forEach((c: any) => {
-            if (c.roster && Array.isArray(c.roster)) {
-              c.roster.forEach((e: any) => {
-                empList.push({
-                  id: e.id,
-                  fullName: e.fullName || e.full_name || "Employee",
-                  email: e.email || "",
-                  tier: (e.tier || "standard").toUpperCase(),
-                  orgName: c.name || "Corporate Client",
-                });
-              });
-            }
+        if (empRes?.beneficiaries && Array.isArray(empRes.beneficiaries)) {
+          empRes.beneficiaries.forEach((b: any) => {
+            empList.push({
+              id: b.id,
+              fullName: b.fullName || b.full_name || "Employee",
+              email: b.email || "",
+              tier: (b.tier || "standard").toUpperCase(),
+              orgName: b.orgName || b.organizations?.name || "Corporate Client",
+            });
           });
         }
         setEmployees(empList);

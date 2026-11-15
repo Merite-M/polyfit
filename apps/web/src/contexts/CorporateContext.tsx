@@ -1024,3 +1024,7 @@ export function useCorporate() {
   }
   return context;
 }
+
+export function useCorporateSafe() {
+  return useContext(CorporateContext);
+}

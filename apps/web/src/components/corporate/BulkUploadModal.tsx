@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api-client";
-import { useCorporate } from "@/contexts/CorporateContext";
+import { useCorporateSafe } from "@/contexts/CorporateContext";
 
 interface BulkUploadModalProps {
   isOpen: boolean;
@@ -47,10 +47,10 @@ export function BulkUploadModal({
 }: BulkUploadModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { organization } = useCorporate();
+  const corporateCtx = useCorporateSafe();
   const effectiveDomain = corporateDomain && !corporateDomain.includes("techcorp")
     ? corporateDomain
-    : organization.domain || "kigalitech.rw";
+    : corporateCtx?.organization?.domain || "kigalitech.rw";
 
   const [dragActive, setDragActive] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);

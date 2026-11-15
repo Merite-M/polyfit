@@ -26,7 +26,7 @@ export interface ApiFetchOptions extends RequestInit {
   retryDelayMs?: number;
 }
 
-const DEFAULT_TIMEOUT_MS = 12000;
+const DEFAULT_TIMEOUT_MS = 20000;
 const DEFAULT_IDEMPOTENT_RETRIES = 2;
 
 // User-friendly error message dictionary

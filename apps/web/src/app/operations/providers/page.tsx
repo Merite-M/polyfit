@@ -161,6 +161,7 @@ function ProviderNetworkContent() {
     counterOffered: 0
   });
   const [processingAmendmentId, setProcessingAmendmentId] = useState<string | null>(null);
+  const [amendmentFeedback, setAmendmentFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // Inline Modals for Counter-Offer and Rejection
   const [counterModal, setCounterModal] = useState<{
@@ -222,6 +223,7 @@ function ProviderNetworkContent() {
     counterRate?: number
   ) => {
     setProcessingAmendmentId(requestId);
+    setAmendmentFeedback(null);
     try {
       const payload: any = { action };
       if (notes) payload.admin_notes = notes;
@@ -232,10 +234,18 @@ function ProviderNetworkContent() {
         body: JSON.stringify(payload)
       });
 
+      setAmendmentFeedback({
+        type: "success",
+        message: `Amendment request marked as ${action.toUpperCase()}`
+      });
+      setTimeout(() => setAmendmentFeedback(null), 4000);
       fetchAmendments();
       fetchProviders();
     } catch (err: any) {
-      alert("Failed to adjudicate rate amendment: " + (err?.message || "Unknown error"));
+      setAmendmentFeedback({
+        type: "error",
+        message: "Failed to adjudicate rate amendment: " + (err?.message || "Unknown error")
+      });
     } finally {
       setProcessingAmendmentId(null);
     }
@@ -909,6 +919,30 @@ function ProviderNetworkContent() {
       {/* Rate Amendment Requests Review Desk */}
       {activeTab === "amendments" && (
         <div className="space-y-6">
+          {amendmentFeedback && (
+            <div className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
+              amendmentFeedback.type === "success"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                : "bg-rose-50 border-rose-200 text-rose-800"
+            }`}>
+              <div className="flex items-center gap-2">
+                {amendmentFeedback.type === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                )}
+                <span>{amendmentFeedback.message}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAmendmentFeedback(null)}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {/* Top Amendments KPI Strip */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-2">
