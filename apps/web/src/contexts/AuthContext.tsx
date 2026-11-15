@@ -83,6 +83,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user && isMounted) {
           setUser(session.user);
           await resolveUserRoles(session.user);
+        } else if (typeof window !== 'undefined' && localStorage.getItem('polyfit_demo_mode') === 'true') {
+          if (isMounted) {
+            setUser({ id: 'demo-user', email: 'demo@example.com' });
+            setRole('super_admin');
+            setOrganizationId('c79a9982-4477-4336-a24b-561419f6c43b');
+            setIsSuperAdmin(true);
+            setIsDemoMode(true);
+          }
         } else if (isMounted) {
           setUser(null);
           setRole(null);
@@ -112,6 +120,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await resolveUserRoles(session.user);
           setLoading(false);
         }, 0);
+      } else if (typeof window !== 'undefined' && localStorage.getItem('polyfit_demo_mode') === 'true') {
+        setUser({ id: 'demo-user', email: 'demo@example.com' });
+        setRole('super_admin');
+        setOrganizationId('c79a9982-4477-4336-a24b-561419f6c43b');
+        setIsSuperAdmin(true);
+        setIsDemoMode(true);
+        setLoading(false);
       } else {
         setUser(null);
         setRole(null);
@@ -143,6 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (typeof window !== 'undefined') {
       try {
+        localStorage.removeItem('polyfit_demo_mode');
         localStorage.removeItem('polyfit_corporate_active_org');
         localStorage.removeItem('polyfit_partner_provider');
         localStorage.removeItem('polyfit_partner_location_id');
@@ -154,6 +170,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const enableDemoMode = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('polyfit_demo_mode', 'true');
+      } catch {}
+    }
     setUser({ id: 'demo-user', email: 'demo@example.com' });
     setRole('super_admin');
     setOrganizationId('c79a9982-4477-4336-a24b-561419f6c43b');
