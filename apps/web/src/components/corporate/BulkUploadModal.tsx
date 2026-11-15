@@ -306,8 +306,8 @@ export function BulkUploadModal({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            org_id: orgId || organization.id,
-            org_slug: organization.slug,
+            org_id: orgId || corporateCtx?.organization?.id,
+            org_slug: corporateCtx?.organization?.slug || "corp",
             csv_data: rawCsvText,
           }),
         });
