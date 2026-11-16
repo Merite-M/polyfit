@@ -102,6 +102,7 @@ export function ProviderDossierDrawer({
   const [approvingInvite, setApprovingInvite] = useState(false);
   const [copiedInvite, setCopiedInvite] = useState(false);
   const [inviteSuccessMessage, setInviteSuccessMessage] = useState<string | null>(null);
+  const [inviteErrorMessage, setInviteErrorMessage] = useState<string | null>(null);
 
   // Synchronize native <dialog> lifecycle
   useEffect(() => {
@@ -243,6 +244,7 @@ export function ProviderDossierDrawer({
     if (!providerId) return;
     setApprovingInvite(true);
     setInviteSuccessMessage(null);
+    setInviteErrorMessage(null);
     try {
       const res = await apiFetch<any>(`/api/operations/providers/${providerId}/approve-invite`, {
         method: "POST",
@@ -257,7 +259,7 @@ export function ProviderDossierDrawer({
       onProviderUpdated?.();
     } catch (err: any) {
       console.error("[ProviderDossierDrawer] Approve & Invite error:", err);
-      alert(err.message || "Failed to approve provider and issue invitation");
+      setInviteErrorMessage(err.message || "Failed to approve provider and issue invitation");
     } finally {
       setApprovingInvite(false);
     }
@@ -409,27 +411,27 @@ export function ProviderDossierDrawer({
         e.preventDefault();
         onClose();
       }}
-      className="backdrop:bg-black/50 backdrop:backdrop-blur-xs bg-transparent p-0 m-0 w-full h-full max-w-none max-h-none border-none outline-none overflow-hidden"
+      className="backdrop:bg-[#0B1F33]/40 backdrop:backdrop-blur-xs bg-transparent p-0 m-0 w-full h-full max-w-none max-h-none border-none outline-none overflow-hidden"
     >
       <div className="w-full h-full flex justify-end">
         <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200">
-          {/* Drawer Header (PolyFit Midnight Navy) */}
-          <div className="p-5 bg-[#0B1F33] text-white border-b border-[#21405A] space-y-3">
+          {/* Drawer Header (PolyFit Brand System) */}
+          <div className="p-5 bg-white text-slate-900 border-b border-slate-200/80 space-y-3">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-[#142C44] border border-[#21405A] text-[#28D17C] shadow-sm">
+                <div className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-[#0B1F33] shadow-xs">
                   <Network className="w-6 h-6" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono uppercase font-bold px-2 py-0.5 rounded-full bg-[#28D17C]/20 text-[#28D17C] border border-[#28D17C]/30">
+                    <span className="text-[10px] font-mono uppercase font-bold px-2 py-0.5 rounded-full bg-[#28D17C]/15 text-[#13804D] border border-[#28D17C]/30">
                       {provider.category || "WELLNESS PROVIDER"}
                     </span>
-                    <span className="font-mono text-xs text-slate-400">
+                    <span className="font-mono text-xs text-slate-500">
                       ID: {provider.id ? provider.id.substring(0, 8) : "..."}
                     </span>
                   </div>
-                  <h2 className="text-lg font-bold text-white tracking-tight mt-0.5">
+                  <h2 className="text-lg font-bold text-[#0B1F33] tracking-tight mt-0.5">
                     {provider.name || "Provider Dossier"}
                   </h2>
                 </div>
@@ -444,12 +446,12 @@ export function ProviderDossierDrawer({
                     disabled={statusUpdating}
                     className={`appearance-none text-xs font-bold pl-3 pr-7 py-1.5 rounded-lg border transition-all cursor-pointer ${
                       provider.status === "active"
-                        ? "bg-[#28D17C]/20 text-[#28D17C] border-[#28D17C]/40"
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                         : provider.status === "suspended"
-                        ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+                        ? "bg-rose-50 text-rose-800 border-rose-200"
                         : provider.status === "rejected"
-                        ? "bg-slate-700 text-slate-300 border-slate-600"
-                        : "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                        ? "bg-slate-100 text-slate-700 border-slate-300"
+                        : "bg-amber-50 text-amber-800 border-amber-200"
                     }`}
                   >
                     <option value="active">Active Certified</option>
@@ -471,7 +473,7 @@ export function ProviderDossierDrawer({
 
                 <button
                   onClick={onClose}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                   aria-label="Close drawer"
                 >
                   <X className="w-5 h-5" />
@@ -481,23 +483,23 @@ export function ProviderDossierDrawer({
 
             {/* Quick Telemetry Mini-Strip */}
             <div className="grid grid-cols-4 gap-2 pt-1 text-center font-mono">
-              <div className="p-2 rounded-lg bg-[#071521] border border-[#21405A]">
-                <div className="text-[10px] text-slate-400 uppercase font-sans">Facilities</div>
-                <div className="text-sm font-bold text-white mt-0.5">{locations.length}</div>
+              <div className="p-2.5 rounded-xl bg-slate-50/70 border border-slate-200/80 shadow-2xs">
+                <div className="text-[10px] text-slate-500 uppercase font-sans font-medium">Facilities</div>
+                <div className="text-sm font-bold text-[#0B1F33] mt-0.5">{locations.length}</div>
               </div>
-              <div className="p-2 rounded-lg bg-[#071521] border border-[#21405A]">
-                <div className="text-[10px] text-slate-400 uppercase font-sans">Agreed Rate</div>
-                <div className="text-sm font-bold text-[#28D17C] mt-0.5">
+              <div className="p-2.5 rounded-xl bg-slate-50/70 border border-slate-200/80 shadow-2xs">
+                <div className="text-[10px] text-slate-500 uppercase font-sans font-medium">Agreed Rate</div>
+                <div className="text-sm font-bold text-[#13804D] mt-0.5">
                   RWF {locationPayoutRate.toLocaleString()}
                 </div>
               </div>
-              <div className="p-2 rounded-lg bg-[#071521] border border-[#21405A]">
-                <div className="text-[10px] text-slate-400 uppercase font-sans">Today Visits</div>
-                <div className="text-sm font-bold text-sky-400 mt-0.5">{metrics.todayVisitsCount || 0}</div>
+              <div className="p-2.5 rounded-xl bg-slate-50/70 border border-slate-200/80 shadow-2xs">
+                <div className="text-[10px] text-slate-500 uppercase font-sans font-medium">Today Visits</div>
+                <div className="text-sm font-bold text-[#0B1F33] mt-0.5">{metrics.todayVisitsCount || 0}</div>
               </div>
-              <div className="p-2 rounded-lg bg-[#071521] border border-[#21405A]">
-                <div className="text-[10px] text-slate-400 uppercase font-sans">MTN / Bank</div>
-                <div className="text-[11px] font-bold text-amber-400 truncate mt-0.5">
+              <div className="p-2.5 rounded-xl bg-slate-50/70 border border-slate-200/80 shadow-2xs">
+                <div className="text-[10px] text-slate-500 uppercase font-sans font-medium">MTN / Bank</div>
+                <div className="text-[11px] font-bold text-amber-700 truncate mt-0.5">
                   {momoCode || accountNumber ? "CONFIGURED" : "PENDING"}
                 </div>
               </div>
@@ -586,6 +588,13 @@ export function ProviderDossierDrawer({
                       <div className="p-2.5 rounded-lg bg-emerald-100/80 border border-emerald-300 text-emerald-900 text-[11px] font-semibold flex items-center gap-2">
                         <Check className="w-3.5 h-3.5 text-emerald-700" />
                         <span>{inviteSuccessMessage}</span>
+                      </div>
+                    )}
+
+                    {inviteErrorMessage && (
+                      <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-300 text-rose-800 text-[11px] font-semibold flex items-center gap-2">
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                        <span>{inviteErrorMessage}</span>
                       </div>
                     )}
 
@@ -1020,8 +1029,8 @@ export function ProviderDossierDrawer({
                           value={kycRevisionNotes}
                           onChange={(e) => setKycRevisionNotes(e.target.value)}
                           placeholder="Specify missing documents (e.g. updated RDB certificate with 2026 renewal stamp or clearer shower facility photos)..."
-                          className="w-full p-2.5 rounded-lg bg-white border border-amber-300 text-xs text-slate-800 focus:outline-none focus:border-amber-500"
-                          rows={3}
+                          style={{ fieldSizing: "content" } as React.CSSProperties}
+                          className="w-full pf-textarea-sm p-2.5 rounded-lg bg-white border border-amber-300 text-xs text-slate-800 focus:outline-none focus:border-amber-500"
                         />
                         <div className="flex justify-end gap-2">
                           <button
@@ -1052,8 +1061,8 @@ export function ProviderDossierDrawer({
                           value={kycRejectReason}
                           onChange={(e) => setKycRejectReason(e.target.value)}
                           placeholder="State the formal grounds for rejection (e.g. Failed safety inspection or invalid company registration)..."
-                          className="w-full p-2.5 rounded-lg bg-white border border-rose-300 text-xs text-slate-800 focus:outline-none focus:border-rose-500"
-                          rows={3}
+                          style={{ fieldSizing: "content" } as React.CSSProperties}
+                          className="w-full pf-textarea-sm p-2.5 rounded-lg bg-white border border-rose-300 text-xs text-slate-800 focus:outline-none focus:border-rose-500"
                         />
                         <div className="flex justify-end gap-2">
                           <button
@@ -1157,12 +1166,12 @@ export function ProviderDossierDrawer({
                           </div>
 
                           {/* SVG Geofence Radar Map Visualization */}
-                          <div className="relative w-full h-48 bg-[#071521] rounded-xl overflow-hidden border border-[#21405A] flex items-center justify-center">
+                          <div className="relative w-full h-48 bg-slate-900 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
                             <svg className="w-full h-full" viewBox="0 0 400 200">
                               {/* Background radar grid circles */}
-                              <circle cx="200" cy="100" r="30" fill="none" stroke="#21405A" strokeWidth="1" />
-                              <circle cx="200" cy="100" r="60" fill="none" stroke="#21405A" strokeWidth="1" strokeDasharray="3 3" />
-                              <circle cx="200" cy="100" r="90" fill="none" stroke="#21405A" strokeWidth="1" strokeDasharray="4 4" />
+                              <circle cx="200" cy="100" r="30" fill="none" stroke="#334155" strokeWidth="1" />
+                              <circle cx="200" cy="100" r="60" fill="none" stroke="#334155" strokeWidth="1" strokeDasharray="3 3" />
+                              <circle cx="200" cy="100" r="90" fill="none" stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
 
                               {/* Dynamic Geofence radius circle scaled to 50-500m */}
                               <circle
@@ -1515,11 +1524,11 @@ export function ProviderDossierDrawer({
                           Inspection Observations &amp; Hygiene Remedy Notes
                         </label>
                         <textarea
-                          rows={3}
                           value={inspectionNotes}
                           onChange={(e) => setInspectionNotes(e.target.value)}
                           placeholder="Record notes on locker room cleanliness, water filter testing, emergency equipment status, ventilation airflow, or required maintenance remedials..."
-                          className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-xs text-slate-800 focus:outline-none focus:border-[#28D17C] leading-relaxed"
+                          style={{ fieldSizing: "content" } as React.CSSProperties}
+                          className="w-full pf-textarea-sm px-3 py-2 rounded-lg bg-white border border-slate-300 text-xs text-slate-800 focus:outline-none focus:border-[#28D17C] leading-relaxed"
                         />
                       </div>
 

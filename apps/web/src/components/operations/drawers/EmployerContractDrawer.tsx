@@ -280,28 +280,28 @@ export function EmployerContractDrawer({
         e.preventDefault();
         onClose();
       }}
-      className="backdrop:bg-black/60 backdrop:backdrop-blur-xs bg-transparent p-0 m-0 w-full h-full max-w-none max-h-none border-none outline-none overflow-hidden"
+      className="backdrop:bg-[#0B1F33]/40 backdrop:backdrop-blur-xs bg-transparent p-0 m-0 w-full h-full max-w-none max-h-none border-none outline-none overflow-hidden"
     >
       <div className="w-full h-full flex justify-end">
         <div className="w-full max-w-3xl bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200">
         {/* Header Cockpit */}
-        <div className="p-6 bg-[#0B1F33] text-white border-b border-[#21405A] space-y-4">
+        <div className="p-6 bg-white text-slate-900 border-b border-slate-200/80 space-y-4">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#142C44] to-[#071521] border border-[#21405A] flex items-center justify-center text-white font-bold text-base shadow-sm">
+              <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-[#0B1F33] font-bold text-base shadow-xs">
                 {org.name ? org.name.charAt(0).toUpperCase() : "C"}
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-base font-bold tracking-tight text-white">{org.name || "Corporate Client"}</h2>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                  <h2 className="text-base font-bold tracking-tight text-[#0B1F33]">{org.name || "Corporate Client"}</h2>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
                     TIN: {org.taxId || org.tax_id || "Unregistered"}
                   </span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#28D17C]/20 text-[#28D17C] font-semibold border border-[#28D17C]/30">
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#28D17C]/15 text-[#13804D] font-semibold border border-[#28D17C]/30">
                     {org.country || "Rwanda"}
                   </span>
                 </div>
-                <div className="text-xs text-slate-400 mt-1 flex items-center gap-2">
+                <div className="text-xs text-slate-500 mt-1 flex items-center gap-2">
                   <span>{org.industry || "Corporate Wellness"}</span>
                   <span>·</span>
                   <span>Headcount: {org.headcountTier || org.headcount_tier || "51-250"}</span>
@@ -318,12 +318,12 @@ export function EmployerContractDrawer({
                   onChange={(e) => handleStatusChange(e.target.value)}
                   className={`text-xs font-bold px-3 py-1.5 rounded-lg border appearance-none pr-7 cursor-pointer transition-colors ${
                     org.status === "active"
-                      ? "bg-[#28D17C]/20 text-[#28D17C] border-[#28D17C]/40"
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                       : org.status === "pipeline"
-                      ? "bg-sky-500/20 text-sky-400 border-sky-500/40"
+                      ? "bg-sky-50 text-sky-800 border-sky-200"
                       : org.status === "suspended"
-                      ? "bg-amber-500/20 text-amber-400 border-amber-500/40"
-                      : "bg-rose-500/20 text-rose-400 border-rose-500/40"
+                      ? "bg-amber-50 text-amber-800 border-amber-200"
+                      : "bg-rose-50 text-rose-800 border-rose-200"
                   }`}
                 >
                   <option value="active">Active Client</option>
@@ -342,7 +342,7 @@ export function EmployerContractDrawer({
 
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                 aria-label="Close drawer"
               >
                 <X className="w-5 h-5" />
@@ -404,26 +404,26 @@ export function EmployerContractDrawer({
           )}
 
           {/* Seat Capacity Bar with 90% Near-Capacity Alert */}
-          <div className="p-3.5 rounded-xl bg-[#071521] border border-[#21405A] space-y-2">
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <Users className="w-3.5 h-3.5 text-[#28D17C]" />
-                <span className="font-semibold text-slate-200">Contracted Seat Utilization</span>
+                <Users className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="font-semibold text-slate-800">Contracted Seat Utilization</span>
                 {isNearCapacity && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
-                    <AlertTriangle className="w-3 h-3" />
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 animate-pulse">
+                    <AlertTriangle className="w-3 h-3 text-amber-600" />
                     <span>≥90% Near Capacity (Upsell Opportunity)</span>
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-bold text-white">
+                <span className="font-mono text-xs font-bold text-[#0B1F33]">
                   {activeCount} / {contractedSeats} seats ({utilizationPct}%)
                 </span>
                 {!editingCapacity ? (
                   <button
                     onClick={() => setEditingCapacity(true)}
-                    className="text-[10px] text-[#28D17C] hover:underline"
+                    className="text-[10px] text-emerald-700 font-bold hover:underline cursor-pointer"
                   >
                     Adjust
                   </button>
@@ -653,27 +653,27 @@ export function EmployerContractDrawer({
                   )}
 
                   {/* Visual Economics Preview Calculator */}
-                  <div className="p-4 rounded-xl bg-[#0B1F33] text-white space-y-3 border border-[#21405A]">
+                  <div className="p-4 rounded-xl bg-slate-50 text-slate-900 space-y-3 border border-slate-200">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-[#28D17C]" />
-                      <span className="text-xs font-bold">Standard Network Economics Benchmark</span>
+                      <Sparkles className="w-4 h-4 text-emerald-600" />
+                      <span className="text-xs font-bold text-[#0B1F33]">Standard Network Economics Benchmark</span>
                     </div>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-slate-500">
                       Based on average network facility fees (RWF 45,000 / month standard benchmark), PolyFit
                       computes the gross monthly financial flow:
                     </p>
                     <div className="grid grid-cols-3 gap-3 pt-1 text-center">
-                      <div className="p-2.5 rounded-lg bg-[#142C44]">
-                        <div className="text-[10px] text-slate-400">Network Tier Fee</div>
-                        <div className="text-xs font-mono font-bold text-white mt-1">RWF 45,000</div>
+                      <div className="p-2.5 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
+                        <div className="text-[10px] text-slate-500 font-medium">Network Tier Fee</div>
+                        <div className="text-xs font-mono font-bold text-[#0B1F33] mt-1">RWF 45,000</div>
                       </div>
-                      <div className="p-2.5 rounded-lg bg-[#142C44]">
-                        <div className="text-[10px] text-slate-400">Avg Employer Share (70%)</div>
-                        <div className="text-xs font-mono font-bold text-[#28D17C] mt-1">RWF 31,500</div>
+                      <div className="p-2.5 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
+                        <div className="text-[10px] text-slate-500 font-medium">Avg Employer Share (70%)</div>
+                        <div className="text-xs font-mono font-bold text-[#13804D] mt-1">RWF 31,500</div>
                       </div>
-                      <div className="p-2.5 rounded-lg bg-[#142C44]">
-                        <div className="text-[10px] text-slate-400">Avg Employee Co-Pay (30%)</div>
-                        <div className="text-xs font-mono font-bold text-slate-300 mt-1">RWF 13,500</div>
+                      <div className="p-2.5 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
+                        <div className="text-[10px] text-slate-500 font-medium">Avg Employee Co-Pay (30%)</div>
+                        <div className="text-xs font-mono font-bold text-slate-700 mt-1">RWF 13,500</div>
                       </div>
                     </div>
                   </div>
@@ -891,7 +891,7 @@ export function EmployerContractDrawer({
             </a>
             <button
               onClick={onClose}
-              className="px-4 py-1.5 rounded-lg bg-[#0B1F33] hover:bg-slate-800 text-white font-semibold transition-colors"
+              className="px-4 py-1.5 rounded-lg bg-[#0B1F33] hover:bg-[#16385C] text-white font-semibold transition-colors shadow-xs cursor-pointer"
             >
               Close
             </button>

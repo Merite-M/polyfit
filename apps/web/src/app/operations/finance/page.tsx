@@ -417,7 +417,7 @@ export default function MarketplaceFinancePage() {
                     return (
                       <tr
                         key={inv.id}
-                        className="hover:bg-slate-50/80 transition cursor-pointer"
+                        className="pf-table-row-deferred hover:bg-slate-50/80 transition cursor-pointer"
                         onClick={() => openDrawer("invoice", inv.id, inv)}
                       >
                         <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
@@ -574,7 +574,7 @@ export default function MarketplaceFinancePage() {
                     return (
                       <tr
                         key={st.id}
-                        className="hover:bg-slate-50/80 transition cursor-pointer"
+                        className="pf-table-row-deferred hover:bg-slate-50/80 transition cursor-pointer"
                         onClick={() => openDrawer("settlement", st.id, st)}
                       >
                         <td className="py-3.5 px-4 font-mono font-bold text-slate-900">

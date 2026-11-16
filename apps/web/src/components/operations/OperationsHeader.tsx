@@ -48,12 +48,12 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
   }, []);
 
   return (
-    <header className="h-16 bg-white border-b border-[#E2E8F0] px-3 sm:px-4 lg:px-6 flex items-center justify-between z-20 sticky top-0 shadow-xs">
+    <header className="h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/90 px-3 sm:px-4 lg:px-6 flex items-center justify-between z-20 sticky top-0 shadow-xs">
       {/* Left: Mobile Menu Trigger & Breadcrumbs */}
       <div className="flex items-center gap-2 sm:gap-3">
         <button
           onClick={onOpenMobileMenu}
-          className="lg:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+          className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
           aria-label="Open mobile menu"
         >
           <Menu className="w-5 h-5" />
@@ -64,7 +64,7 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
           <span className="hidden sm:inline text-slate-300">/</span>
           <span className="hidden md:inline font-semibold text-[#0B1F33]">Operations</span>
           <span className="hidden md:inline text-slate-300">/</span>
-          <span className="font-semibold text-[#008A4B] bg-[#E9FAF2] px-2.5 py-0.5 rounded-full border border-[#B7F1D2] text-[11px] truncate max-w-[140px] sm:max-w-none">
+          <span className="font-semibold text-emerald-950 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 text-[11px] truncate max-w-[140px] sm:max-w-none shadow-2xs">
             {getSectionName()}
           </span>
         </div>
@@ -75,10 +75,10 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
         <button
           onClick={onOpenOmnibar}
           aria-label="Search operations (Cmd+K)"
-          className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 hover:border-slate-300 text-xs text-slate-500 transition-all shadow-2xs group cursor-pointer min-w-0 overflow-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 outline-none"
+          className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100/90 border border-slate-200/90 hover:border-slate-300 text-xs text-slate-500 transition-all shadow-2xs group cursor-pointer min-w-0 overflow-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 outline-none"
         >
           <div className="flex items-center gap-2.5 min-w-0 overflow-hidden">
-            <Search className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors shrink-0" />
+            <Search className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition-colors shrink-0" />
             <span className="text-slate-600 font-medium truncate">
               Search employers, providers, visits, invoices...
             </span>
@@ -96,31 +96,34 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
         <button
           onClick={() => openBypassModal()}
           aria-label="Emergency Turnstile Bypass Pass"
-          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#008A4B] hover:bg-[#00703C] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 outline-none"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#28D17C] hover:bg-[#22bc6e] text-slate-950 text-xs font-bold shadow-xs shadow-emerald-500/15 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 outline-none active:scale-[0.98]"
           title="Emergency Turnstile Bypass Pass"
         >
-          <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+          <Zap className="w-3.5 h-3.5 text-slate-950 fill-slate-950" />
           <span className="hidden sm:inline">Emergency Pass</span>
         </button>
 
         {/* Mobile Search Button */}
         <button
           onClick={onOpenOmnibar}
-          className="md:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-emerald-500 outline-none"
+          className="md:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-emerald-500 outline-none"
           aria-label="Search"
         >
           <Search className="w-5 h-5" />
         </button>
 
         {/* Live Kigali Clock */}
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 text-xs font-mono">
+        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200/90 text-slate-600 text-xs font-mono shadow-2xs">
           <Clock className="w-3.5 h-3.5 text-slate-400" />
           <span>{currentTime || "--:--:-- CAT"}</span>
         </div>
 
         {/* Network Status Badge */}
-        <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#E9FAF2] border border-[#B7F1D2] text-[#008A4B] text-xs font-medium">
-          <CheckCircle2 className="w-3.5 h-3.5 text-[#008A4B]" />
+        <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50/80 border border-emerald-200/80 text-emerald-800 text-xs font-medium shadow-2xs">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
           <span>Network Nominal</span>
         </div>
 
@@ -128,8 +131,8 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
         <PlatformSuiteLauncher variant="light" />
 
         {/* Admin Avatar, Role & Sign Out */}
-        <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-          <div className="w-8 h-8 rounded-full bg-[#0B1F33] text-white flex items-center justify-center text-xs font-bold font-mono">
+        <div className="flex items-center gap-2 pl-2 border-l border-slate-200/90">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-400 flex items-center justify-center text-slate-950 font-bold text-xs shadow-xs font-mono shrink-0">
             {user?.email ? user.email.slice(0, 2).toUpperCase() : "SA"}
           </div>
           <div className="hidden md:block text-left">
@@ -143,7 +146,7 @@ export function OperationsHeader({ onOpenMobileMenu, onOpenOmnibar }: Operations
           <button
             onClick={() => signOut("/operations/login")}
             title="Sign Out of Operations Console"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-slate-100 transition-colors ml-1"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-slate-100 transition-colors ml-1 cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
           </button>

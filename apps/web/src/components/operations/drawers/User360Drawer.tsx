@@ -255,27 +255,27 @@ export function User360Drawer({
       onClick={(e) => {
         if (e.target === dialogRef.current) onClose();
       }}
-      className="backdrop:bg-black/60 backdrop:backdrop-blur-xs bg-transparent p-0 m-0 w-full h-full max-w-none max-h-none border-none outline-none overflow-hidden select-none"
+      className="backdrop:bg-[#0B1F33]/40 backdrop:backdrop-blur-xs bg-transparent p-0 m-0 w-full h-full max-w-none max-h-none border-none outline-none overflow-hidden select-none"
     >
       <div className="w-full h-full flex justify-end">
         <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200 overflow-hidden">
           
           {/* DRAWER TOP BAR */}
-          <div className="p-4 bg-[#0B1F33] text-white flex items-center justify-between border-b border-[#21405A]">
+          <div className="p-5 bg-white text-slate-900 flex items-center justify-between border-b border-slate-200/80">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#28D17C] to-[#00D2B4] flex items-center justify-center font-bold text-white shadow-md text-sm">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#28D17C] to-[#00D2B4] flex items-center justify-center font-bold text-white shadow-sm text-sm">
                 {fullName.charAt(0).toUpperCase()}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-[#28D17C]/20 text-[#28D17C] font-bold border border-[#28D17C]/40">
+                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-[#28D17C]/15 text-[#13804D] font-bold border border-[#28D17C]/30">
                     USER 360 COCKPIT
                   </span>
-                  <span className="text-[11px] font-mono text-slate-400">
+                  <span className="text-[11px] font-mono text-slate-500">
                     ID: {employeeId?.substring(0, 8)}...
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-white truncate max-w-md mt-0.5">
+                <h3 className="text-base font-bold text-[#0B1F33] truncate max-w-md mt-0.5">
                   {fullName}
                 </h3>
               </div>
@@ -283,7 +283,7 @@ export function User360Drawer({
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
               aria-label="Close drawer"
             >
               <X className="w-5 h-5" />
@@ -374,22 +374,22 @@ export function User360Drawer({
             </div>
 
             {/* SECTION 1: SIMULATED BENEFICIARY MOBILE PASS (TRUE SUPPORT PROXY VIEW) */}
-            <div className="rounded-2xl bg-[#0B1F33] text-white p-5 border border-[#21405A] shadow-md space-y-4">
-              <div className="flex items-center justify-between border-b border-[#21405A] pb-3">
+            <div className="rounded-2xl bg-white text-slate-900 p-5 border border-slate-200/80 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <Smartphone className="w-4 h-4 text-[#28D17C]" />
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#0B1F33]">
                     Simulated Beneficiary Pass (Mobile Proxy View)
                   </h4>
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#28D17C] animate-pulse" />
                   <span>RFC 6238 ACTIVE</span>
                 </div>
               </div>
 
               {/* Pass Visual Card Silhouette */}
-              <div className="p-4 rounded-xl bg-gradient-to-br from-[#071521] to-[#102A45] border border-[#21405A] space-y-4 relative overflow-hidden">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-[#0B1F33] to-[#142C44] text-white border border-slate-700 space-y-4 relative overflow-hidden shadow-sm">
                 <div className="flex items-start justify-between">
                   <div>
                     <span className="text-[10px] font-mono tracking-widest text-[#28D17C] uppercase font-bold block">
@@ -412,7 +412,7 @@ export function User360Drawer({
                 </div>
 
                 {/* Dynamic TOTP Code Display with Live Radial Countdown Ring */}
-                <div className="p-3.5 rounded-xl bg-[#0B1F33]/90 border border-[#21405A] flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-[#071521]/90 border border-slate-700/80 flex items-center justify-between">
                   <div className="space-y-0.5">
                     <span className="text-[10px] uppercase font-semibold text-slate-400 flex items-center gap-1.5">
                       <QrCode className="w-3.5 h-3.5 text-[#00D2B4]" />
@@ -608,7 +608,7 @@ export function User360Drawer({
                         ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
                         : device.isLockedOut && !isManagerOverride
                         ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                        : "bg-[#0B1F33] hover:bg-slate-800 text-white shadow-sm"
+                        : "bg-[#0B1F33] hover:bg-[#16385C] text-white shadow-xs cursor-pointer"
                     }`}
                   >
                     {resetting ? (
@@ -676,7 +676,7 @@ export function User360Drawer({
                   />
                   <button
                     onClick={handleTestToken}
-                    className="px-4 py-1.5 rounded-lg bg-[#0B1F33] hover:bg-slate-800 text-white text-xs font-semibold transition-colors"
+                    className="px-4 py-1.5 rounded-lg bg-[#0B1F33] hover:bg-[#16385C] text-white text-xs font-semibold transition-colors shadow-xs cursor-pointer"
                   >
                     Diagnose
                   </button>

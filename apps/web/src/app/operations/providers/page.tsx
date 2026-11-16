@@ -163,13 +163,13 @@ function ProviderNetworkContent() {
   const [processingAmendmentId, setProcessingAmendmentId] = useState<string | null>(null);
   const [amendmentFeedback, setAmendmentFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  // Inline Modals for Counter-Offer and Rejection
   const [counterModal, setCounterModal] = useState<{
     isOpen: boolean;
     req: AmendmentRequestItem | null;
     rate: string;
     notes: string;
-  }>({ isOpen: false, req: null, rate: "", notes: "" });
+    error?: string | null;
+  }>({ isOpen: false, req: null, rate: "", notes: "", error: null });
 
   const [rejectModal, setRejectModal] = useState<{
     isOpen: boolean;
@@ -789,7 +789,7 @@ function ProviderNetworkContent() {
                       <tr
                         key={provider.id}
                         onClick={() => handleOpenDossier(provider.id)}
-                        className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                        className="pf-table-row-deferred hover:bg-slate-50/80 transition-colors cursor-pointer group"
                       >
                         {/* Column 1: Trade Entity */}
                         <td className="py-3.5 px-4">
@@ -1078,7 +1078,7 @@ function ProviderNetworkContent() {
                       const isRejected = req.status === "rejected";
 
                       return (
-                        <tr key={req.id} className="hover:bg-slate-50/80 transition-colors">
+                        <tr key={req.id} className="pf-table-row-deferred hover:bg-slate-50/80 transition-colors">
                           <td className="py-3.5 px-4">
                             <div className="font-bold text-slate-900 text-xs">{req.providerName}</div>
                             <div className="flex items-center gap-1.5 mt-0.5">
@@ -1221,7 +1221,16 @@ function ProviderNetworkContent() {
           {counterModal.isOpen && counterModal.req && (
             <dialog
               open
-              className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 w-full h-full"
+              onCancel={(e) => {
+                e.preventDefault();
+                setCounterModal({ isOpen: false, req: null, rate: "", notes: "", error: null });
+              }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setCounterModal({ isOpen: false, req: null, rate: "", notes: "", error: null });
+                }
+              }}
+              className="fixed inset-0 m-0 p-4 w-full h-full max-w-none max-h-none bg-slate-950/60 backdrop:bg-slate-950/60 backdrop:backdrop-blur-xs z-50 flex items-center justify-center border-none outline-none"
             >
               <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full p-5 space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -1230,12 +1239,18 @@ function ProviderNetworkContent() {
                     <h3 className="text-sm font-bold text-slate-900">Counter-Offer Payout Rate</h3>
                   </div>
                   <button
-                    onClick={() => setCounterModal({ isOpen: false, req: null, rate: "", notes: "" })}
+                    onClick={() => setCounterModal({ isOpen: false, req: null, rate: "", notes: "", error: null })}
                     className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
+
+                {counterModal.error && (
+                  <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                    {counterModal.error}
+                  </div>
+                )}
 
                 <div className="space-y-3 text-xs">
                   <div className="p-3 bg-slate-50 rounded-xl space-y-1">
@@ -1257,7 +1272,7 @@ function ProviderNetworkContent() {
                     <input
                       type="number"
                       value={counterModal.rate}
-                      onChange={(e) => setCounterModal((prev) => ({ ...prev, rate: e.target.value }))}
+                      onChange={(e) => setCounterModal((prev) => ({ ...prev, rate: e.target.value, error: null }))}
                       placeholder="e.g. 4000"
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
@@ -1268,11 +1283,11 @@ function ProviderNetworkContent() {
                       Commercial Reasoning / Note to Partner
                     </label>
                     <textarea
-                      rows={2}
                       value={counterModal.notes}
                       onChange={(e) => setCounterModal((prev) => ({ ...prev, notes: e.target.value }))}
                       placeholder="Explain the platform commercial benchmark..."
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      style={{ fieldSizing: "content" } as React.CSSProperties}
+                      className="w-full pf-textarea-sm px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -1280,7 +1295,7 @@ function ProviderNetworkContent() {
                 <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                   <button
                     type="button"
-                    onClick={() => setCounterModal({ isOpen: false, req: null, rate: "", notes: "" })}
+                    onClick={() => setCounterModal({ isOpen: false, req: null, rate: "", notes: "", error: null })}
                     className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50"
                   >
                     Cancel
@@ -1289,7 +1304,7 @@ function ProviderNetworkContent() {
                     type="button"
                     onClick={() => {
                       if (!counterModal.rate || Number(counterModal.rate) <= 0) {
-                        alert("Please enter a valid counter-offer rate");
+                        setCounterModal((prev) => ({ ...prev, error: "Please enter a valid counter-offer rate greater than 0." }));
                         return;
                       }
                       handleAdjudicateAmendment(
@@ -1298,7 +1313,7 @@ function ProviderNetworkContent() {
                         counterModal.notes,
                         Number(counterModal.rate)
                       );
-                      setCounterModal({ isOpen: false, req: null, rate: "", notes: "" });
+                      setCounterModal({ isOpen: false, req: null, rate: "", notes: "", error: null });
                     }}
                     className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer"
                   >
@@ -1313,7 +1328,16 @@ function ProviderNetworkContent() {
           {rejectModal.isOpen && rejectModal.req && (
             <dialog
               open
-              className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 w-full h-full"
+              onCancel={(e) => {
+                e.preventDefault();
+                setRejectModal({ isOpen: false, req: null, notes: "" });
+              }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setRejectModal({ isOpen: false, req: null, notes: "" });
+                }
+              }}
+              className="fixed inset-0 m-0 p-4 w-full h-full max-w-none max-h-none bg-slate-950/60 backdrop:bg-slate-950/60 backdrop:backdrop-blur-xs z-50 flex items-center justify-center border-none outline-none"
             >
               <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full p-5 space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -1339,11 +1363,11 @@ function ProviderNetworkContent() {
                       Decline Reason &amp; Formal Feedback
                     </label>
                     <textarea
-                      rows={2}
                       value={rejectModal.notes}
                       onChange={(e) => setRejectModal((prev) => ({ ...prev, notes: e.target.value }))}
                       placeholder="Specify decline rationale..."
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                      style={{ fieldSizing: "content" } as React.CSSProperties}
+                      className="w-full pf-textarea-sm px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
                     />
                   </div>
                 </div>

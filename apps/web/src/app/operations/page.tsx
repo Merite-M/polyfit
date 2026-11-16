@@ -371,7 +371,7 @@ export default function OperationsCommandCenterPage() {
           <NetworkCoverageMap />
 
           {/* Live Verified Visits Telemetry Stream */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5">
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(11,31,51,0.05),0_1px_2px_rgba(11,31,51,0.02)] p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-[#28D17C]" />
@@ -400,7 +400,7 @@ export default function OperationsCommandCenterPage() {
                   <div
                     key={visit.id}
                     onClick={() => openDrawer("visit", visit.id, visit, `Visit ${visit.id.substring(0, 8)}`)}
-                    className="py-3 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-xl cursor-pointer transition-colors"
+                    className="pf-stream-card-enter py-3 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-xl cursor-pointer transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs shrink-0 border border-emerald-100">
@@ -439,7 +439,7 @@ export default function OperationsCommandCenterPage() {
         {/* Right Column (5/12): Margin Ledger & Network Distribution */}
         <div className="lg:col-span-5 space-y-6">
           {/* Marketplace Financial Clearinghouse Breakdown */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(11,31,51,0.05),0_1px_2px_rgba(11,31,51,0.02)] p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Coins className="w-4 h-4 text-[#0B1F33]" />

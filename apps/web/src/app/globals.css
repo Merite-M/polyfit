@@ -208,6 +208,15 @@
 }
 
 /* Native HTML <dialog> Styling & Modern Web Guidance transitions */
+/* MANDATORY (Modern Web Guidance): stop page scroll under modal dialog */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
 dialog:not([open]),
 dialog.pf-native-dialog:not([open]) {
   display: none !important;

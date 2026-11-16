@@ -227,11 +227,11 @@ export function CreditNoteModal({
                 Audit Notes / Justification
               </label>
               <textarea
-                rows={2}
                 placeholder="Provide internal notes for fiscal audit trail..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                style={{ fieldSizing: "content" } as React.CSSProperties}
+                className="w-full pf-textarea-sm px-3 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
 

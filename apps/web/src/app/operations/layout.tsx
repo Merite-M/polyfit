@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { OperationsSidebar } from "@/components/operations/OperationsSidebar";
@@ -23,6 +23,23 @@ export default function OperationsLayout({
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [omnibarOpen, setOmnibarOpen] = useState(false);
+  const mobileDrawerRef = useRef<HTMLDialogElement>(null);
+
+  // Modern Web Guidance: Native <dialog> navigation drawer lifecycle synchronization
+  useEffect(() => {
+    const dialog = mobileDrawerRef.current;
+    if (!dialog) return;
+
+    if (mobileMenuOpen) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } else {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+  }, [mobileMenuOpen]);
 
   // Auth Redirect Guard
   useEffect(() => {
@@ -99,33 +116,40 @@ export default function OperationsLayout({
 
   return (
     <OperationsDrawerProvider>
-      <div className="flex h-screen overflow-hidden bg-[#F7F9FC]">
+      <div className="flex h-screen overflow-hidden bg-[#F7F9FC] relative selection:bg-emerald-100 selection:text-emerald-900">
         {/* Desktop Persistent Sidebar (Fixed 260px) */}
         <div className="hidden lg:block w-64 flex-shrink-0 h-full">
           <OperationsSidebar />
         </div>
 
-        {/* Mobile Drawer Backdrop & Sidebar */}
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden flex">
-            <div
-              className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
-              onClick={() => setMobileMenuOpen(false)}
-            />
-            <div className="relative flex-1 flex flex-col max-w-xs w-full bg-[#0B1F33] z-10 animate-in slide-in-from-left duration-200">
-              <OperationsSidebar onCloseMobile={() => setMobileMenuOpen(false)} />
-            </div>
+        {/* Modern Web Platform: Native Accessible Navigation Drawer (<dialog>) */}
+        <dialog
+          ref={mobileDrawerRef}
+          onClose={() => setMobileMenuOpen(false)}
+          onClick={(e) => {
+            if (e.target === mobileDrawerRef.current) {
+              setMobileMenuOpen(false);
+            }
+          }}
+          aria-label="PolyFit Operations Navigation Drawer"
+          className="lg:hidden fixed inset-0 m-0 p-0 w-full h-full max-w-none max-h-none bg-transparent border-0 outline-none backdrop:bg-slate-950/60 backdrop:backdrop-blur-xs overflow-hidden z-50 open:flex"
+        >
+          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-[#0B1F33] z-10 h-full shadow-2xl animate-in slide-in-from-left duration-200">
+            <OperationsSidebar onCloseMobile={() => setMobileMenuOpen(false)} />
           </div>
-        )}
+        </dialog>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
+          {/* Ambient PolyFit Brand Longevity Glow */}
+          <div className="absolute top-0 inset-x-0 h-96 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(40,209,124,0.06),rgba(247,249,252,0)_70%)] pointer-events-none" />
+
           <OperationsHeader
             onOpenMobileMenu={() => setMobileMenuOpen(true)}
             onOpenOmnibar={() => setOmnibarOpen(true)}
           />
 
-          <main className="flex-1 overflow-y-auto p-4 lg:p-8 space-y-6">
+          <main className="flex-1 overflow-y-auto p-4 lg:p-8 space-y-6 relative z-10 @container/main">
             {children}
           </main>
         </div>

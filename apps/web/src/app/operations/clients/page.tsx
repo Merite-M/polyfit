@@ -562,14 +562,14 @@ function CorporateClientsContent() {
         <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-[#0B1F33] text-white border-b border-[#21405A]">
-                <th className="py-3 px-4 font-semibold uppercase tracking-wider text-[10px]">Client Legal Name</th>
-                <th className="py-3 px-4 font-semibold uppercase tracking-wider text-[10px]">Status</th>
-                <th className="py-3 px-4 font-semibold uppercase tracking-wider text-[10px]">Industry &amp; Country</th>
-                <th className="py-3 px-4 font-semibold uppercase tracking-wider text-[10px]">Contracted Capacity</th>
-                <th className="py-3 px-4 font-semibold uppercase tracking-wider text-[10px]">Whitelisted Domains</th>
-                <th className="py-3 px-4 font-semibold uppercase tracking-wider text-[10px]">Active Plans</th>
-                <th className="py-3 px-4 font-semibold uppercase tracking-wider text-[10px] text-right">Actions</th>
+              <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Client Legal Name</th>
+                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Status</th>
+                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Industry &amp; Country</th>
+                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Contracted Capacity</th>
+                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Whitelisted Domains</th>
+                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Active Plans</th>
+                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px] text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -598,12 +598,12 @@ function CorporateClientsContent() {
                     <tr
                       key={client.id}
                       onClick={() => openDrawer("organization", client.id)}
-                      className="hover:bg-slate-50/80 cursor-pointer transition-colors group"
+                      className="pf-table-row-deferred hover:bg-slate-50/80 cursor-pointer transition-colors group"
                     >
                       {/* Company Name & Avatar */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#142C44] to-[#071521] border border-[#21405A] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+                          <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 text-[#0B1F33] flex items-center justify-center font-bold text-xs flex-shrink-0 group-hover:border-[#28D17C] transition-colors">
                             {client.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
@@ -921,7 +921,7 @@ function CorporateClientsContent() {
                       const mailLink = `mailto:${lead.work_email}?subject=PolyFit%20Corporate%20Wellness%20Demo%20-%20${encodeURIComponent(lead.company_name)}&body=Hello%20${encodeURIComponent(lead.contact_name)},%0A%0AThank%20you%20for%20your%20interest%20in%20PolyFit.`;
 
                       return (
-                        <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
+                        <tr key={lead.id} className="pf-table-row-deferred hover:bg-slate-50/80 transition-colors">
                           <td className="py-3 px-4">
                             <div className="font-bold text-slate-900 text-xs">{lead.company_name}</div>
                             <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5">

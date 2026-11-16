@@ -63,10 +63,10 @@ export function ExecutiveKpiGrid({ data }: ExecutiveKpiGridProps) {
     .join(" ");
 
   return (
-    <div className="@container">
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div className="@container w-full">
+      <div className="grid grid-cols-1 @sm:grid-cols-2 @2xl:grid-cols-4 gap-4">
         {/* Card 1: Network Scale */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(11,31,51,0.05),0_1px_2px_rgba(11,31,51,0.02)] hover:border-slate-300 transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between text-slate-500 mb-3">
               <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">
@@ -106,7 +106,7 @@ export function ExecutiveKpiGrid({ data }: ExecutiveKpiGridProps) {
         </div>
 
         {/* Card 2: Beneficiary Engagement */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(11,31,51,0.05),0_1px_2px_rgba(11,31,51,0.02)] hover:border-slate-300 transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between text-slate-500 mb-3">
               <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">
@@ -139,7 +139,7 @@ export function ExecutiveKpiGrid({ data }: ExecutiveKpiGridProps) {
         </div>
 
         {/* Card 3: Visit Velocity & 24h Trend */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(11,31,51,0.05),0_1px_2px_rgba(11,31,51,0.02)] hover:border-slate-300 transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between text-slate-500 mb-2">
               <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">
@@ -158,7 +158,7 @@ export function ExecutiveKpiGrid({ data }: ExecutiveKpiGridProps) {
                   </span>
                   <span className="text-xs text-slate-500 font-medium">MTD Visits</span>
                 </div>
-                <div className="text-[11px] text-[#008A4B] font-semibold mt-0.5">
+                <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
                   {visits.verificationSuccessRate}% Pass Rate
                 </div>
               </div>
@@ -187,8 +187,9 @@ export function ExecutiveKpiGrid({ data }: ExecutiveKpiGridProps) {
         </div>
 
         {/* Card 4: Marketplace Financial Ticker (Gross Margin Spread) */}
-        <div className="bg-[#0B1F33] text-white rounded-2xl p-5 border border-[#21405A] shadow-md flex flex-col justify-between">
-          <div>
+        <div className="bg-[#0B1F33] text-white rounded-2xl p-5 border border-slate-800 shadow-[0_4px_24px_-4px_rgba(11,31,51,0.25)] relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute -top-12 -right-12 w-28 h-28 bg-[#28D17C]/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="relative z-10">
             <div className="flex items-center justify-between text-slate-400 mb-2">
               <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-300">
                 Marketplace Margin Ticker
@@ -208,7 +209,7 @@ export function ExecutiveKpiGrid({ data }: ExecutiveKpiGridProps) {
             </div>
           </div>
 
-          <div className="pt-3 border-t border-[#21405A] space-y-1 text-[11px]">
+          <div className="pt-3 border-t border-slate-800/80 space-y-1 text-[11px] relative z-10">
             <div className="flex justify-between text-slate-300">
               <span className="text-slate-400">Invoiced MTD:</span>
               <span className="font-mono">{formatCurrencyDisplay(financials.invoicedMtd)}</span>

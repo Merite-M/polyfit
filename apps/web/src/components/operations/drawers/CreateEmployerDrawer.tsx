@@ -266,29 +266,29 @@ export function CreateEmployerDrawer({
         e.preventDefault();
         onClose();
       }}
-      className="backdrop:bg-black/60 backdrop:backdrop-blur-xs bg-transparent p-0 m-0 w-full h-full max-w-none max-h-none border-none outline-none overflow-hidden"
+      className="backdrop:bg-[#0B1F33]/40 backdrop:backdrop-blur-xs bg-transparent p-0 m-0 w-full h-full max-w-none max-h-none border-none outline-none overflow-hidden"
     >
       <div className="w-full h-full flex justify-end">
         <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200">
         {/* Header */}
-        <div className="p-6 bg-[#0B1F33] text-white flex items-center justify-between border-b border-[#21405A]">
+        <div className="p-6 bg-white text-slate-900 flex items-center justify-between border-b border-slate-200/80">
           <div>
             <div className="flex items-center gap-2">
-              <span className="p-1.5 rounded-lg bg-[#28D17C]/20 text-[#28D17C] border border-[#28D17C]/30">
+              <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <Building2 className="w-4 h-4" />
               </span>
-              <h2 className="text-base font-bold tracking-tight">Provision Corporate Client</h2>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#28D17C]/20 text-[#28D17C] border border-[#28D17C]/30">
+              <h2 className="text-base font-bold tracking-tight text-[#0B1F33]">Provision Corporate Client</h2>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#28D17C]/15 text-[#13804D] border border-[#28D17C]/30">
                 New Client Setup
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               Streamlined 3-step enterprise client contract & subsidy onboarding
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
             aria-label="Close drawer"
           >
             <X className="w-5 h-5" />
@@ -296,7 +296,7 @@ export function CreateEmployerDrawer({
         </div>
 
         {/* Step Indicator Progress Bar */}
-        <div className="px-6 py-3 bg-[#071521] border-b border-[#21405A] flex items-center justify-between text-xs">
+        <div className="px-6 py-3 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between text-xs">
           {[
             { step: 1, title: "1. Corporate Identity & TIN" },
             { step: 2, title: "2. Subsidy Matrix Builder" },
@@ -311,15 +311,15 @@ export function CreateEmployerDrawer({
                     isCompleted
                       ? "bg-[#28D17C] text-[#0B1F33]"
                       : isCurrent
-                      ? "bg-white text-[#0B1F33] ring-2 ring-[#28D17C]"
-                      : "bg-slate-800 text-slate-400"
+                      ? "bg-white text-[#0B1F33] ring-2 ring-[#0B1F33] shadow-xs"
+                      : "bg-slate-200 text-slate-500"
                   }`}
                 >
                   {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : s.step}
                 </div>
                 <span
                   className={`font-medium text-[11px] hidden sm:inline ${
-                    isCurrent ? "text-white font-semibold" : "text-slate-400"
+                    isCurrent ? "text-[#0B1F33] font-bold" : "text-slate-500"
                   }`}
                 >
                   {s.title}
@@ -598,39 +598,39 @@ export function CreateEmployerDrawer({
                 )}
 
                 {/* VISUAL ECONOMICS CALCULATOR CARD */}
-                <div className="p-4 rounded-xl bg-[#0B1F33] text-white space-y-3 border border-[#21405A]">
+                <div className="p-4 rounded-xl bg-slate-50 text-slate-900 space-y-3 border border-slate-200/80">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-[#28D17C]" />
-                      <span className="text-xs font-bold tracking-wide">Live Subsidy Economics Preview</span>
+                      <Sparkles className="w-4 h-4 text-emerald-600" />
+                      <span className="text-xs font-bold tracking-wide text-[#0B1F33]">Live Subsidy Economics Preview</span>
                     </div>
-                    <span className="text-[10px] font-mono text-[#00D2B4] uppercase">
+                    <span className="text-[10px] font-mono font-semibold text-[#13804D] uppercase">
                       {PLAN_TIER_BENCHMARKS[planTier]?.label}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 pt-1">
-                    <div className="p-2.5 rounded-lg bg-[#142C44] border border-[#21405A]">
-                      <div className="text-[10px] text-slate-400 font-medium">Employer Contribution</div>
-                      <div className="text-sm font-mono font-bold text-[#28D17C] mt-0.5">
+                    <div className="p-2.5 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
+                      <div className="text-[10px] text-slate-500 font-medium">Employer Contribution</div>
+                      <div className="text-sm font-mono font-bold text-[#13804D] mt-0.5">
                         RWF {employerShare.toLocaleString()}
-                        <span className="text-[10px] font-normal text-slate-400"> / employee</span>
+                        <span className="text-[10px] font-normal text-slate-500"> / employee</span>
                       </div>
                     </div>
-                    <div className="p-2.5 rounded-lg bg-[#142C44] border border-[#21405A]">
-                      <div className="text-[10px] text-slate-400 font-medium">Employee Co-Pay</div>
-                      <div className="text-sm font-mono font-bold text-white mt-0.5">
+                    <div className="p-2.5 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
+                      <div className="text-[10px] text-slate-500 font-medium">Employee Co-Pay</div>
+                      <div className="text-sm font-mono font-bold text-[#0B1F33] mt-0.5">
                         RWF {employeeShare.toLocaleString()}
-                        <span className="text-[10px] font-normal text-slate-400"> / employee</span>
+                        <span className="text-[10px] font-normal text-slate-500"> / employee</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-[#21405A] flex items-center justify-between text-xs">
-                    <span className="text-slate-300 text-[11px]">
+                  <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
+                    <span className="text-slate-600 text-[11px]">
                       Projected Total Monthly Client Commitment ({contractedSeats} seats):
                     </span>
-                    <span className="font-mono font-bold text-[#00D2B4] text-xs">
+                    <span className="font-mono font-bold text-[#13804D] text-xs">
                       RWF {projectedMonthlyEmployerCommitment.toLocaleString()}
                     </span>
                   </div>
@@ -790,7 +790,7 @@ export function CreateEmployerDrawer({
                   setError(null);
                   setCurrentStep((prev) => (prev + 1) as any);
                 }}
-                className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-[#0B1F33] hover:bg-slate-800 text-white text-xs font-semibold transition-colors"
+                className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-[#0B1F33] hover:bg-[#16385C] text-white text-xs font-semibold transition-colors shadow-xs cursor-pointer"
               >
                 <span>Continue</span>
                 <ArrowRight className="w-3.5 h-3.5" />

@@ -457,21 +457,21 @@ function LiveVisitMonitorContent() {
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Gateway Status Badge */}
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0E263E] border border-[#21405A] text-xs">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#28D17C] opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[#28D17C]"></span>
             </span>
-            <span className="text-slate-300 font-mono text-[11px]">{telemetry.gatewayNode}</span>
+            <span className="text-slate-600 font-mono text-[11px]">{telemetry.gatewayNode}</span>
           </div>
 
           {/* Sound Alert Toggle */}
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className={`p-2 rounded-xl border text-xs font-medium transition-colors flex items-center gap-1.5 ${
+            className={`p-2 rounded-xl border text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
               soundEnabled
-                ? "bg-[#28D17C]/20 text-[#28D17C] border-[#28D17C]/40"
-                : "bg-[#142C44] text-slate-400 border-[#21405A] hover:text-white"
+                ? "bg-[#E9FAF2] text-[#008A4B] border-[#B7F1D2]"
+                : "bg-white text-slate-600 border-slate-200 hover:text-[#0B1F33] hover:border-slate-300 shadow-xs"
             }`}
             title={soundEnabled ? "Mute Anomaly Chimes" : "Enable Anomaly Sound Alerts"}
           >
@@ -482,10 +482,10 @@ function LiveVisitMonitorContent() {
           {/* Stream Pause / Play Toggle */}
           <button
             onClick={() => setIsPaused(!isPaused)}
-            className={`p-2 rounded-xl border text-xs font-medium transition-colors flex items-center gap-1.5 ${
+            className={`p-2 rounded-xl border text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
               isPaused
-                ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                : "bg-[#142C44] text-slate-300 border-[#21405A] hover:text-white"
+                ? "bg-amber-50 text-amber-700 border-amber-300"
+                : "bg-white text-slate-600 border-slate-200 hover:text-[#0B1F33] hover:border-slate-300 shadow-xs"
             }`}
             title={isPaused ? "Resume Live Telemetry Stream" : "Pause Stream (Freeze View)"}
           >
@@ -505,88 +505,92 @@ function LiveVisitMonitorContent() {
       </div>
 
       {/* ─── 2. Metric Telemetry Ribbon ─── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="p-3.5 rounded-2xl bg-[#0B1F33] border border-[#21405A] space-y-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Today's Visits</span>
-          <div className="font-mono text-xl font-bold text-white flex items-center gap-1.5">
+      <div className="@container grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-1 hover:border-slate-300 transition-all">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Today's Visits</span>
+          <div className="font-mono text-xl font-bold text-[#0B1F33] flex items-center gap-1.5">
             <span>{telemetry.todayVisits}</span>
-            <span className="text-[10px] font-normal text-[#28D17C]">({telemetry.todayVerified} OK)</span>
+            <span className="text-[10px] font-normal text-[#008A4B]">({telemetry.todayVerified} OK)</span>
           </div>
-          <span className="text-[10px] text-slate-500 block truncate">Kigali & regional network</span>
+          <span className="text-[10px] text-slate-400 block truncate">Kigali &amp; regional network</span>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-[#0B1F33] border border-[#21405A] space-y-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Integrity Rate</span>
-          <div className="font-mono text-xl font-bold text-[#28D17C]">
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-1 hover:border-slate-300 transition-all">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Integrity Rate</span>
+          <div className="font-mono text-xl font-bold text-[#008A4B]">
             {telemetry.verifiedRate}%
           </div>
-          <span className="text-[10px] text-slate-500 block">Cryptographic TOTP match</span>
+          <span className="text-[10px] text-slate-400 block">Cryptographic TOTP match</span>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-[#0B1F33] border border-[#21405A] space-y-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Pending 20m</span>
-          <div className="font-mono text-xl font-bold text-amber-400">
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-1 hover:border-slate-300 transition-all">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pending 20m</span>
+          <div className="font-mono text-xl font-bold text-amber-600">
             {telemetry.todayPending}
           </div>
-          <span className="text-[10px] text-slate-500 block">Awaiting facility checkout</span>
+          <span className="text-[10px] text-slate-400 block">Awaiting facility checkout</span>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-[#0B1F33] border border-[#21405A] space-y-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Active Anomalies</span>
-          <div className={`font-mono text-xl font-bold ${telemetry.activeAnomaliesCount > 0 ? "text-rose-400" : "text-slate-300"}`}>
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-1 hover:border-slate-300 transition-all">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Active Anomalies</span>
+          <div className={`font-mono text-xl font-bold ${telemetry.activeAnomaliesCount > 0 ? "text-rose-600" : "text-slate-700"}`}>
             {telemetry.activeAnomaliesCount}
           </div>
-          <span className="text-[10px] text-slate-500 block">Passback & velocity flags</span>
+          <span className="text-[10px] text-slate-400 block">Passback &amp; velocity flags</span>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-[#0B1F33] border border-[#21405A] space-y-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Open Disputes</span>
-          <div className={`font-mono text-xl font-bold ${telemetry.activeDisputesCount > 0 ? "text-purple-400" : "text-slate-300"}`}>
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-1 hover:border-slate-300 transition-all">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Open Disputes</span>
+          <div className={`font-mono text-xl font-bold ${telemetry.activeDisputesCount > 0 ? "text-purple-600" : "text-slate-700"}`}>
             {telemetry.activeDisputesCount}
           </div>
-          <span className="text-[10px] text-slate-500 block">Awaiting ops triage</span>
+          <span className="text-[10px] text-slate-400 block">Awaiting ops triage</span>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-[#0B1F33] border border-[#21405A] space-y-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">IoT Turnstiles</span>
-          <div className="font-mono text-xl font-bold text-[#00D2B4] flex items-center gap-1">
-            <CheckCircle2 className="w-4 h-4 text-[#00D2B4]" />
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-1 hover:border-slate-300 transition-all">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">IoT Turnstiles</span>
+          <div className="font-mono text-xl font-bold text-teal-600 flex items-center gap-1">
+            <CheckCircle2 className="w-4 h-4 text-teal-600" />
             <span>{telemetry.turnstilesOnlineCount}</span>
           </div>
-          <span className="text-[10px] text-slate-500 block">Active hardware gateways</span>
+          <span className="text-[10px] text-slate-400 block">Active hardware gateways</span>
         </div>
       </div>
 
       {/* ─── 3. Navigation Tabs & Mode Switcher ─── */}
-      <div className="flex items-center justify-between border-b border-[#21405A] text-xs">
+      <div className="flex items-center justify-between border-b border-slate-200 text-xs">
         <div className="flex items-center gap-1 sm:gap-2">
           <button
             onClick={() => setActiveTab("stream")}
-            className={`px-4 py-3 font-bold border-b-2 transition-all flex items-center gap-2 ${
+            className={`px-4 py-3 font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === "stream"
-                ? "border-[#28D17C] text-[#28D17C]"
-                : "border-transparent text-slate-400 hover:text-slate-200"
+                ? "border-[#28D17C] text-[#0B1F33]"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <Activity className="w-4 h-4" />
+            <Activity className="w-4 h-4 text-[#008A4B]" />
             <span>Live Telemetry Stream</span>
-            <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300">
+            <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded-full ${
+              activeTab === "stream"
+                ? "bg-[#E9FAF2] text-[#008A4B] border border-[#B7F1D2]"
+                : "bg-slate-100 text-slate-600 border border-slate-200"
+            }`}>
               {filteredVisits.length}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab("clearinghouse")}
-            className={`px-4 py-3 font-bold border-b-2 transition-all flex items-center gap-2 ${
+            className={`px-4 py-3 font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === "clearinghouse"
-                ? "border-[#28D17C] text-[#28D17C]"
-                : "border-transparent text-slate-400 hover:text-slate-200"
+                ? "border-[#28D17C] text-[#0B1F33]"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <FileText className="w-4 h-4" />
+            <FileText className="w-4 h-4 text-purple-600" />
             <span>Dispute Clearinghouse</span>
             {disputedVisits.length > 0 && (
-              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30">
+              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-full bg-purple-50 text-purple-700 font-bold border border-purple-200">
                 {disputedVisits.length}
               </span>
             )}
@@ -594,16 +598,16 @@ function LiveVisitMonitorContent() {
 
           <button
             onClick={() => setActiveTab("intelligence")}
-            className={`px-4 py-3 font-bold border-b-2 transition-all flex items-center gap-2 ${
+            className={`px-4 py-3 font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === "intelligence"
-                ? "border-[#28D17C] text-[#28D17C]"
-                : "border-transparent text-slate-400 hover:text-slate-200"
+                ? "border-[#28D17C] text-[#0B1F33]"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <ShieldAlert className="w-4 h-4" />
-            <span>Fraud & Velocity Intelligence</span>
+            <ShieldAlert className="w-4 h-4 text-rose-600" />
+            <span>Fraud &amp; Velocity Intelligence</span>
             {telemetry.activeAnomaliesCount > 0 && (
-              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">
+              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-full bg-rose-50 text-rose-700 font-bold border border-rose-200">
                 {telemetry.activeAnomaliesCount}
               </span>
             )}
@@ -612,7 +616,7 @@ function LiveVisitMonitorContent() {
 
         <button
           onClick={fetchVisits}
-          className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          className="p-2 rounded-lg text-slate-500 hover:text-[#0B1F33] hover:bg-slate-100 transition-colors cursor-pointer"
           title="Refresh Data"
         >
           <RefreshCw className="w-4 h-4" />
@@ -623,7 +627,7 @@ function LiveVisitMonitorContent() {
       {activeTab === "stream" && (
         <div className="space-y-4">
           {/* Filter Bar */}
-          <div className="p-4 rounded-2xl bg-[#0B1F33] border border-[#21405A] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-xs">
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-xs">
             <div className="relative flex-1">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -631,7 +635,7 @@ function LiveVisitMonitorContent() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search beneficiary, email, corporate client, facility, or visit ref..."
-                className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#142C44] border border-[#21405A] text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-[#28D17C]"
+                className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-slate-900 text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C]"
               />
             </div>
 
@@ -640,7 +644,7 @@ function LiveVisitMonitorContent() {
               <select
                 value={methodFilter}
                 onChange={(e) => setMethodFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-[#142C44] border border-[#21405A] text-slate-200 text-xs focus:outline-none focus:border-[#28D17C]"
+                className="px-3 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C] cursor-pointer"
               >
                 <option value="all">All Methods</option>
                 <option value="totp_qr">TOTP Dynamic QR</option>
@@ -653,7 +657,7 @@ function LiveVisitMonitorContent() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-[#142C44] border border-[#21405A] text-slate-200 text-xs focus:outline-none focus:border-[#28D17C]"
+                className="px-3 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C] cursor-pointer"
               >
                 <option value="all">All Statuses</option>
                 <option value="verified">Verified</option>
@@ -665,10 +669,10 @@ function LiveVisitMonitorContent() {
               {/* Anomaly Only Toggle */}
               <button
                 onClick={() => setAnomalyOnly(!anomalyOnly)}
-                className={`px-3 py-2 rounded-xl border font-semibold text-xs transition-colors flex items-center gap-1.5 ${
+                className={`px-3 py-2 rounded-xl border font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer ${
                   anomalyOnly
-                    ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
-                    : "bg-[#142C44] text-slate-300 border-[#21405A] hover:text-white"
+                    ? "bg-rose-50 text-rose-700 border-rose-300"
+                    : "bg-slate-50/50 text-slate-700 border-slate-200 hover:bg-slate-100"
                 }`}
               >
                 <ShieldAlert className="w-3.5 h-3.5" />
@@ -678,18 +682,18 @@ function LiveVisitMonitorContent() {
           </div>
 
           {/* Visits Table & Mobile Feed */}
-          <div className="rounded-2xl bg-[#0B1F33] border border-[#21405A] overflow-hidden shadow-xl">
+          <div className="rounded-2xl bg-white border border-slate-200/80 overflow-hidden shadow-xs">
             {/* Mobile Card Feed (sm:hidden) */}
-            <div className="sm:hidden divide-y divide-[#21405A]">
+            <div className="sm:hidden divide-y divide-slate-100">
               {loading && visits.length === 0 ? (
-                <div className="p-8 text-center text-slate-400">
-                  <Activity className="w-6 h-6 animate-spin text-[#28D17C] mx-auto mb-2" />
+                <div className="p-8 text-center text-slate-500">
+                  <Activity className="w-6 h-6 animate-spin text-[#008A4B] mx-auto mb-2" />
                   <span className="text-xs">Initializing live telemetry stream from Kigali Gateway...</span>
                 </div>
               ) : filteredVisits.length === 0 ? (
-                <div className="p-8 text-center text-slate-400 space-y-1">
-                  <ShieldCheck className="w-8 h-8 text-slate-500 mx-auto mb-1" />
-                  <span className="block font-semibold text-slate-300 text-xs">No visits match filters.</span>
+                <div className="p-8 text-center text-slate-500 space-y-1">
+                  <ShieldCheck className="w-8 h-8 text-slate-400 mx-auto mb-1" />
+                  <span className="block font-semibold text-slate-700 text-xs">No visits match filters.</span>
                   <span className="text-[10px] text-slate-500">Adjust search criteria or status.</span>
                 </div>
               ) : (
@@ -703,11 +707,11 @@ function LiveVisitMonitorContent() {
                     <div
                       key={v.id}
                       onClick={() => openDrawer("visit", v.id, v, "Visit Inspection")}
-                      className="p-4 active:bg-[#122A42] transition-colors space-y-2.5 cursor-pointer"
+                      className="p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors space-y-2.5 cursor-pointer"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-[#142C44] border border-[#21405A] flex items-center justify-center font-bold text-xs text-[#28D17C] shrink-0">
+                          <div className="w-8 h-8 rounded-lg bg-[#E9FAF2] border border-[#B7F1D2] flex items-center justify-center font-bold text-xs text-[#008A4B] shrink-0">
                             {emp?.full_name?.charAt(0) || "U"}
                           </div>
                           <div>
@@ -717,53 +721,53 @@ function LiveVisitMonitorContent() {
                                 e.stopPropagation();
                                 if (emp?.id) openDrawer("employee", emp.id, emp, emp.full_name);
                               }}
-                              className="font-bold text-white text-xs hover:text-[#28D17C] text-left block"
+                              className="font-bold text-[#0B1F33] text-xs hover:text-[#008A4B] text-left block"
                             >
                               {emp?.full_name || "Beneficiary"}
                             </button>
-                            <div className="text-[10px] text-slate-400 truncate max-w-[160px]">
+                            <div className="text-[10px] text-slate-500 truncate max-w-[160px]">
                               {emp?.email}
                             </div>
                           </div>
                         </div>
 
                         <div className="text-right shrink-0">
-                          <div className="font-mono text-white text-[10px] font-semibold">
+                          <div className="font-mono text-[#0B1F33] text-[10px] font-semibold">
                             {formatRelativeTime(v.check_in_at)}
                           </div>
-                          <div className="text-[9px] text-slate-400 font-mono">
+                          <div className="text-[9px] text-slate-500 font-mono">
                             {new Date(v.check_in_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                           </div>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 text-[11px] bg-[#0E263E] p-2.5 rounded-xl border border-[#21405A]">
+                      <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50/70 p-2.5 rounded-xl border border-slate-200/80">
                         <div>
-                          <div className="text-[9px] text-slate-400 uppercase font-semibold">Employer</div>
+                          <div className="text-[9px] text-slate-500 uppercase font-semibold">Employer</div>
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               if (org?.id) openDrawer("organization", org.id, org, org.name);
                             }}
-                            className="font-semibold text-slate-200 hover:text-[#28D17C] flex items-center gap-1 mt-0.5 text-left truncate max-w-[130px]"
+                            className="font-semibold text-slate-800 hover:text-[#008A4B] flex items-center gap-1 mt-0.5 text-left truncate max-w-[130px]"
                           >
-                            <Building2 className="w-3 h-3 text-indigo-400 shrink-0" />
+                            <Building2 className="w-3 h-3 text-indigo-500 shrink-0" />
                             <span className="truncate">{org?.name || "Corporate"}</span>
                           </button>
                         </div>
 
                         <div>
-                          <div className="text-[9px] text-slate-400 uppercase font-semibold">Venue</div>
+                          <div className="text-[9px] text-slate-500 uppercase font-semibold">Venue</div>
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               if (prov?.id) openDrawer("provider", prov.id, prov, prov.name);
                             }}
-                            className="font-semibold text-slate-200 hover:text-[#28D17C] flex items-center gap-1 mt-0.5 text-left truncate max-w-[130px]"
+                            className="font-semibold text-slate-800 hover:text-[#008A4B] flex items-center gap-1 mt-0.5 text-left truncate max-w-[130px]"
                           >
-                            <Network className="w-3 h-3 text-teal-400 shrink-0" />
+                            <Network className="w-3 h-3 text-teal-600 shrink-0" />
                             <span className="truncate">{loc?.name || "Facility"}</span>
                           </button>
                         </div>
@@ -778,8 +782,8 @@ function LiveVisitMonitorContent() {
                               key={idx}
                               className={`inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold font-mono border ${
                                 ano.severity === "critical"
-                                  ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
-                                  : "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                                  ? "bg-rose-50 text-rose-700 border-rose-300"
+                                  : "bg-amber-50 text-amber-700 border-amber-300"
                               }`}
                             >
                               {ano.label}
@@ -787,7 +791,7 @@ function LiveVisitMonitorContent() {
                           ))}
                         </div>
 
-                        <span className="text-[10px] text-[#28D17C] font-semibold inline-flex items-center gap-0.5">
+                        <span className="text-[10px] text-[#008A4B] font-semibold inline-flex items-center gap-0.5">
                           Inspect <ChevronRight className="w-3 h-3" />
                         </span>
                       </div>
@@ -801,29 +805,29 @@ function LiveVisitMonitorContent() {
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="bg-[#0E263E] border-b border-[#21405A] text-slate-400 uppercase tracking-wider text-[10px] font-semibold">
-                    <th className="py-3 px-4">Time</th>
-                    <th className="py-3 px-4">Beneficiary</th>
-                    <th className="py-3 px-4">Corporate Client</th>
-                    <th className="py-3 px-4">Provider Venue</th>
-                    <th className="py-3 px-4">Verification Method</th>
-                    <th className="py-3 px-4">Status & Anomalies</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                  <tr className="bg-slate-50/70 border-b border-slate-200 text-slate-600 uppercase tracking-wider text-[10px] font-bold">
+                    <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Time</th>
+                    <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Beneficiary</th>
+                    <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Corporate Client</th>
+                    <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Provider Venue</th>
+                    <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Verification Method</th>
+                    <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Status &amp; Anomalies</th>
+                    <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px] text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#21405A]/70">
+                <tbody className="divide-y divide-slate-100">
                   {loading && visits.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-slate-400">
-                        <Activity className="w-6 h-6 animate-spin text-[#28D17C] mx-auto mb-2" />
+                      <td colSpan={7} className="py-12 text-center text-slate-500">
+                        <Activity className="w-6 h-6 animate-spin text-[#008A4B] mx-auto mb-2" />
                         <span>Initializing live telemetry stream from Kigali Gateway...</span>
                       </td>
                     </tr>
                   ) : filteredVisits.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-slate-400">
-                        <ShieldCheck className="w-8 h-8 text-slate-500 mx-auto mb-2" />
-                        <span className="block font-semibold text-slate-300">No visits matched the selected filters.</span>
+                      <td colSpan={7} className="py-12 text-center text-slate-500">
+                        <ShieldCheck className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                        <span className="block font-semibold text-slate-700">No visits matched the selected filters.</span>
                         <span className="text-[11px] text-slate-500">Try loosening search criteria or switching status.</span>
                       </td>
                     </tr>
@@ -837,15 +841,15 @@ function LiveVisitMonitorContent() {
                       return (
                         <tr
                           key={v.id}
-                          className="hover:bg-[#122A42] transition-colors group cursor-pointer"
+                          className="pf-table-row-deferred hover:bg-slate-50/80 transition-colors group cursor-pointer"
                           onClick={() => openDrawer("visit", v.id, v, "Visit Inspection")}
                         >
                           {/* Timestamp */}
                           <td className="py-3.5 px-4 whitespace-nowrap">
-                            <div className="font-mono text-white text-[11px] font-semibold">
+                            <div className="font-mono text-[#0B1F33] text-[11px] font-semibold">
                               {formatRelativeTime(v.check_in_at)}
                             </div>
-                            <div className="text-[10px] text-slate-400 font-mono">
+                            <div className="text-[10px] text-slate-500 font-mono">
                               {new Date(v.check_in_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                             </div>
                           </td>
@@ -853,7 +857,7 @@ function LiveVisitMonitorContent() {
                           {/* Beneficiary */}
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-lg bg-[#142C44] border border-[#21405A] flex items-center justify-center font-bold text-xs text-[#28D17C] shrink-0">
+                              <div className="w-7 h-7 rounded-lg bg-[#E9FAF2] border border-[#B7F1D2] flex items-center justify-center font-bold text-xs text-[#008A4B] shrink-0">
                                 {emp?.full_name?.charAt(0) || "U"}
                               </div>
                               <div className="min-w-0">
@@ -863,14 +867,14 @@ function LiveVisitMonitorContent() {
                                     e.stopPropagation();
                                     if (emp?.id) openDrawer("employee", emp.id, emp, emp.full_name);
                                   }}
-                                  className="font-bold text-white truncate group-hover:text-[#28D17C] transition-colors flex items-center gap-1.5 text-left"
+                                  className="font-bold text-[#0B1F33] truncate group-hover:text-[#008A4B] transition-colors flex items-center gap-1.5 text-left"
                                 >
                                   <span>{emp?.full_name || "Employee"}</span>
-                                  <span className="font-mono text-[9px] px-1 py-0.2 rounded bg-slate-800 text-slate-300 font-normal">
+                                  <span className="font-mono text-[9px] px-1 py-0.2 rounded bg-slate-100 text-slate-600 font-normal border border-slate-200">
                                     {emp?.tier || "STANDARD"}
                                   </span>
                                 </button>
-                                <div className="text-[10px] text-slate-400 truncate max-w-[140px]">
+                                <div className="text-[10px] text-slate-500 truncate max-w-[140px]">
                                   {emp?.email}
                                 </div>
                               </div>
@@ -887,13 +891,13 @@ function LiveVisitMonitorContent() {
                                   openDrawer("organization", org.id, org, org.name);
                                 }
                               }}
-                              className="text-left group/org hover:text-[#28D17C] transition-colors"
+                              className="text-left group/org hover:text-[#008A4B] transition-colors"
                             >
-                              <div className="font-bold text-slate-200 group-hover/org:text-[#28D17C] flex items-center gap-1">
-                                <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                              <div className="font-bold text-slate-800 group-hover/org:text-[#008A4B] flex items-center gap-1">
+                                <Building2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                                 <span className="truncate max-w-[130px]">{org?.name || "Corporate Client"}</span>
                               </div>
-                              <span className="text-[10px] text-slate-400 block">Corporate Employer</span>
+                              <span className="text-[10px] text-slate-500 block">Corporate Employer</span>
                             </button>
                           </td>
 
@@ -907,13 +911,13 @@ function LiveVisitMonitorContent() {
                                   openDrawer("provider", prov.id, prov, prov.name);
                                 }
                               }}
-                              className="text-left group/prov hover:text-[#28D17C] transition-colors"
+                              className="text-left group/prov hover:text-[#008A4B] transition-colors"
                             >
-                              <div className="font-bold text-slate-200 group-hover/prov:text-[#28D17C] flex items-center gap-1">
-                                <Network className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                              <div className="font-bold text-slate-800 group-hover/prov:text-[#008A4B] flex items-center gap-1">
+                                <Network className="w-3.5 h-3.5 text-teal-600 shrink-0" />
                                 <span className="truncate max-w-[140px]">{loc?.name || "Facility"}</span>
                               </div>
-                              <span className="text-[10px] text-slate-400 block">
+                              <span className="text-[10px] text-slate-500 block">
                                 {prov?.name || "Provider"} • {loc?.city || "Kigali"}
                               </span>
                             </button>
@@ -935,17 +939,17 @@ function LiveVisitMonitorContent() {
                                   key={idx}
                                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold font-mono border ${
                                     ano.severity === "critical"
-                                      ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+                                      ? "bg-rose-50 text-rose-700 border-rose-300"
                                       : ano.severity === "warning"
-                                      ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                                      : "bg-teal-500/20 text-teal-300 border-teal-500/40"
+                                      ? "bg-amber-50 text-amber-700 border-amber-300"
+                                      : "bg-teal-50 text-teal-700 border-teal-300"
                                   }`}
                                   title={ano.detail}
                                 >
                                   {ano.severity === "critical" ? (
-                                    <ShieldAlert className="w-3 h-3" />
+                                    <ShieldAlert className="w-3 h-3 text-rose-600" />
                                   ) : (
-                                    <AlertTriangle className="w-3 h-3" />
+                                    <AlertTriangle className="w-3 h-3 text-amber-600" />
                                   )}
                                   <span>{ano.label}</span>
                                 </span>
@@ -961,10 +965,10 @@ function LiveVisitMonitorContent() {
                                 e.stopPropagation();
                                 openDrawer("visit", v.id, v, "Visit Inspection");
                               }}
-                              className="px-2.5 py-1.5 rounded-lg bg-[#142C44] hover:bg-slate-700 text-slate-200 hover:text-white font-semibold text-[11px] transition-colors inline-flex items-center gap-1"
+                              className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-[#0B1F33] hover:border-[#28D17C] font-semibold text-[11px] shadow-2xs transition-all inline-flex items-center gap-1 cursor-pointer"
                             >
                               <span>Trace</span>
-                              <ChevronRight className="w-3 h-3" />
+                              <ChevronRight className="w-3 h-3 text-[#008A4B]" />
                             </button>
                           </td>
                         </tr>
@@ -1009,32 +1013,32 @@ function LiveVisitMonitorContent() {
           )}
 
           {/* Clearinghouse Header & Filter Bar */}
-          <div className="p-4 rounded-2xl bg-[#0B1F33] border border-[#21405A] flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
-              <h3 className="font-bold text-white text-sm flex items-center gap-2">
-                <FileText className="w-4 h-4 text-purple-400" />
+              <h3 className="font-bold text-[#0B1F33] text-sm flex items-center gap-2">
+                <FileText className="w-4 h-4 text-purple-600" />
                 <span>Central Dispute Adjudication Queue</span>
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Front-desk and scanner claims requiring operational review. 1-click overrides honor partner settlement, void fraudulent claims, or apply goodwill coverage.
               </p>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
               {/* Status Filter Pills */}
-              <div className="flex items-center p-1 rounded-xl bg-[#0E263E] border border-[#21405A] text-xs">
+              <div className="flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs">
                 <button
                   type="button"
                   onClick={() => setDisputeFilter("open")}
-                  className={`px-3 py-1.5 rounded-lg font-semibold transition-colors flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-lg font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
                     disputeFilter === "open"
-                      ? "bg-purple-600 text-white shadow-sm"
-                      : "text-slate-400 hover:text-white"
+                      ? "bg-white text-slate-900 shadow-xs font-bold"
+                      : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   <span>Open &amp; Reviewing</span>
                   {disputesList.filter((d) => d.status === "open" || d.status === "investigating").length > 0 && (
-                    <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-white">
+                    <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-full bg-purple-100 text-purple-700 font-bold border border-purple-200">
                       {disputesList.filter((d) => d.status === "open" || d.status === "investigating").length}
                     </span>
                   )}
@@ -1042,10 +1046,10 @@ function LiveVisitMonitorContent() {
                 <button
                   type="button"
                   onClick={() => setDisputeFilter("resolved")}
-                  className={`px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
                     disputeFilter === "resolved"
-                      ? "bg-purple-600 text-white shadow-sm"
-                      : "text-slate-400 hover:text-white"
+                      ? "bg-white text-slate-900 shadow-xs font-bold"
+                      : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   <span>Resolved</span>
@@ -1053,10 +1057,10 @@ function LiveVisitMonitorContent() {
                 <button
                   type="button"
                   onClick={() => setDisputeFilter("all")}
-                  className={`px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
                     disputeFilter === "all"
-                      ? "bg-purple-600 text-white shadow-sm"
-                      : "text-slate-400 hover:text-white"
+                      ? "bg-white text-slate-900 shadow-xs font-bold"
+                      : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   <span>All</span>
@@ -1067,24 +1071,24 @@ function LiveVisitMonitorContent() {
                 type="button"
                 onClick={fetchDisputes}
                 disabled={loadingDisputes}
-                className="p-2 rounded-xl bg-[#0E263E] border border-[#21405A] text-slate-300 hover:text-white transition-colors"
+                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-[#0B1F33] hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
                 title="Refresh Dispute Queue"
               >
-                <RefreshCw className={`w-4 h-4 ${loadingDisputes ? "animate-spin text-[#28D17C]" : ""}`} />
+                <RefreshCw className={`w-4 h-4 ${loadingDisputes ? "animate-spin text-[#008A4B]" : ""}`} />
               </button>
             </div>
           </div>
 
           {loadingDisputes && disputesList.length === 0 ? (
-            <div className="p-12 rounded-2xl bg-[#0B1F33] border border-[#21405A] text-center text-slate-400 space-y-2">
-              <Activity className="w-8 h-8 animate-spin text-purple-400 mx-auto" />
+            <div className="p-12 rounded-2xl bg-white border border-slate-200/80 shadow-xs text-center text-slate-500 space-y-2">
+              <Activity className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
               <span className="text-xs">Loading live disputes queue from aggregator database...</span>
             </div>
           ) : disputesList.length === 0 ? (
-            <div className="p-12 rounded-2xl bg-[#0B1F33] border border-[#21405A] text-center text-slate-400 space-y-2">
-              <CheckCircle2 className="w-10 h-10 text-[#28D17C] mx-auto" />
-              <h4 className="font-bold text-white text-base">No Disputes Found</h4>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
+            <div className="p-12 rounded-2xl bg-white border border-slate-200/80 shadow-xs text-center text-slate-500 space-y-2">
+              <CheckCircle2 className="w-10 h-10 text-[#008A4B] mx-auto" />
+              <h4 className="font-bold text-[#0B1F33] text-base">No Disputes Found</h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
                 {disputeFilter === "open"
                   ? "Zero open disputes requiring staff intervention. All partner check-in transactions are reconciled."
                   : "No dispute records match the selected filter."}
@@ -1104,10 +1108,10 @@ function LiveVisitMonitorContent() {
                 return (
                   <div
                     key={dispute.id}
-                    className={`p-5 rounded-2xl bg-[#0B1F33] border transition-all space-y-4 shadow-lg ${
+                    className={`p-5 rounded-2xl bg-white border transition-all space-y-4 shadow-xs ${
                       isOpen
-                        ? "border-[#21405A] hover:border-purple-500/50"
-                        : "border-[#21405A]/60 opacity-90"
+                        ? "border-slate-200/80 hover:border-purple-300"
+                        : "border-slate-200/60 opacity-90"
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -1115,72 +1119,72 @@ function LiveVisitMonitorContent() {
                         <span
                           className={`font-mono text-[10px] uppercase px-2 py-0.5 rounded-full font-bold border ${
                             isOpen
-                              ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
-                              : "bg-emerald-500/20 text-[#28D17C] border-emerald-500/40"
+                              ? "bg-purple-50 text-purple-700 border-purple-200"
+                              : "bg-[#E9FAF2] text-[#008A4B] border-[#B7F1D2]"
                           }`}
                         >
                           {isOpen ? "OPEN DISPUTE" : "RESOLVED"}
                         </span>
-                        <span className="font-mono text-[10px] text-slate-400">
+                        <span className="font-mono text-[10px] text-slate-500">
                           REF: {dispute.id.substring(0, 8)}
                         </span>
                       </div>
-                      <span className="text-[11px] text-slate-400 font-mono">
+                      <span className="text-[11px] text-slate-500 font-mono">
                         {formatRelativeTime(dispute.created_at)}
                       </span>
                     </div>
 
                     {/* Venue & Beneficiary Summary */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                      <div className="p-3 rounded-xl bg-[#0E263E] border border-[#21405A] space-y-1">
-                        <div className="text-[9px] text-slate-400 uppercase font-semibold flex items-center justify-between">
+                      <div className="p-3 rounded-xl bg-slate-50/70 border border-slate-200/80 space-y-1">
+                        <div className="text-[9px] text-slate-500 uppercase font-semibold flex items-center justify-between">
                           <span>Beneficiary &amp; Employer</span>
-                          <span className="font-mono text-[#28D17C]">{emp?.tier || "STANDARD"}</span>
+                          <span className="font-mono text-[#008A4B]">{emp?.tier || "STANDARD"}</span>
                         </div>
-                        <div className="font-bold text-white truncate">
+                        <div className="font-bold text-[#0B1F33] truncate">
                           {emp?.full_name || "Corporate Beneficiary"}
                         </div>
-                        <div className="text-slate-400 text-[11px] truncate">
+                        <div className="text-slate-500 text-[11px] truncate">
                           {org?.name || "Corporate Client"}
                         </div>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-[#0E263E] border border-[#21405A] space-y-1">
-                        <div className="text-[9px] text-slate-400 uppercase font-semibold">
+                      <div className="p-3 rounded-xl bg-slate-50/70 border border-slate-200/80 space-y-1">
+                        <div className="text-[9px] text-slate-500 uppercase font-semibold">
                           Partner Facility
                         </div>
-                        <div className="font-bold text-white truncate">
+                        <div className="font-bold text-[#0B1F33] truncate">
                           {loc?.name || "Provider Facility"}
                         </div>
-                        <div className="text-slate-400 text-[11px] truncate">
+                        <div className="text-slate-500 text-[11px] truncate">
                           {prov?.name || "Wellness Provider"} ({loc?.city || "Kigali"})
                         </div>
                       </div>
                     </div>
 
                     {/* Claim Reason */}
-                    <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs space-y-1">
-                      <div className="text-purple-300 text-[10px] font-bold uppercase tracking-wider flex items-center justify-between">
+                    <div className="p-3 rounded-xl bg-purple-50/60 border border-purple-200/70 text-xs space-y-1">
+                      <div className="text-purple-700 text-[10px] font-bold uppercase tracking-wider flex items-center justify-between">
                         <span>Reported Claim ({dispute.raised_by_role || "Front-Desk Staff"})</span>
-                        <span className="text-amber-400 font-mono font-semibold">~3,800 RWF Exposure</span>
+                        <span className="text-amber-700 font-mono font-semibold">~3,800 RWF Exposure</span>
                       </div>
-                      <p className="text-slate-200 italic leading-relaxed text-[11px]">
+                      <p className="text-slate-700 italic leading-relaxed text-[11px]">
                         &quot;{dispute.reason || "Front desk reported check-in scanner mismatch."}&quot;
                       </p>
                     </div>
 
                     {/* Resolution Notes if Resolved */}
                     {!isOpen && dispute.resolution_notes && (
-                      <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-[11px] text-emerald-200 space-y-0.5">
-                        <span className="text-[9px] uppercase font-bold text-emerald-400 tracking-wider">
+                      <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-800 space-y-0.5">
+                        <span className="text-[9px] uppercase font-bold text-[#008A4B] tracking-wider">
                           Resolution Outcome: {dispute.resolution_type || "Adjudicated"}
                         </span>
-                        <p className="text-slate-300">{dispute.resolution_notes}</p>
+                        <p className="text-slate-600">{dispute.resolution_notes}</p>
                       </div>
                     )}
 
                     {/* Actions Toolbar */}
-                    <div className="pt-1 flex flex-wrap items-center justify-between gap-2 border-t border-[#21405A]/70">
+                    <div className="pt-1 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100">
                       <button
                         type="button"
                         onClick={() => {
@@ -1188,10 +1192,10 @@ function LiveVisitMonitorContent() {
                             openDrawer("visit", visit.id, visit, "Dispute Inspection");
                           }
                         }}
-                        className="text-xs text-slate-300 hover:text-white font-medium inline-flex items-center gap-1 transition-colors"
+                        className="text-xs text-slate-600 hover:text-[#0B1F33] font-medium inline-flex items-center gap-1 transition-colors cursor-pointer"
                       >
                         <span>Full Trace</span>
-                        <ExternalLink className="w-3 h-3 text-[#28D17C]" />
+                        <ExternalLink className="w-3 h-3 text-[#008A4B]" />
                       </button>
 
                       {isOpen ? (
@@ -1202,7 +1206,7 @@ function LiveVisitMonitorContent() {
                             onClick={() =>
                               handleInlineAdjudicate(dispute.visit_id, "force_validate", "Approve & Pay Partner")
                             }
-                            className="px-2.5 py-1.5 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 text-[#28D17C] border border-emerald-500/40 text-[11px] font-bold transition-all disabled:opacity-50"
+                            className="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-[11px] font-bold shadow-2xs transition-all disabled:opacity-50 cursor-pointer"
                             title="Honors partner reimbursement, validates visit"
                           >
                             Approve &amp; Pay
@@ -1214,7 +1218,7 @@ function LiveVisitMonitorContent() {
                             onClick={() =>
                               handleInlineAdjudicate(dispute.visit_id, "split_resolution", "Goodwill Split")
                             }
-                            className="px-2.5 py-1.5 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40 text-[11px] font-bold transition-all disabled:opacity-50"
+                            className="px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300 text-[11px] font-bold shadow-2xs transition-all disabled:opacity-50 cursor-pointer"
                             title="Goodwill coverage (PolyFit absorbs liability, preserves employee quota)"
                           >
                             Goodwill
@@ -1226,7 +1230,7 @@ function LiveVisitMonitorContent() {
                             onClick={() =>
                               handleInlineAdjudicate(dispute.visit_id, "void", "Reject & Void")
                             }
-                            className="px-2.5 py-1.5 rounded-lg bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 border border-rose-500/40 text-[11px] font-bold transition-all disabled:opacity-50"
+                            className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 text-[11px] font-bold shadow-2xs transition-all disabled:opacity-50 cursor-pointer"
                             title="Cancels reimbursement, voids visit"
                           >
                             Reject
@@ -1250,61 +1254,61 @@ function LiveVisitMonitorContent() {
       {activeTab === "intelligence" && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-5 rounded-2xl bg-[#0B1F33] border border-[#21405A] space-y-2">
-              <div className="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase tracking-wider">
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2 hover:border-slate-300 transition-all">
+              <div className="flex items-center gap-2 text-rose-600 font-bold text-xs uppercase tracking-wider">
                 <RotateCcw className="w-4 h-4" />
                 <span>Anti-Passback Violations</span>
               </div>
-              <div className="font-mono text-3xl font-extrabold text-white">
+              <div className="font-mono text-3xl font-extrabold text-[#0B1F33]">
                 {visits.filter((v) => v.anomalies?.some((a) => a.type === "anti_passback")).length}
               </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
+              <p className="text-[11px] text-slate-500 leading-relaxed">
                 Check-in attempts blocked within the 180-minute cooldown window at the same partner facility.
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-[#0B1F33] border border-[#21405A] space-y-2">
-              <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2 hover:border-slate-300 transition-all">
+              <div className="flex items-center gap-2 text-amber-600 font-bold text-xs uppercase tracking-wider">
                 <Zap className="w-4 h-4" />
                 <span>Impossible Velocity Jumps</span>
               </div>
-              <div className="font-mono text-3xl font-extrabold text-white">
+              <div className="font-mono text-3xl font-extrabold text-[#0B1F33]">
                 {visits.filter((v) => v.anomalies?.some((a) => a.type === "velocity_anomaly")).length}
               </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
+              <p className="text-[11px] text-slate-500 leading-relaxed">
                 Instances where check-ins occurred across venues &gt;40km apart within less than 60 minutes.
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-[#0B1F33] border border-[#21405A] space-y-2">
-              <div className="flex items-center gap-2 text-teal-400 font-bold text-xs uppercase tracking-wider">
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2 hover:border-slate-300 transition-all">
+              <div className="flex items-center gap-2 text-teal-600 font-bold text-xs uppercase tracking-wider">
                 <MapPin className="w-4 h-4" />
                 <span>Geofence Deviations</span>
               </div>
-              <div className="font-mono text-3xl font-extrabold text-white">
+              <div className="font-mono text-3xl font-extrabold text-[#0B1F33]">
                 {visits.filter((v) => v.anomalies?.some((a) => a.type === "outside_geofence")).length}
               </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
+              <p className="text-[11px] text-slate-500 leading-relaxed">
                 Scans initiated with mobile GPS coordinates &gt;500 meters outside facility boundary.
               </p>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-[#0B1F33] border border-[#21405A] space-y-3">
-            <h3 className="font-bold text-white text-sm flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-[#28D17C]" />
+          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-3">
+            <h3 className="font-bold text-[#0B1F33] text-sm flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#008A4B]" />
               <span>Real-Time Anomaly Rule Engine Directives</span>
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-300">
-              <div className="p-3.5 rounded-xl bg-[#0E263E] border border-[#21405A] space-y-1">
-                <strong className="text-white block">Rule 1: 180-Minute Cooldown Guarantee</strong>
-                <span className="text-slate-400 leading-relaxed">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-600">
+              <div className="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80 space-y-1">
+                <strong className="text-[#0B1F33] block">Rule 1: 180-Minute Cooldown Guarantee</strong>
+                <span className="text-slate-500 leading-relaxed">
                   Employees cannot scan into the same gym or studio twice within 3 hours. Cooldown applies network-wide to prevent gym card lending or buddy check-ins.
                 </span>
               </div>
-              <div className="p-3.5 rounded-xl bg-[#0E263E] border border-[#21405A] space-y-1">
-                <strong className="text-white block">Rule 2: PostGIS Geofence Verification</strong>
-                <span className="text-slate-400 leading-relaxed">
+              <div className="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80 space-y-1">
+                <strong className="text-[#0B1F33] block">Rule 2: PostGIS Geofence Verification</strong>
+                <span className="text-slate-500 leading-relaxed">
                   Every dynamic TOTP access code generated in the employee mobile app is bound to the facility polygon. Remote check-ins from office or home are denied.
                 </span>
               </div>

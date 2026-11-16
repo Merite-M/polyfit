@@ -359,30 +359,30 @@ export default function SupportOperationsPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Top Header & Role Simulator */}
-      <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 pb-6 border-b border-[#21405A]">
+      <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 pb-6 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-[#0E263E] border border-[#21405A] text-[#28D17C]">
+            <div className="p-2.5 rounded-xl bg-[#E9FAF2] border border-[#B7F1D2] text-[#008A4B]">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold tracking-tight text-white">Beneficiary Support &amp; Team Permissions</h1>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#28D17C]/20 text-[#28D17C] border border-[#28D17C]/30">
+                <h1 className="text-xl font-bold tracking-tight text-[#0B1F33]">Beneficiary Support &amp; Team Permissions</h1>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#E9FAF2] text-[#008A4B] border border-[#B7F1D2]">
                   Platform Operations
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Centralized beneficiary support cockpit, hardware binding security, dynamic platform knobs & immutable audit stream.
+              <p className="text-xs text-slate-500 mt-0.5">
+                Centralized beneficiary support cockpit, hardware binding security, dynamic platform knobs &amp; immutable audit stream.
               </p>
             </div>
           </div>
         </div>
 
         {/* Role Simulator Switcher */}
-        <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-xl bg-[#0B1F33] border border-[#21405A]">
-          <span className="text-[11px] font-semibold text-slate-400 pl-2 pr-1 flex items-center gap-1.5">
-            <Eye className="w-3.5 h-3.5 text-[#28D17C]" />
+        <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-xl bg-slate-100 border border-slate-200">
+          <span className="text-[11px] font-semibold text-slate-600 pl-2 pr-1 flex items-center gap-1.5">
+            <Eye className="w-3.5 h-3.5 text-[#008A4B]" />
             <span>Simulate Role:</span>
           </span>
           {(Object.keys(RBAC_ROLE_CONFIG) as Array<keyof typeof RBAC_ROLE_CONFIG>).map((roleKey) => {
@@ -393,10 +393,10 @@ export default function SupportOperationsPage() {
                 key={roleKey}
                 type="button"
                 onClick={() => setActiveRole(roleKey)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   isCurrent
-                    ? "bg-[#28D17C] text-[#071521] shadow-xs"
-                    : "text-slate-300 hover:text-white hover:bg-[#142C44]"
+                    ? "bg-white text-slate-900 shadow-xs font-bold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
                 }`}
               >
                 {r.label}
@@ -407,122 +407,122 @@ export default function SupportOperationsPage() {
       </div>
 
       {/* Role Capability Banner */}
-      <div className="p-3.5 rounded-xl bg-[#0E263E] border border-[#21405A] flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
+      <div className="p-3.5 rounded-xl bg-[#E9FAF2]/60 border border-[#B7F1D2] flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2.5">
           <span className={`px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider text-[10px] border ${rolePermissions.badgeColor}`}>
             Active: {rolePermissions.label}
           </span>
-          <span className="text-slate-300">{rolePermissions.description}</span>
+          <span className="text-slate-700">{rolePermissions.description}</span>
         </div>
-        <div className="flex items-center gap-4 text-[11px] font-mono text-slate-400">
-          <span className={rolePermissions.canResetDevice ? "text-[#28D17C]" : "text-slate-500"}>
+        <div className="flex items-center gap-4 text-[11px] font-mono text-slate-600">
+          <span className={rolePermissions.canResetDevice ? "text-[#008A4B] font-semibold" : "text-slate-400"}>
             ✓ Device Reset: {rolePermissions.canResetDevice ? "Allowed" : "Disabled"}
           </span>
-          <span className={rolePermissions.canOverrideResetLimit ? "text-[#28D17C]" : "text-slate-500"}>
+          <span className={rolePermissions.canOverrideResetLimit ? "text-[#008A4B] font-semibold" : "text-slate-400"}>
             ✓ Force Override: {rolePermissions.canOverrideResetLimit ? "Yes" : "No"}
           </span>
-          <span className={rolePermissions.canUpdateSettings ? "text-[#28D17C]" : "text-slate-500"}>
+          <span className={rolePermissions.canUpdateSettings ? "text-[#008A4B] font-semibold" : "text-slate-400"}>
             ✓ Knobs Tuning: {rolePermissions.canUpdateSettings ? "Yes" : "No"}
           </span>
         </div>
       </div>
 
       {/* Real-time Telemetry Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl bg-[#0B1F33] border border-[#21405A] relative overflow-hidden">
-          <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Beneficiaries Roster</div>
-          <div className="text-2xl font-bold font-mono text-white mt-1.5">
+      <div className="@container grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="p-4.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs relative overflow-hidden hover:border-slate-300 transition-all">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Beneficiaries Roster</div>
+          <div className="text-2xl font-bold font-mono text-[#0B1F33] mt-1.5">
             {totalBeneficiaries}
           </div>
-          <div className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1 font-mono">
+          <div className="text-[11px] text-emerald-700 mt-1 flex items-center gap-1 font-mono">
             <span>{activeCount} Active</span>
-            <span className="text-slate-500">·</span>
-            <span className="text-slate-400">{totalBeneficiaries - activeCount} Frozen/Inactive</span>
+            <span className="text-slate-300">·</span>
+            <span className="text-slate-500">{totalBeneficiaries - activeCount} Frozen/Inactive</span>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#0B1F33] border border-[#21405A] relative overflow-hidden">
-          <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Hardware Locked Passes</div>
-          <div className="text-2xl font-bold font-mono text-[#28D17C] mt-1.5">
+        <div className="p-4.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs relative overflow-hidden hover:border-slate-300 transition-all">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Hardware Locked Passes</div>
+          <div className="text-2xl font-bold font-mono text-[#008A4B] mt-1.5">
             {lockedCount}
           </div>
-          <div className="text-[11px] text-slate-400 mt-1 font-mono">
+          <div className="text-[11px] text-slate-500 mt-1 font-mono">
             Anti-credential sharing active
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#0B1F33] border border-[#21405A] relative overflow-hidden">
-          <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">30-Day Device Resets</div>
-          <div className="text-2xl font-bold font-mono text-amber-400 mt-1.5">
+        <div className="p-4.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs relative overflow-hidden hover:border-slate-300 transition-all">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">30-Day Device Resets</div>
+          <div className="text-2xl font-bold font-mono text-amber-600 mt-1.5">
             {resetCountSum}
           </div>
-          <div className="text-[11px] text-slate-400 mt-1 font-mono">
+          <div className="text-[11px] text-slate-500 mt-1 font-mono">
             Across network beneficiaries
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#0B1F33] border border-[#21405A] relative overflow-hidden">
-          <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Security Audit Velocity</div>
-          <div className="text-2xl font-bold font-mono text-indigo-400 mt-1.5">
+        <div className="p-4.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs relative overflow-hidden hover:border-slate-300 transition-all">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Security Audit Velocity</div>
+          <div className="text-2xl font-bold font-mono text-indigo-600 mt-1.5">
             {auditLogs.length}+
           </div>
-          <div className="text-[11px] text-indigo-300 mt-1 font-mono">
+          <div className="text-[11px] text-indigo-500 mt-1 font-mono">
             Tamper-proof HMAC verified
           </div>
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex border-b border-[#21405A] space-x-1">
+      <div className="flex border-b border-slate-200 space-x-1">
         <button
           type="button"
           onClick={() => setActiveTab("beneficiaries")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer ${
             activeTab === "beneficiaries"
-              ? "border-[#28D17C] text-[#28D17C] bg-[#0E263E]/50"
-              : "border-transparent text-slate-400 hover:text-white"
+              ? "border-[#28D17C] text-[#0B1F33]"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Users className="w-4 h-4" />
+          <Users className="w-4 h-4 text-[#008A4B]" />
           <span>Beneficiary Support Directory</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("settings")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer ${
             activeTab === "settings"
-              ? "border-[#28D17C] text-[#28D17C] bg-[#0E263E]/50"
-              : "border-transparent text-slate-400 hover:text-white"
+              ? "border-[#28D17C] text-[#0B1F33]"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Sliders className="w-4 h-4" />
+          <Sliders className="w-4 h-4 text-amber-500" />
           <span>Operational Rules &amp; Limits</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("audit")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer ${
             activeTab === "audit"
-              ? "border-[#28D17C] text-[#28D17C] bg-[#0E263E]/50"
-              : "border-transparent text-slate-400 hover:text-white"
+              ? "border-[#28D17C] text-[#0B1F33]"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <History className="w-4 h-4" />
+          <History className="w-4 h-4 text-purple-600" />
           <span>System &amp; Security Audit Trail</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("team")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer ${
             activeTab === "team"
-              ? "border-[#28D17C] text-[#28D17C] bg-[#0E263E]/50"
-              : "border-transparent text-slate-400 hover:text-white"
+              ? "border-[#28D17C] text-[#0B1F33]"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Shield className="w-4 h-4" />
+          <Shield className="w-4 h-4 text-blue-600" />
           <span>Staff Directory &amp; Permissions</span>
         </button>
       </div>
@@ -539,7 +539,7 @@ export default function SupportOperationsPage() {
                 placeholder="Search beneficiary name, email, employer or department..."
                 value={beneficiarySearch}
                 onChange={(e) => setBeneficiarySearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#28D17C]"
+                className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C]"
               />
             </div>
 
@@ -547,7 +547,7 @@ export default function SupportOperationsPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-slate-300 focus:outline-none focus:border-[#28D17C]"
+                className="px-3 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C]"
               >
                 <option value="all">All Statuses</option>
                 <option value="active">Active Only</option>
@@ -558,7 +558,7 @@ export default function SupportOperationsPage() {
               <select
                 value={tierFilter}
                 onChange={(e) => setTierFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-slate-300 focus:outline-none focus:border-[#28D17C]"
+                className="px-3 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C]"
               >
                 <option value="all">All Benefit Tiers</option>
                 <option value="basic">Basic Tier</option>
@@ -570,7 +570,7 @@ export default function SupportOperationsPage() {
               <button
                 type="button"
                 onClick={fetchBeneficiaries}
-                className="p-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-slate-400 hover:text-white transition-colors"
+                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-[#0B1F33] hover:border-slate-300 transition-colors shadow-xs"
                 title="Refresh Beneficiary List"
               >
                 <RefreshCw className="w-4 h-4" />
@@ -579,10 +579,10 @@ export default function SupportOperationsPage() {
           </div>
 
           {/* Beneficiaries Table */}
-          <div className="rounded-xl border border-[#21405A] bg-[#0B1F33] overflow-hidden">
+          <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#0E263E] border-b border-[#21405A] text-slate-400 uppercase font-semibold text-[10px] tracking-wider">
+                <thead className="bg-slate-50/70 border-b border-slate-200 text-slate-600 uppercase font-bold text-[10px] tracking-wider">
                   <tr>
                     <th className="py-3 px-4">Beneficiary</th>
                     <th className="py-3 px-4">Employer Client</th>
@@ -593,7 +593,7 @@ export default function SupportOperationsPage() {
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#21405A]/50">
+                <tbody className="divide-y divide-slate-100">
                   {beneficiariesLoading ? (
                     <tr>
                       <td colSpan={7} className="py-12 text-center text-slate-400">
@@ -614,18 +614,18 @@ export default function SupportOperationsPage() {
                         <tr
                           key={b.id}
                           onClick={() => openDrawer("employee", b.id, b, b.full_name)}
-                          className="hover:bg-[#0E263E]/60 cursor-pointer transition-colors group"
+                          className="pf-table-row-deferred hover:bg-slate-50/80 cursor-pointer transition-colors group"
                         >
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-[#142C44] border border-[#21405A] flex items-center justify-center font-bold text-white text-xs group-hover:border-[#28D17C] transition-colors">
+                              <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-[#0B1F33] text-xs group-hover:border-[#28D17C] transition-colors">
                                 {b.full_name?.charAt(0) || "B"}
                               </div>
                               <div>
-                                <div className="font-bold text-white flex items-center gap-2">
+                                <div className="font-bold text-[#0B1F33] flex items-center gap-2">
                                   <span>{b.full_name}</span>
                                 </div>
-                                <div className="text-[11px] text-slate-400 font-mono">
+                                <div className="text-[11px] text-slate-500 font-mono">
                                   {b.email}
                                 </div>
                               </div>
@@ -641,9 +641,9 @@ export default function SupportOperationsPage() {
                                   openDrawer("organization", b.organizations.id, b.organizations, b.organizations.name);
                                 }
                               }}
-                              className="flex items-center gap-1.5 text-slate-300 hover:text-[#28D17C] text-left transition-colors"
+                              className="flex items-center gap-1.5 text-slate-700 hover:text-[#008A4B] text-left transition-colors"
                             >
-                              <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                              <Building2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                               <span className="font-medium truncate max-w-[140px]">
                                 {b.organizations?.name || "Corporate Client"}
                               </span>
@@ -656,7 +656,7 @@ export default function SupportOperationsPage() {
                           </td>
 
                           <td className="py-3.5 px-4">
-                            <span className="text-[10px] font-mono uppercase font-bold px-2 py-0.5 rounded bg-slate-800 text-[#28D17C] border border-[#28D17C]/20">
+                            <span className="text-[10px] font-mono uppercase font-bold px-2 py-0.5 rounded bg-emerald-50 text-[#008A4B] border border-emerald-200">
                               {b.tier || "STANDARD"}
                             </span>
                           </td>
@@ -664,11 +664,11 @@ export default function SupportOperationsPage() {
                           <td className="py-3.5 px-4">
                             {isLocked ? (
                               <div className="flex items-center gap-2">
-                                <span className="p-1 rounded bg-emerald-500/10 text-[#28D17C] border border-emerald-500/20">
+                                <span className="p-1 rounded bg-[#E9FAF2] text-[#008A4B] border border-[#B7F1D2]">
                                   <Lock className="w-3 h-3" />
                                 </span>
                                 <div>
-                                  <div className="font-mono text-[11px] text-slate-200">
+                                  <div className="font-mono text-[11px] text-slate-800">
                                     {b.device_model || "Mobile Device"}
                                   </div>
                                   <div className="text-[10px] text-slate-500 font-mono truncate max-w-[120px]">
@@ -677,8 +677,8 @@ export default function SupportOperationsPage() {
                                 </div>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-2 text-slate-500">
-                                <span className="p-1 rounded bg-slate-800 text-slate-400">
+                              <div className="flex items-center gap-2 text-slate-400">
+                                <span className="p-1 rounded bg-slate-100 text-slate-500">
                                   <Unlock className="w-3 h-3" />
                                 </span>
                                 <span className="text-[11px]">Unbound</span>
@@ -689,8 +689,8 @@ export default function SupportOperationsPage() {
                           <td className="py-3.5 px-4 font-mono">
                             <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
                               (b.device_reset_count || 0) >= 2
-                                ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                                : "text-slate-300"
+                                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                : "text-slate-600"
                             }`}>
                               {b.device_reset_count || 0} / 2
                             </span>
@@ -699,10 +699,10 @@ export default function SupportOperationsPage() {
                           <td className="py-3.5 px-4">
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                               b.status === "active"
-                                ? "bg-emerald-500/15 text-[#28D17C] border-emerald-500/30"
+                                ? "bg-emerald-50 text-[#008A4B] border-emerald-200"
                                 : b.status === "frozen"
-                                ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
-                                : "bg-rose-500/15 text-rose-300 border-rose-500/30"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : "bg-rose-50 text-rose-700 border-rose-200"
                             }`}>
                               {b.status}
                             </span>
@@ -715,7 +715,7 @@ export default function SupportOperationsPage() {
                                 e.stopPropagation();
                                 openDrawer("employee", b.id, b, b.full_name);
                               }}
-                              className="px-2.5 py-1 rounded-lg bg-[#142C44] hover:bg-[#28D17C] hover:text-[#071521] text-white text-[11px] font-semibold transition-colors inline-flex items-center gap-1.5"
+                              className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 text-slate-700 hover:text-[#0B1F33] border border-slate-200 shadow-xs hover:border-[#28D17C] text-[11px] font-semibold transition-colors inline-flex items-center gap-1.5 cursor-pointer"
                             >
                               <span>Inspect 360</span>
                               <ExternalLink className="w-3 h-3" />
@@ -737,22 +737,22 @@ export default function SupportOperationsPage() {
         <div className="space-y-6 animate-in fade-in duration-150">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
             <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <h3 className="text-sm font-bold text-[#0B1F33] flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-[#28D17C]" />
                 <span>Real-Time Platform Security & Anti-Fraud Knobs</span>
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Dynamic configuration values persisted in PostgreSQL with instantaneous live propagation across verification routes.
               </p>
             </div>
             {settingsSuccessNotice && (
-              <div className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-[#28D17C] border border-emerald-500/30 text-xs font-semibold flex items-center gap-2">
+              <div className="px-3 py-1.5 rounded-xl bg-emerald-50 text-[#008A4B] border border-emerald-200 text-xs font-semibold flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>{settingsSuccessNotice}</span>
               </div>
             )}
             {settingsErrorNotice && (
-              <div className="px-3 py-1.5 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center gap-2">
+              <div className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-semibold flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" />
                 <span>{settingsErrorNotice}</span>
               </div>
@@ -767,17 +767,17 @@ export default function SupportOperationsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Anti-Passback Cooldown */}
-              <div className="p-5 rounded-xl bg-[#0B1F33] border border-[#21405A] space-y-4">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-amber-400" />
+                  <span className="text-xs font-bold text-[#0B1F33] flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-amber-500" />
                     <span>Anti-Passback Cooldown Window</span>
                   </span>
-                  <span className="font-mono text-xs font-bold text-[#28D17C] bg-[#142C44] px-2 py-0.5 rounded border border-[#21405A]">
+                  <span className="font-mono text-xs font-bold text-[#008A4B] bg-[#E9FAF2] px-2.5 py-1 rounded-lg border border-[#B7F1D2]">
                     {localSettingsValues["anti_passback_cooldown_minutes"] || 180} minutes
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-500">
                   Minimum duration a beneficiary must wait between check-ins at the same wellness provider venue before another verified visit can be recorded.
                 </p>
                 <div className="space-y-2">
@@ -811,24 +811,24 @@ export default function SupportOperationsPage() {
                       localSettingsValues["anti_passback_cooldown_minutes"] || 180
                     )
                   }
-                  className="w-full py-2 rounded-lg bg-[#142C44] hover:bg-[#28D17C] hover:text-[#071521] text-white text-xs font-semibold transition-colors disabled:opacity-40"
+                  className="w-full py-2.5 rounded-xl bg-[#0B1F33] hover:bg-[#16385C] text-white text-xs font-semibold shadow-xs transition-colors disabled:opacity-40 cursor-pointer"
                 >
                   {settingsSavingKey === "anti_passback_cooldown_minutes" ? "Propagating..." : "Save Cooldown Window"}
                 </button>
               </div>
 
               {/* TOTP Step Interval */}
-              <div className="p-5 rounded-xl bg-[#0B1F33] border border-[#21405A] space-y-4">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-blue-400" />
+                  <span className="text-xs font-bold text-[#0B1F33] flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-blue-500" />
                     <span>TOTP Pass Rotation Window</span>
                   </span>
-                  <span className="font-mono text-xs font-bold text-[#28D17C] bg-[#142C44] px-2 py-0.5 rounded border border-[#21405A]">
+                  <span className="font-mono text-xs font-bold text-[#008A4B] bg-[#E9FAF2] px-2.5 py-1 rounded-lg border border-[#B7F1D2]">
                     {localSettingsValues["totp_step_seconds"] || 30} seconds
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-500">
                   Time-step interval for dynamic pass rotation. Shorter intervals increase cryptographic replay immunity; longer intervals tolerate poor connectivity.
                 </p>
                 <div className="grid grid-cols-4 gap-2 pt-1">
@@ -845,10 +845,10 @@ export default function SupportOperationsPage() {
                             totp_step_seconds: step,
                           }))
                         }
-                        className={`py-1.5 rounded-lg text-xs font-mono font-bold border transition-colors ${
+                        className={`py-1.5 rounded-xl text-xs font-mono font-bold border transition-colors cursor-pointer ${
                           isSelected
-                            ? "bg-[#28D17C] text-[#071521] border-[#28D17C]"
-                            : "bg-[#142C44] text-slate-300 border-[#21405A] hover:bg-slate-700"
+                            ? "bg-[#28D17C] text-[#0B1F33] border-[#28D17C] shadow-xs"
+                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                         }`}
                       >
                         {step}s
@@ -865,24 +865,24 @@ export default function SupportOperationsPage() {
                       localSettingsValues["totp_step_seconds"] || 30
                     )
                   }
-                  className="w-full py-2 rounded-lg bg-[#142C44] hover:bg-[#28D17C] hover:text-[#071521] text-white text-xs font-semibold transition-colors disabled:opacity-40"
+                  className="w-full py-2.5 rounded-xl bg-[#0B1F33] hover:bg-[#16385C] text-white text-xs font-semibold shadow-xs transition-colors disabled:opacity-40 cursor-pointer"
                 >
                   {settingsSavingKey === "totp_step_seconds" ? "Propagating..." : "Save TOTP Interval"}
                 </button>
               </div>
 
               {/* Geofence Enforcement Radius */}
-              <div className="p-5 rounded-xl bg-[#0B1F33] border border-[#21405A] space-y-4">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-purple-400" />
+                  <span className="text-xs font-bold text-[#0B1F33] flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-purple-500" />
                     <span>Venue Geofence Enforcement Radius</span>
                   </span>
-                  <span className="font-mono text-xs font-bold text-[#28D17C] bg-[#142C44] px-2 py-0.5 rounded border border-[#21405A]">
+                  <span className="font-mono text-xs font-bold text-[#008A4B] bg-[#E9FAF2] px-2.5 py-1 rounded-lg border border-[#B7F1D2]">
                     {localSettingsValues["geofence_radius_meters"] || 250} meters
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-500">
                   Maximum allowable spatial distance between the scanning front-desk staff device and the beneficiary phone GPS coordinates at verified check-in.
                 </p>
                 <div className="space-y-2">
@@ -916,24 +916,24 @@ export default function SupportOperationsPage() {
                       localSettingsValues["geofence_radius_meters"] || 250
                     )
                   }
-                  className="w-full py-2 rounded-lg bg-[#142C44] hover:bg-[#28D17C] hover:text-[#071521] text-white text-xs font-semibold transition-colors disabled:opacity-40"
+                  className="w-full py-2.5 rounded-xl bg-[#0B1F33] hover:bg-[#16385C] text-white text-xs font-semibold shadow-xs transition-colors disabled:opacity-40 cursor-pointer"
                 >
                   {settingsSavingKey === "geofence_radius_meters" ? "Propagating..." : "Save Geofence Radius"}
                 </button>
               </div>
 
               {/* Max Monthly Device Resets */}
-              <div className="p-5 rounded-xl bg-[#0B1F33] border border-[#21405A] space-y-4">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white flex items-center gap-2">
-                    <Smartphone className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs font-bold text-[#0B1F33] flex items-center gap-2">
+                    <Smartphone className="w-4 h-4 text-[#008A4B]" />
                     <span>Monthly Device Reset Quota</span>
                   </span>
-                  <span className="font-mono text-xs font-bold text-[#28D17C] bg-[#142C44] px-2 py-0.5 rounded border border-[#21405A]">
+                  <span className="font-mono text-xs font-bold text-[#008A4B] bg-[#E9FAF2] px-2.5 py-1 rounded-lg border border-[#B7F1D2]">
                     {localSettingsValues["max_device_resets_per_month"] || 2} resets / 30d
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-500">
                   Maximum unprivileged hardware lock resets permitted per beneficiary in a rolling 30-day window before manager override is mandatory.
                 </p>
                 <div className="grid grid-cols-4 gap-2 pt-1">
@@ -950,10 +950,10 @@ export default function SupportOperationsPage() {
                             max_device_resets_per_month: quota,
                           }))
                         }
-                        className={`py-1.5 rounded-lg text-xs font-mono font-bold border transition-colors ${
+                        className={`py-1.5 rounded-xl text-xs font-mono font-bold border transition-colors cursor-pointer ${
                           isSelected
-                            ? "bg-[#28D17C] text-[#071521] border-[#28D17C]"
-                            : "bg-[#142C44] text-slate-300 border-[#21405A] hover:bg-slate-700"
+                            ? "bg-[#28D17C] text-[#0B1F33] border-[#28D17C] shadow-xs"
+                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                         }`}
                       >
                         {quota} Resets
@@ -970,7 +970,7 @@ export default function SupportOperationsPage() {
                       localSettingsValues["max_device_resets_per_month"] || 2
                     )
                   }
-                  className="w-full py-2 rounded-lg bg-[#142C44] hover:bg-[#28D17C] hover:text-[#071521] text-white text-xs font-semibold transition-colors disabled:opacity-40"
+                  className="w-full py-2.5 rounded-xl bg-[#0B1F33] hover:bg-[#16385C] text-white text-xs font-semibold shadow-xs transition-colors disabled:opacity-40 cursor-pointer"
                 >
                   {settingsSavingKey === "max_device_resets_per_month" ? "Propagating..." : "Save Reset Quota"}
                 </button>
@@ -991,7 +991,7 @@ export default function SupportOperationsPage() {
                 placeholder="Search audit action, operator, metadata..."
                 value={auditSearch}
                 onChange={(e) => setAuditSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#28D17C]"
+                className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C]"
               />
             </div>
 
@@ -999,7 +999,7 @@ export default function SupportOperationsPage() {
               <select
                 value={auditActionFilter}
                 onChange={(e) => setAuditActionFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-slate-300 focus:outline-none focus:border-[#28D17C]"
+                className="px-3 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C]"
               >
                 <option value="all">All Audit Actions</option>
                 <option value="device_lock_reset">device_lock_reset</option>
@@ -1014,7 +1014,7 @@ export default function SupportOperationsPage() {
               <button
                 type="button"
                 onClick={fetchAuditLogs}
-                className="p-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-slate-400 hover:text-white transition-colors"
+                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-[#0B1F33] hover:border-slate-300 transition-colors shadow-xs"
                 title="Refresh Audit Logs"
               >
                 <RefreshCw className="w-4 h-4" />
@@ -1022,10 +1022,10 @@ export default function SupportOperationsPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-[#21405A] bg-[#0B1F33] overflow-hidden">
+          <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#0E263E] border-b border-[#21405A] text-slate-400 uppercase font-semibold text-[10px] tracking-wider">
+                <thead className="bg-slate-50/70 border-b border-slate-200 text-slate-600 uppercase font-bold text-[10px] tracking-wider">
                   <tr>
                     <th className="py-3 px-4">Timestamp</th>
                     <th className="py-3 px-4">Action Event</th>
@@ -1035,7 +1035,7 @@ export default function SupportOperationsPage() {
                     <th className="py-3 px-4 text-right">Details</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#21405A]/50">
+                <tbody className="divide-y divide-slate-100">
                   {auditLoading ? (
                     <tr>
                       <td colSpan={6} className="py-12 text-center text-slate-400">
@@ -1059,35 +1059,35 @@ export default function SupportOperationsPage() {
                         <tr
                           key={log.id}
                           onClick={() => openAuditDetail(log)}
-                          className="hover:bg-[#0E263E]/60 cursor-pointer transition-colors"
+                          className="pf-table-row-deferred hover:bg-slate-50/80 cursor-pointer transition-colors"
                         >
-                          <td className="py-3 px-4 font-mono text-[11px] text-slate-300">
+                          <td className="py-3 px-4 font-mono text-[11px] text-slate-700">
                             {new Date(log.created_at).toLocaleString()}
                           </td>
 
                           <td className="py-3 px-4">
                             <span className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] ${
                               actionLower.includes("reset")
-                                ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                                ? "bg-amber-50 text-amber-700 border border-amber-200"
                                 : actionLower.includes("updated") || actionLower.includes("assigned")
-                                ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                                ? "bg-blue-50 text-blue-700 border border-blue-200"
                                 : actionLower.includes("limited")
-                                ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                                : "bg-emerald-500/20 text-[#28D17C] border border-emerald-500/30"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                : "bg-emerald-50 text-[#008A4B] border border-emerald-200"
                             }`}>
                               {action}
                             </span>
                           </td>
 
-                          <td className="py-3 px-4 font-mono text-slate-400 text-[11px]">
+                          <td className="py-3 px-4 font-mono text-slate-500 text-[11px]">
                             {entityType}
                           </td>
 
-                          <td className="py-3 px-4 text-slate-200 font-mono text-[11px] truncate max-w-[160px]">
+                          <td className="py-3 px-4 text-slate-800 font-mono text-[11px] truncate max-w-[160px]">
                             {operator}
                           </td>
 
-                          <td className="py-3 px-4 font-mono text-slate-400 text-[11px]">
+                          <td className="py-3 px-4 font-mono text-slate-500 text-[11px]">
                             {log.ip_address || "127.0.0.1"}
                           </td>
 
@@ -1098,7 +1098,7 @@ export default function SupportOperationsPage() {
                                 e.stopPropagation();
                                 openAuditDetail(log);
                               }}
-                              className="text-slate-400 hover:text-[#28D17C] font-mono text-[11px] underline"
+                              className="text-slate-500 hover:text-[#008A4B] font-mono text-[11px] underline cursor-pointer"
                             >
                               Inspect JSON
                             </button>
@@ -1118,11 +1118,11 @@ export default function SupportOperationsPage() {
       {activeTab === "team" && (
         <div className="space-y-6 animate-in fade-in duration-150">
           <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#0B1F33] flex items-center gap-2">
               <Shield className="w-4 h-4 text-[#28D17C]" />
               <span>Team Role-Based Access Control & Governance</span>
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-500 mt-0.5">
               Strict role segregation protecting super-admin operations console actions from unauthorized escalation.
             </p>
           </div>
@@ -1133,8 +1133,8 @@ export default function SupportOperationsPage() {
               ([roleKey, role]) => (
                 <div
                   key={roleKey}
-                  className={`p-4 rounded-xl bg-[#0B1F33] border space-y-3 ${
-                    activeRole === roleKey ? "border-[#28D17C]" : "border-[#21405A]"
+                  className={`p-4 rounded-2xl bg-white border space-y-3 shadow-xs ${
+                    activeRole === roleKey ? "border-[#28D17C] ring-2 ring-[#28D17C]/20" : "border-slate-200/80"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -1142,34 +1142,34 @@ export default function SupportOperationsPage() {
                       {role.label}
                     </span>
                     {activeRole === roleKey && (
-                      <span className="text-[10px] text-[#28D17C] font-bold">Simulating</span>
+                      <span className="text-[10px] text-[#008A4B] font-bold bg-[#E9FAF2] px-1.5 py-0.5 rounded">Simulating</span>
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-400 min-h-[44px]">
+                  <p className="text-[11px] text-slate-500 min-h-[44px]">
                     {role.description}
                   </p>
-                  <div className="pt-2 border-t border-[#21405A] space-y-1.5 text-[10px] font-mono">
+                  <div className="pt-2 border-t border-slate-100 space-y-1.5 text-[10px] font-mono">
                     <div className="flex justify-between">
                       <span className="text-slate-500">Device Lock Reset:</span>
-                      <strong className={role.canResetDevice ? "text-[#28D17C]" : "text-rose-400"}>
+                      <strong className={role.canResetDevice ? "text-[#008A4B]" : "text-rose-600"}>
                         {role.canResetDevice ? "ALLOWED" : "DENIED"}
                       </strong>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-500">Manager Override:</span>
-                      <strong className={role.canOverrideResetLimit ? "text-[#28D17C]" : "text-rose-400"}>
+                      <strong className={role.canOverrideResetLimit ? "text-[#008A4B]" : "text-rose-600"}>
                         {role.canOverrideResetLimit ? "ALLOWED" : "DENIED"}
                       </strong>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-500">Platform Knobs:</span>
-                      <strong className={role.canUpdateSettings ? "text-[#28D17C]" : "text-rose-400"}>
+                      <strong className={role.canUpdateSettings ? "text-[#008A4B]" : "text-rose-600"}>
                         {role.canUpdateSettings ? "ALLOWED" : "DENIED"}
                       </strong>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-500">Role Management:</span>
-                      <strong className={role.canManageRoles ? "text-[#28D17C]" : "text-rose-400"}>
+                      <strong className={role.canManageRoles ? "text-[#008A4B]" : "text-rose-600"}>
                         {role.canManageRoles ? "ALLOWED" : "DENIED"}
                       </strong>
                     </div>
@@ -1180,29 +1180,29 @@ export default function SupportOperationsPage() {
           </div>
 
           {/* Operator Directory */}
-          <div className="rounded-xl border border-[#21405A] bg-[#0B1F33] overflow-hidden">
-            <div className="p-4 bg-[#0E263E] border-b border-[#21405A] flex items-center justify-between">
+          <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-xs">
+            <div className="p-4 bg-slate-50/70 border-b border-slate-200 flex items-center justify-between">
               <div>
-                <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                <h4 className="text-xs font-bold text-[#0B1F33] uppercase tracking-wider">
                   Internal Operations Staff Directory
                 </h4>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-500">
                   Manage assigned system privileges for PolyFit operators.
                 </p>
               </div>
               {!rolePermissions.canManageRoles && (
-                <span className="text-[10px] text-amber-400 font-mono">
+                <span className="text-[10px] text-amber-600 font-mono">
                   Role modification requires Super Admin privilege
                 </span>
               )}
               {teamErrorNotice && (
-                <span className="text-[10px] text-rose-400 font-mono font-bold">
+                <span className="text-[10px] text-rose-600 font-mono font-bold">
                   {teamErrorNotice}
                 </span>
               )}
             </div>
 
-            <div className="divide-y divide-[#21405A]/50">
+            <div className="divide-y divide-slate-100">
               {teamLoading ? (
                 <div className="py-8 text-center text-slate-400 text-xs">
                   Loading team directory...
@@ -1215,14 +1215,14 @@ export default function SupportOperationsPage() {
                 teamMembers.map((member) => (
                   <div
                     key={member.id}
-                    className="p-4 flex items-center justify-between hover:bg-[#0E263E]/40 transition-colors"
+                    className="p-4 flex items-center justify-between hover:bg-slate-50/60 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#142C44] border border-[#21405A] flex items-center justify-center font-bold text-white text-xs">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-[#0B1F33] text-xs">
                         {member.email.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div className="font-bold text-white text-xs font-mono">
+                        <div className="font-bold text-[#0B1F33] text-xs font-mono">
                           {member.email}
                         </div>
                         <div className="text-[10px] text-slate-500 font-mono mt-0.5">
@@ -1236,7 +1236,7 @@ export default function SupportOperationsPage() {
                         value={member.role}
                         disabled={!rolePermissions.canManageRoles || updatingUserRole === member.id}
                         onChange={(e) => handleAssignRole(member.id, e.target.value)}
-                        className="px-3 py-1.5 rounded-lg bg-[#071521] border border-[#21405A] text-xs font-semibold text-white focus:outline-none focus:border-[#28D17C] disabled:opacity-50"
+                        className="px-3 py-1.5 rounded-xl bg-slate-50/50 border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C] disabled:opacity-50"
                       >
                         <option value="super_admin">Super Admin</option>
                         <option value="polyfit_ops">Ops Lead</option>
@@ -1262,17 +1262,17 @@ export default function SupportOperationsPage() {
           e.preventDefault();
           closeAuditDetail();
         }}
-        className="backdrop:bg-[#071521]/70 backdrop:backdrop-blur-xs bg-[#0B1F33] text-white border border-[#21405A] rounded-2xl p-6 w-full max-w-2xl max-h-[85vh] overflow-hidden m-auto shadow-2xl"
+        className="backdrop:bg-[#0B1F33]/40 backdrop:backdrop-blur-xs bg-white text-slate-900 border border-slate-200/80 rounded-2xl p-6 w-full max-w-2xl max-h-[85vh] overflow-hidden m-auto shadow-2xl"
       >
-        <div className="flex items-center justify-between pb-4 border-b border-[#21405A]">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-200">
           <div className="flex items-center gap-2">
-            <Terminal className="w-5 h-5 text-[#28D17C]" />
-            <h3 className="font-bold text-sm text-white">Cryptographic Audit Entry Metadata</h3>
+            <Terminal className="w-5 h-5 text-[#008A4B]" />
+            <h3 className="font-bold text-sm text-[#0B1F33]">Cryptographic Audit Entry Metadata</h3>
           </div>
           <button
             type="button"
             onClick={closeAuditDetail}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-[#142C44]"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -1280,41 +1280,41 @@ export default function SupportOperationsPage() {
 
         {selectedAuditLog && (
           <div className="py-4 space-y-4 overflow-y-auto max-h-[60vh] text-xs">
-            <div className="grid grid-cols-2 gap-3 text-slate-300">
-              <div className="p-2.5 rounded-lg bg-[#0E263E] border border-[#21405A]">
+            <div className="grid grid-cols-2 gap-3 text-slate-700">
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="text-[10px] text-slate-400 font-mono">ACTION</div>
-                <div className="font-bold text-white font-mono mt-0.5">{selectedAuditLog.action || selectedAuditLog.event_type || "system_audit"}</div>
+                <div className="font-bold text-[#0B1F33] font-mono mt-0.5">{selectedAuditLog.action || selectedAuditLog.event_type || "system_audit"}</div>
               </div>
-              <div className="p-2.5 rounded-lg bg-[#0E263E] border border-[#21405A]">
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="text-[10px] text-slate-400 font-mono">TIMESTAMP</div>
-                <div className="font-mono text-white mt-0.5">
+                <div className="font-mono text-[#0B1F33] mt-0.5">
                   {new Date(selectedAuditLog.created_at).toISOString()}
                 </div>
               </div>
-              <div className="p-2.5 rounded-lg bg-[#0E263E] border border-[#21405A]">
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="text-[10px] text-slate-400 font-mono">ENTITY TYPE</div>
-                <div className="font-mono text-white mt-0.5">{selectedAuditLog.entity_type || (selectedAuditLog.event_type ? selectedAuditLog.event_type.split("_")[0].toUpperCase() : "SYSTEM")}</div>
+                <div className="font-mono text-[#0B1F33] mt-0.5">{selectedAuditLog.entity_type || (selectedAuditLog.event_type ? selectedAuditLog.event_type.split("_")[0].toUpperCase() : "SYSTEM")}</div>
               </div>
-              <div className="p-2.5 rounded-lg bg-[#0E263E] border border-[#21405A]">
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="text-[10px] text-slate-400 font-mono">ENTITY ID</div>
-                <div className="font-mono text-white mt-0.5 truncate">{selectedAuditLog.entity_id || "N/A"}</div>
+                <div className="font-mono text-[#0B1F33] mt-0.5 truncate">{selectedAuditLog.entity_id || "N/A"}</div>
               </div>
             </div>
 
             <div>
-              <div className="text-[11px] font-semibold text-slate-400 mb-1.5">Raw JSON Metadata Payload:</div>
-              <pre className="p-4 rounded-xl bg-[#071521] border border-[#21405A] text-[11px] font-mono text-[#28D17C] overflow-x-auto whitespace-pre-wrap">
+              <div className="text-[11px] font-semibold text-slate-500 mb-1.5">Raw JSON Metadata Payload:</div>
+              <pre className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-[11px] font-mono text-[#28D17C] overflow-x-auto whitespace-pre-wrap">
                 {JSON.stringify(selectedAuditLog.metadata, null, 2)}
               </pre>
             </div>
           </div>
         )}
 
-        <div className="pt-4 border-t border-[#21405A] flex justify-end">
+        <div className="pt-4 border-t border-slate-200 flex justify-end">
           <button
             type="button"
             onClick={closeAuditDetail}
-            className="px-4 py-2 rounded-xl bg-[#142C44] hover:bg-[#28D17C] hover:text-[#071521] text-white text-xs font-semibold transition-colors"
+            className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition-colors cursor-pointer"
           >
             Close Inspector
           </button>

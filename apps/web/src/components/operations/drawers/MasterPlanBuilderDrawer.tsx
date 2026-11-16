@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   X,
@@ -200,9 +200,27 @@ export function MasterPlanBuilderDrawer({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Synchronize native <dialog> modal lifecycle
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (isOpen) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } else {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+  }, [isOpen]);
 
   // Sync state when drawer opens or plan changes
   useEffect(() => {
@@ -424,33 +442,38 @@ export function MasterPlanBuilderDrawer({
   if (!isOpen || !mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex justify-end" role="dialog" aria-modal="true" aria-labelledby="master-plan-builder-title">
-      {/* Backdrop overlay */}
-      <div
-        className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity animate-in fade-in-50 duration-200"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Slide-over Drawer Panel */}
-      <div className="relative z-50 w-full max-w-xl bg-[#0B1F33] border-l border-[#21405A] shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-300 overflow-hidden text-white select-none">
+    <dialog
+      ref={dialogRef}
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+      onClick={(e) => {
+        if (e.target === dialogRef.current) onClose();
+      }}
+      className="backdrop:bg-slate-950/70 backdrop:backdrop-blur-xs bg-transparent p-0 m-0 w-full h-full max-w-none max-h-none border-none outline-none overflow-hidden select-none fixed inset-0 z-[9999]"
+      aria-labelledby="master-plan-builder-title"
+    >
+      <div className="w-full h-full flex justify-end">
+        {/* Slide-over Drawer Panel */}
+        <div className="relative z-50 w-full max-w-xl bg-white border-l border-slate-200 shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-300 overflow-hidden text-slate-900 select-none">
         {/* Drawer Header */}
-        <div className="h-16 px-6 border-b border-[#21405A] bg-[#071521] flex items-center justify-between shrink-0">
+        <div className="h-16 px-6 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#28D17C]/15 border border-[#28D17C]/30 flex items-center justify-center text-[#28D17C]">
+            <div className="w-9 h-9 rounded-xl bg-[#E9FAF2] border border-[#B7F1D2] flex items-center justify-center text-[#008A4B]">
               <Layers className="w-5 h-5" />
             </div>
             <div>
               <h2
                 id="master-plan-builder-title"
-                className="text-sm font-bold text-white tracking-wide flex items-center gap-2"
+                className="text-sm font-bold text-[#0B1F33] tracking-tight flex items-center gap-2"
               >
                 <span>{plan?.id ? "Edit Master Benefit Plan" : "Master Plan Builder"}</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#28D17C]/20 text-[#28D17C] font-semibold border border-[#28D17C]/30">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#E9FAF2] text-[#008A4B] font-semibold border border-[#B7F1D2]">
                   OPS GOVERNANCE
                 </span>
               </h2>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-500">
                 Author aggregator tier access rules, category allowances, and visit caps.
               </p>
             </div>
@@ -459,7 +482,7 @@ export function MasterPlanBuilderDrawer({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
             aria-label="Close master plan builder"
           >
             <X className="w-5 h-5" />
@@ -469,24 +492,24 @@ export function MasterPlanBuilderDrawer({
         {/* Scrollable Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
           {error && (
-            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
               <span>{error}</span>
             </div>
           )}
 
           {/* Plan Scope: Global Public vs Client-Exclusive Enterprise */}
-          <div className="space-y-3 p-3.5 rounded-2xl bg-[#071521] border border-[#21405A]">
+          <div className="space-y-3 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-[#28D17C]" />
-                <span>Plan Scope & Visibility</span>
+              <label className="text-xs font-bold text-[#0B1F33] flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-[#008A4B]" />
+                <span>Plan Scope &amp; Visibility</span>
               </label>
               <span className={cn(
                 "text-[10px] font-mono px-2 py-0.5 rounded-full font-bold",
                 isExclusive
-                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                  : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                  ? "bg-amber-50 text-amber-700 border border-amber-200"
+                  : "bg-emerald-50 text-[#008A4B] border border-emerald-200"
               )}>
                 {isExclusive ? "CLIENT EXCLUSIVE (HIDDEN PUBLICLY)" : "GLOBAL NETWORK (PUBLIC)"}
               </span>
@@ -499,16 +522,16 @@ export function MasterPlanBuilderDrawer({
                 className={cn(
                   "p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between",
                   !isExclusive
-                    ? "bg-[#28D17C]/15 border-[#28D17C] text-white shadow-xs"
-                    : "bg-[#0B1F33] border-[#21405A] text-slate-400 hover:text-white"
+                    ? "bg-[#E9FAF2] border-[#28D17C] text-[#0B1F33] shadow-xs"
+                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                 )}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold">Global Network Tier</span>
                   {!isExclusive && <span className="w-1.5 h-1.5 rounded-full bg-[#28D17C]" />}
                 </div>
-                <span className="text-[10px] text-slate-400 mt-0.5 leading-snug">
-                  Published on marketing pricing & ROI calculator for all clients.
+                <span className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+                  Published on marketing pricing &amp; ROI calculator for all clients.
                 </span>
               </button>
 
@@ -518,15 +541,15 @@ export function MasterPlanBuilderDrawer({
                 className={cn(
                   "p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between",
                   isExclusive
-                    ? "bg-amber-500/15 border-amber-500 text-white shadow-xs"
-                    : "bg-[#0B1F33] border-[#21405A] text-slate-400 hover:text-white"
+                    ? "bg-amber-50 border-amber-400 text-amber-900 shadow-xs"
+                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                 )}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold">Client-Exclusive Tier</span>
-                  {isExclusive && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
+                  {isExclusive && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
                 </div>
-                <span className="text-[10px] text-slate-400 mt-0.5 leading-snug">
+                <span className="text-[10px] text-slate-500 mt-0.5 leading-snug">
                   Hidden from public site. Custom-contracted for a specific enterprise client.
                 </span>
               </button>
@@ -534,25 +557,25 @@ export function MasterPlanBuilderDrawer({
 
             {/* If Client-Exclusive, pick the dedicated client organization */}
             {isExclusive && (
-              <div className="space-y-1.5 pt-2 border-t border-[#21405A]/70 animate-in fade-in-50 duration-200">
-                <label className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
+              <div className="space-y-1.5 pt-2 border-t border-slate-100 animate-in fade-in-50 duration-200">
+                <label className="text-[11px] font-semibold text-slate-700 flex items-center justify-between">
                   <span>Exclusive Client Organization</span>
-                  <span className="text-[9px] text-amber-400 font-mono">DEDICATED ACCOUNT</span>
+                  <span className="text-[9px] text-amber-600 font-mono">DEDICATED ACCOUNT</span>
                 </label>
                 <select
                   value={orgId}
                   onChange={(e) => setOrgId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white focus:outline-none focus:border-amber-400 transition-colors cursor-pointer"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 transition-colors cursor-pointer"
                   required={isExclusive}
                 >
-                  <option value="" disabled className="bg-[#0B1F33] text-slate-400">Select enterprise client...</option>
+                  <option value="" disabled className="text-slate-400">Select enterprise client...</option>
                   {organizations.map((org) => (
-                    <option key={org.id} value={org.id} className="bg-[#0B1F33] text-white">
+                    <option key={org.id} value={org.id}>
                       {org.name} {org.slug ? `(${org.slug})` : ""}
                     </option>
                   ))}
                 </select>
-                <p className="text-[10px] text-slate-400 leading-snug">
+                <p className="text-[10px] text-slate-500 leading-snug">
                   Only eligible employees and HR administrators of this organization will see and access this plan.
                 </p>
               </div>
@@ -561,23 +584,23 @@ export function MasterPlanBuilderDrawer({
 
           {/* Plan Name */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-200 flex items-center justify-between">
+            <label className="text-xs font-bold text-[#0B1F33] flex items-center justify-between">
               <span>Plan Name</span>
-              <span className="text-[10px] text-slate-400 font-mono">DISPLAY NAME</span>
+              <span className="text-[10px] text-slate-500 font-mono">DISPLAY NAME</span>
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Enterprise Premium Wellness Tier"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#071521] border border-[#21405A] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#28D17C] transition-colors"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C] transition-colors"
               required
             />
           </div>
 
           {/* Tier Classification */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-200 block">
+            <label className="text-xs font-bold text-[#0B1F33] block">
               Tier Classification
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -590,19 +613,19 @@ export function MasterPlanBuilderDrawer({
                     type="button"
                     onClick={() => handleSelectTier(t.id)}
                     className={cn(
-                      "p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between",
+                      "p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between",
                       isSelected
-                        ? "bg-[#28D17C]/15 border-[#28D17C] text-white shadow-xs"
-                        : "bg-[#071521] border-[#21405A] text-slate-400 hover:text-white hover:bg-slate-800"
+                        ? "bg-[#E9FAF2] border-[#28D17C] text-[#0B1F33] shadow-xs"
+                        : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                     )}
                   >
                     <div className="flex items-center justify-between">
-                      <Icon className={cn("w-4 h-4", isSelected ? "text-[#28D17C]" : "text-slate-400")} />
+                      <Icon className={cn("w-4 h-4", isSelected ? "text-[#008A4B]" : "text-slate-400")} />
                       {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-[#28D17C]" />}
                     </div>
                     <div className="mt-2">
-                      <div className="text-xs font-bold text-white capitalize">{t.label}</div>
-                      <div className="text-[9px] text-slate-400 line-clamp-1 mt-0.5">{t.desc}</div>
+                      <div className="text-xs font-bold text-[#0B1F33] capitalize">{t.label}</div>
+                      <div className="text-[9px] text-slate-500 line-clamp-1 mt-0.5">{t.desc}</div>
                     </div>
                   </button>
                 );
@@ -611,11 +634,11 @@ export function MasterPlanBuilderDrawer({
           </div>
 
           {/* Visit Quota Allowance & HR Co-Pay Policy Architecture */}
-          <div className="p-3.5 rounded-2xl bg-[#071521] border border-[#21405A] space-y-3">
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-3">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-200 flex items-center justify-between">
+              <label className="text-xs font-bold text-[#0B1F33] flex items-center justify-between">
                 <span>Monthly Visit Cap</span>
-                <span className="text-[10px] text-slate-400 font-mono">VISITS / MO PER EMPLOYEE</span>
+                <span className="text-[10px] text-slate-500 font-mono">VISITS / MO PER EMPLOYEE</span>
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -624,7 +647,7 @@ export function MasterPlanBuilderDrawer({
                   max={99}
                   value={maxVisits}
                   onChange={(e) => setMaxVisits(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white font-mono focus:outline-none focus:border-[#28D17C]"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C]"
                 />
               </div>
               <div className="flex gap-1.5 pt-1">
@@ -634,10 +657,10 @@ export function MasterPlanBuilderDrawer({
                     type="button"
                     onClick={() => setMaxVisits(v)}
                     className={cn(
-                      "px-2 py-0.5 rounded text-[10px] font-mono cursor-pointer border transition-colors",
+                      "px-2.5 py-1 rounded-lg text-[10px] font-mono cursor-pointer border transition-colors",
                       maxVisits === v
-                        ? "bg-[#28D17C]/20 border-[#28D17C] text-[#28D17C]"
-                        : "bg-slate-900 border-[#21405A] text-slate-400 hover:text-white"
+                        ? "bg-[#E9FAF2] border-[#28D17C] text-[#008A4B] font-bold"
+                        : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                     )}
                   >
                     {v}
@@ -646,27 +669,27 @@ export function MasterPlanBuilderDrawer({
               </div>
             </div>
 
-            <div className="pt-2 border-t border-[#21405A]/60 flex items-start gap-2 text-[11px] text-slate-400">
-              <Shield className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <div className="pt-2 border-t border-slate-100 flex items-start gap-2 text-[11px] text-slate-500">
+              <Shield className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
               <span>
-                <strong className="text-slate-300">Subsidy & Co-Pay Authority:</strong> Configured exclusively by client HR administrators in the Corporate Portal based on employer wellness benefit budget.
+                <strong className="text-slate-700">Subsidy &amp; Co-Pay Authority:</strong> Configured exclusively by client HR administrators in the Corporate Portal based on employer wellness benefit budget.
               </span>
             </div>
           </div>
 
           {/* Subscription Pricing Architecture */}
-          <div className="space-y-3 p-3.5 rounded-2xl bg-[#071521] border border-[#21405A]">
+          <div className="space-y-3 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-white flex items-center gap-1.5">
-                <Coins className="w-3.5 h-3.5 text-[#28D17C]" />
+              <label className="text-xs font-bold text-[#0B1F33] flex items-center gap-1.5">
+                <Coins className="w-3.5 h-3.5 text-[#008A4B]" />
                 <span>Aggregator Tier Pricing (Per Employee)</span>
               </label>
-              <span className="text-[10px] text-slate-400 font-mono">RRA EBM INVOICING</span>
+              <span className="text-[10px] text-slate-500 font-mono">RRA EBM INVOICING</span>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-300">Monthly Price (RWF)</label>
+                <label className="text-[11px] font-semibold text-slate-700">Monthly Price (RWF)</label>
                 <div className="flex items-center gap-1.5">
                   <input
                     type="number"
@@ -678,14 +701,14 @@ export function MasterPlanBuilderDrawer({
                       setMonthlyPriceRwf(val);
                       setAnnualPriceRwf(Math.round(val * 0.85));
                     }}
-                    className="w-full px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white font-mono focus:outline-none focus:border-[#28D17C]"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C]"
                   />
-                  <span className="text-[10px] font-mono text-slate-400 shrink-0">RWF</span>
+                  <span className="text-[10px] font-mono text-slate-500 shrink-0">RWF</span>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-300">Annual Price (RWF/mo)</label>
+                <label className="text-[11px] font-semibold text-slate-700">Annual Price (RWF/mo)</label>
                 <div className="flex items-center gap-1.5">
                   <input
                     type="number"
@@ -693,16 +716,16 @@ export function MasterPlanBuilderDrawer({
                     step={1000}
                     value={annualPriceRwf}
                     onChange={(e) => setAnnualPriceRwf(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white font-mono focus:outline-none focus:border-[#28D17C]"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C]"
                   />
-                  <span className="text-[10px] font-mono text-slate-400 shrink-0">RWF</span>
+                  <span className="text-[10px] font-mono text-slate-500 shrink-0">RWF</span>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-300">Monthly Price (USD)</label>
+                <label className="text-[11px] font-semibold text-slate-700">Monthly Price (USD)</label>
                 <div className="flex items-center gap-1.5">
                   <input
                     type="number"
@@ -713,47 +736,47 @@ export function MasterPlanBuilderDrawer({
                       setMonthlyPriceUsd(val);
                       setAnnualPriceUsd(Math.round(val * 0.85));
                     }}
-                    className="w-full px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white font-mono focus:outline-none focus:border-[#28D17C]"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C]"
                   />
-                  <span className="text-[10px] font-mono text-slate-400 shrink-0">USD</span>
+                  <span className="text-[10px] font-mono text-slate-500 shrink-0">USD</span>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-300">Annual Price (USD/mo)</label>
+                <label className="text-[11px] font-semibold text-slate-700">Annual Price (USD/mo)</label>
                 <div className="flex items-center gap-1.5">
                   <input
                     type="number"
                     min={0}
                     value={annualPriceUsd}
                     onChange={(e) => setAnnualPriceUsd(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white font-mono focus:outline-none focus:border-[#28D17C]"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C]"
                   />
-                  <span className="text-[10px] font-mono text-slate-400 shrink-0">USD</span>
+                  <span className="text-[10px] font-mono text-slate-500 shrink-0">USD</span>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-300">Public Badge</label>
+                <label className="text-[11px] font-semibold text-slate-700">Public Badge</label>
                 <input
                   type="text"
                   value={badge}
                   onChange={(e) => setBadge(e.target.value)}
                   placeholder="e.g. Most Popular"
-                  className="w-full px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#28D17C]"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C]"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-300">Target Cohort</label>
+                <label className="text-[11px] font-semibold text-slate-700">Target Cohort</label>
                 <input
                   type="text"
                   value={targetAudience}
                   onChange={(e) => setTargetAudience(e.target.value)}
                   placeholder="e.g. 50 to 500 staff"
-                  className="w-full px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#28D17C]"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C]"
                 />
               </div>
             </div>
@@ -762,10 +785,10 @@ export function MasterPlanBuilderDrawer({
           {/* Covered Provider Categories (Aggregator Multi-Category Architecture) */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-200 block">
+              <label className="text-xs font-bold text-[#0B1F33] block">
                 Covered Provider Network Categories
               </label>
-              <span className="text-[10px] font-mono text-[#28D17C]">
+              <span className="text-[10px] font-mono text-[#008A4B] font-bold">
                 {selectedCategories.length} Categories Active
               </span>
             </div>
@@ -777,10 +800,10 @@ export function MasterPlanBuilderDrawer({
                     key={cat.id}
                     onClick={() => toggleCategory(cat.id)}
                     className={cn(
-                      "p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition-all",
+                      "p-3 rounded-2xl border flex items-start gap-3 cursor-pointer transition-all",
                       isChecked
-                        ? "bg-[#28D17C]/10 border-[#28D17C]/40 text-white"
-                        : "bg-[#071521] border-[#21405A] text-slate-400 hover:border-slate-600"
+                        ? "bg-[#E9FAF2] border-[#28D17C] text-[#0B1F33] shadow-xs"
+                        : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                     )}
                   >
                     <div
@@ -788,19 +811,19 @@ export function MasterPlanBuilderDrawer({
                         "w-4 h-4 rounded mt-0.5 border flex items-center justify-center shrink-0",
                         isChecked
                           ? "bg-[#28D17C] border-[#28D17C] text-[#0B1F33]"
-                          : "border-slate-500 bg-transparent"
+                          : "border-slate-300 bg-white"
                       )}
                     >
                       {isChecked && <CheckCircle2 className="w-3.5 h-3.5 text-[#0B1F33]" />}
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-white flex items-center gap-2">
+                      <div className="text-xs font-bold text-[#0B1F33] flex items-center gap-2">
                         <span>{cat.label}</span>
-                        <span className="text-[9px] font-mono text-slate-400 uppercase">
+                        <span className="text-[9px] font-mono text-slate-500 uppercase">
                           ({cat.id})
                         </span>
                       </div>
-                      <div className="text-[10px] text-slate-400 mt-0.5 leading-normal">
+                      <div className="text-[10px] text-slate-500 mt-0.5 leading-normal">
                         {cat.desc}
                       </div>
                     </div>
@@ -813,7 +836,7 @@ export function MasterPlanBuilderDrawer({
           {/* Budget Cap & Family Pass Option */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-200 block">
+              <label className="text-xs font-bold text-[#0B1F33] block">
                 Employee Budget Cap (Optional)
               </label>
               <div className="flex items-center gap-2">
@@ -823,14 +846,14 @@ export function MasterPlanBuilderDrawer({
                   placeholder="Unlimited"
                   value={budgetCap}
                   onChange={(e) => setBudgetCap(e.target.value === "" ? "" : Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#071521] border border-[#21405A] text-xs text-white font-mono focus:outline-none focus:border-[#28D17C]"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C]"
                 />
-                <span className="text-xs font-mono text-slate-400">RWF</span>
+                <span className="text-xs font-mono text-slate-500">RWF</span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-200 block">
+              <label className="text-xs font-bold text-[#0B1F33] block">
                 Family Pass Eligibility
               </label>
               <button
@@ -839,8 +862,8 @@ export function MasterPlanBuilderDrawer({
                 className={cn(
                   "w-full px-3.5 py-2.5 rounded-xl border flex items-center justify-between text-xs font-semibold cursor-pointer transition-all",
                   isFamilyEligible
-                    ? "bg-blue-500/15 border-blue-500 text-blue-300"
-                    : "bg-[#071521] border-[#21405A] text-slate-400"
+                    ? "bg-blue-50 border-blue-300 text-blue-700 shadow-xs"
+                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                 )}
               >
                 <span>Family Dependent Passes</span>
@@ -848,8 +871,8 @@ export function MasterPlanBuilderDrawer({
                   className={cn(
                     "text-[10px] font-mono px-2 py-0.5 rounded-full",
                     isFamilyEligible
-                      ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                      : "bg-slate-800 text-slate-400"
+                      ? "bg-blue-100 text-blue-700 border border-blue-200 font-bold"
+                      : "bg-slate-100 text-slate-500"
                   )}
                 >
                   {isFamilyEligible ? "ENABLED" : "DISABLED"}
@@ -859,29 +882,29 @@ export function MasterPlanBuilderDrawer({
           </div>
 
           {/* Plan Inclusions (What's Included) */}
-          <div className="space-y-3 p-3.5 rounded-2xl bg-[#071521] border border-[#21405A]">
+          <div className="space-y-3 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-white flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#28D17C]" />
+              <label className="text-xs font-bold text-[#0B1F33] flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#008A4B]" />
                 <span>What&apos;s Included ({features.length})</span>
               </label>
-              <span className="text-[10px] text-slate-400 font-mono">VISIBLE IN PRICING & PORTALS</span>
+              <span className="text-[10px] text-slate-500 font-mono">VISIBLE IN PRICING &amp; PORTALS</span>
             </div>
 
             <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
               {features.map((feat, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-slate-200"
+                  className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800"
                 >
                   <div className="flex items-center gap-2 truncate">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#28D17C] shrink-0" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#008A4B] shrink-0" />
                     <span className="truncate">{feat}</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleRemoveFeature(idx)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0 cursor-pointer"
+                    className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0 cursor-pointer"
                     title="Remove item"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -906,12 +929,12 @@ export function MasterPlanBuilderDrawer({
                   }
                 }}
                 placeholder="Add included feature (press Enter)..."
-                className="flex-1 px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#28D17C]"
+                className="flex-1 px-3 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C]"
               />
               <button
                 type="button"
                 onClick={handleAddFeature}
-                className="px-3 py-2 rounded-xl bg-[#28D17C]/15 border border-[#28D17C]/40 text-[#28D17C] hover:bg-[#28D17C]/25 text-xs font-semibold cursor-pointer shrink-0 transition-colors flex items-center gap-1"
+                className="px-3 py-2 rounded-xl bg-[#0B1F33] text-white hover:bg-[#16385C] text-xs font-semibold cursor-pointer shrink-0 transition-colors flex items-center gap-1 shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add</span>
@@ -920,29 +943,29 @@ export function MasterPlanBuilderDrawer({
           </div>
 
           {/* Plan Exclusions (What's NOT Included) */}
-          <div className="space-y-3 p-3.5 rounded-2xl bg-[#071521] border border-[#21405A]">
+          <div className="space-y-3 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-white flex items-center gap-1.5">
-                <MinusCircle className="w-3.5 h-3.5 text-amber-400" />
+              <label className="text-xs font-bold text-[#0B1F33] flex items-center gap-1.5">
+                <MinusCircle className="w-3.5 h-3.5 text-amber-500" />
                 <span>What&apos;s NOT Included ({notIncluded.length})</span>
               </label>
-              <span className="text-[10px] text-slate-400 font-mono">SHOWN WITH STRIKETHROUGH</span>
+              <span className="text-[10px] text-slate-500 font-mono">SHOWN WITH STRIKETHROUGH</span>
             </div>
 
             <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
               {notIncluded.map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-slate-400"
+                  className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500"
                 >
                   <div className="flex items-center gap-2 truncate">
-                    <span className="text-amber-400 font-mono font-bold">—</span>
+                    <span className="text-amber-500 font-mono font-bold">—</span>
                     <span className="truncate line-through opacity-80">{item}</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleRemoveNotIncluded(idx)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0 cursor-pointer"
+                    className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0 cursor-pointer"
                     title="Remove item"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -967,12 +990,12 @@ export function MasterPlanBuilderDrawer({
                   }
                 }}
                 placeholder="Add excluded item (press Enter)..."
-                className="flex-1 px-3 py-2 rounded-xl bg-[#0B1F33] border border-[#21405A] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                className="flex-1 px-3 py-2 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400"
               />
               <button
                 type="button"
                 onClick={handleAddNotIncluded}
-                className="px-3 py-2 rounded-xl bg-amber-400/15 border border-amber-400/40 text-amber-400 hover:bg-amber-400/25 text-xs font-semibold cursor-pointer shrink-0 transition-colors flex items-center gap-1"
+                className="px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 text-xs font-semibold cursor-pointer shrink-0 transition-colors flex items-center gap-1 shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add</span>
@@ -982,7 +1005,7 @@ export function MasterPlanBuilderDrawer({
 
           {/* Status & Description */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-200 block">Plan Status</label>
+            <label className="text-xs font-bold text-[#0B1F33] block">Plan Status</label>
             <div className="flex gap-2">
               {(["active", "draft", "inactive"] as const).map((s) => (
                 <button
@@ -993,11 +1016,11 @@ export function MasterPlanBuilderDrawer({
                     "flex-1 py-2 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer border",
                     status === s
                       ? s === "active"
-                        ? "bg-[#28D17C]/20 border-[#28D17C] text-[#28D17C]"
+                        ? "bg-[#E9FAF2] border-[#28D17C] text-[#008A4B] shadow-xs"
                         : s === "draft"
-                        ? "bg-amber-500/20 border-amber-500 text-amber-400"
-                        : "bg-rose-500/20 border-rose-500 text-rose-400"
-                      : "bg-[#071521] border-[#21405A] text-slate-400 hover:text-white"
+                        ? "bg-amber-50 border-amber-300 text-amber-700 shadow-xs"
+                        : "bg-rose-50 border-rose-300 text-rose-700 shadow-xs"
+                      : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                   )}
                 >
                   {s}
@@ -1007,25 +1030,25 @@ export function MasterPlanBuilderDrawer({
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-200 block">Plan Description</label>
+            <label className="text-xs font-bold text-[#0B1F33] block">Plan Description</label>
             <textarea
-              rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Detailed description of facility access, amenities, and policy guidelines shown in the mobile employee app..."
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#071521] border border-[#21405A] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#28D17C] transition-colors resize-none"
+              style={{ fieldSizing: "content" } as React.CSSProperties}
+              className="w-full pf-textarea-sm px-3.5 py-2.5 rounded-xl bg-slate-50/50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#28D17C]/20 focus:border-[#28D17C] transition-colors"
             />
           </div>
         </form>
 
         {/* Drawer Footer Actions */}
-        <div className="p-4 border-t border-[#21405A] bg-[#071521] flex items-center justify-between gap-3 shrink-0">
+        <div className="p-4 border-t border-slate-200 bg-slate-50/70 flex items-center justify-between gap-3 shrink-0">
           {plan?.id ? (
             <button
               type="button"
               onClick={handleDelete}
               disabled={isSubmitting}
-              className="px-3.5 py-2 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold transition-all cursor-pointer"
+              className="px-3.5 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-all cursor-pointer shadow-xs"
             >
               Deactivate Plan
             </button>
@@ -1038,7 +1061,7 @@ export function MasterPlanBuilderDrawer({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-xl border border-[#21405A] text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer shadow-xs"
             >
               Cancel
             </button>
@@ -1046,7 +1069,7 @@ export function MasterPlanBuilderDrawer({
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] font-bold text-xs transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+              className="px-5 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] text-[#0B1F33] font-bold text-xs transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
             >
               {isSubmitting ? (
                 <span>Deploying...</span>
@@ -1060,7 +1083,8 @@ export function MasterPlanBuilderDrawer({
           </div>
         </div>
       </div>
-    </div>,
+    </div>
+  </dialog>,
     document.body
   );
 }
