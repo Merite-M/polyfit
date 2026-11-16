@@ -32,7 +32,7 @@ export function FacilityUnitsModal({ isOpen, onClose }: FacilityUnitsModalProps)
   const filteredLocations = locations.filter((loc) => {
     const q = searchQuery.toLowerCase();
     return (
-      loc.name.toLowerCase().includes(q) ||
+      ((loc.name || "").toLowerCase().includes(q)) ||
       (loc.city && loc.city.toLowerCase().includes(q)) ||
       (loc.address && loc.address.toLowerCase().includes(q))
     );

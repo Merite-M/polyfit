@@ -62,6 +62,20 @@ const CANONICAL_PRESETS: TierPreset[] = [
     ]
   },
   {
+    id: "standard",
+    tier: "standard",
+    name: "Standard",
+    badge: "Active Workforce",
+    visits: 10,
+    monthlyRwf: 25000,
+    annualRwf: 21250,
+    features: [
+      "10 verified visits per month across 65+ partner facilities",
+      "Fitness gyms, Olympic lap pools & fitness studios",
+      "Single consolidated monthly RRA EBM 18% VAT invoice"
+    ]
+  },
+  {
     id: "premium",
     tier: "premium",
     name: "Premium",

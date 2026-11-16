@@ -247,14 +247,14 @@ export function CorporateSidebar({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-emerald-400 flex-shrink-0">
-              {organization.name.substring(0, 2).toUpperCase()}
+              {(organization?.name || "CO").substring(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold text-white truncate">
-                {user?.user_metadata?.full_name || organization.contact_email?.split("@")[0] || "HR Administrator"}
+                {user?.user_metadata?.full_name || organization?.contact_email?.split("@")[0] || "HR Administrator"}
               </p>
               <p className="text-[10px] text-slate-400 truncate">
-                {organization.contact_email || `hr@${organization.domain}`}
+                {organization?.contact_email || (organization?.domain ? `hr@${organization.domain}` : "hr@polyfit.rw")}
               </p>
             </div>
           </div>

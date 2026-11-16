@@ -36,10 +36,12 @@ export function DepartmentTable({
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const filtered = departmentList
-    .filter((d) => d.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter((d) => (d?.name ? d.name.toLowerCase().includes(searchTerm.toLowerCase()) : false))
     .sort((a, b) => {
       const mult = sortOrder === "desc" ? -1 : 1;
-      return (a[sortBy] - b[sortBy]) * mult;
+      const aVal = Number(a[sortBy]) || 0;
+      const bVal = Number(b[sortBy]) || 0;
+      return (aVal - bVal) * mult;
     });
 
   const toggleSort = (field: "participationRate" | "visits" | "eligible") => {

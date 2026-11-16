@@ -604,6 +604,36 @@ router.get('/platform-config', async (req, res) => {
           ]
         },
         {
+          id: 'standard',
+          tier: 'standard',
+          name: 'Standard Active Pass',
+          badge: 'Active Workforce',
+          description: 'Comprehensive corporate wellness access across premium gyms, lap pools, and fitness studios with flexible scheduling.',
+          target: 'Mid-sized corporate teams',
+          visits: 10,
+          pricing: {
+            RWF: { monthly: 25000, annual: 21250, period: '/ employee / mo' },
+            USD: { monthly: 19, annual: 16, period: '/ employee / mo' }
+          },
+          popular: false,
+          ctaText: 'Start Standard Plan',
+          ctaVariant: 'secondary',
+          features: [
+            '10 verified visits per month',
+            'Access to 65+ partner facilities, lap pools & fitness studios',
+            'Single consolidated RRA EBM monthly invoice',
+            'Dynamic anti-passback biometric & geo lock',
+            'Live department utilization telemetry',
+            'Standard employee roster upload (CSV)',
+            'Priority support (8h SLA)'
+          ],
+          notIncluded: [
+            'Reformer Pilates & Boutique Studios',
+            'Thermal spas & clinical physiotherapy',
+            'Dedicated wellness concierge'
+          ]
+        },
+        {
           id: 'premium',
           tier: 'premium',
           name: 'Premium',

@@ -47,8 +47,10 @@ interface PulsesRulesData {
   dailyVisitLimit: number;
   allowMultiVenueDifferentCategory: boolean;
   tierMonthlyCredits: {
+    basic: number;
     starter: number;
     standard: number;
+    premium: number;
     executive: number;
   };
 }
@@ -99,8 +101,10 @@ function OperationsPlansContent() {
     dailyVisitLimit: 1,
     allowMultiVenueDifferentCategory: true,
     tierMonthlyCredits: {
+      basic: 5,
       starter: 10,
-      standard: 25,
+      standard: 20,
+      premium: 25,
       executive: 50
     }
   });
@@ -568,11 +572,11 @@ function OperationsPlansContent() {
                       {/* Pricing RWF / USD */}
                       <td className="py-4 px-5">
                         <div className="font-bold text-[#0B1F33] font-mono text-sm">
-                          {formatRwf(plan.monthly_price_rwf || (tier === "basic" ? 10000 : tier === "starter" ? 18000 : tier === "premium" ? 32000 : 50000))}
+                          {formatRwf(plan.monthly_price_rwf || (tier === "basic" ? 10000 : tier === "starter" ? 18000 : tier === "standard" ? 25000 : tier === "premium" ? 32000 : 50000))}
                         </div>
                         <div className="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
                           <span className="font-mono text-[#008A4B] font-semibold">
-                            ${plan.monthly_price_usd || (tier === "basic" ? 8 : tier === "starter" ? 14 : tier === "premium" ? 24 : 38)}/mo
+                            ${plan.monthly_price_usd || (tier === "basic" ? 8 : tier === "starter" ? 14 : tier === "standard" ? 19 : tier === "premium" ? 24 : 38)}/mo
                           </span>
                           <span>•</span>
                           <span>15% off annual</span>
@@ -1041,28 +1045,44 @@ function OperationsPlansContent() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               {[
                 {
-                  tier: "starter" as const,
-                  name: "Starter Benefit Tier",
-                  subtitle: "Base Wellness Package",
+                  tier: "basic" as const,
+                  name: "Basic Tier",
+                  subtitle: "Essential Fitness",
                   color: "border-slate-200 bg-slate-50/60",
                   icon: Shield,
                   badge: "bg-slate-100 text-slate-700 border border-slate-200"
                 },
                 {
+                  tier: "starter" as const,
+                  name: "Starter Tier",
+                  subtitle: "Gyms & Pools",
+                  color: "border-emerald-200 bg-emerald-50/30",
+                  icon: ShieldCheck,
+                  badge: "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                },
+                {
                   tier: "standard" as const,
-                  name: "Standard Benefit Tier",
-                  subtitle: "Most Popular Corporate Plan",
+                  name: "Standard Tier",
+                  subtitle: "Active Workforce",
                   color: "border-blue-200 bg-blue-50/30",
                   icon: Sparkles,
                   badge: "bg-blue-50 text-blue-700 border border-blue-200"
                 },
                 {
+                  tier: "premium" as const,
+                  name: "Premium Tier",
+                  subtitle: "Full Network Pass",
+                  color: "border-purple-200 bg-purple-50/30",
+                  icon: Trophy,
+                  badge: "bg-purple-50 text-purple-700 border border-purple-200"
+                },
+                {
                   tier: "executive" as const,
-                  name: "Executive Benefit Tier",
-                  subtitle: "Full-Spectrum Premium Package",
+                  name: "Executive Tier",
+                  subtitle: "All-Access VIP",
                   color: "border-amber-200 bg-amber-50/30",
                   icon: Crown,
                   badge: "bg-amber-50 text-amber-700 border border-amber-200"

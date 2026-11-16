@@ -874,7 +874,7 @@ export default function FacilityDirectory({ onOpenLeadForm }: FacilityDirectoryP
                     </h4>
 
                     <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6">
-                      A premier corporate destination featuring state-of-the-art conditioning equipment, sanitized wellness amenities, and verified digital check-in passes. Fully accessible under PolyFit Professional and Enterprise plans.
+                      A premier corporate destination featuring state-of-the-art conditioning equipment, sanitized wellness amenities, and verified digital check-in passes. Fully accessible under PolyFit Premium and Executive plans.
                     </p>
 
                     <div className="flex flex-wrap gap-2 mb-6">

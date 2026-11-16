@@ -263,7 +263,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const s = params.get("org") || params.get("slug");
-      if (s) return s.toLowerCase().includes("techcorp");
+      if (s) return String(s).toLowerCase().includes("techcorp");
     }
     return false;
   }, []);
@@ -383,7 +383,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Fallback for techcorp-rwanda demo mode only
-    if (targetSlugOrId.toLowerCase().includes("techcorp")) {
+    if (targetSlugOrId && String(targetSlugOrId).toLowerCase().includes("techcorp")) {
       setPlans(TECHCORP_CANONICAL_DATA.plans as unknown as BenefitPlan[]);
       setEmployees(TECHCORP_CANONICAL_DATA.employees as CorporateEmployee[]);
       setFunnelData(TECHCORP_CANONICAL_DATA.funnel);
@@ -476,7 +476,7 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
         if (isCancelled) return;
 
         const effectiveOrg = dataRes?.organization || organization;
-        const rawStatus = (orgStatusFromCheck || effectiveOrg?.status || "active").toLowerCase();
+        const rawStatus = String(orgStatusFromCheck || effectiveOrg?.status || "active").toLowerCase();
 
         if (rawStatus === "pipeline" || rawStatus === "pending_review") {
           setOrganizationStatus("pending_review");

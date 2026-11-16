@@ -122,10 +122,10 @@ export function HistoricalCheckinLog() {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
-          item.beneficiary_name.toLowerCase().includes(q) ||
-          item.beneficiary_id.toLowerCase().includes(q) ||
-          item.beneficiary_email.toLowerCase().includes(q) ||
-          item.organization_name.toLowerCase().includes(q)
+          (item.beneficiary_name || '').toLowerCase().includes(q) ||
+          (item.beneficiary_id || '').toLowerCase().includes(q) ||
+          (item.beneficiary_email || '').toLowerCase().includes(q) ||
+          (item.organization_name || '').toLowerCase().includes(q)
         );
       }
 

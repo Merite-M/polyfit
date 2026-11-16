@@ -243,7 +243,7 @@ export function LivePassVirtualizationModal({
     if (exploreCategory === "studio" && !v.category.toLowerCase().includes("pilates") && !v.category.toLowerCase().includes("yoga")) return false;
     if (exploreSearch.trim()) {
       const q = exploreSearch.toLowerCase();
-      return v.name.toLowerCase().includes(q) || v.neighborhood.toLowerCase().includes(q);
+      return (v.name || "").toLowerCase().includes(q) || (v.neighborhood || "").toLowerCase().includes(q);
     }
     return true;
   });

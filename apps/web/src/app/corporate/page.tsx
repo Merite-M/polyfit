@@ -94,13 +94,13 @@ export default function CorporateDashboardPage() {
 
     generateRraEbmInvoicePdf({
       id: economics.invoiceNumber || "PF-INV-LIVE",
-      invoice_number: economics.invoiceNumber || `PF-INV-${new Date().toISOString().slice(0, 7)}-${organization.slug.slice(0, 4).toUpperCase()}`,
+      invoice_number: economics.invoiceNumber || `PF-INV-${new Date().toISOString().slice(0, 7)}-${(organization?.slug || "CORP").slice(0, 4).toUpperCase()}`,
       billing_period_start: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`,
       billing_period_end: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0],
       organizations: {
-        name: organization.name,
-        tax_id: organization.tax_id || "109283746",
-        billing_email: organization.billing_email || `finance@${organization.domain}`,
+        name: organization?.name || "Corporate Client",
+        tax_id: organization?.tax_id || "109283746",
+        billing_email: organization?.billing_email || (organization?.domain ? `finance@${organization.domain}` : "finance@polyfit.rw"),
       },
       status: economics.invoiceStatus || "draft",
       due_date: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0],

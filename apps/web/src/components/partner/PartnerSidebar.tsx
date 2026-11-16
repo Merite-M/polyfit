@@ -21,6 +21,7 @@ import {
   Wand2
 } from 'lucide-react';
 import { usePartner } from '@/contexts/PartnerContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { IsometricHexMark } from '@/components/ui/polyfit-logo';
 
 interface PartnerSidebarProps {
@@ -39,6 +40,7 @@ interface NavItem {
 export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
   const pathname = usePathname();
   const { provider, todaySummary } = usePartner();
+  const { user, signOut } = useAuth();
 
   const navSections = [
     {
@@ -208,6 +210,26 @@ export function PartnerSidebar({ onCloseMobile }: PartnerSidebarProps) {
           <Link href="/terms" className="hover:text-white transition-colors flex items-center gap-1">
             Partner Terms <ExternalLink className="w-2.5 h-2.5" />
           </Link>
+        </div>
+
+        {/* Staff Session & Sign Out */}
+        <div className="pt-2 border-t border-border/60 flex items-center justify-between">
+          <div className="min-w-0 pr-2">
+            <p className="text-[11px] font-semibold text-white truncate">
+              {user?.email || provider?.contact_email || 'partner@polyfit.rw'}
+            </p>
+            <p className="text-[10px] text-slate-400 truncate">
+              {provider?.name || 'Partner Facility'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => signOut?.('/partner/login')}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+            title="Sign out of Partner Portal"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </aside>

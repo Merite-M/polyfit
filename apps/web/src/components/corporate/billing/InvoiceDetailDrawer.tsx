@@ -250,9 +250,9 @@ export function InvoiceDetailDrawer({
     if (!auditSearchQuery) return true;
     const q = auditSearchQuery.toLowerCase();
     return (
-      v.employee_name.toLowerCase().includes(q) ||
-      v.department.toLowerCase().includes(q) ||
-      v.provider_name.toLowerCase().includes(q)
+      (v.employee_name || "").toLowerCase().includes(q) ||
+      (v.department || "").toLowerCase().includes(q) ||
+      (v.provider_name || "").toLowerCase().includes(q)
     );
   });
 

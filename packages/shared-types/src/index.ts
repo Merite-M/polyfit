@@ -188,7 +188,7 @@ export interface PlatformSettings {
 }
 
 export interface PricingTier {
-  id: 'starter' | 'professional' | 'enterprise';
+  id: 'basic' | 'starter' | 'standard' | 'premium' | 'executive' | 'professional' | 'enterprise';
   name: string;
   badge: string;
   description: string;

@@ -13,9 +13,11 @@ import {
   RefreshCw,
   Search,
   ScanLine,
-  ArrowRight
+  ArrowRight,
+  LogOut
 } from 'lucide-react';
 import { usePartner } from '@/contexts/PartnerContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { FacilityUnitsModal } from './FacilityUnitsModal';
 
 interface PartnerHeaderProps {
@@ -32,6 +34,7 @@ export function PartnerHeader({
   const pathname = usePathname();
   const isCheckinPage = pathname === '/partner/checkins';
   const { locations, selectedLocationId, setSelectedLocationId, selectedLocation, todaySummary, refreshSummary } = usePartner();
+  const { signOut } = useAuth();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const [unitsModalOpen, setUnitsModalOpen] = React.useState(false);
 
@@ -140,6 +143,16 @@ export function PartnerHeader({
             </Link>
           )
         )}
+
+        {/* Counter Terminal Shift Lock / Sign Out */}
+        <button
+          type="button"
+          onClick={() => signOut?.('/partner/login')}
+          title="Sign out / Lock Counter Terminal"
+          className="p-2 rounded-xl bg-white border border-[#E2E8F0] hover:bg-rose-50 hover:border-rose-200 text-[#526173] hover:text-rose-600 transition-colors shadow-2xs cursor-pointer ml-1"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
       </div>
     </header>
   );
