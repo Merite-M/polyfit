@@ -2,7 +2,6 @@ import PublicNavigation from "@/components/public-navigation";
 import Hero from "@/components/landing/hero";
 import CredibilityStrip from "@/components/landing/credibility-strip";
 import ProblemSection from "@/components/landing/problem-section";
-import SolutionSection from "@/components/landing/solution-section";
 import HowItWorks from "@/components/landing/how-it-works";
 import ForCompanies from "@/components/landing/for-companies";
 import ForProviders from "@/components/landing/for-providers";
@@ -24,7 +23,6 @@ export default function Home() {
         <Hero />
         <CredibilityStrip />
         <ProblemSection />
-        <SolutionSection />
         <HowItWorks />
         <CompanySponsorLookup />
         <RoiCalculator />
