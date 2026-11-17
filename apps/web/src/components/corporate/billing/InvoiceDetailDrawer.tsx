@@ -51,7 +51,7 @@ interface InvoiceDetailDrawerProps {
 export function InvoiceDetailDrawer({
   isOpen,
   onClose,
-  invoice,
+  invoice: propInvoice,
   onDispute,
 }: InvoiceDetailDrawerProps) {
   const [activeTab, setActiveTab] = useState<"items" | "audit" | "payment" | "tax_shield">("items");
@@ -64,13 +64,14 @@ export function InvoiceDetailDrawer({
   const [taxCertError, setTaxCertError] = useState<string | null>(null);
   const [copiedSeal, setCopiedSeal] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [cachedInvoice, setCachedInvoice] = useState<any>(invoice);
+  const [cachedInvoice, setCachedInvoice] = useState<any>(propInvoice);
 
   useEffect(() => {
-    if (invoice) setCachedInvoice(invoice);
-  }, [invoice]);
+    if (propInvoice) setCachedInvoice(propInvoice);
+  }, [propInvoice]);
 
-  const activeInvoice = invoice || cachedInvoice;
+  const currentInvoice = propInvoice || cachedInvoice;
+  const activeInvoice = currentInvoice;
 
   // Synchronize native <dialog> element
   useEffect(() => {
@@ -116,9 +117,9 @@ export function InvoiceDetailDrawer({
 
   // Fetch granular audit visits whenever the drawer opens for an invoice
   useEffect(() => {
-    if (isOpen && invoice?.id) {
+    if (isOpen && currentInvoice?.id) {
       setIsLoadingAudit(true);
-      apiFetch<{ visits: AuditVisit[] }>(`/api/billing/invoices/${invoice.id}/audit-trail`)
+      apiFetch<{ visits: AuditVisit[] }>(`/api/billing/invoices/${currentInvoice.id}/audit-trail`)
         .then((res) => {
           if (res?.visits) {
             setAuditVisits(res.visits);
@@ -127,7 +128,7 @@ export function InvoiceDetailDrawer({
         .catch((err) => {
           console.warn("[InvoiceDetailDrawer] Using fallback audit visits:", err.message);
           // Only show canonical demo visits if this invoice is explicitly for TechCorp
-          if (invoice.organizations?.name?.toLowerCase().includes("techcorp") || invoice.invoice_number?.includes("0045")) {
+          if (currentInvoice.organizations?.name?.toLowerCase().includes("techcorp") || currentInvoice.invoice_number?.includes("0045")) {
             setAuditVisits([
               {
                 id: "v-001",
@@ -162,9 +163,7 @@ export function InvoiceDetailDrawer({
         })
         .finally(() => setIsLoadingAudit(false));
     }
-  }, [isOpen, invoice?.id]);
-
-  if (!isOpen || !invoice) return null;
+  }, [isOpen, currentInvoice?.id]);
 
   const handleCopy = (text: string, label: string) => {
     if (navigator?.clipboard) {
@@ -205,22 +204,23 @@ export function InvoiceDetailDrawer({
   };
 
   const handleDownloadPdf = () => {
+    if (!currentInvoice) return;
     setIsDownloadingPdf(true);
     try {
       generateRraEbmInvoicePdf({
-        id: invoice.id,
-        invoice_number: invoice.invoice_number,
-        billing_period_start: invoice.billing_period_start,
-        billing_period_end: invoice.billing_period_end,
-        total_visits: invoice.total_visits,
-        total_amount: invoice.total_amount,
-        tax_amount: invoice.tax_amount,
-        status: invoice.status,
-        due_date: invoice.due_date,
-        paid_at: invoice.paid_at,
-        created_at: invoice.created_at,
-        organizations: invoice.organizations,
-        line_items: invoice.invoice_line_items?.map((li: any) => ({
+        id: currentInvoice.id,
+        invoice_number: currentInvoice.invoice_number,
+        billing_period_start: currentInvoice.billing_period_start,
+        billing_period_end: currentInvoice.billing_period_end,
+        total_visits: currentInvoice.total_visits,
+        total_amount: currentInvoice.total_amount,
+        tax_amount: currentInvoice.tax_amount,
+        status: currentInvoice.status,
+        due_date: currentInvoice.due_date,
+        paid_at: currentInvoice.paid_at,
+        created_at: currentInvoice.created_at,
+        organizations: currentInvoice.organizations,
+        line_items: currentInvoice.invoice_line_items?.map((li: any) => ({
           provider_name: li.providers?.name || li.provider_name || "Wellness Facility",
           provider_category: li.providers?.category || "gym",
           visit_count: li.visit_count,
@@ -275,7 +275,7 @@ export function InvoiceDetailDrawer({
 
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
-    link.setAttribute("download", `polyfit-audit-${invoice.invoice_number || invoice.id}.csv`);
+    link.setAttribute("download", `polyfit-audit-${currentInvoice?.invoice_number || currentInvoice?.id || "statement"}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -292,6 +292,18 @@ export function InvoiceDetailDrawer({
     );
   });
 
+  if (!isOpen || !currentInvoice) {
+    return (
+      <dialog
+        ref={dialogRef}
+        onCancel={handleCancel}
+        className="pf-native-drawer p-0 bg-transparent text-foreground"
+      />
+    );
+  }
+
+  const invoice = currentInvoice;
+
   const isPaid = invoice.status === "paid";
   const isOverdue = invoice.status === "overdue";
   const isDisputed = invoice.status === "disputed";
@@ -299,9 +311,6 @@ export function InvoiceDetailDrawer({
   const totalAmount = Number(invoice.total_amount) || 0;
   const taxAmount = Number(invoice.tax_amount) || Math.round(totalAmount * (0.18 / 1.18));
   const subtotalBeforeTax = totalAmount - taxAmount;
-
-  if (!activeInvoice && !isOpen) return null;
-  const currentInvoice = activeInvoice || invoice;
 
   return (
     <dialog
