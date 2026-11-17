@@ -38,9 +38,9 @@ export default function PricingRoiBanner({ onOpenLeadForm }: PricingRoiBannerPro
       icon: Users,
     },
     {
-      value: "100%",
-      label: "RRA EBM Deductible",
-      subtext: "Itemized with 18% VAT as an approved corporate health expenditure in Rwanda.",
+      value: "30%",
+      label: "CIT Tax Shield Benefit",
+      subtext: "Deductible under RRA Law Article 24 as a certified staff health & welfare expense, lowering net cost by 30%.",
       icon: Receipt,
     },
   ];

@@ -59,9 +59,11 @@ export function BulkUploadModal({
   const [isParsing, setIsParsing] = useState(false);
   const [parseProgress, setParseProgress] = useState<{ processed: number; total: number } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFullRosterSync, setIsFullRosterSync] = useState(false);
   const [importResult, setImportResult] = useState<{
     created: number;
     updated: number;
+    deprovisioned?: number;
     skipped: number;
     failed: number;
     duration_ms?: number;
@@ -281,44 +283,67 @@ export function BulkUploadModal({
 
     try {
       let response: any;
-      try {
-        response = await apiFetch<{
-          success: boolean;
-          message: string;
-          summary: {
-            created: number;
-            updated: number;
-            skipped: number;
-            failed: number;
-          };
-          duration_ms?: number;
-        }>(`${apiUrl}/api/organizations/${orgId}/employees/bulk`, {
+      const targetOrgId = orgId || corporateCtx?.organization?.id;
+      const validEmployees = parsedRows.filter((r) => r.isValid).map((r) => ({
+        full_name: r.full_name,
+        email: r.email,
+        phone: r.phone,
+        employee_id_external: r.employee_id,
+        department: r.department,
+        tier: r.tier,
+      }));
+
+      if (isFullRosterSync && targetOrgId) {
+        response = await apiFetch<any>(`${apiUrl}/api/organizations/${targetOrgId}/sync-roster`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            csv_data: rawCsvText,
-            update_existing: true,
-            send_invites: false,
+            employees: validEmployees,
+            fullRosterSync: true,
+            deprovisionAction: "terminate",
           }),
         });
-      } catch {
-        response = await apiFetch<any>(`/api/public/corporate/employees/bulk`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            org_id: orgId || corporateCtx?.organization?.id,
-            org_slug: corporateCtx?.organization?.slug || "corp",
-            csv_data: rawCsvText,
-          }),
-        });
+      } else {
+        try {
+          response = await apiFetch<{
+            success: boolean;
+            message: string;
+            summary: {
+              created: number;
+              updated: number;
+              skipped: number;
+              failed: number;
+            };
+            duration_ms?: number;
+          }>(`${apiUrl}/api/organizations/${targetOrgId}/employees/bulk`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              csv_data: rawCsvText,
+              update_existing: true,
+              send_invites: false,
+            }),
+          });
+        } catch {
+          response = await apiFetch<any>(`/api/public/corporate/employees/bulk`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              org_id: targetOrgId,
+              org_slug: corporateCtx?.organization?.slug || "corp",
+              csv_data: rawCsvText,
+            }),
+          });
+        }
       }
 
       if (response && response.summary) {
         setImportResult({
-          created: response.summary.created,
-          updated: response.summary.updated,
-          skipped: response.summary.skipped,
-          failed: response.summary.failed,
+          created: response.summary.created || 0,
+          updated: response.summary.updated || 0,
+          deprovisioned: response.summary.deprovisioned || 0,
+          skipped: response.summary.skipped || 0,
+          failed: response.summary.failed || 0,
           duration_ms: response.duration_ms,
         });
         onImportSuccess();
@@ -393,7 +418,7 @@ export function BulkUploadModal({
                 </p>
               </div>
 
-              <div className="grid grid-cols-4 gap-2 pt-2">
+              <div className={`grid ${importResult.deprovisioned && importResult.deprovisioned > 0 ? "grid-cols-5" : "grid-cols-4"} gap-2 pt-2`}>
                 <div className="bg-[var(--surface,#FFFFFF)] p-2.5 rounded-xl border border-[var(--border,#E2E8F0)]">
                   <span className="block text-lg font-bold text-[#006D3C]">
                     {importResult.created}
@@ -410,6 +435,16 @@ export function BulkUploadModal({
                     Updated
                   </span>
                 </div>
+                {importResult.deprovisioned !== undefined && importResult.deprovisioned > 0 && (
+                  <div className="bg-amber-50/70 p-2.5 rounded-xl border border-amber-200">
+                    <span className="block text-lg font-bold text-amber-700">
+                      {importResult.deprovisioned}
+                    </span>
+                    <span className="text-[10px] uppercase font-semibold text-amber-800">
+                      Deprovisioned
+                    </span>
+                  </div>
+                )}
                 <div className="bg-[var(--surface,#FFFFFF)] p-2.5 rounded-xl border border-[var(--border,#E2E8F0)]">
                   <span className="block text-lg font-bold text-[var(--text-secondary,#526173)]">
                     {importResult.skipped}
@@ -650,6 +685,25 @@ export function BulkUploadModal({
                       Showing first 30 of {parsedRows.length} records
                     </p>
                   )}
+
+                  {/* Full Roster Sync & Auto-Deprovisioning Toggle */}
+                  <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 flex items-start gap-3">
+                    <input
+                      id="full-roster-sync-toggle"
+                      type="checkbox"
+                      checked={isFullRosterSync}
+                      onChange={(e) => setIsFullRosterSync(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#006D3C] focus:ring-[#28D17C] cursor-pointer"
+                    />
+                    <div>
+                      <label htmlFor="full-roster-sync-toggle" className="text-xs font-bold text-[#0B1F33] cursor-pointer block">
+                        Full Census Synchronization &amp; Auto-Deprovisioning
+                      </label>
+                      <p className="text-[11px] text-slate-500 leading-relaxed mt-0.5">
+                        When enabled, former employees who are not in this census will be automatically deactivated so your company never leaks budget on departed staff visits.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </>

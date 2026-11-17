@@ -140,9 +140,11 @@ export function SettlementDetailDrawer({ statement, isOpen, onClose }: Settlemen
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Disbursement Rail:</span>
               <span className="font-mono font-medium text-primary">
-                {statement.provider.bank_details?.bank_name
+                {statement.payment_reference?.startsWith("MOMO") || statement.provider.bank_details?.momo_phone
+                  ? `MTN MoMo (${statement.provider.bank_details?.momo_phone || "Mobile Money"})`
+                  : statement.provider.bank_details?.bank_name
                   ? `${statement.provider.bank_details.bank_name} ••••${statement.provider.bank_details.account_number?.slice(-4) || ''}`
-                  : 'Pending Rail Setup'}
+                  : 'MTN Mobile Money / Bank EFT'}
               </span>
             </div>
             <div className="flex items-center justify-between text-xs">

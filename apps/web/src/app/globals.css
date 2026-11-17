@@ -688,3 +688,66 @@ dialog.pf-native-drawer[open]::backdrop {
     }
   }
 }
+
+/* 4. Modern Web Guidance: Native <dialog> Top-Layer Architecture & Backdrop Animation
+      - overscroll-behavior: contain stops background page scrolling
+      - transition-behavior: allow-discrete enables top layer exit transitions
+      - @starting-style defines entry animation from top layer */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background-color: rgba(11, 31, 51, 0);
+  transition-property: background-color, display, overlay;
+  transition-duration: 0.25s;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-behavior: allow-discrete;
+}
+
+dialog[open]::backdrop {
+  background-color: rgba(11, 31, 51, 0.6);
+  backdrop-filter: blur(4px);
+
+  @starting-style {
+    background-color: rgba(11, 31, 51, 0);
+  }
+}
+
+/* Base dialog transition */
+dialog.pf-native-dialog {
+  opacity: 0;
+  transform: scale(0.96) translateY(8px);
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0.25s;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-behavior: allow-discrete;
+}
+
+dialog.pf-native-dialog[open] {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+
+  @starting-style {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+}
+
+.pf-dialog-lg {
+  max-width: 48rem;
+  width: 92vw;
+}
+
+.pf-dialog-xl {
+  max-width: 60rem;
+  width: 94vw;
+}
+
+.pf-dialog-md {
+  max-width: 36rem;
+  width: 90vw;
+}
+

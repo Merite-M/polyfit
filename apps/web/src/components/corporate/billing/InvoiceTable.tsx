@@ -12,6 +12,7 @@ import {
   Clock,
   ChevronRight,
   ShieldAlert,
+  ShieldCheck,
 } from "lucide-react";
 
 export interface InvoiceRecord {
@@ -38,6 +39,7 @@ interface InvoiceTableProps {
   invoices: InvoiceRecord[];
   onSelectInvoice: (invoice: InvoiceRecord) => void;
   onDisputeInvoice: (invoice: InvoiceRecord) => void;
+  onInspectTaxCert?: (invoice: InvoiceRecord) => void;
   isLoading?: boolean;
 }
 
@@ -45,6 +47,7 @@ export function InvoiceTable({
   invoices,
   onSelectInvoice,
   onDisputeInvoice,
+  onInspectTaxCert,
   isLoading = false,
 }: InvoiceTableProps) {
   const [activeFilter, setActiveFilter] = useState<"all" | "unpaid" | "paid" | "disputed">("all");
@@ -300,6 +303,15 @@ export function InvoiceTable({
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        {onInspectTaxCert && (
+                          <button
+                            onClick={() => onInspectTaxCert(inv)}
+                            title="RRA Article 24 CIT Tax-Shield Certificate (30% Deduction)"
+                            className="p-1.5 text-purple-700 hover:text-purple-900 hover:bg-purple-50 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <ShieldCheck className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => onSelectInvoice(inv)}
                           title="View statement details and visit audit"

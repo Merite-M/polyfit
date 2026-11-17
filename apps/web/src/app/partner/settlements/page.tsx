@@ -339,7 +339,13 @@ export default function PartnerSettlementsPage() {
                     </td>
 
                     <td className="py-3.5 px-4 text-[#526173]">
-                      {stmt.payout_date || 'Pending'}
+                      <div className="font-medium">{stmt.payout_date || 'Pending Cycle'}</div>
+                      {stmt.payment_reference && (
+                        <div className="flex items-center gap-1 font-mono text-[10px] text-amber-700 font-semibold mt-0.5">
+                          <Smartphone className="w-3 h-3 text-amber-500 shrink-0" />
+                          <span className="truncate max-w-[120px]">{stmt.payment_reference}</span>
+                        </div>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4">

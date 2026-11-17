@@ -37,6 +37,8 @@ import { useOperationsDrawer } from "@/contexts/OperationsDrawerContext";
 import { MonthlyBillingRunModal } from "@/components/operations/finance/MonthlyBillingRunModal";
 import { SettlementReconciliationModal } from "@/components/operations/finance/SettlementReconciliationModal";
 import { DisbursementExportModal } from "@/components/operations/finance/DisbursementExportModal";
+import { MomoDisburseModal } from "@/components/operations/finance/MomoDisburseModal";
+import { RraTaxCertificateModal } from "@/components/operations/finance/RraTaxCertificateModal";
 import { generateInvoicePdf } from "@/lib/invoice-pdf";
 import { generateSettlementPdf } from "@/lib/settlement-pdf";
 
@@ -57,6 +59,10 @@ export default function MarketplaceFinancePage() {
   const [isBillingRunModalOpen, setIsBillingRunModalOpen] = useState(false);
   const [isReconciliationModalOpen, setIsReconciliationModalOpen] = useState(false);
   const [isDisbursementModalOpen, setIsDisbursementModalOpen] = useState(false);
+  const [isMomoModalOpen, setIsMomoModalOpen] = useState(false);
+  const [selectedDisburseSettlement, setSelectedDisburseSettlement] = useState<any | null>(null);
+  const [isTaxCertModalOpen, setIsTaxCertModalOpen] = useState(false);
+  const [selectedTaxCertInvoice, setSelectedTaxCertInvoice] = useState<any | null>(null);
 
   // Data States
   const [overview, setOverview] = useState<any>(null);
@@ -473,6 +479,17 @@ export default function MarketplaceFinancePage() {
                             <button
                               type="button"
                               onClick={() => {
+                                setSelectedTaxCertInvoice(inv);
+                                setIsTaxCertModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg border border-purple-200 bg-purple-50 text-purple-700 hover:text-purple-900 hover:bg-purple-100 transition-colors"
+                              title="Inspect RRA Article 24 CIT Tax-Shield Certificate"
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
                                 const pdfData = {
                                   id: inv.id,
                                   invoice_number: inv.invoice_number || `INV-${inv.id.slice(0, 8)}`,
@@ -641,6 +658,20 @@ export default function MarketplaceFinancePage() {
                         </td>
                         <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1.5">
+                            {st.status !== "disbursed" && st.status !== "paid" && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedDisburseSettlement(st);
+                                  setIsMomoModalOpen(true);
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-[11px] shadow-2xs transition-all cursor-pointer"
+                                title="1-Click Instant Mobile Money Payout (MTN / Airtel)"
+                              >
+                                <Smartphone className="w-3.5 h-3.5 text-slate-950" />
+                                <span>MoMo Pay</span>
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => {
@@ -874,6 +905,24 @@ export default function MarketplaceFinancePage() {
       <DisbursementExportModal
         isOpen={isDisbursementModalOpen}
         onClose={() => setIsDisbursementModalOpen(false)}
+      />
+
+      <MomoDisburseModal
+        isOpen={isMomoModalOpen}
+        onClose={() => setIsMomoModalOpen(false)}
+        settlement={selectedDisburseSettlement}
+        onSuccess={(updated) => {
+          setSettlements((prev) =>
+            prev.map((s) => (s.id === updated.id ? { ...s, status: "paid", payment_reference: updated.payment_reference } : s))
+          );
+        }}
+      />
+
+      <RraTaxCertificateModal
+        isOpen={isTaxCertModalOpen}
+        onClose={() => setIsTaxCertModalOpen(false)}
+        invoiceId={selectedTaxCertInvoice?.id || null}
+        invoiceNumber={selectedTaxCertInvoice?.invoice_number}
       />
     </div>
   );

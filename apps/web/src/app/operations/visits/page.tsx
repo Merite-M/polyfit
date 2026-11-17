@@ -163,6 +163,40 @@ function LiveVisitMonitorContent() {
   const [adjudicatingId, setAdjudicatingId] = useState<string | null>(null);
   const [feedbackToast, setFeedbackToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
+  // Dedicated Real-Time Fraud & Anomaly Intelligence State
+  const [securityAnomalies, setSecurityAnomalies] = useState<any[]>([]);
+  const [anomaliesSummary, setAnomaliesSummary] = useState<any>({
+    threat_index: "Low (0/100)",
+    velocity_violations: 0,
+    device_collisions: 0,
+    passback_violations: 0,
+    outside_geofence: 0,
+    cooldown_violations: 0,
+    active_anomalies: 0,
+    total_scanned_window: 0,
+  });
+  const [loadingAnomalies, setLoadingAnomalies] = useState(false);
+  const [anomalySeverityFilter, setAnomalySeverityFilter] = useState<"all" | "critical" | "warning">("all");
+  const [anomalyTypeFilter, setAnomalyTypeFilter] = useState<string>("all");
+
+  // Fetch live security anomalies from backend intelligence engine
+  const fetchAnomalies = async () => {
+    try {
+      setLoadingAnomalies(true);
+      const res = await apiFetch<any>(`/api/operations/security/anomalies`);
+      if (res?.anomalies && Array.isArray(res.anomalies)) {
+        setSecurityAnomalies(res.anomalies);
+      }
+      if (res?.summary) {
+        setAnomaliesSummary(res.summary);
+      }
+    } catch (err: any) {
+      console.warn("[Visits] Anomalies fetch error:", err.message);
+    } finally {
+      setLoadingAnomalies(false);
+    }
+  };
+
   // Fetch dispute queue directly from dedicated endpoint
   const fetchDisputes = async () => {
     try {
@@ -279,6 +313,14 @@ function LiveVisitMonitorContent() {
       fetchDisputes();
     }
   }, [activeTab, disputeFilter, refreshKey]);
+
+  // Fetch security anomalies whenever switching to intelligence tab
+  useEffect(() => {
+    if (activeTab === "intelligence") {
+      fetchAnomalies();
+    }
+  }, [activeTab, refreshKey]);
+
 
   // Supabase Realtime channel subscription for instant check-in events
   useEffect(() => {
@@ -1250,56 +1292,276 @@ function LiveVisitMonitorContent() {
         </div>
       )}
 
-      {/* ─── TAB 3: FRAUD & VELOCITY INTELLIGENCE ─── */}
+      {/* ─── TAB 3: FRAUD & VELOCITY INTELLIGENCE COCKPIT ─── */}
       {activeTab === "intelligence" && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2 hover:border-slate-300 transition-all">
-              <div className="flex items-center gap-2 text-rose-600 font-bold text-xs uppercase tracking-wider">
-                <RotateCcw className="w-4 h-4" />
-                <span>Anti-Passback Violations</span>
+        <div className="space-y-5">
+          {/* Header & Threat Index Bar */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-rose-600" />
+                <h3 className="font-bold text-[#0B1F33] text-sm">
+                  Network Anti-Fraud &amp; Physical Anomaly Intelligence
+                </h3>
+                <span className="font-mono text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                  Window: {anomaliesSummary.total_scanned_window || 150} recent check-ins
+                </span>
               </div>
-              <div className="font-mono text-3xl font-extrabold text-[#0B1F33]">
-                {visits.filter((v) => v.anomalies?.some((a) => a.type === "anti_passback")).length}
-              </div>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                Check-in attempts blocked within the 180-minute cooldown window at the same partner facility.
+              <p className="text-xs text-slate-500 mt-0.5">
+                Multi-layer verification engine detecting GPS spoofing, impossible physical velocity jumps, device collisions, and cooldown bypasses.
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2 hover:border-slate-300 transition-all">
-              <div className="flex items-center gap-2 text-amber-600 font-bold text-xs uppercase tracking-wider">
-                <Zap className="w-4 h-4" />
-                <span>Impossible Velocity Jumps</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={fetchAnomalies}
+                disabled={loadingAnomalies}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-[#0B1F33] hover:bg-slate-50 text-xs font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+                title="Refresh anomaly telemetry from backend engine"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingAnomalies ? "animate-spin text-[#008A4B]" : ""}`} />
+                <span>Re-scan Network</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 4-Stat Live Intelligence Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {/* Threat Index */}
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  Network Threat Index
+                </span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                  anomaliesSummary.active_anomalies > 3
+                    ? "bg-rose-100 text-rose-800 border border-rose-200"
+                    : anomaliesSummary.active_anomalies > 0
+                    ? "bg-amber-100 text-amber-800 border border-amber-200"
+                    : "bg-[#E9FAF2] text-[#008A4B] border border-[#B7F1D2]"
+                }`}>
+                  {anomaliesSummary.threat_index || "Low (0/100)"}
+                </span>
               </div>
-              <div className="font-mono text-3xl font-extrabold text-[#0B1F33]">
-                {visits.filter((v) => v.anomalies?.some((a) => a.type === "velocity_anomaly")).length}
+              <div className="font-mono text-2xl font-extrabold text-[#0B1F33]">
+                {anomaliesSummary.active_anomalies || 0}
+                <span className="text-xs font-normal text-slate-500 ml-1.5 font-sans">active flags</span>
               </div>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                Instances where check-ins occurred across venues &gt;40km apart within less than 60 minutes.
+              <p className="text-[11px] text-slate-500">
+                Composite anomaly score across all partner venues in Rwanda.
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2 hover:border-slate-300 transition-all">
-              <div className="flex items-center gap-2 text-teal-600 font-bold text-xs uppercase tracking-wider">
-                <MapPin className="w-4 h-4" />
-                <span>Geofence Deviations</span>
+            {/* Velocity Jumps */}
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 flex items-center gap-1">
+                  <Zap className="w-3.5 h-3.5 text-amber-600" />
+                  Velocity Jumps
+                </span>
+                <span className="text-[10px] font-mono text-slate-500">&gt;40 km/h</span>
               </div>
-              <div className="font-mono text-3xl font-extrabold text-[#0B1F33]">
-                {visits.filter((v) => v.anomalies?.some((a) => a.type === "outside_geofence")).length}
+              <div className="font-mono text-2xl font-extrabold text-slate-900">
+                {anomaliesSummary.velocity_violations || 0}
               </div>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                Scans initiated with mobile GPS coordinates &gt;500 meters outside facility boundary.
+              <p className="text-[11px] text-slate-500">
+                Check-ins with impossible transit speeds between distant facilities.
+              </p>
+            </div>
+
+            {/* Anti-Passback & Collisions */}
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 flex items-center gap-1">
+                  <RotateCcw className="w-3.5 h-3.5 text-rose-600" />
+                  Cooldown &amp; Collisions
+                </span>
+                <span className="text-[10px] font-mono text-slate-500">180m Window</span>
+              </div>
+              <div className="font-mono text-2xl font-extrabold text-slate-900">
+                {(anomaliesSummary.passback_violations || 0) + (anomaliesSummary.device_collisions || 0)}
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Device sharing or multiple check-ins within the 3-hour facility cooldown.
+              </p>
+            </div>
+
+            {/* Geofence Breaches */}
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-teal-700 flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-teal-600" />
+                  Geofence Breaches
+                </span>
+                <span className="text-[10px] font-mono text-slate-500">&gt;500m</span>
+              </div>
+              <div className="font-mono text-2xl font-extrabold text-slate-900">
+                {anomaliesSummary.outside_geofence || 0}
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Scans generated outside validated provider GPS polygons.
               </p>
             </div>
           </div>
 
+          {/* Filter Bar & Anomaly Table */}
+          <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs">
+            <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/60">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-semibold text-slate-600">Filter Severity:</span>
+                <div className="flex items-center p-0.5 rounded-lg bg-slate-200/70 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setAnomalySeverityFilter("all")}
+                    className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                      anomalySeverityFilter === "all"
+                        ? "bg-white text-slate-900 shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAnomalySeverityFilter("critical")}
+                    className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                      anomalySeverityFilter === "critical"
+                        ? "bg-white text-rose-700 shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Critical
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAnomalySeverityFilter("warning")}
+                    className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                      anomalySeverityFilter === "warning"
+                        ? "bg-white text-amber-700 shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Warnings
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500">
+                  Showing {securityAnomalies.filter((a) => anomalySeverityFilter === "all" || a.severity === anomalySeverityFilter).length} detected flags
+                </span>
+              </div>
+            </div>
+
+            {loadingAnomalies && securityAnomalies.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 space-y-2">
+                <Activity className="w-8 h-8 animate-spin text-[#008A4B] mx-auto" />
+                <span className="text-xs">Scanning real-time network telemetry for physical anomalies...</span>
+              </div>
+            ) : securityAnomalies.filter((a) => anomalySeverityFilter === "all" || a.severity === anomalySeverityFilter).length === 0 ? (
+              <div className="p-12 text-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#E9FAF2] text-[#008A4B] flex items-center justify-center mx-auto border border-[#B7F1D2]">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <h4 className="font-bold text-[#0B1F33] text-sm">
+                  Zero Network Anomalies Detected
+                </h4>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  All recent beneficiary check-ins across Kigali and nationwide facilities adhere strictly to 180-minute cooldowns, PostGIS geofence boundaries, and realistic human transit speeds.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+                      <th className="py-3 px-4">Severity &amp; Type</th>
+                      <th className="py-3 px-4">Beneficiary &amp; Employer</th>
+                      <th className="py-3 px-4">Facility Venue</th>
+                      <th className="py-3 px-4">Telemetry Detail</th>
+                      <th className="py-3 px-4">Timestamp</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {securityAnomalies
+                      .filter((a) => anomalySeverityFilter === "all" || a.severity === anomalySeverityFilter)
+                      .map((anom, idx) => (
+                        <tr key={anom.id || idx} className="hover:bg-slate-50/80 transition">
+                          <td className="py-3 px-4">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase font-mono border ${
+                              anom.severity === "critical"
+                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
+                            }`}>
+                              {anom.severity === "critical" ? (
+                                <ShieldAlert className="w-3 h-3 text-rose-600" />
+                              ) : (
+                                <AlertTriangle className="w-3 h-3 text-amber-600" />
+                              )}
+                              <span>{anom.label || anom.type}</span>
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-slate-800">
+                              {anom.employee_name || "Beneficiary"}
+                            </div>
+                            <span className="text-[10px] text-slate-500 block">
+                              {anom.organization_name || "Corporate Client"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="font-semibold text-slate-800 flex items-center gap-1">
+                              <Network className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                              <span>{anom.provider_name || "Facility"}</span>
+                            </div>
+                            <span className="text-[10px] text-slate-500 block">
+                              {anom.location_name || "Venue"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="text-slate-700 font-medium">
+                              {anom.detail}
+                            </div>
+                            {anom.speed_kmh && (
+                              <span className="font-mono text-[10px] text-amber-700 block">
+                                Speed: {anom.speed_kmh} km/h • Distance: {anom.distance_km} km
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-slate-500 font-mono text-[11px] whitespace-nowrap">
+                            {anom.flagged_at ? formatRelativeTime(anom.flagged_at) : "Recently"}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (anom.visit_id) {
+                                  openDrawer("visit", anom.visit_id, anom, "Anomaly Investigation");
+                                }
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-[#0B1F33] hover:border-[#28D17C] font-semibold text-[11px] shadow-2xs transition-all inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              <span>Investigate</span>
+                              <ChevronRight className="w-3 h-3 text-[#008A4B]" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Real-Time Rule Engine Directives */}
           <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-3">
             <h3 className="font-bold text-[#0B1F33] text-sm flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-[#008A4B]" />
               <span>Real-Time Anomaly Rule Engine Directives</span>
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-600">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-600">
               <div className="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80 space-y-1">
                 <strong className="text-[#0B1F33] block">Rule 1: 180-Minute Cooldown Guarantee</strong>
                 <span className="text-slate-500 leading-relaxed">
@@ -1312,10 +1574,17 @@ function LiveVisitMonitorContent() {
                   Every dynamic TOTP access code generated in the employee mobile app is bound to the facility polygon. Remote check-ins from office or home are denied.
                 </span>
               </div>
+              <div className="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80 space-y-1">
+                <strong className="text-[#0B1F33] block">Rule 3: Physical Velocity Impossibility</strong>
+                <span className="text-slate-500 leading-relaxed">
+                  Flagged when consecutive check-ins between separate venues require transit speeds &gt;40 km/h (accounting for Kigali traffic conditions).
+                </span>
+              </div>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

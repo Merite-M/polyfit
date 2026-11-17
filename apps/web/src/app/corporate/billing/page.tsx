@@ -10,6 +10,7 @@ import { DepartmentAllocationBar } from "@/components/corporate/billing/Departme
 import { InvoiceTable, InvoiceRecord } from "@/components/corporate/billing/InvoiceTable";
 import { InvoiceDetailDrawer } from "@/components/corporate/billing/InvoiceDetailDrawer";
 import { DisputeModal } from "@/components/corporate/billing/DisputeModal";
+import { RraTaxCertificateModal } from "@/components/operations/finance/RraTaxCertificateModal";
 import {
   Download,
   RefreshCw,
@@ -32,6 +33,8 @@ export default function BillingPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [disputeInvoiceTarget, setDisputeInvoiceTarget] = useState<InvoiceRecord | null>(null);
   const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
+  const [taxCertInvoiceTarget, setTaxCertInvoiceTarget] = useState<InvoiceRecord | null>(null);
+  const [isTaxCertModalOpen, setIsTaxCertModalOpen] = useState(false);
 
   const handleOpenDetail = (invoice: InvoiceRecord) => {
     setSelectedInvoice(invoice);
@@ -41,6 +44,11 @@ export default function BillingPage() {
   const handleOpenDispute = (invoice: InvoiceRecord) => {
     setDisputeInvoiceTarget(invoice);
     setIsDisputeModalOpen(true);
+  };
+
+  const handleOpenTaxCert = (invoice: InvoiceRecord) => {
+    setTaxCertInvoiceTarget(invoice);
+    setIsTaxCertModalOpen(true);
   };
 
   const handleSubmitDispute = async (invoiceId: string, reason: string, notes: string) => {
@@ -163,6 +171,7 @@ export default function BillingPage() {
             invoices={invoices}
             onSelectInvoice={handleOpenDetail}
             onDisputeInvoice={handleOpenDispute}
+            onInspectTaxCert={handleOpenTaxCert}
             isLoading={isLoadingInvoices}
           />
         </div>
@@ -182,6 +191,14 @@ export default function BillingPage() {
         onClose={() => setIsDisputeModalOpen(false)}
         invoice={disputeInvoiceTarget}
         onSubmitDispute={handleSubmitDispute}
+      />
+
+      {/* RRA Article 24 CIT Tax-Shield Certificate Modal */}
+      <RraTaxCertificateModal
+        isOpen={isTaxCertModalOpen}
+        onClose={() => setIsTaxCertModalOpen(false)}
+        invoiceId={taxCertInvoiceTarget?.id || null}
+        invoiceNumber={taxCertInvoiceTarget?.invoice_number}
       />
     </div>
   );

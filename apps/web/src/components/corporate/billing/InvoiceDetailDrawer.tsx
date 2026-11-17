@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { formatRwf, formatInvoiceDate, generateRraEbmInvoicePdf } from "@/lib/invoice-pdf";
 import { apiFetch } from "@/lib/api-client";
 import {
@@ -21,6 +22,7 @@ import {
   ShieldCheck,
   FileText,
   Users,
+  RefreshCw,
 } from "lucide-react";
 
 interface AuditVisit {
@@ -52,11 +54,15 @@ export function InvoiceDetailDrawer({
   invoice,
   onDispute,
 }: InvoiceDetailDrawerProps) {
-  const [activeTab, setActiveTab] = useState<"items" | "audit" | "payment">("items");
+  const [activeTab, setActiveTab] = useState<"items" | "audit" | "payment" | "tax_shield">("items");
   const [auditVisits, setAuditVisits] = useState<AuditVisit[]>([]);
   const [isLoadingAudit, setIsLoadingAudit] = useState(false);
   const [auditSearchQuery, setAuditSearchQuery] = useState("");
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [taxCertData, setTaxCertData] = useState<any | null>(null);
+  const [isLoadingTaxCert, setIsLoadingTaxCert] = useState(false);
+  const [taxCertError, setTaxCertError] = useState<string | null>(null);
+  const [copiedSeal, setCopiedSeal] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [cachedInvoice, setCachedInvoice] = useState<any>(invoice);
 
@@ -165,6 +171,36 @@ export function InvoiceDetailDrawer({
       navigator.clipboard.writeText(text);
       setCopiedField(label);
       setTimeout(() => setCopiedField(null), 2000);
+    }
+  };
+
+  // Fetch RRA Article 24 CIT Tax-Shield Certificate whenever the tax_shield tab is selected
+  useEffect(() => {
+    if (isOpen && activeInvoice?.id && activeTab === "tax_shield") {
+      setIsLoadingTaxCert(true);
+      setTaxCertError(null);
+      apiFetch<any>(`/api/billing/invoices/${activeInvoice.id}/tax-certificate`)
+        .then((res) => {
+          if (res?.certificate) {
+            setTaxCertData(res.certificate);
+          } else {
+            setTaxCertError(res?.error || "Could not retrieve certificate");
+          }
+        })
+        .catch((err) => {
+          setTaxCertError(err.message || "Failed to load RRA tax certificate");
+        })
+        .finally(() => {
+          setIsLoadingTaxCert(false);
+        });
+    }
+  }, [isOpen, activeInvoice?.id, activeTab]);
+
+  const handleCopySeal = () => {
+    if (taxCertData?.cryptographic_seal) {
+      navigator.clipboard.writeText(taxCertData.cryptographic_seal);
+      setCopiedSeal(true);
+      setTimeout(() => setCopiedSeal(false), 2000);
     }
   };
 
@@ -402,6 +438,17 @@ export function InvoiceDetailDrawer({
             >
               <CreditCard className="w-3.5 h-3.5" />
               <span>Settlement Rails</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("tax_shield")}
+              className={`pb-3 text-xs font-bold transition-colors cursor-pointer border-b-2 flex items-center gap-1.5 ${
+                activeTab === "tax_shield"
+                  ? "border-purple-600 text-purple-700"
+                  : "border-transparent text-[#526173] hover:text-[#0B1F33]"
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
+              <span>RRA CIT Tax Shield (30%)</span>
             </button>
           </div>
 
@@ -720,6 +767,118 @@ export function InvoiceDetailDrawer({
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* TAB 4: RRA Article 24 CIT Tax Shield Certificate */}
+          {activeTab === "tax_shield" && (
+            <div className="space-y-4">
+              {isLoadingTaxCert ? (
+                <div className="p-8 text-center text-xs text-[#8491A3] space-y-2">
+                  <RefreshCw className="w-6 h-6 animate-spin text-purple-600 mx-auto" />
+                  <p>Generating cryptographically sealed tax certificate...</p>
+                </div>
+              ) : taxCertError ? (
+                <div className="p-6 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-center space-y-2 text-xs">
+                  <AlertCircle className="w-6 h-6 text-rose-600 mx-auto" />
+                  <p className="font-bold">Failed to load certificate</p>
+                  <p className="text-rose-600">{taxCertError}</p>
+                </div>
+              ) : taxCertData ? (
+                <div className="p-5 rounded-2xl border-2 border-purple-200 bg-gradient-to-b from-white to-purple-50/30 space-y-4">
+                  <div className="border-b border-purple-100 pb-3 flex items-start justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 font-mono block">
+                        REPUBLIC OF RWANDA • RWANDA REVENUE AUTHORITY (RRA)
+                      </span>
+                      <h4 className="font-extrabold text-[#0B1F33] text-sm mt-0.5">
+                        Article 24 CIT 30% Wellness Deduction Certificate
+                      </h4>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Statutory wellness expense deduction under Rwanda Law Nº 027/2022
+                      </p>
+                    </div>
+                    <span className="font-mono text-[10px] bg-purple-100 text-purple-800 px-2 py-0.5 rounded font-bold">
+                      {taxCertData.certificate_number}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 rounded-xl bg-white border border-purple-100 space-y-0.5">
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold">Client Company</span>
+                      <p className="font-bold text-[#0B1F33]">{taxCertData.organization_name}</p>
+                      <p className="text-[11px] font-mono text-slate-500">TIN: {taxCertData.organization_tin || "TIN-Pending"}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-purple-100 space-y-0.5">
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold">Certified Telemetry</span>
+                      <p className="font-bold text-[#006D3C] flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>{taxCertData.total_verified_visits} Verified Visits</span>
+                      </p>
+                      <p className="text-[11px] text-slate-500 font-mono">{taxCertData.period_start} → {taxCertData.period_end}</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-white border border-purple-200 space-y-2 text-xs">
+                    <div className="flex justify-between text-slate-600">
+                      <span>Gross Invoice Spend:</span>
+                      <span className="font-mono font-bold text-slate-900">{formatRwf(taxCertData.gross_spend_rwf)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Input VAT Deduction (18%):</span>
+                      <span className="font-mono text-indigo-700">-{formatRwf(taxCertData.vat_deduction_rwf)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-700 pt-1 border-t border-purple-100 font-semibold">
+                      <span>Net Qualifying Wellness Spend:</span>
+                      <span className="font-mono text-slate-900">{formatRwf(taxCertData.net_qualifying_wellness_spend_rwf)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-extrabold text-purple-900 pt-1.5 border-t border-purple-200">
+                      <span>Guaranteed 30% CIT Deduction:</span>
+                      <span className="font-mono text-purple-700">{formatRwf(taxCertData.cit_deduction_benefit_rwf)}</span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-900 text-white space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#28D17C]" />
+                        HMAC-SHA256 Cryptographic Seal
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCopySeal}
+                        className="text-[10px] text-slate-400 hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        {copiedSeal ? (
+                          <>
+                            <Check className="w-3 h-3 text-[#28D17C]" />
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            <span>Copy Seal</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <p className="font-mono text-[10px] text-slate-300 break-all bg-slate-950 p-2 rounded-lg border border-slate-800">
+                      {taxCertData.cryptographic_seal}
+                    </p>
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[10px] text-slate-400">Public Audit Link:</span>
+                      <Link
+                        href={`/verify/tax-cert/${taxCertData.cryptographic_seal}`}
+                        target="_blank"
+                        className="text-[11px] font-bold text-[#28D17C] hover:underline flex items-center gap-1"
+                      >
+                        <span>Verify Seal Online</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
           )}
         </div>
