@@ -284,13 +284,23 @@ async function evaluateEmployeeEligibility(arg1, arg2, arg3, arg4, arg5) {
     }
   }
 
-  // 6 & 7. Concurrently check Provider Contract and Monthly Quota
-  const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-  const [contractRes, visitsRes] = await Promise.all([
+  // 6 & 7. Concurrently check Provider Contract and Monthly Quota (UTC Boundary)
+  const now = new Date();
+  const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0)).toISOString();
+
+  // Query custom employer rider or master provider agreement concurrently with visits
+  const [customContractRes, masterContractRes, visitsRes] = await Promise.all([
     supabase
       .from('provider_contracts')
       .select('id, status, per_visit_rate, monthly_cap')
       .eq('org_id', effectiveOrgId)
+      .eq('provider_id', location.provider_id)
+      .eq('status', 'active')
+      .maybeSingle(),
+    supabase
+      .from('provider_contracts')
+      .select('id, status, per_visit_rate, monthly_cap')
+      .is('org_id', null)
       .eq('provider_id', location.provider_id)
       .eq('status', 'active')
       .maybeSingle(),
@@ -302,8 +312,8 @@ async function evaluateEmployeeEligibility(arg1, arg2, arg3, arg4, arg5) {
       .gte('check_in_at', startOfMonth)
   ]);
 
-  const { data: contract, error: contractError } = contractRes;
-  if (contractError || !contract) {
+  const contract = customContractRes.data || masterContractRes.data;
+  if (!contract) {
     return {
       eligible: false,
       reason: 'No active contract between employer organization and this wellness provider',

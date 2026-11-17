@@ -144,27 +144,32 @@ async function generateSettlement(providerId, periodStart, periodEnd) {
 
   const allOrgIds = Array.from(new Set([...Object.keys(billableVisitsByOrg), ...Object.keys(heldVisitsByOrg)]));
 
-  // Get contract rates for each org
+  // Get custom contracts and Master Provider Agreement (org_id IS NULL)
   const { data: contracts, error: contractError } = await supabase
     .from('provider_contracts')
     .select('org_id, per_visit_rate')
     .eq('provider_id', providerId)
-    .in('org_id', allOrgIds)
     .eq('status', 'active');
 
   if (contractError) {
     throw new Error(`Failed to query contracts: ${contractError.message}`);
   }
 
+  let masterRate = 8000;
   const rateByOrg = {};
   for (const contract of (contracts || [])) {
-    rateByOrg[contract.org_id] = parseFloat(contract.per_visit_rate);
+    if (!contract.org_id) {
+      masterRate = parseFloat(contract.per_visit_rate) || masterRate;
+    } else {
+      rateByOrg[contract.org_id] = parseFloat(contract.per_visit_rate);
+    }
   }
 
-  // Check for missing contracts
-  const missingContracts = allOrgIds.filter(oid => rateByOrg[oid] === undefined);
-  if (missingContracts.length > 0) {
-    console.warn(`[settlementService] Skipping orgs without active contract for provider ${provider.name}: ${missingContracts.join(', ')}`);
+  // Default any orgs without custom bilateral contract to the Master Provider Agreement rate
+  for (const oid of allOrgIds) {
+    if (rateByOrg[oid] === undefined) {
+      rateByOrg[oid] = masterRate;
+    }
   }
 
   // ── Calculate billable settlement totals ──
@@ -358,8 +363,22 @@ async function listSettlements({ providerId, status, page = 1, limit = 20 } = {}
 
   if (error) throw new Error(`Failed to list settlements: ${error.message}`);
 
+  const enriched = (data || []).map(s => {
+    const gross = Number(s.total_amount) || 0;
+    const fee = Math.round(gross * 0.15);
+    const net = gross - fee;
+    return {
+      ...s,
+      settlement_number: s.settlement_number || `PF-SET-${(s.settlement_period_end || '').slice(0, 7)}-${s.id.slice(0, 6).toUpperCase()}`,
+      gross_amount: gross,
+      platform_fee_amount: fee,
+      net_payout_amount: net,
+      net_amount: net
+    };
+  });
+
   return {
-    settlements: data || [],
+    settlements: enriched,
     total: count || 0,
     page,
     limit
@@ -424,16 +443,24 @@ async function getSettlementDetail(settlementId) {
   const grossAmount = Number(settlement.total_amount) || 0;
   const netBeforeVat = Math.round((grossAmount / 1.18) * 100) / 100;
   const vatAmount = Math.round((grossAmount - netBeforeVat) * 100) / 100;
+  const platformFeePct = 15;
+  const platformFeeAmount = Math.round(grossAmount * (platformFeePct / 100));
+  const netPayoutAmount = grossAmount - platformFeeAmount;
+  const settlementNum = settlement.settlement_number || `PF-SET-${(settlement.settlement_period_end || '').slice(0, 7)}-${settlement.id.slice(0, 6).toUpperCase()}`;
 
   return {
     ...settlement,
+    settlement_number: settlementNum,
     net15_disbursement_date: net15PayoutDate,
     payout_due_date: net15PayoutDate,
     subtotal_exclusive_vat: netBeforeVat,
     vat_rate_pct: 18,
     vat_amount: vatAmount,
     gross_amount: grossAmount,
-    net_amount: grossAmount,
+    platform_fee_percentage: platformFeePct,
+    platform_fee_amount: platformFeeAmount,
+    net_payout_amount: netPayoutAmount,
+    net_amount: netPayoutAmount,
     visit_breakdown: visitBreakdown,
     visit_count_verified: visitBreakdown.length
   };

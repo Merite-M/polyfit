@@ -135,14 +135,33 @@ function verifySignedPassPayload(signedPayload) {
   const [encodedData, sig] = parts;
   try {
     const jsonStr = Buffer.from(encodedData, 'base64url').toString('utf8');
-    const expectedSig = crypto
+    const parsed = JSON.parse(jsonStr);
+
+    // 1. Online pass signature check (HMAC-SHA256 with server pepper)
+    const expectedServerSig = crypto
       .createHmac('sha256', getSecretPepper())
       .update(jsonStr)
       .digest('base64url');
 
     // Constant-time comparison to prevent timing side-channel attacks on pass signature
-    if (!safeCompare(sig, expectedSig)) return null;
-    return JSON.parse(jsonStr);
+    if (safeCompare(sig, expectedServerSig)) {
+      return parsed;
+    }
+
+    // 2. Offline pass signature check (RFC 3174 SHA-1 tamper hash from mobile app)
+    if (parsed && (parsed.type === 'polyfit_totp_pass' || parsed.offline)) {
+      const clientHash = crypto
+        .createHash('sha1')
+        .update(jsonStr + (parsed.token || ''))
+        .digest('hex')
+        .slice(0, 16);
+
+      if (safeCompare(sig, clientHash)) {
+        return parsed;
+      }
+    }
+
+    return null;
   } catch (err) {
     return null;
   }

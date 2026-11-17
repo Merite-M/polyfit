@@ -26,15 +26,25 @@ describe('PolyFit Partner Ecosystem End-to-End Audit & Hardening', () => {
   let testSettlementId = null;
   let activeContractId = null;
 
-  before(async () => {
-    // Clean any residual test visits for Claire to allow clean passback testing
-    if (supabase) {
-      await supabase
-        .from('visits')
-        .delete()
-        .eq('employee_id', CLAIRE_EMP_ID)
-        .gte('created_at', new Date(Date.now() - 3600000).toISOString());
+  async function cleanClaireVisits() {
+    if (!supabase) return;
+    const { data: visits } = await supabase
+      .from('visits')
+      .select('id')
+      .eq('employee_id', CLAIRE_EMP_ID);
 
+    if (visits && visits.length > 0) {
+      const vIds = visits.map((v) => v.id);
+      await supabase.from('visit_disputes').delete().in('visit_id', vIds);
+      await supabase.from('visits').delete().in('id', vIds);
+    }
+  }
+
+  before(async () => {
+    // Clean any residual test visits for Claire to allow clean passback and quota testing
+    await cleanClaireVisits();
+
+    if (supabase) {
       // Fetch active contract
       const { data: contract } = await supabase
         .from('provider_contracts')
@@ -468,5 +478,9 @@ describe('PolyFit Partner Ecosystem End-to-End Audit & Hardening', () => {
       assert.ok(found, 'Created partner check-in must appear in Operations visit ledger');
       assert.strictEqual(found.employee_id, CLAIRE_EMP_ID);
     });
+  });
+
+  after(async () => {
+    await cleanClaireVisits();
   });
 });

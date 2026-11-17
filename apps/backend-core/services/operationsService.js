@@ -163,9 +163,9 @@ async function getOperationsOverview() {
     totalSettlementLiability = verifiedMonthCount * 3800;
   }
 
-  // Fallback financial baseline if database has early-stage sample records
-  const invoicedDisplay = totalInvoicedMtd > 0 ? totalInvoicedMtd : 18500000;
-  const liabilityDisplay = totalSettlementLiability > 0 ? totalSettlementLiability : 13875000;
+  // Live ledger financials directly from database
+  const invoicedDisplay = totalInvoicedMtd;
+  const liabilityDisplay = totalSettlementLiability;
   const grossMarginSpread = Math.max(0, invoicedDisplay - liabilityDisplay);
   const grossMarginPercentage = invoicedDisplay > 0
     ? Number(((grossMarginSpread / invoicedDisplay) * 100).toFixed(1))

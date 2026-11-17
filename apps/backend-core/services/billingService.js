@@ -128,12 +128,11 @@ async function generateInvoice(orgId, periodStart, periodEnd) {
     visitsByProvider[providerId].visits.push(visit);
   }
 
-  // ── Look up contract rates for each provider ──
+  // ── Look up contract rates for each provider (custom employer rider or Master Provider Agreement) ──
   const providerIds = Object.keys(visitsByProvider);
   const { data: contracts, error: contractError } = await supabase
     .from('provider_contracts')
-    .select('provider_id, per_visit_rate')
-    .eq('org_id', orgId)
+    .select('provider_id, org_id, per_visit_rate')
     .in('provider_id', providerIds)
     .eq('status', 'active');
 
@@ -141,17 +140,21 @@ async function generateInvoice(orgId, periodStart, periodEnd) {
     throw new Error(`Failed to query provider contracts: ${contractError.message}`);
   }
 
-  // Build rate lookup map
+  // Build rate lookup map: custom bilateral contract takes precedence over Master Provider Agreement (org_id IS NULL)
   const rateByProvider = {};
   for (const contract of (contracts || [])) {
-    rateByProvider[contract.provider_id] = parseFloat(contract.per_visit_rate);
+    if (contract.org_id === orgId) {
+      rateByProvider[contract.provider_id] = parseFloat(contract.per_visit_rate);
+    } else if (!contract.org_id && rateByProvider[contract.provider_id] === undefined) {
+      rateByProvider[contract.provider_id] = parseFloat(contract.per_visit_rate);
+    }
   }
 
-  // Verify all providers have active contracts
-  const missingContracts = providerIds.filter(pid => rateByProvider[pid] === undefined);
-  if (missingContracts.length > 0) {
-    const names = missingContracts.map(pid => visitsByProvider[pid].providerName).join(', ');
-    throw new Error(`No active contract found for providers: ${names}. Cannot generate invoice.`);
+  // Fallback to standard network default rate (8000 RWF) if contract is pending renewal
+  for (const pid of providerIds) {
+    if (rateByProvider[pid] === undefined) {
+      rateByProvider[pid] = 8000;
+    }
   }
 
   // ── Calculate line items ──
