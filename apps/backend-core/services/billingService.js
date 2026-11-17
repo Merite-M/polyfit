@@ -987,13 +987,38 @@ async function verifyTaxCertificateSeal(seal) {
     const computedSeal = crypto.createHmac('sha256', secretKey).update(dataToSign).digest('hex');
 
     if (computedSeal === seal) {
+      const gross = parseFloat(inv.total_amount) || 0;
+      const vat = parseFloat(inv.tax_amount) || Math.round(gross * (0.18 / 1.18));
+      const net = gross - vat;
+      const cit = Math.round(net * 0.3);
+
       return {
         verified: true,
+        certificate: {
+          certificate_number: certNumber,
+          organization_name: org.name,
+          organization_tin: org.tax_id,
+          invoice_number: inv.invoice_number,
+          total_amount: gross,
+          verified_visits: totalVerifiedVisits,
+          status: inv.status,
+          fiscal_year: fiscalYear,
+          period_start: inv.billing_period_start,
+          period_end: inv.billing_period_end,
+          total_verified_visits: totalVerifiedVisits,
+          gross_spend_rwf: gross,
+          vat_deduction_rwf: vat,
+          net_qualifying_wellness_spend_rwf: net,
+          cit_deduction_benefit_rwf: cit,
+          rra_compliance_statement: 'Certified that all attendance records backing this invoice were cryptographically verified through decentralized TOTP and geo-fenced partner terminal scanners in compliance with RRA verifiable corporate benefit standards.',
+          cryptographic_seal: seal,
+          issued_at: new Date().toISOString()
+        },
         certificate_number: certNumber,
         organization_name: org.name,
         organization_tin: org.tax_id,
         invoice_number: inv.invoice_number,
-        total_amount: parseFloat(inv.total_amount),
+        total_amount: gross,
         verified_visits: totalVerifiedVisits,
         status: inv.status,
         fiscal_year: fiscalYear,
