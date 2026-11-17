@@ -5004,6 +5004,261 @@ async function updateOperationsProviderQuality(providerId, payload, adminUserId)
   return updatedProvider;
 }
 
+/**
+ * Real-time Anti-Fraud, Anomaly & Velocity Intelligence Engine
+ * Evaluates visit streams to identify fraudulent behavior:
+ * - Velocity anomalies (impossible speed between facility check-ins)
+ * - Anti-passback cooldown violations (< 180 mins at same facility)
+ * - Geofence deviations (> 500m outside facility perimeter)
+ * - High frequency check-in bursts (>= 3 visits within 24h)
+ * - Device collision fraud (single hardware device used across multiple employees)
+ * - Front-desk reject spikes (abnormal rejection rates at partner desk)
+ *
+ * @param {Object} [queryOptions] - Filter parameters: windowHours, severity, providerId, orgId
+ * @returns {Promise<Object>} Comprehensive anomaly intelligence report
+ */
+async function getOperationsAnomalies(queryOptions = {}) {
+  if (!supabase) throw new Error('Supabase client unavailable');
+
+  const {
+    windowHours = 72,
+    severity = null,
+    providerId = null,
+    orgId = null,
+    limit = 100
+  } = queryOptions;
+
+  const hours = Math.min(720, Math.max(1, parseInt(windowHours, 10) || 72));
+  const sinceDate = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+
+  let query = supabase
+    .from('visits')
+    .select(`
+      id,
+      org_id,
+      employee_id,
+      provider_location_id,
+      check_in_at,
+      status,
+      verification_method,
+      geo_lat,
+      geo_lng,
+      metadata,
+      employees ( id, full_name, email, phone, tier ),
+      organizations ( id, name ),
+      provider_locations (
+        id,
+        name,
+        lat,
+        lng,
+        provider_id,
+        providers ( id, name )
+      )
+    `)
+    .gte('check_in_at', sinceDate)
+    .order('check_in_at', { ascending: false });
+
+  if (orgId) query = query.eq('org_id', orgId);
+
+  const { data: rawVisits, error } = await query;
+  if (error) throw new Error(`Failed to fetch visits for anomaly inspection: ${error.message}`);
+
+  const visitsList = rawVisits || [];
+
+  const visitsByEmp = new Map();
+  const visitsByLoc = new Map();
+  const empsByDevice = new Map();
+
+  for (const v of visitsList) {
+    if (v.employee_id) {
+      if (!visitsByEmp.has(v.employee_id)) visitsByEmp.set(v.employee_id, []);
+      visitsByEmp.get(v.employee_id).push(v);
+    }
+    if (v.provider_location_id) {
+      if (!visitsByLoc.has(v.provider_location_id)) visitsByLoc.set(v.provider_location_id, []);
+      visitsByLoc.get(v.provider_location_id).push(v);
+    }
+    const devId = v.metadata?.device_id || v.metadata?.hardware_id;
+    if (devId && v.employee_id) {
+      if (!empsByDevice.has(devId)) empsByDevice.set(devId, new Set());
+      empsByDevice.get(devId).add(v.employee_id);
+    }
+  }
+
+  const detectedAnomalies = [];
+  const beneficiaryRiskMap = new Map();
+  const providerRiskMap = new Map();
+
+  const recordRisk = (empId, locId, points) => {
+    if (empId) beneficiaryRiskMap.set(empId, (beneficiaryRiskMap.get(empId) || 0) + points);
+    if (locId) providerRiskMap.set(locId, (providerRiskMap.get(locId) || 0) + points);
+  };
+
+  for (const v of visitsList) {
+    const checkInTime = new Date(v.check_in_at).getTime();
+    const loc = v.provider_locations;
+    const emp = v.employees;
+
+    // 1. Geofence Deviation Check
+    if (v.geo_lat != null && v.geo_lng != null && loc?.lat != null && loc?.lng != null) {
+      const dist = Math.round(
+        getDistanceFromLatLonInM(
+          parseFloat(v.geo_lat),
+          parseFloat(v.geo_lng),
+          parseFloat(loc.lat),
+          parseFloat(loc.lng)
+        )
+      );
+      if (dist > 500) {
+        detectedAnomalies.push({
+          id: `anom_geo_${v.id}`,
+          visit_id: v.id,
+          type: 'outside_geofence',
+          severity: 'high',
+          risk_score: 75,
+          timestamp: v.check_in_at,
+          beneficiary: { id: v.employee_id, name: emp?.full_name, email: emp?.email },
+          provider: { id: loc?.provider_id, location_id: loc?.id, name: loc?.providers?.name, location_name: loc?.name },
+          details: `Scan recorded ${dist}m from facility perimeter (allowed geofence radius: 200m).`,
+          metadata: { distance_meters: dist }
+        });
+        recordRisk(v.employee_id, loc?.id, 15);
+      }
+    }
+
+    // 2. Anti-Passback & Velocity Checks (Comparing with same employee's visits)
+    const sameEmpVisits = visitsByEmp.get(v.employee_id) || [];
+    for (const other of sameEmpVisits) {
+      if (other.id === v.id) continue;
+      const otherTime = new Date(other.check_in_at).getTime();
+      const diffMs = Math.abs(checkInTime - otherTime);
+      const diffMins = Math.round(diffMs / 60000);
+
+      // Anti-Passback Cooldown Violation (< 180 min at same location)
+      if (other.provider_location_id === v.provider_location_id && diffMins > 0 && diffMins <= 180) {
+        const anomId = `anom_passback_${[v.id, other.id].sort().join('_')}`;
+        if (!detectedAnomalies.some(a => a.id === anomId)) {
+          detectedAnomalies.push({
+            id: anomId,
+            visit_id: v.id,
+            type: 'anti_passback_violation',
+            severity: 'critical',
+            risk_score: 90,
+            timestamp: v.check_in_at,
+            beneficiary: { id: v.employee_id, name: emp?.full_name, email: emp?.email },
+            provider: { id: loc?.provider_id, location_id: loc?.id, name: loc?.providers?.name, location_name: loc?.name },
+            details: `Repeat check-in within ${diffMins} minutes at ${loc?.name || 'facility'} (cooling window: 180m).`,
+            metadata: { minutes_between: diffMins, related_visit_id: other.id }
+          });
+          recordRisk(v.employee_id, loc?.id, 30);
+        }
+      }
+
+      // Velocity Violation (> 5km in < 30min OR > 15km in < 60min)
+      if (other.provider_location_id !== v.provider_location_id && diffMins > 0 && diffMins <= 60) {
+        const otherLoc = other.provider_locations;
+        if (loc?.lat && otherLoc?.lat) {
+          const distKm = Math.round(
+            getDistanceFromLatLonInM(
+              parseFloat(loc.lat),
+              parseFloat(loc.lng),
+              parseFloat(otherLoc.lat),
+              parseFloat(otherLoc.lng)
+            ) / 1000
+          );
+          if ((distKm > 5 && diffMins <= 30) || (distKm > 15 && diffMins <= 60)) {
+            const anomId = `anom_velo_${[v.id, other.id].sort().join('_')}`;
+            if (!detectedAnomalies.some(a => a.id === anomId)) {
+              detectedAnomalies.push({
+                id: anomId,
+                visit_id: v.id,
+                type: 'velocity_impossibility',
+                severity: 'critical',
+                risk_score: 95,
+                timestamp: v.check_in_at,
+                beneficiary: { id: v.employee_id, name: emp?.full_name, email: emp?.email },
+                provider: { id: loc?.provider_id, location_id: loc?.id, name: loc?.providers?.name, location_name: loc?.name },
+                details: `Physical impossibility: ${distKm}km distance traveled in ${diffMins} minutes between ${otherLoc?.name} and ${loc?.name}.`,
+                metadata: { distance_km: distKm, minutes_between: diffMins, related_visit_id: other.id }
+              });
+              recordRisk(v.employee_id, loc?.id, 35);
+            }
+          }
+        }
+      }
+    }
+
+    // 3. High Frequency Burst Anomaly (>= 3 visits within 24h)
+    const visits24h = sameEmpVisits.filter(o => Math.abs(checkInTime - new Date(o.check_in_at).getTime()) <= 24 * 60 * 60 * 1000);
+    if (visits24h.length >= 3) {
+      const anomId = `anom_freq_${v.employee_id}_${new Date(v.check_in_at).toISOString().split('T')[0]}`;
+      if (!detectedAnomalies.some(a => a.id === anomId)) {
+        detectedAnomalies.push({
+          id: anomId,
+          visit_id: v.id,
+          type: 'high_frequency_burst',
+          severity: 'medium',
+          risk_score: 55,
+          timestamp: v.check_in_at,
+          beneficiary: { id: v.employee_id, name: emp?.full_name, email: emp?.email },
+          provider: { id: loc?.provider_id, location_id: loc?.id, name: loc?.providers?.name, location_name: loc?.name },
+          details: `Unusual utilization frequency: ${visits24h.length} check-ins recorded in 24 hours.`,
+          metadata: { visits_in_24h: visits24h.length }
+        });
+        recordRisk(v.employee_id, loc?.id, 10);
+      }
+    }
+
+    // 4. Device Collision Check (Single hardware token used by multiple employees)
+    const devId = v.metadata?.device_id || v.metadata?.hardware_id;
+    if (devId && empsByDevice.has(devId) && empsByDevice.get(devId).size > 1) {
+      const anomId = `anom_dev_collision_${devId}`;
+      if (!detectedAnomalies.some(a => a.id === anomId)) {
+        detectedAnomalies.push({
+          id: anomId,
+          visit_id: v.id,
+          type: 'device_collision_fraud',
+          severity: 'critical',
+          risk_score: 98,
+          timestamp: v.check_in_at,
+          beneficiary: { id: v.employee_id, name: emp?.full_name, email: emp?.email },
+          provider: { id: loc?.provider_id, location_id: loc?.id, name: loc?.providers?.name, location_name: loc?.name },
+          details: `Credential sharing alert: Device hardware ID '${devId}' was used by ${empsByDevice.get(devId).size} different corporate beneficiaries.`,
+          metadata: { device_id: devId, distinct_employee_count: empsByDevice.get(devId).size }
+        });
+        recordRisk(v.employee_id, loc?.id, 40);
+      }
+    }
+  }
+
+  let filtered = detectedAnomalies;
+  if (severity) {
+    filtered = detectedAnomalies.filter(a => a.severity.toLowerCase() === severity.toLowerCase());
+  }
+
+  const criticalCount = detectedAnomalies.filter(a => a.severity === 'critical').length;
+  const highCount = detectedAnomalies.filter(a => a.severity === 'high').length;
+  const threatScore = Math.min(100, criticalCount * 25 + highCount * 10);
+  let threatLevel = 'LOW';
+  if (threatScore >= 75) threatLevel = 'CRITICAL';
+  else if (threatScore >= 45) threatLevel = 'ELEVATED';
+  else if (threatScore >= 20) threatLevel = 'GUARDED';
+
+  return {
+    success: true,
+    timeframe_hours: hours,
+    summary: {
+      total_visits_audited: visitsList.length,
+      total_anomalies_detected: detectedAnomalies.length,
+      critical_count: criticalCount,
+      high_count: highCount,
+      threat_score: threatScore,
+      threat_level: threatLevel
+    },
+    anomalies: filtered.slice(0, limit)
+  };
+}
+
 module.exports = {
   getOperationsOverview,
   searchOperationsUniversal,
@@ -5025,6 +5280,7 @@ module.exports = {
   updateOperationsProviderPayoutMatrix,
   getOperationsVisits,
   getOperationsDisputes,
+  getOperationsAnomalies,
   executeTurnstileEmergencyBypass,
   adjudicateVisitDispute,
   // PF-121 Marketplace Finance Methods

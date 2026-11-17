@@ -11,9 +11,12 @@ const {
 const VALID_CATEGORIES = ['gym', 'pool', 'studio', 'clinic', 'wellness_center', 'sports'];
 
 const DEFAULT_MAX_VISITS_BY_TIER = {
+  starter: 8,
   basic: 8,
   standard: 12,
-  premium: 20
+  professional: 16,
+  premium: 20,
+  executive: null
 };
 
 /**

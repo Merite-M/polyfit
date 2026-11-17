@@ -140,11 +140,17 @@ describe('PolyFit Partner Ecosystem End-to-End Audit & Hardening', () => {
         return;
       }
 
-      // Clear any visits for altEmp to prevent stale anti-passback locks
-      await supabase
+      // Clear any disputes and visits for altEmp to prevent stale anti-passback locks
+      const { data: altVisits } = await supabase
         .from('visits')
-        .delete()
+        .select('id')
         .eq('employee_id', altEmp.id);
+
+      if (altVisits && altVisits.length > 0) {
+        const altVIds = altVisits.map((v) => v.id);
+        await supabase.from('visit_disputes').delete().in('visit_id', altVIds);
+        await supabase.from('visits').delete().in('id', altVIds);
+      }
 
       const altSecret = deriveEmployeeSecret(altEmp.id);
       const altToken = generateTotp(altSecret);

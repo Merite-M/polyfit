@@ -287,4 +287,42 @@ router.patch('/:id', requireAuth, requireOrgAccess((req) => req.params.id), requ
   }
 });
 
+const { syncOrganizationRoster } = require('../services/employeeService');
+
+/**
+ * POST /api/organizations/:id/sync-roster
+ * Enterprise HRIS / SCIM Automated Roster Sync & Deprovisioning Rail
+ * Allows HR teams, Workday/BambooHR webhooks, and IT admins to reconcile employee roster
+ */
+router.post('/:id/sync-roster', requireAuth, requireOrgAccess((req) => req.params.id), requireRole('super_admin', 'polyfit_ops', 'org_admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { roster, full_roster_sync = false, default_tier = 'standard', auto_reactivate = true, sync_source = 'hris_api' } = req.body;
+
+    if (!Array.isArray(roster)) {
+      return res.status(400).json({
+        error: 'Roster must be an array of employee objects',
+        code: 'ORG_INVALID_ROSTER_PAYLOAD'
+      });
+    }
+
+    const result = await syncOrganizationRoster(id, roster, {
+      fullRosterSync: Boolean(full_roster_sync),
+      defaultTier: String(default_tier),
+      autoReactivate: Boolean(auto_reactivate),
+      syncSource: String(sync_source)
+    });
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[organizationRoutes/sync-roster] Error:', error);
+    const status = error.status || 500;
+    return res.status(status).json({
+      error: error.message || 'Internal server error executing roster sync',
+      code: error.code || 'ROSTER_SYNC_FAILED'
+    });
+  }
+});
+
 module.exports = router;
+

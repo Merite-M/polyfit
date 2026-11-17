@@ -21,6 +21,7 @@ const {
   updateOperationsProviderPayoutMatrix,
   getOperationsVisits,
   getOperationsDisputes,
+  getOperationsAnomalies,
   executeTurnstileEmergencyBypass,
   adjudicateVisitDispute,
   getOperationsFinanceOverview,
@@ -611,6 +612,30 @@ router.get('/visits', async (req, res) => {
     return res.status(500).json({
       error: error.message,
       code: 'OPERATIONS_VISITS_STREAM_FAILED'
+    });
+  }
+});
+
+/**
+ * GET /api/operations/visits/anomalies
+ * GET /api/operations/security/anomalies
+ * Real-time Anti-Fraud, Anomaly & Velocity Intelligence Engine
+ * Evaluates visit streams to identify fraudulent behavior:
+ * - Velocity anomalies (impossible travel speed between facilities)
+ * - Anti-passback cooldown violations (< 180 mins at same facility)
+ * - Geofence deviations (> 500m outside facility perimeter)
+ * - High frequency check-in bursts (>= 3 visits within 24h)
+ * - Device collision fraud (single hardware device used across multiple employees)
+ */
+router.get(['/visits/anomalies', '/security/anomalies'], async (req, res) => {
+  try {
+    const result = await getOperationsAnomalies(req.query);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[operationsRoutes] Security anomalies error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      code: 'OPERATIONS_ANOMALIES_FAILED'
     });
   }
 });

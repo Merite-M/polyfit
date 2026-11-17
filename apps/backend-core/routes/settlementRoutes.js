@@ -9,7 +9,8 @@ const {
   generateAllSettlements,
   listSettlements,
   getSettlementDetail,
-  updateSettlementStatus
+  updateSettlementStatus,
+  processMoMoPayout
 } = require('../services/settlementService');
 
 const router = express.Router();
@@ -157,6 +158,37 @@ router.patch(
       return res.status(statusCode).json({
         error: err.message,
         code: 'SETTLEMENT_STATUS_UPDATE_FAILED'
+      });
+    }
+  }
+);
+
+// ─── POST /api/settlements/:id/disburse/momo ──────────────────────────────────
+// Automated MTN MoMo & Airtel Money batch disbursement rail.
+// Only polyfit_ops/super_admin can disburse funds to provider wallet.
+router.post(
+  ['/:id/disburse/momo', '/:id/payout/momo'],
+  requireAuth,
+  requireRole('polyfit_ops', 'super_admin'),
+  async (req, res) => {
+    try {
+      const { momo_phone, operator = 'mtn', notes } = req.body || {};
+      const adminUserId = req.user?.id || null;
+
+      const result = await processMoMoPayout(req.params.id, {
+        momoPhoneNumber: momo_phone,
+        operator,
+        adminUserId,
+        notes
+      });
+
+      return res.status(200).json(result);
+    } catch (err) {
+      console.error('[settlementRoutes] MoMo disbursement error:', err.message);
+      const statusCode = err.message.includes('not found') ? 404 : 400;
+      return res.status(statusCode).json({
+        error: err.message,
+        code: 'MOMO_DISBURSEMENT_FAILED'
       });
     }
   }

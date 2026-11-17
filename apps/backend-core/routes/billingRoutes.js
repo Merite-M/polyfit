@@ -12,7 +12,9 @@ const {
   getBillingSummary,
   disputeInvoice,
   exportInvoiceAuditCsv,
-  updateInvoiceStatus
+  updateInvoiceStatus,
+  generateTaxCertificate,
+  verifyTaxCertificateSeal
 } = require('../services/billingService');
 
 const router = express.Router();
@@ -331,6 +333,57 @@ router.patch(
       return res.status(statusCode).json({
         error: err.message,
         code: 'BILLING_STATUS_UPDATE_FAILED'
+      });
+    }
+  }
+);
+
+// ─── GET /api/billing/invoices/:id/tax-certificate ────────────────────────────
+// Generate or retrieve Rwanda Revenue Authority (RRA) Article 24 CIT Tax Shield Certificate
+router.get(
+  '/invoices/:id/tax-certificate',
+  requireAuth,
+  requireRole('org_admin', 'polyfit_ops', 'super_admin'),
+  async (req, res) => {
+    try {
+      const invoice = await getInvoiceDetail(req.params.id);
+
+      if (req.primaryRole === 'org_admin' && invoice.org_id !== req.orgId) {
+        return res.status(403).json({
+          error: 'You can only view tax certificates for your own organization',
+          code: 'BILLING_FORBIDDEN_ORG'
+        });
+      }
+
+      const certificate = await generateTaxCertificate(req.params.id);
+      return res.status(200).json(certificate);
+    } catch (err) {
+      console.error('[billingRoutes] Tax certificate generation error:', err.message);
+      const statusCode = err.message.includes('not found') ? 404 : 500;
+      return res.status(statusCode).json({
+        error: err.message,
+        code: 'BILLING_TAX_CERT_FAILED'
+      });
+    }
+  }
+);
+
+// ─── GET /api/billing/tax-certificates/verify/:seal ───────────────────────────
+// Public cryptographic verification of RRA Tax-Shield Certificate by digital seal
+router.get(
+  '/tax-certificates/verify/:seal',
+  async (req, res) => {
+    try {
+      const result = await verifyTaxCertificateSeal(req.params.seal);
+      if (!result.verified) {
+        return res.status(404).json(result);
+      }
+      return res.status(200).json(result);
+    } catch (err) {
+      console.error('[billingRoutes] Tax certificate verification error:', err.message);
+      return res.status(500).json({
+        error: err.message,
+        code: 'VERIFY_FAILED'
       });
     }
   }
