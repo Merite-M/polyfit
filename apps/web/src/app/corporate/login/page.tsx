@@ -22,6 +22,7 @@ import {
 import { PolyFitLogo } from "@/components/ui/polyfit-logo";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api-client";
+import { useAuth } from "@/contexts/AuthContext";
 
 type LoginMode = "signin" | "lookup" | "reset";
 
@@ -43,6 +44,12 @@ function CorporateLoginContent() {
   const emailParam = searchParams.get("email") || "";
   const registeredParam = searchParams.get("registered") === "true";
   const redirectParam = searchParams.get("redirect") || "/corporate";
+  const { enableDemoMode } = useAuth();
+
+  const handleDemoBypass = () => {
+    enableDemoMode?.();
+    router.push(redirectParam || "/corporate");
+  };
 
   const [mode, setMode] = useState<LoginMode>(registeredParam ? "lookup" : "signin");
   const [email, setEmail] = useState<string>(emailParam);
@@ -427,6 +434,22 @@ function CorporateLoginContent() {
                   )}
                 </button>
               </form>
+            )}
+
+            {mode === "signin" && (
+              <div className="pt-4 border-t border-slate-200 text-center space-y-2">
+                <button
+                  type="button"
+                  onClick={handleDemoBypass}
+                  className="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0B1F33] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors border border-slate-200/80 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#008A4B]" />
+                  <span>Explore Corporate Demo (TechCorp Rwanda HR Lead)</span>
+                </button>
+                <p className="text-[10px] text-slate-500">
+                  Instant evaluation clearance for prospective HR managers and CFOs.
+                </p>
+              </div>
             )}
 
             {mode === "lookup" && (
