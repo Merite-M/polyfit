@@ -868,7 +868,7 @@ export function InvoiceDetailDrawer({
                     <div className="flex items-center justify-between pt-1">
                       <span className="text-[10px] text-slate-400">Public Audit Link:</span>
                       <Link
-                        href={`/verify/tax-cert/${taxCertData.cryptographic_seal}`}
+                        href={`/verify/tax-cert?seal=${encodeURIComponent(taxCertData.cryptographic_seal)}`}
                         target="_blank"
                         className="text-[11px] font-bold text-[#28D17C] hover:underline flex items-center gap-1"
                       >
