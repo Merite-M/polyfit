@@ -81,9 +81,10 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
   const [vaultSeed, setVaultSeed] = useState<string | null>(null);
   const [isCodeHidden, setIsCodeHidden] = useState(false);
 
-  // Reanimated 4 Shared Values for 60/120 FPS UI Thread Performance
+  // Reanimated 4.8.0 Shared Values for 60/120 FPS UI Thread Performance
   const progressRatio = useSharedValue(1);
   const shimmerTranslateY = useSharedValue(-25);
+  const verifiedBadgeScale = useSharedValue(1);
 
   // Retrieve seed from SecureStore vault if prop is missing
   useEffect(() => {
@@ -94,12 +95,21 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
     }
   }, [offlineSeed]);
 
-  // Anti-screenshot animated watermark shimmer loop on UI thread
+  // Anti-screenshot animated watermark shimmer loop & live badge pulse on UI thread
   useEffect(() => {
     shimmerTranslateY.value = withRepeat(
       withSequence(
         withTiming(25, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
         withTiming(-25, { duration: 3000, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      true
+    );
+
+    verifiedBadgeScale.value = withRepeat(
+      withSequence(
+        withTiming(1.06, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1.0, { duration: 1800, easing: Easing.inOut(Easing.ease) })
       ),
       -1,
       true
@@ -152,6 +162,12 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
     };
   });
 
+  const animatedVerifiedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: verifiedBadgeScale.value }],
+    };
+  });
+
   const handleToggleCode = () => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -172,10 +188,10 @@ export const DynamicQrPass: React.FC<DynamicQrPassProps> = ({
               <Text style={styles.domainChipText}>{orgDomain}</Text>
             </View>
           </View>
-          <View style={styles.verifiedChip}>
+          <Animated.View style={[styles.verifiedChip, animatedVerifiedStyle]}>
             <ShieldCheck size={14} color={Palette.green} />
             <Text style={styles.verifiedChipText}>VERIFIED</Text>
-          </View>
+          </Animated.View>
         </View>
 
         {/* Beneficiary Identity Row */}

@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js",
+    "start": "node --env-file=.env index.js",
+    "dev": "node --env-file=.env --watch index.js",
     "test": "node --test",
     "clean": "turbo clean"
   },
@@ -15,7 +15,7 @@
   "dependencies": {
     "@polyfit/shared-utils": "workspace:*",
     "@polyfit/supabase-client": "workspace:*",
-    "@supabase/supabase-js": "^2.112.3",
+    "@supabase/supabase-js": "catalog:",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

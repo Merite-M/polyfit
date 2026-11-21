@@ -13,6 +13,15 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  withRepeat,
+  withSequence,
+  Easing,
+} from 'react-native-reanimated';
 import { AppModal } from '@/components/common/app-modal';
 import {
   CheckCircle2,
@@ -48,7 +57,13 @@ export const CheckinSuccessModal: React.FC<CheckinSuccessModalProps> = ({
   verifiedAt,
   isOfflineSync = false,
 }) => {
-  // Trigger tactile haptics on modal display
+  // Reanimated 4.8.0 Shared Values for Butter-Smooth 60/120 FPS UI Thread Performance
+  const cardScale = useSharedValue(0.92);
+  const cardOpacity = useSharedValue(0);
+  const haloScale = useSharedValue(1);
+  const haloOpacity = useSharedValue(0.75);
+
+  // Trigger tactile haptics and spring animations on modal display
   useEffect(() => {
     if (visible) {
       try {
@@ -59,8 +74,45 @@ export const CheckinSuccessModal: React.FC<CheckinSuccessModalProps> = ({
       } catch (err) {
         // graceful fallback on web
       }
+
+      // Spring-loaded modal entrance
+      cardScale.value = withSpring(1, { damping: 14, stiffness: 180 });
+      cardOpacity.value = withTiming(1, { duration: 240, easing: Easing.out(Easing.quad) });
+
+      // Pulsing concentric radar halo running entirely on the UI worklet runtime
+      haloScale.value = withRepeat(
+        withSequence(
+          withTiming(1.18, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1.0, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        true
+      );
+      haloOpacity.value = withRepeat(
+        withSequence(
+          withTiming(0.35, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.85, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        true
+      );
+    } else {
+      cardScale.value = 0.92;
+      cardOpacity.value = 0;
+      haloScale.value = 1;
+      haloOpacity.value = 0.75;
     }
   }, [visible]);
+
+  const animatedCardStyle = useAnimatedStyle(() => ({
+    opacity: cardOpacity.value,
+    transform: [{ scale: cardScale.value }],
+  }));
+
+  const animatedHaloStyle = useAnimatedStyle(() => ({
+    opacity: haloOpacity.value,
+    transform: [{ scale: haloScale.value }],
+  }));
 
   const displayTime = verifiedAt
     ? new Date(verifiedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -75,15 +127,15 @@ export const CheckinSuccessModal: React.FC<CheckinSuccessModalProps> = ({
     >
       <View style={styles.modalBackdrop}>
         <ScrollView style={{ width: '100%' }} contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          <View style={styles.cardContainer}>
+          <Animated.View style={[styles.cardContainer, animatedCardStyle]}>
           {/* Pulsing Concentric Green Halo */}
-          <View style={styles.haloOuterRing}>
+          <Animated.View style={[styles.haloOuterRing, animatedHaloStyle]}>
             <View style={styles.haloInnerRing}>
               <View style={styles.iconCircle}>
                 <CheckCircle2 size={48} color="#0B1F33" strokeWidth={2.5} />
               </View>
             </View>
-          </View>
+          </Animated.View>
 
           {/* Headline */}
           <Text style={styles.headline}>Access Granted</Text>
@@ -150,7 +202,7 @@ export const CheckinSuccessModal: React.FC<CheckinSuccessModalProps> = ({
           >
             <Text style={styles.doneBtnText}>Done</Text>
           </Pressable>
-        </View>
+        </Animated.View>
       </ScrollView>
     </View>
   </AppModal>
