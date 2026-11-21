@@ -1,9 +1,6 @@
 packages:
   - 'apps/*'
   - 'packages/*'
-catalog:
-  '@supabase/supabase-js': ^2.112.3
-  clsx: ^2.1.1
 allowBuilds:
   core-js: true
   unrs-resolver: true
