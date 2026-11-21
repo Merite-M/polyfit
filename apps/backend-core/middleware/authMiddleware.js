@@ -41,17 +41,24 @@ const requireAuth = async (req, res, next) => {
       });
     }
 
-    // Support deterministic mock/test bearer tokens for automated tests & staff demo mode (strictly non-production)
-    if (process.env.NODE_ENV !== 'production') {
-      const demoRoleMap = {
+    // Strictly for automated unit test execution under test runner (zero demo/bypass mode in live servers or production)
+    const isTestRunner = process.env.NODE_ENV !== 'production' && (
+      process.env.NODE_ENV === 'test' ||
+      process.env.npm_lifecycle_event === 'test' ||
+      process.argv.some((arg) => typeof arg === 'string' && arg.includes('--test')) ||
+      (process.execArgv && process.execArgv.some((arg) => typeof arg === 'string' && arg.includes('--test')))
+    );
+    if (isTestRunner) {
+      const testRoleMap = {
+        'test-super-admin-token': { role: 'super_admin', roles: ['super_admin'], email: 'superadmin@polyfit.africa', id: '00000000-0000-0000-0000-000000000001' },
         'demo-super-admin-token': { role: 'super_admin', roles: ['super_admin'], email: 'superadmin@polyfit.africa', id: '00000000-0000-0000-0000-000000000001' },
         'demo-ops-token': { role: 'polyfit_ops', roles: ['polyfit_ops'], email: 'ops@polyfit.africa', id: '00000000-0000-0000-0000-000000000002' },
         'demo-org-admin-token': { role: 'org_admin', roles: ['org_admin'], email: 'orgadmin@bankofkigali.rw', id: '00000000-0000-0000-0000-000000000003', orgId: 'c79a9982-4477-4336-a24b-561419f6c43b' },
         'demo-provider-admin-token': { role: 'provider_admin', roles: ['provider_admin'], email: 'provider@serena.co.rw', id: '00000000-0000-0000-0000-000000000004', providerId: '90d06d31-999c-42c0-a0c6-fc31ec818ced' },
         'demo-employee-token': { role: 'employee', roles: ['employee'], email: 'employee@bankofkigali.rw', id: '00000000-0000-0000-0000-000000000005', orgId: 'c79a9982-4477-4336-a24b-561419f6c43b' }
       };
-      if (demoRoleMap[token]) {
-        const info = demoRoleMap[token];
+      if (testRoleMap[token]) {
+        const info = testRoleMap[token];
         req.user = { id: info.id, email: info.email, user_metadata: { role: info.role } };
         req.roles = info.roles;
         req.primaryRole = info.role;
@@ -159,25 +166,6 @@ const optionalAuth = async (req, res, next) => {
     const token = authHeader.slice(7).trim();
     if (!token) {
       return next();
-    }
-
-    if (process.env.NODE_ENV !== 'production') {
-      const demoRoleMap = {
-        'demo-super-admin-token': { role: 'super_admin', roles: ['super_admin'], email: 'superadmin@polyfit.africa', id: '00000000-0000-0000-0000-000000000001' },
-        'demo-ops-token': { role: 'polyfit_ops', roles: ['polyfit_ops'], email: 'ops@polyfit.africa', id: '00000000-0000-0000-0000-000000000002' },
-        'demo-org-admin-token': { role: 'org_admin', roles: ['org_admin'], email: 'orgadmin@bankofkigali.rw', id: '00000000-0000-0000-0000-000000000003', orgId: 'c79a9982-4477-4336-a24b-561419f6c43b' },
-        'demo-provider-admin-token': { role: 'provider_admin', roles: ['provider_admin'], email: 'provider@serena.co.rw', id: '00000000-0000-0000-0000-000000000004', providerId: '90d06d31-999c-42c0-a0c6-fc31ec818ced' },
-        'demo-employee-token': { role: 'employee', roles: ['employee'], email: 'employee@bankofkigali.rw', id: '00000000-0000-0000-0000-000000000005', orgId: 'c79a9982-4477-4336-a24b-561419f6c43b' }
-      };
-      if (demoRoleMap[token]) {
-        const info = demoRoleMap[token];
-        req.user = { id: info.id, email: info.email, user_metadata: { role: info.role } };
-        req.roles = info.roles;
-        req.primaryRole = info.role;
-        req.orgId = info.orgId || null;
-        req.providerId = info.providerId || null;
-        return next();
-      }
     }
 
     if (!supabase) {

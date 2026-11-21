@@ -19,7 +19,12 @@ const authRateLimiter = rateLimit({
     error: 'Too many authentication attempts, please try again after 15 minutes',
     code: 'AUTH_RATE_LIMIT_EXCEEDED'
   },
-  skip: (req) => req.headers['x-skip-rate-limit'] === 'true' && req.headers['x-enforce-rate-limit'] !== 'true'
+  skip: (req) => (
+    process.env.NODE_ENV === 'test' ||
+    process.env.npm_lifecycle_event === 'test' ||
+    process.argv.some((a) => typeof a === 'string' && a.includes('--test')) ||
+    (process.execArgv && process.execArgv.some((a) => typeof a === 'string' && a.includes('--test')))
+  ) && req.headers['x-enforce-rate-limit'] !== 'true'
 });
 
 const ALLOWED_ROLES = [

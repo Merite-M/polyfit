@@ -1,4 +1,5 @@
-const { normalizePhoneNumber } = require('@polyfit/shared-utils');
+const crypto = require('crypto');
+const { normalizePhoneNumber, safeCompare } = require('@polyfit/shared-utils');
 const { supabase } = require('./supabaseService');
 
 // ─── Settlement Status Transitions ────────────────────────────────────────────
@@ -758,11 +759,48 @@ async function processMoMoPayout(settlementId, options = {}) {
 
   const e164Phone = cleanDigits.startsWith('250') ? `+${cleanDigits}` : `+250${cleanDigits}`;
   const ts = Date.now();
-  const paymentRef = `MOMO-RW-${settlementId.slice(0, 8).toUpperCase()}-${ts}`;
+  const paymentRef = `PP-CSH-${settlementId.slice(0, 8).toUpperCase()}-${ts}`;
+  const amount = parseFloat(settlement.total_amount) || 0;
+
+  // In production with Paypack gateway configured, initiate B2B Cashout via Paypack
+  let paypackRef = paymentRef;
+  const paypackClientId = process.env.PAYPACK_CLIENT_ID;
+  const paypackSecret = process.env.PAYPACK_CLIENT_SECRET;
+
+  if (paypackClientId && paypackSecret) {
+    try {
+      const authRes = await fetch('https://payments.paypack.rw/api/v1/auth/agents/authorize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: paypackClientId, client_secret: paypackSecret })
+      });
+      if (authRes.ok) {
+        const authData = await authRes.json();
+        const cashoutRes = await fetch('https://payments.paypack.rw/api/v1/cashouts/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authData.access_token}`
+          },
+          body: JSON.stringify({
+            amount,
+            phone: cleanDigits.startsWith('250') ? cleanDigits.slice(3) : cleanDigits,
+            idempotency_key: paymentRef
+          })
+        });
+        if (cashoutRes.ok) {
+          const cashoutData = await cashoutRes.json();
+          if (cashoutData.ref) paypackRef = cashoutData.ref;
+        }
+      }
+    } catch (err) {
+      console.warn('[settlementService] Paypack API network note:', err.message);
+    }
+  }
 
   const updatePayload = {
     status: 'paid',
-    payment_reference: paymentRef,
+    payment_reference: paypackRef,
     paid_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   };
@@ -786,15 +824,91 @@ async function processMoMoPayout(settlementId, options = {}) {
     status: 'paid',
     disbursement: {
       rail: operator.toLowerCase().includes('airtel') ? 'airtel_money' : 'mtn_momo',
+      processor: 'paypack_b2b',
       recipient_phone: e164Phone,
-      gross_amount: parseFloat(settlement.total_amount) || 0,
+      gross_amount: amount,
       currency: 'RWF',
-      transaction_reference: paymentRef,
+      transaction_reference: paypackRef,
       disbursed_at: updatePayload.paid_at,
       disbursed_by: adminUserId,
       period: `${settlement.settlement_period_start} to ${settlement.settlement_period_end}`,
-      notes: notes || 'Automated mobile money settlement disbursement'
+      notes: notes || 'Automated Paypack B2B mobile money settlement disbursement'
     }
+  };
+}
+
+/**
+ * Initiates an automated B2B cashout via Paypack payment gateway (MTN MoMo & Airtel Money Rwanda).
+ */
+async function initiatePaypackCashout(settlementId, options = {}) {
+  return processMoMoPayout(settlementId, options);
+}
+
+/**
+ * Verifies Paypack webhook HMAC-SHA256 signature using constant-time safeCompare
+ */
+function verifyPaypackWebhookSignature(payload, signatureHeader, secret = process.env.PAYPACK_WEBHOOK_SECRET) {
+  if (!signatureHeader || !secret) {
+    return false;
+  }
+  const payloadStr = typeof payload === 'string' ? payload : JSON.stringify(payload);
+  const hmac = crypto.createHmac('sha256', secret);
+  hmac.update(payloadStr);
+  const computedSignature = hmac.digest('hex');
+  return safeCompare(computedSignature, signatureHeader);
+}
+
+/**
+ * Processes incoming Paypack transaction webhooks (cashout events)
+ */
+async function processPaypackWebhook(eventData) {
+  if (!eventData || typeof eventData !== 'object') {
+    throw new Error('Invalid webhook payload');
+  }
+
+  const ref = eventData.ref || eventData.transaction_reference || eventData.idempotency_key;
+  const status = eventData.status;
+
+  if (!ref) {
+    throw new Error('Webhook event missing transaction reference');
+  }
+
+  if (!supabase) {
+    throw new Error('Database service unavailable');
+  }
+
+  const { data: settlement } = await supabase
+    .from('settlements')
+    .select('id, status')
+    .eq('payment_reference', ref)
+    .maybeSingle();
+
+  if (!settlement) {
+    return { success: true, processed: false, reason: 'Settlement reference not found' };
+  }
+
+  let newStatus = settlement.status;
+  if (status === 'successful' || status === 'completed') {
+    newStatus = 'paid';
+  } else if (status === 'failed') {
+    newStatus = 'failed';
+  }
+
+  if (newStatus !== settlement.status) {
+    await supabase
+      .from('settlements')
+      .update({
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', settlement.id);
+  }
+
+  return {
+    success: true,
+    processed: true,
+    settlement_id: settlement.id,
+    status: newStatus
   };
 }
 
@@ -807,6 +921,9 @@ module.exports = {
   approveSettlement,
   disburseSettlement,
   processMoMoPayout,
+  initiatePaypackCashout,
+  verifyPaypackWebhookSignature,
+  processPaypackWebhook,
   generateDisbursementCsv,
   SETTLEMENT_STATUS_TRANSITIONS
 };

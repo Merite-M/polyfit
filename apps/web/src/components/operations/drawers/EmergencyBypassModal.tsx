@@ -241,24 +241,24 @@ export function EmergencyBypassModal({
       }}
       className="backdrop:bg-[#0B1F33]/40 backdrop:backdrop-blur-xs bg-transparent p-0 m-auto max-w-xl w-full border-none outline-none overflow-visible shadow-2xl"
     >
-      <div className="bg-white text-slate-900 rounded-2xl border border-slate-200/80 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white text-slate-900 rounded-2xl border border-slate-200/80 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 @container">
         {/* Header */}
         <div className="p-5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-[#E9FAF2] text-[#008A4B] border border-[#B7F1D2]">
-              <Zap className="w-5 h-5" />
+            <div className="p-2.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200">
+              <Zap className="w-5 h-5 text-amber-600" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-base text-[#0B1F33] tracking-tight">
-                  Turnstile Emergency Bypass
+                  Provisional Emergency Gate Bypass
                 </h3>
-                <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-[#E9FAF2] text-[#008A4B] font-semibold border border-[#B7F1D2]">
-                  5-SEC SLA
+                <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 font-semibold border border-amber-200">
+                  SUPERVISOR REVIEW
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Front-desk escalation: instantly unblock an employee at the front desk.
+                Front-desk escalation: issue provisional entry code under supervisor review governance.
               </p>
             </div>
           </div>
@@ -288,10 +288,14 @@ export function EmergencyBypassModal({
               </div>
 
               <div>
-                <h4 className="text-lg font-bold text-[#0B1F33]">Emergency Pass Issued &amp; Verified!</h4>
+                <h4 className="text-lg font-bold text-[#0B1F33]">Provisional Emergency Pass Issued</h4>
                 <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-                  A verified visit has been recorded in the aggregator database and broadcasted to the venue turnstile gateway.
+                  Single-use clearance code issued for front-desk entry. Visit queued with <strong>Supervisor Review Required</strong> prior to financial settlement clearing.
                 </p>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium mt-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  <span>Settlement Hold: Provisional Check-In</span>
+                </div>
               </div>
 
               {/* Pass Code Card */}

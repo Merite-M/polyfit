@@ -664,7 +664,13 @@ router.get('/visits/disputes', async (req, res) => {
  */
 router.post('/visits/emergency-bypass', async (req, res) => {
   try {
-    const adminUserId = req.user?.id || null;
+    const adminUserId = req.user?.id;
+    if (!adminUserId) {
+      return res.status(401).json({
+        error: 'Unauthorized: Operator authentication required for emergency bypass',
+        code: 'OPERATIONS_AUTH_REQUIRED'
+      });
+    }
     const result = await executeTurnstileEmergencyBypass(req.body, adminUserId);
     return res.status(201).json(result);
   } catch (error) {
@@ -1065,7 +1071,13 @@ router.patch('/settings', async (req, res) => {
         code: 'SETTING_PARAMS_REQUIRED'
       });
     }
-    const adminUser = req.user || { id: null, role: 'super_admin', name: 'Ops Super Admin' };
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        error: 'Unauthorized: Operator authentication required to modify platform settings',
+        code: 'OPERATIONS_AUTH_REQUIRED'
+      });
+    }
+    const adminUser = req.user;
     const result = await updateOperationsPlatformSetting(key, value, adminUser);
     return res.status(200).json(result);
   } catch (error) {
@@ -1108,7 +1120,13 @@ const handleTeamRoleAssignment = async (req, res) => {
     if (!role) {
       return res.status(400).json({ error: 'Role is required', code: 'ROLE_REQUIRED' });
     }
-    const adminUser = req.user || { id: null, role: 'super_admin', name: 'Ops Super Admin' };
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        error: 'Unauthorized: Operator authentication required to assign roles',
+        code: 'OPERATIONS_AUTH_REQUIRED'
+      });
+    }
+    const adminUser = req.user;
     const result = await assignOperationsTeamRole({
       userId: finalUserId,
       email: finalEmail,

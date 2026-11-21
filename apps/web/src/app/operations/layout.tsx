@@ -19,7 +19,7 @@ export default function OperationsLayout({
   const pathname = usePathname();
   const router = useRouter();
   const isLoginPage = pathname?.startsWith("/operations/login");
-  const { user, role, isSuperAdmin, isDemoMode, isLoading: authLoading, signOut } = useAuth();
+  const { user, role, isSuperAdmin, isLoading: authLoading, signOut } = useAuth();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [omnibarOpen, setOmnibarOpen] = useState(false);
@@ -70,8 +70,8 @@ export default function OperationsLayout({
     );
   }
 
-  // Staff Clearance Check
-  const hasClearance = isSuperAdmin || isDemoMode || role === "super_admin" || role === "polyfit_ops";
+  // Staff Clearance Check (Cryptographically verified Supabase Session & RBAC role)
+  const hasClearance = isSuperAdmin || role === "super_admin" || role === "polyfit_ops";
   if (!hasClearance) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F7F9FC] text-[#0B1F33] p-6 relative overflow-x-hidden">

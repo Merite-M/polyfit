@@ -251,235 +251,17 @@ interface PartnerContextType {
   updateLocation: (locId: string, data: Partial<ProviderLocation>) => Promise<{ success: boolean; location?: ProviderLocation; error?: string }>;
 }
 
-// Fallback seed data for seamless evaluation & counter testing
-const DEFAULT_PROVIDER: ProviderProfile = {
-  id: '90d06d31-999c-42c0-a0c6-fc31ec818ced',
-  name: 'FitLife Gym Kigali',
-  category: 'gym',
-  contact_email: 'ops@fitlife.rw',
-  rating: 4.8,
-  tax_id: '108392019',
-  bank_details: {
-    payout_method: 'bank',
-    bank_name: 'Bank of Kigali (BK)',
-    account_name: 'FitLife Ltd',
-    account_number: '00040-0692140-19',
-    swift_code: 'BOKRRWRW'
-  }
-};
-
-const STANDARD_OPERATING_HOURS: Record<string, { is_closed: boolean; shifts: Array<{ open: string; close: string }> }> = {
-  mon: { is_closed: false, shifts: [{ open: '06:00', close: '21:00' }] },
-  tue: { is_closed: false, shifts: [{ open: '06:00', close: '21:00' }] },
-  wed: { is_closed: false, shifts: [{ open: '06:00', close: '21:00' }] },
-  thu: { is_closed: false, shifts: [{ open: '06:00', close: '21:00' }] },
-  fri: { is_closed: false, shifts: [{ open: '06:00', close: '21:00' }] },
-  sat: { is_closed: false, shifts: [{ open: '08:00', close: '20:00' }] },
-  sun: { is_closed: false, shifts: [{ open: '09:00', close: '18:00' }] },
-};
-
-const DEFAULT_LOCATIONS: ProviderLocation[] = [
-  {
-    id: '447f4bf2-ff66-48c5-851e-460cba17bfe4',
-    provider_id: '90d06d31-999c-42c0-a0c6-fc31ec818ced',
-    name: 'Kigali Central Facility (Unit #851931)',
-    city: 'Kigali',
-    address: 'KN 3 Ave, Kigali City Tower, Level 2',
-    capacity: 150,
-    operating_hours: STANDARD_OPERATING_HOURS,
-    amenities: ['Cardio Zone', 'Free Weights', 'Olympic Pool', 'Sauna', 'Lockers & Showers', 'WiFi'],
-    metadata: {
-      phone: '+250 788 123 456',
-      website: 'https://fitlife.rw',
-      social_links: {
-        instagram: 'fitlifekigali',
-        whatsapp: '+250788123456'
-      },
-      description: 'Premier Kigali wellness center with comprehensive resistance equipment, cardio decks, and certified personal trainers.',
-      guidelines: 'Clean gym attire and indoor training shoes required. Bring a workout towel.',
-      first_checkin_rules: {
-        booking_required: false,
-        registration_form_required: true,
-        guided_tour_mandatory: false,
-        arrive_early_minutes: 10
-      },
-      recommended_gear: ['Training Shoes', 'Workout Towel', 'Water Bottle'],
-      geofence_radius_meters: 100
-    }
-  },
-  {
-    id: '189e7cb8-155e-419a-8b83-bd9e3eb021da',
-    provider_id: '90d06d31-999c-42c0-a0c6-fc31ec818ced',
-    name: 'Nyarutarama Health Branch (Unit #851932)',
-    city: 'Kigali',
-    address: 'KG 9 Ave, Nyarutarama Tennis Club Annex',
-    capacity: 100,
-    operating_hours: STANDARD_OPERATING_HOURS,
-    amenities: ['Cardio Machines', 'Strength Racks', 'Steam Room', 'Lockers & Showers', 'Smoothie Bar'],
-    metadata: {
-      phone: '+250 788 654 321',
-      website: 'https://fitlife.rw',
-      social_links: {
-        instagram: 'fitlifenyarutarama',
-        whatsapp: '+250788654321'
-      },
-      description: 'Scenic Nyarutarama branch offering boutique functional training, recovery amenities, and tranquil group exercise studios.',
-      guidelines: 'Check in via dynamic QR pass at reception counter before entering workout floor.',
-      first_checkin_rules: {
-        booking_required: false,
-        registration_form_required: false,
-        guided_tour_mandatory: true,
-        arrive_early_minutes: 15
-      },
-      recommended_gear: ['Training Shoes', 'Towel'],
-      geofence_radius_meters: 100
-    }
-  }
-];
-
-const DEFAULT_DASHBOARD_OVERVIEW: DashboardOverview = {
-  provider: {
-    id: '90d06d31-999c-42c0-a0c6-fc31ec818ced',
-    name: 'FitLife Gym Kigali',
-    category: 'gym',
-    rating: 4.8,
-    is_payout_configured: true,
-    payout_details: DEFAULT_PROVIDER.bank_details || null,
-    tax_id: '108392019'
-  },
-  location_context: {
-    selected_location_id: 'all',
-    total_locations: 2,
-    locations: [
-      {
-        id: '447f4bf2-ff66-48c5-851e-460cba17bfe4',
-        name: 'Kigali Central Facility (Unit #851931)',
-        city: 'Kigali',
-        address: 'KN 3 Ave, Level 2',
-        capacity: 150,
-        status: 'active',
-        geofence_radius_meters: 150
-      },
-      {
-        id: '189e7cb8-155e-419a-8b83-bd9e3eb021da',
-        name: 'Nyarutarama Health Branch (Unit #851932)',
-        city: 'Kigali',
-        address: 'KG 9 Ave, Tennis Annex',
-        capacity: 100,
-        status: 'active',
-        geofence_radius_meters: 150
-      }
-    ]
-  },
-  kpis: {
-    today_visits: 0,
-    yesterday_visits: 0,
-    vs_yesterday_delta_pct: 0,
-    unique_corporate_visitors_mtd: 0,
-    mtd_total_visits: 0,
-    estimated_mtd_revenue_rwf: 0,
-    estimated_net_payout_rwf: 0,
-    currency: 'RWF',
-    active_contracts_count: 0,
-    per_visit_rate: 5000
-  },
-  peak_hours_heatmap: {
-    hours_24: Array(24).fill(0),
-    weekday_hours_24: Array(24).fill(0),
-    weekend_hours_24: Array(24).fill(0),
-    rush_hours: {
-      morning_rush_count: 0,
-      lunch_rush_count: 0,
-      evening_rush_count: 0
-    }
-  },
-  top_organizations: [],
-  recent_activity: []
-};
-
-const DEFAULT_COMMERCIAL_CONDITIONS: CommercialConditions = {
-  provider: {
-    id: '90d06d31-999c-42c0-a0c6-fc31ec818ced',
-    name: 'FitLife Gym Kigali',
-    category: 'gym',
-    status: 'active'
-  },
-  active_contract: {
-    id: '5d23c0ca-829c-4f3f-8373-271422d335e1',
-    tier_classification: 'Tier 1 - Certified Network Facility',
-    per_visit_rate: 5000,
-    currency: 'RWF',
-    monthly_cap: null,
-    access_hours: { weekdays: '06:00 - 21:00', weekends: '08:00 - 18:00' },
-    status: 'active',
-    effective_from: '2026-09-01',
-    contract_party: 'PolyFit Corporate Wellness Network'
-  },
-  all_contracts: [
-    {
-      id: '5d23c0ca-829c-4f3f-8373-271422d335e1',
-      org_name: 'PolyFit Aggregator Master Agreement',
-      per_visit_rate: 5000,
-      monthly_cap: null,
-      status: 'active',
-      effective_from: '2026-09-01'
-    }
-  ],
-  tier_access_matrix: [
-    {
-      tier: 'basic',
-      tier_name: 'PolyFit Basic Tier',
-      description: 'Entry-level employee wellness tier for standard fitness and basic gym access.',
-      co_pay_percentage: 20,
-      is_eligible_for_entry: true,
-      restriction_reason: 'Full access granted for verified corporate beneficiaries under this tier.'
-    },
-    {
-      tier: 'standard',
-      tier_name: 'PolyFit Standard Tier',
-      description: 'Comprehensive corporate plan for full facility workouts, pools, and studios.',
-      co_pay_percentage: 10,
-      is_eligible_for_entry: true,
-      restriction_reason: 'Full access granted for verified corporate beneficiaries under this tier.'
-    },
-    {
-      tier: 'premium',
-      tier_name: 'PolyFit Premium / Executive Tier',
-      description: 'Executive all-access corporate tier covering all premium facilities, studios, and recovery.',
-      co_pay_percentage: 0,
-      is_eligible_for_entry: true,
-      restriction_reason: 'Full access granted for verified corporate beneficiaries under this tier.'
-    }
-  ],
-  payment_calculation_rules: {
-    gross_rate_per_checkin_rwf: 5000,
-    platform_fee_percent: 10,
-    net_payout_per_checkin_rwf: 4500,
-    anti_passback_window_hours: 3,
-    dispute_window_minutes: 20,
-    co_pay_handling: 'PolyFit collects co-pays directly from the employee or client employer. The provider always receives the guaranteed contractual 5,000 RWF gross rate.',
-    disbursement_schedule: 'Monthly on the 15th for all verified check-ins in the previous calendar month via verified Rwandan Bank Transfer or MTN/Airtel MoMo.'
-  }
-};
-
 const PartnerContext = createContext<PartnerContextType | undefined>(undefined);
 
 export function PartnerProvider({ children }: { children: React.ReactNode }) {
   const { providerId, user, isSuperAdmin, isDemoMode, isLoading: authLoading } = useAuth();
   const [provider, setProvider] = useState<ProviderProfile | null>(null);
   const [providerStatus, setProviderStatus] = useState<'active' | 'pending_review' | 'not_found' | 'loading'>('loading');
-  const [locations, setLocations] = useState<ProviderLocation[]>(DEFAULT_LOCATIONS);
+  const [locations, setLocations] = useState<ProviderLocation[]>([]);
   const [selectedLocationId, setSelectedLocationIdState] = useState<string>('all');
-  const [todaySummary, setTodaySummary] = useState<TodaySummary | null>({
-    total_visits_today: 0,
-    settlement_earned_today: 0,
-    currency: 'RWF',
-    pending_queue_count: 0,
-    disputed_count: 0,
-    per_visit_rate: 5000
-  });
-  const [dashboardData, setDashboardData] = useState<DashboardOverview | null>(DEFAULT_DASHBOARD_OVERVIEW);
-  const [commercialConditions, setCommercialConditions] = useState<CommercialConditions | null>(DEFAULT_COMMERCIAL_CONDITIONS);
+  const [todaySummary, setTodaySummary] = useState<TodaySummary | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardOverview | null>(null);
+  const [commercialConditions, setCommercialConditions] = useState<CommercialConditions | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [manualCheckinOpen, setManualCheckinOpen] = useState<boolean>(false);
   const [retroactiveClaimOpen, setRetroactiveClaimOpen] = useState<boolean>(false);
@@ -533,7 +315,7 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // 2. Email lookup resolution
+        // 3. Email lookup resolution
         if (!resolvedProvider && user.email) {
           try {
             const checkRes = await apiFetch<any>(`/api/public/partner/check-email?email=${encodeURIComponent(user.email)}`);
@@ -550,12 +332,6 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
           } catch (e) {
             console.warn('[PartnerContext] Error looking up partner by email:', e);
           }
-        }
-
-        // 3. Super admin or demo mode fallback
-        if (!resolvedProvider && (isSuperAdmin || isDemoMode)) {
-          resolvedProvider = DEFAULT_PROVIDER;
-          provStatus = 'active';
         }
 
         if (isCancelled) return;
@@ -816,8 +592,8 @@ const hasAuthToken = () => {
         }
         return { success: false, error: res?.error || 'Failed to submit amendment request' };
       } catch (err: any) {
-        console.warn('[PartnerContext] Amendment request fallback:', err);
-        return { success: true }; // Succeeds gracefully in offline mode
+        console.error('[PartnerContext] Amendment request error:', err);
+        return { success: false, error: err?.message || 'Failed to submit amendment request' };
       }
     },
     [provider?.id]
@@ -840,25 +616,8 @@ const hasAuthToken = () => {
         }
         return { success: false, error: res?.error || 'Failed to create location' };
       } catch (err: any) {
-        console.warn('[PartnerContext] Create location offline fallback:', err);
-        const fallbackLoc: ProviderLocation = {
-          id: `loc-${Date.now()}`,
-          provider_id: provider.id,
-          name: data.name || 'New Facility Branch',
-          city: data.city || 'Kigali',
-          address: data.address || '',
-          country: data.country || 'Rwanda',
-          amenities: data.amenities || [],
-          capacity: data.capacity || 100,
-          lat: data.lat,
-          lng: data.lng,
-          operating_hours: data.operating_hours,
-          photos: data.photos || [],
-          metadata: data.metadata || {},
-          status: 'active'
-        };
-        setLocations((prev) => [...prev, fallbackLoc]);
-        return { success: true, location: fallbackLoc };
+        console.error('[PartnerContext] Create location error:', err);
+        return { success: false, error: err?.message || 'Failed to create location' };
       }
     },
     [provider?.id]
@@ -881,11 +640,8 @@ const hasAuthToken = () => {
         }
         return { success: false, error: res?.error || 'Failed to update location' };
       } catch (err: any) {
-        console.warn('[PartnerContext] Update location offline fallback:', err);
-        setLocations((prev) =>
-          prev.map((l) => (l.id === locId ? ({ ...l, ...data } as ProviderLocation) : l))
-        );
-        return { success: true };
+        console.error('[PartnerContext] Update location error:', err);
+        return { success: false, error: err?.message || 'Failed to update location' };
       }
     },
     [provider?.id]

@@ -389,12 +389,13 @@ async function assignBenefitPlan(orgId, benefitId, { employeeIds = [], departmen
     employee_id: empId,
     benefit_id: benefitId,
     status: 'active',
-    activated_at: activatedAt
+    activated_at: activatedAt,
+    expires_at: null
   }));
 
   const { error: insErr } = await supabase
     .from('eligibility')
-    .insert(newRecords);
+    .upsert(newRecords, { onConflict: 'employee_id,benefit_id' });
 
   if (insErr) {
     throw { status: 500, message: insErr.message, code: 'BENEFIT_ASSIGN_FAILED' };

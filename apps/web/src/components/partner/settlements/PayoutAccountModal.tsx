@@ -45,7 +45,7 @@ export function PayoutAccountModal({ isOpen, onClose, onSuccess }: PayoutAccount
   // Sync state when provider data is ready or modal opens
   useEffect(() => {
     if (provider) {
-      setTaxId(provider.tax_id || '108392019');
+      setTaxId(provider.tax_id || '');
       const b = provider.bank_details;
       if (b) {
         setPayoutMethod(b.payout_method || 'bank');
@@ -57,9 +57,8 @@ export function PayoutAccountModal({ isOpen, onClose, onSuccess }: PayoutAccount
         if (b.momo_code) setMomoCode(b.momo_code);
         if (b.momo_phone) setMomoPhone(b.momo_phone);
       } else {
-        // Fallback default for Kigali demo
-        setAccountName(provider.name || 'FitLife Ltd');
-        setAccountNumber('00040-0692140-19');
+        setAccountName(provider.name || '');
+        setAccountNumber('');
       }
     }
   }, [provider, isOpen]);

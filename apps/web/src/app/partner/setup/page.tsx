@@ -286,31 +286,16 @@ function PartnerSetupContent() {
           ...(formState.amenities || []),
         ])
       ),
-      logo_url:
-        formState.logo_url ||
-        'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=300',
-      cover_url:
-        formState.cover_url ||
-        (isPoolFacility
-          ? 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=1200'
-          : 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&q=80&w=1200'),
-      entrance_url:
-        formState.entrance_url ||
-        'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=800',
-      gallery_urls:
-        formState.gallery_urls && formState.gallery_urls.length >= 3
-          ? formState.gallery_urls
-          : [
-              'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800',
-              'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&q=80&w=800',
-              'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=800',
-            ],
-      bank_name: formState.bank_name || 'Bank of Kigali (BK)',
-      swift_code: formState.swift_code || 'BOKRRWRW',
-      account_name: formState.account_name || `${formState.name || 'Partner'} Ltd`,
-      account_number: formState.account_number || '00490-0692841-29',
-      tax_id: formState.tax_id || '109 482 173',
-      payout_method: 'bank',
+      logo_url: formState.logo_url || '',
+      cover_url: formState.cover_url || '',
+      entrance_url: formState.entrance_url || '',
+      gallery_urls: formState.gallery_urls || [],
+      bank_name: formState.bank_name || '',
+      swift_code: formState.swift_code || '',
+      account_name: formState.account_name || '',
+      account_number: formState.account_number || '',
+      tax_id: formState.tax_id || '',
+      payout_method: formState.payout_method || 'bank',
     };
     handlePatch(patch);
     setPresetAppliedToast(true);

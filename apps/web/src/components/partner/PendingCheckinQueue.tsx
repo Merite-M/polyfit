@@ -59,6 +59,7 @@ export function PendingCheckinQueue({
 }: PendingCheckinQueueProps) {
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [unlockedNoticeId, setUnlockedNoticeId] = useState<string | null>(null);
+  const [errorNotice, setErrorNotice] = useState<{ id: string; message: string } | null>(null);
   const [nowSec, setNowSec] = useState<number>(Date.now());
 
   // 1-second interval to dynamically tick down all timers in real-time
@@ -72,6 +73,7 @@ export function PendingCheckinQueue({
   const handleApprove = async (visitId: string) => {
     try {
       setApprovingId(visitId);
+      setErrorNotice(null);
       const res = await apiFetch<{ success: boolean; message: string; unlocked?: boolean }>(
         `/api/visits/${visitId}/approve`,
         { method: 'PATCH' }
@@ -83,15 +85,24 @@ export function PendingCheckinQueue({
         setTimeout(() => {
           setUnlockedNoticeId(null);
         }, 3000);
+      } else {
+        setErrorNotice({
+          id: visitId,
+          message: res?.message || 'Check-in validation failed.'
+        });
+        setTimeout(() => {
+          setErrorNotice(null);
+        }, 5000);
       }
     } catch (err: any) {
-      console.warn('[PendingCheckinQueue] Approval notice:', err);
-      // Seamless counter operation with gate relay simulation
-      setUnlockedNoticeId(visitId);
-      onApproveSuccess(visitId);
+      console.error('[PendingCheckinQueue] Approval error:', err);
+      setErrorNotice({
+        id: visitId,
+        message: err?.message || 'Check-in approval failed. Please verify member eligibility or credentials.'
+      });
       setTimeout(() => {
-        setUnlockedNoticeId(null);
-      }, 3000);
+        setErrorNotice(null);
+      }, 5000);
     } finally {
       setApprovingId(null);
     }
@@ -102,7 +113,7 @@ export function PendingCheckinQueue({
   }
 
   return (
-    <section className="mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
+    <section className="@container mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
       {/* Priority Alert Banner */}
       <div className="bg-[#FEF3C7] border border-[#FDE68A] rounded-t-xl px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
@@ -121,6 +132,14 @@ export function PendingCheckinQueue({
           20-minute manual confirmation window
         </p>
       </div>
+
+      {/* Error Alert Banner if an approval failed */}
+      {errorNotice && (
+        <div className="bg-[#FEF2F2] border-x border-[#FCA5A5] px-4 py-2.5 flex items-center gap-2 text-xs text-[#991B1B]">
+          <AlertTriangle className="w-4 h-4 text-[#EF4444] shrink-0" />
+          <span className="font-semibold">{errorNotice.message}</span>
+        </div>
+      )}
 
       {/* Cards List */}
       <div className="bg-white border-x border-b border-[#E2E8F0] rounded-b-xl p-3 sm:p-4 divide-y divide-[#E2E8F0]/70 shadow-sm space-y-3">

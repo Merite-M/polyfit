@@ -67,6 +67,7 @@ export function FrontDeskAccessTerminal({
   const [totpDigits, setTotpDigits] = useState(['', '', '', '', '', '']);
   const [turnstileToken, setTurnstileToken] = useState('');
   const [employeeIdentifier, setEmployeeIdentifier] = useState('');
+  const [supervisorOtp, setSupervisorOtp] = useState('');
   const [audioFeedback, setAudioFeedback] = useState(true);
   
   // State
@@ -170,6 +171,7 @@ export function FrontDeskAccessTerminal({
     setTotpDigits(['', '', '', '', '', '']);
     setTurnstileToken('');
     setEmployeeIdentifier('');
+    setSupervisorOtp('');
     setResult(null);
     setTimeout(() => {
       inputRefs.current[0]?.focus();
@@ -260,10 +262,10 @@ export function FrontDeskAccessTerminal({
     }
   };
 
-  // Perform turnstile hardware bypass verification
+  // Perform turnstile / counter verification with TOTP pass or Supervisor Counter OTP fallback
   const triggerTurnstileVerification = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!turnstileToken.trim() && !employeeIdentifier.trim()) return;
+    if (!turnstileToken.trim() && !supervisorOtp.trim()) return;
 
     const targetLocationId = selectedLocationId !== 'all' ? selectedLocationId : locations[0]?.id;
     const startTime = performance.now();
@@ -271,14 +273,24 @@ export function FrontDeskAccessTerminal({
     setResult(null);
 
     try {
+      const payload: Record<string, any> = {
+        provider_location_id: targetLocationId
+      };
+
+      if (turnstileToken.trim()) {
+        payload.qr_token = turnstileToken.trim();
+      }
+      if (supervisorOtp.trim()) {
+        payload.counter_otp = supervisorOtp.trim();
+        payload.supervisor_otp = supervisorOtp.trim();
+      }
+      if (employeeIdentifier.trim()) {
+        payload.employee_identifier = employeeIdentifier.trim();
+      }
+
       const res = await apiFetch<any>('/api/visits/verify-turnstile', {
         method: 'POST',
-        body: JSON.stringify({
-          turnstile_id: 'TURNSTILE_01',
-          qr_token: turnstileToken.trim() || undefined,
-          employee_identifier: employeeIdentifier.trim() || undefined,
-          provider_location_id: targetLocationId
-        })
+        body: JSON.stringify(payload)
       });
 
       const elapsed = Math.round(performance.now() - startTime);
@@ -287,7 +299,7 @@ export function FrontDeskAccessTerminal({
 
       setResult({
         status: 'success',
-        message: res?.message || 'Turnstile Plaque Validated • Entry Logged',
+        message: res?.message || 'Access Authorized • Gate Unlocked',
         latencyMs: elapsed,
         timestamp: new Date().toLocaleTimeString(),
         employee: res?.employee,
@@ -305,7 +317,7 @@ export function FrontDeskAccessTerminal({
 
       setResult({
         status: err?.status === 409 ? 'anti_passback' : 'rejected',
-        message: err?.message || 'Turnstile bypass verification failed.',
+        message: err?.message || 'Verification failed. Valid dynamic pass or Supervisor OTP required.',
         latencyMs: elapsed,
         timestamp: new Date().toLocaleTimeString()
       });
@@ -472,17 +484,17 @@ export function FrontDeskAccessTerminal({
             </div>
           )}
 
-          {/* Mode 2: Turnstile Plaque Scanner */}
+          {/* Mode 2: Turnstile Plaque Scanner / Supervisor Counter Fallback */}
           {activeMode === 'turnstile' && (
             <form onSubmit={triggerTurnstileVerification} className="space-y-3 max-w-md">
               <div>
                 <label className="block text-xs font-medium text-[#8491A3] mb-1">
-                  Scan QR code token from employee's badge / counter plaque:
+                  Scan QR code token from employee badge or mobile pass:
                 </label>
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="e.g. PF-VISIT-TURNSTILE-90D0..."
+                    placeholder="e.g. PF-VISIT-TURNSTILE-90D0... (or leave blank if using Supervisor OTP)"
                     value={turnstileToken}
                     onChange={(e) => setTurnstileToken(e.target.value)}
                     autoFocus
@@ -495,7 +507,7 @@ export function FrontDeskAccessTerminal({
 
               <div>
                 <label className="block text-xs font-medium text-[#8491A3] mb-1">
-                  Employee identifier (Email or UUID):
+                  Beneficiary identifier (Corporate email or employee UUID):
                 </label>
                 <input
                   type="text"
@@ -507,10 +519,26 @@ export function FrontDeskAccessTerminal({
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-medium text-[#8491A3] mb-1">
+                  Supervisor SMS OTP (Required if dynamic pass is unavailable):
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="Enter 6-digit supervisor counter OTP"
+                  value={supervisorOtp}
+                  onChange={(e) => setSupervisorOtp(e.target.value.replace(/\D/g, ''))}
+                  disabled={isVerifying}
+                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm font-mono bg-black/40 border border-white/20 focus:border-[#28D17C] rounded-xl text-white placeholder:text-[#526173] outline-none transition-all"
+                />
+              </div>
+
               <div className="flex items-center gap-2 pt-1">
                 <button
                   type="submit"
-                  disabled={isVerifying || (!turnstileToken.trim() && !employeeIdentifier.trim())}
+                  disabled={isVerifying || (!turnstileToken.trim() && !supervisorOtp.trim())}
                   className="px-4 py-2 rounded-xl bg-[#28D17C] hover:bg-[#22BC6E] disabled:opacity-40 text-[#0B1F33] font-bold text-xs sm:text-sm transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                   {isVerifying ? (
@@ -518,7 +546,7 @@ export function FrontDeskAccessTerminal({
                   ) : (
                     <ArrowRight className="w-4 h-4" />
                   )}
-                  <span>Validate Turnstile Entry</span>
+                  <span>Validate Entry & Unlock</span>
                 </button>
 
                 <button

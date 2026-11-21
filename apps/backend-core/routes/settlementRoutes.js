@@ -10,7 +10,10 @@ const {
   listSettlements,
   getSettlementDetail,
   updateSettlementStatus,
-  processMoMoPayout
+  processMoMoPayout,
+  initiatePaypackCashout,
+  verifyPaypackWebhookSignature,
+  processPaypackWebhook
 } = require('../services/settlementService');
 
 const router = express.Router();
@@ -193,5 +196,35 @@ router.post(
     }
   }
 );
+
+// ─── POST /api/settlements/webhook/paypack ──────────────────────────────────
+// Webhook listener for Paypack B2B cashout events (MTN MoMo / Airtel Money)
+// Authenticated via HMAC-SHA256 signature in X-Paypack-Signature header
+router.post('/webhook/paypack', async (req, res) => {
+  try {
+    const signature = req.headers['x-paypack-signature'] || req.headers['x-signature'];
+
+    // Verify HMAC signature in production or whenever secret is provided
+    const webhookSecret = process.env.PAYPACK_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const isValid = verifyPaypackWebhookSignature(req.body, signature, webhookSecret);
+      if (!isValid) {
+        return res.status(401).json({
+          error: 'Invalid webhook signature',
+          code: 'UNAUTHORIZED_WEBHOOK'
+        });
+      }
+    }
+
+    const result = await processPaypackWebhook(req.body);
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('[settlementRoutes] Paypack webhook error:', err.message);
+    return res.status(500).json({
+      error: err.message || 'Error processing payment webhook',
+      code: 'WEBHOOK_PROCESSING_FAILED'
+    });
+  }
+});
 
 module.exports = router;

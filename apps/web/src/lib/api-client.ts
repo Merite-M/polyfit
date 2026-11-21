@@ -74,21 +74,14 @@ export async function apiFetch<T = unknown>(
   const requestHeaders = new Headers(fetchOptions.headers || {});
   if (!requestHeaders.has('Authorization')) {
     try {
-      if (typeof window !== 'undefined') {
-        if (supabase) {
-          const { data } = await supabase.auth.getSession();
-          if (data?.session?.access_token) {
-            requestHeaders.set('Authorization', `Bearer ${data.session.access_token}`);
-          }
-        }
-        if (!requestHeaders.has('Authorization') && localStorage.getItem('polyfit_demo_mode') === 'true') {
-          requestHeaders.set('Authorization', 'Bearer demo-super-admin-token');
+      if (typeof window !== 'undefined' && supabase) {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session?.access_token) {
+          requestHeaders.set('Authorization', `Bearer ${data.session.access_token}`);
         }
       }
-    } catch {
-      if (typeof window !== 'undefined' && localStorage.getItem('polyfit_demo_mode') === 'true') {
-        requestHeaders.set('Authorization', 'Bearer demo-super-admin-token');
-      }
+    } catch (err) {
+      console.warn('[apiClient] Error resolving Supabase auth session token:', err);
     }
   }
 

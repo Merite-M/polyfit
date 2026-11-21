@@ -13,8 +13,7 @@ import {
   AlertCircle,
   CheckCircle2,
   KeyRound,
-  ShieldAlert,
-  Sparkles
+  ShieldAlert
 } from "lucide-react";
 import { PolyFitLogo } from "@/components/ui/polyfit-logo";
 import { supabase } from "@polyfit/supabase-client";
@@ -25,7 +24,6 @@ function OperationsLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl") || "/operations";
-  const { enableDemoMode } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -76,10 +74,14 @@ function OperationsLoginContent() {
         console.warn("[OperationsLogin] Backend verify notice:", err);
       }
 
-      // Metadata or user_roles check fallback
+      // Fallback: database user_roles check (never trust client user_metadata)
       if (!hasClearance) {
-        const role = user.user_metadata?.role;
-        if (role === "super_admin" || role === "polyfit_ops") {
+        const { data: roleRecords } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id);
+        const roles = Array.isArray(roleRecords) ? roleRecords.map((r: any) => r.role) : [];
+        if (roles.includes("super_admin") || roles.includes("polyfit_ops")) {
           hasClearance = true;
         }
       }
@@ -98,11 +100,6 @@ function OperationsLoginContent() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleDemoBypass = () => {
-    enableDemoMode?.();
-    router.push(returnUrl);
   };
 
   return (
@@ -213,17 +210,9 @@ function OperationsLoginContent() {
               </div>
             </form>
 
-            {/* Quick Demo Access for Evaluation */}
+            {/* Enterprise Security Note */}
             <div className="pt-4 border-t border-slate-200 text-center space-y-2">
-              <button
-                type="button"
-                onClick={handleDemoBypass}
-                className="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0B1F33] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors border border-slate-200/80 cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-[#008A4B]" />
-                <span>Launch Operations Demo Console (Local Test Mode)</span>
-              </button>
-              <p className="text-[10px] text-slate-500">
+              <p className="text-[11px] text-slate-500">
                 Staff accounts require multi-factor verification under PolyFit Enterprise Security Standards.
               </p>
             </div>

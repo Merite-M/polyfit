@@ -29,6 +29,7 @@ import {
   ArrowRight,
 } from 'lucide-react-native';
 import { Palette, Spacing, Radius } from '@/constants/theme';
+import { useDiscoveryStore } from '@/stores/discovery-store';
 
 export interface ScannedPlaqueData {
   providerLocationId: string;
@@ -37,34 +38,6 @@ export interface ScannedPlaqueData {
   lat: number;
   lng: number;
 }
-
-// Official partner desk plaques in Kigali for testing and manual resolution
-export const PARTNER_DESK_PLAQUES: (ScannedPlaqueData & { shortCode: string })[] = [
-  {
-    shortCode: 'PLQ-101',
-    providerLocationId: 'b0000000-0000-0000-0000-000000000010',
-    facilityName: 'Cercle Sportif Olympic Pool',
-    neighborhood: 'Kiyovu, Kigali',
-    lat: -1.9542,
-    lng: 30.0625,
-  },
-  {
-    shortCode: 'PLQ-102',
-    providerLocationId: 'b0000000-0000-0000-0000-000000000011',
-    facilityName: 'Kigali Heights Fitness Club',
-    neighborhood: 'Kimihurura, Kigali',
-    lat: -1.9536,
-    lng: 30.0921,
-  },
-  {
-    shortCode: 'PLQ-103',
-    providerLocationId: 'b0000000-0000-0000-0000-000000000012',
-    facilityName: 'Waka Fitness & Performance',
-    neighborhood: 'Downtown Kigali',
-    lat: -1.9441,
-    lng: 30.0619,
-  },
-];
 
 interface CounterScannerModalProps {
   visible: boolean;
@@ -93,10 +66,6 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
     if (visible) {
       setManualCode('');
       setManualError(null);
-      // Auto-grant camera in demo/web context after initial prompt
-      if (permissionStatus === 'prompt') {
-        setPermissionStatus('granted');
-      }
     } else {
       setTorchEnabled(false);
     }
@@ -127,29 +96,26 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
       return;
     }
 
-    // Try matching shortCode or location ID
-    const match = PARTNER_DESK_PLAQUES.find(
-      (p) =>
-        p.shortCode === clean ||
-        p.providerLocationId.toLowerCase() === clean.toLowerCase() ||
-        p.facilityName.toLowerCase().includes(clean.toLowerCase())
+    // Match against real discovered facilities in PolyFit Network
+    const facilities = useDiscoveryStore.getState().facilities;
+    const match = facilities.find(
+      (f) =>
+        f.location_id.toUpperCase() === clean ||
+        f.location_name.toUpperCase().includes(clean)
     );
 
     if (match) {
-      handleSimulateScan(match);
+      handleSimulateScan({
+        providerLocationId: match.location_id,
+        facilityName: match.location_name,
+        neighborhood: match.neighborhood,
+        lat: match.lat,
+        lng: match.lng,
+      });
       return;
     }
 
-    // Fallback: Generate dynamic manual verification receipt for custom code
-    const customPlaque: ScannedPlaqueData = {
-      providerLocationId: `custom_plq_${clean}`,
-      facilityName: `${clean} Verified Desk`,
-      neighborhood: 'Kigali Central',
-      lat: -1.9536,
-      lng: 30.0924,
-    };
-
-    handleSimulateScan(customPlaque);
+    setManualError(`Plaque code "${clean}" was not recognized. Please scan the QR plaque directly or verify with front-desk staff.`);
   };
 
   return (
@@ -271,7 +237,7 @@ export const CounterScannerModal: React.FC<CounterScannerModalProps> = ({
                   <Text style={styles.inputLabel}>PLAQUE CODE / FACILITY ID</Text>
                   <TextInput
                     style={styles.manualInput}
-                    placeholder="e.g. PLQ-101, PLQ-102"
+                    placeholder="e.g. facility ID or front desk code"
                     placeholderTextColor={Palette.textMuted}
                     value={manualCode}
                     onChangeText={(text) => {

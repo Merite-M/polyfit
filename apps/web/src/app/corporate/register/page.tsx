@@ -125,13 +125,7 @@ function CorporateRegistrationContent() {
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!workEmail.trim() || !emailRegex.test(workEmail.trim())) {
-      setSubmitError("Please enter a valid work email address");
-      return false;
-    }
-    const emailDomain = workEmail.trim().split("@")[1]?.toLowerCase();
-    const freemails = ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com"];
-    if (freemails.includes(emailDomain)) {
-      setSubmitError("Corporate enrollment requires an official company email (e.g. name@company.rw), not a personal free email.");
+      setSubmitError("Please enter a valid email address");
       return false;
     }
     const digitsOnly = phone.replace(/\D/g, "");
@@ -183,8 +177,7 @@ function CorporateRegistrationContent() {
       }
     } catch (err: any) {
       console.error("[CorporateRegister] Submission error:", err);
-      // Fallback redirect to activation page with email prefilled
-      router.push(`/corporate/activate?email=${encodeURIComponent(workEmail.trim())}&welcome=true`);
+      setSubmitError(err?.message || "Corporate registration failed. Please verify your details or contact PolyFit support.");
     } finally {
       setIsSubmitting(false);
     }

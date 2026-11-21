@@ -32,10 +32,11 @@ async function runSyncVerification() {
   console.log(`Initial Max Visits: ${initialRes.body.benefit?.max_monthly_visits}`);
   console.log(`Initial Co-Pay: ${initialRes.body.benefit?.co_pay_percentage}%`);
 
-  // Step 2: HR upgrades Claire to Executive Tier via Corporate Portal Endpoint
-  console.log('\n[Step 2] HR updates Claire to Executive Tier via PATCH /api/public/corporate/employees/:id...');
+  // Step 2: HR upgrades Claire to Executive Tier via Authenticated Corporate Endpoint
+  console.log('\n[Step 2] HR updates Claire to Executive Tier via PATCH /api/organizations/:orgId/employees/:id...');
   const upgradeRes = await request(app)
-    .patch(`/api/public/corporate/employees/${CLAIRE_EMP_ID}`)
+    .patch(`/api/organizations/${KTI_ORG_ID}/employees/${CLAIRE_EMP_ID}`)
+    .set('Authorization', SUPER_ADMIN_TOKEN)
     .send({ tier: 'executive' });
 
   console.log(`HR Upgrade Response: HTTP ${upgradeRes.status}`);
@@ -64,10 +65,11 @@ async function runSyncVerification() {
     console.error('✗ FAILED: Mobile App did not reflect Executive plan!');
   }
 
-  // Step 4: HR assigns a specific plan via POST /api/public/corporate/benefits/:id/assign
-  console.log('\n[Step 4] HR assigns Starter Plan explicitly via POST /api/public/corporate/benefits/:id/assign...');
+  // Step 4: HR assigns a specific plan via POST /api/organizations/:orgId/benefits/:id/assign
+  console.log('\n[Step 4] HR assigns Starter Plan explicitly via POST /api/organizations/:orgId/benefits/:id/assign...');
   const assignRes = await request(app)
-    .post(`/api/public/corporate/benefits/${STARTER_BENEFIT_ID}/assign`)
+    .post(`/api/organizations/${KTI_ORG_ID}/benefits/${STARTER_BENEFIT_ID}/assign`)
+    .set('Authorization', SUPER_ADMIN_TOKEN)
     .send({ employeeIds: [CLAIRE_EMP_ID] });
 
   console.log(`HR Assign Response: HTTP ${assignRes.status}`);

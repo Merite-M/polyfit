@@ -22,7 +22,6 @@ import {
 import { PolyFitLogo } from "@/components/ui/polyfit-logo";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api-client";
-import { useAuth } from "@/contexts/AuthContext";
 
 type LoginMode = "signin" | "lookup" | "reset";
 
@@ -44,12 +43,6 @@ function CorporateLoginContent() {
   const emailParam = searchParams.get("email") || "";
   const registeredParam = searchParams.get("registered") === "true";
   const redirectParam = searchParams.get("redirect") || "/corporate";
-  const { enableDemoMode } = useAuth();
-
-  const handleDemoBypass = () => {
-    enableDemoMode?.();
-    router.push(redirectParam || "/corporate");
-  };
 
   const [mode, setMode] = useState<LoginMode>(registeredParam ? "lookup" : "signin");
   const [email, setEmail] = useState<string>(emailParam);
@@ -75,7 +68,7 @@ function CorporateLoginContent() {
     e.preventDefault();
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes("@")) {
-      setErrorMsg("Please enter your official corporate email address.");
+      setErrorMsg("Please enter a valid email address.");
       return;
     }
     if (!password) {
@@ -130,6 +123,35 @@ function CorporateLoginContent() {
     } catch (err: any) {
       console.error("[CorporateLogin] Sign in error:", err);
       setErrorMsg(err.message || "Failed to sign in. Please verify your email and password.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 4. Magic Link Sign In (Passwordless)
+  const handleMagicLink = async () => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes("@")) {
+      setErrorMsg("Please enter your email address to receive a sign-in magic link.");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: cleanEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}${redirectParam || "/corporate"}`
+        }
+      });
+      if (error) throw error;
+      setSuccessMsg(`Magic login link sent to ${cleanEmail}! Check your inbox to sign in without password.`);
+    } catch (err: any) {
+      console.error("[CorporateLogin] Magic link error:", err);
+      setErrorMsg(err.message || "Failed to send magic link. Please check your email or sign in with password.");
     } finally {
       setLoading(false);
     }
@@ -440,14 +462,15 @@ function CorporateLoginContent() {
               <div className="pt-4 border-t border-slate-200 text-center space-y-2">
                 <button
                   type="button"
-                  onClick={handleDemoBypass}
-                  className="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0B1F33] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors border border-slate-200/80 cursor-pointer"
+                  onClick={handleMagicLink}
+                  disabled={loading}
+                  className="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0B1F33] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors border border-slate-200/80 cursor-pointer disabled:opacity-50"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[#008A4B]" />
-                  <span>Explore Corporate Demo (TechCorp Rwanda HR Lead)</span>
+                  <Mail className="w-3.5 h-3.5 text-[#008A4B]" />
+                  <span>Send Sign-In Magic Link to Email</span>
                 </button>
                 <p className="text-[10px] text-slate-500">
-                  Instant evaluation clearance for prospective HR managers and CFOs.
+                  Passwordless authentication delivered directly to your registered inbox.
                 </p>
               </div>
             )}

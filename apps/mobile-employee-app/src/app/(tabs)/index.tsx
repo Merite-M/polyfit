@@ -29,6 +29,8 @@ import { PassVerificationStatus } from '@/components/pass/pass-verification-stat
 import { CounterScannerModal, ScannedPlaqueData } from '@/components/pass/counter-scanner-modal';
 import { CheckinSuccessModal } from '@/components/pass/checkin-success-modal';
 import { OfflineVaultService } from '@/services/offline-vault';
+import { generateClientTotp } from '@/services/totp';
+import { calculateDistanceKm } from '@/services/discovery-service';
 
 export default function AccessPassScreen() {
   const router = useRouter();
@@ -176,17 +178,33 @@ export default function AccessPassScreen() {
     }
   }, [session?.access_token, initializeSession, refreshProfileAndVisits]);
 
-  // Handle Modality B Scan Success (from Camera or Plaque Simulator)
+  // Handle Modality B Scan Success (from Camera or Plaque Scanner)
   const handlePlaqueScanned = async (plaque: ScannedPlaqueData) => {
     setScannerVisible(false);
 
-    // 1. Geofence rejection check
-    if (isOutOfGeofence) {
+    // 1. Live Geofence verification using GPS coordinates if available
+    let withinGeofence = true;
+    let currentDistanceMeters = 0;
+    try {
+      if (Platform.OS !== 'web') {
+        const Location = require('expo-location');
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          const distKm = calculateDistanceKm(loc.coords.latitude, loc.coords.longitude, plaque.lat, plaque.lng);
+          currentDistanceMeters = Math.round(distKm * 1000);
+          withinGeofence = currentDistanceMeters <= 200;
+        }
+      }
+    } catch {
+      // In offline or sensor error context, preserve standard flow
+    }
+
+    if (!withinGeofence) {
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       }
-      const msg = `Geofence check failed: You are 450m away from ${plaque.facilityName}. Maximum allowed access radius is 200m.`;
-      Alert.alert('Outside Geofence', msg);
+      Alert.alert('Outside Geofence', `Geofence check failed: You are ${currentDistanceMeters}m away from ${plaque.facilityName}. Maximum allowed access radius is 200m.`);
       return;
     }
 
@@ -205,12 +223,14 @@ export default function AccessPassScreen() {
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       }
-      const msg = `Monthly allowance reached: You have utilized all ${monthlyVisits}/${monthlyVisits} visits for this cycle. Refreshes on Nov 1.`;
+      const msg = `Monthly allowance reached: You have utilized all ${monthlyVisits}/${monthlyVisits} visits for this cycle.`;
       Alert.alert('Allowance Reached', msg);
       return;
     }
 
-    // 4. Calculate new remaining and create receipt
+    // 4. Generate dynamic TOTP from provisioned secret seed
+    const activeSeed = offlineTokenSeed || 'polyfit_device_vault_seed';
+    const dynamicToken = generateClientTotp(activeSeed, 30);
     const newRemaining = typeof remainingVisits === 'number' ? Math.max(0, remainingVisits - 1) : remainingVisits;
     const nowIso = new Date().toISOString();
 
@@ -223,7 +243,7 @@ export default function AccessPassScreen() {
       checkInAt: nowIso,
       verificationMethod: 'plaque_scan' as const,
       status: 'verified' as const,
-      totpTokenHash: 'verified_sig_' + Math.random().toString(36).substring(2, 9),
+      totpTokenHash: `totp_${dynamicToken}`,
       facilityCity: `${plaque.neighborhood}, Kigali`,
     };
 
@@ -237,11 +257,11 @@ export default function AccessPassScreen() {
     if (isOffline) {
       // Stash in encrypted offline vault
       await OfflineVaultService.queueOfflineVisit({
-        employeeId: employee?.id || 'demo-emp-id',
+        employeeId: employee?.id || 'unassigned-employee',
         providerLocationId: plaque.providerLocationId,
         providerLocationName: plaque.facilityName,
         scannedAt: nowIso,
-        totpToken: '782914',
+        totpToken: dynamicToken,
         lat: plaque.lat,
         lng: plaque.lng,
       });
@@ -292,11 +312,11 @@ export default function AccessPassScreen() {
     setSuccessModalVisible(true);
   };
 
-  const orgName = organization?.name || 'Corporate Wellness';
-  const orgDomain = organization?.domain || 'bk.rw';
-  const employeeName = employee?.full_name || 'Jean Mugisha';
-  const department = employee?.department || 'Commercial Banking';
-  const tierName = benefit?.name || 'Standard Corporate Tier';
+  const orgName = organization?.name || 'Corporate Employer';
+  const orgDomain = organization?.domain || '';
+  const employeeName = employee?.full_name || 'Corporate Employee';
+  const department = employee?.department || 'Employee Beneficiary';
+  const tierName = benefit?.name || 'Corporate Wellness Plan';
   const isFullySponsored = benefit?.is_fully_sponsored ?? true;
 
   const targetFacility = !isTargetBannerDismissed && (preselectedFacility || (params.facilityName ? {

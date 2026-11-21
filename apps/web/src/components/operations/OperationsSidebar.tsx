@@ -90,7 +90,7 @@ export function OperationsSidebar({ onCloseMobile }: OperationsSidebarProps) {
         <div className="flex items-center justify-between mb-4">
           <Link
             href="/operations"
-            onClick={(e) => handleNavClick(e, "/operations")}
+            onClick={(e: React.MouseEvent) => handleNavClick(e, "/operations")}
             className="flex items-center gap-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded-lg"
           >
             <IsometricHexMark size={32} />
@@ -156,7 +156,7 @@ export function OperationsSidebar({ onCloseMobile }: OperationsSidebarProps) {
             <Link
               key={item.name}
               href={item.href}
-              onClick={(e) => handleNavClick(e, item.href)}
+              onClick={(e: React.MouseEvent) => handleNavClick(e, item.href)}
               style={isActive ? { viewTransitionName: "operations-active-pill" } : undefined}
               className={`group flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 relative ${
                 isActive

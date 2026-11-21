@@ -474,7 +474,7 @@ describe('Employee Portal & Mobile Telemetry Test Suite (PF-109)', () => {
       assert.equal(res.body.success, true);
       assert.ok(res.body.offline_token_seed);
       assert.equal(res.body.offline_token_seed.length, 64); // 32 bytes hex = 64 characters
-      assert.equal(res.body.totp_step_seconds, 15);
+      assert.equal(res.body.totp_step_seconds, 30);
       assert.ok(res.body.activated_at);
       assert.equal(res.body.employee.status, 'active');
     });

@@ -64,8 +64,8 @@ export function EmployeeJoinClient({ orgConfig }: EmployeeJoinClientProps) {
     orgConfig.domains?.length
       ? orgConfig.domains
       : orgConfig.domain
-      ? [orgConfig.domain]
-      : []
+        ? [orgConfig.domain]
+        : []
   ).map((d) => d.toLowerCase());
 
   // Validate corporate domain on blur or typing
@@ -77,14 +77,6 @@ export function EmployeeJoinClient({ orgConfig }: EmployeeJoinClientProps) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(val)) {
       setEmailError("Please enter a valid email address");
-      return false;
-    }
-
-    const emailDomain = val.split("@")[1]?.toLowerCase();
-    if (allowedDomains.length > 0 && !allowedDomains.includes(emailDomain)) {
-      setEmailError(
-        `Must use your official @${allowedDomains.join(" or @")} company email address.`
-      );
       return false;
     }
 
@@ -117,7 +109,10 @@ export function EmployeeJoinClient({ orgConfig }: EmployeeJoinClientProps) {
       );
 
       const passPlan = res?.plan || {};
-      const resolvedCode = res?.activation_code || employeeId.trim() || `PF-${Math.floor(100000 + Math.random() * 900000)}`;
+      const resolvedCode = res?.activation_code || res?.code;
+      if (!resolvedCode) {
+        throw new Error(res?.error || "Activation server did not issue a verified pass code. Please contact HR.");
+      }
 
       setCreatedPass({
         employeeName: res?.employee?.full_name || fullName.trim(),
@@ -132,25 +127,9 @@ export function EmployeeJoinClient({ orgConfig }: EmployeeJoinClientProps) {
       });
       setIsSuccess(true);
     } catch (err: any) {
-      if (err?.status === 400 && err.message) {
-        setEmailError(err.message);
-        setIsSubmitting(false);
-        return;
-      }
-      // In offline/demo mode, deliver instant pass experience gracefully
-      const fallbackCode = employeeId.trim() || `PF-${Math.floor(100000 + Math.random() * 900000)}`;
-      setCreatedPass({
-        employeeName: fullName.trim(),
-        email: email.trim(),
-        employeeId: employeeId.trim(),
-        planName: orgConfig.tierName,
-        maxVisits: orgConfig.maxVisits,
-        coPayPercent: orgConfig.coPayPercent,
-        orgName: orgConfig.name,
-        activationCode: fallbackCode,
-        isAlreadyEnrolled: false,
-      });
-      setIsSuccess(true);
+      const errorMsg = err?.message || "Failed to activate employee pass. Please check with your HR department or try again.";
+      setEmailError(errorMsg);
+      setIsSuccess(false);
     } finally {
       setIsSubmitting(false);
     }

@@ -192,16 +192,20 @@ export function LiveSmartphonePreview({ state, currentStep }: LiveSmartphonePrev
                 {/* Discovery Card as seen by Corporate Employees */}
                 <div className="bg-[#0D2235] rounded-2xl border border-[#21405A] overflow-hidden shadow-lg group">
                   {/* Hero Photo Header */}
-                  <div className="h-24 bg-slate-800 relative">
-                    <img
-                      src={
-                        state.cover_url ||
-                        'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&q=80&w=600'
-                      }
-                      alt="Venue Cover"
-                      className="w-full h-full object-cover transition-all duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0D2235] via-transparent to-black/40" />
+                  <div className="h-24 bg-slate-800 relative flex items-center justify-center">
+                    {state.cover_url ? (
+                      <img
+                        src={state.cover_url}
+                        alt="Venue Cover"
+                        className="w-full h-full object-cover transition-all duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#132D43] to-[#0A1826] text-[#526173]">
+                        <ImageIcon className="w-6 h-6 mb-1 opacity-40" />
+                        <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">Upload Cover Photo</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0D2235] via-transparent to-black/40 pointer-events-none" />
 
                     {/* Geofence & Proximity Badge */}
                     <div className="absolute top-2 left-2 bg-[#071521]/80 backdrop-blur-xs px-2 py-0.5 rounded-full text-[9px] font-bold text-white border border-white/10 flex items-center gap-1">
@@ -216,15 +220,18 @@ export function LiveSmartphonePreview({ state, currentStep }: LiveSmartphonePrev
                     </div>
 
                     {/* Logo Avatar Overlay */}
-                    <div className="absolute -bottom-2.5 left-3 w-9 h-9 rounded-xl bg-[#071521] border-2 border-[#28D17C] overflow-hidden shadow-md">
-                      <img
-                        src={
-                          state.logo_url ||
-                          'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=200'
-                        }
-                        alt="Logo"
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="absolute -bottom-2.5 left-3 w-9 h-9 rounded-xl bg-[#071521] border-2 border-[#28D17C] overflow-hidden shadow-md flex items-center justify-center">
+                      {state.logo_url ? (
+                        <img
+                          src={state.logo_url}
+                          alt="Logo"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-[10px] font-black text-[#28D17C]">
+                          {(state.name || 'PF').slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -308,15 +315,19 @@ export function LiveSmartphonePreview({ state, currentStep }: LiveSmartphonePrev
                 </button>
 
                 {/* Entrance Photo Banner */}
-                <div className="h-28 rounded-xl bg-slate-800 overflow-hidden relative border border-[#21405A]">
-                  <img
-                    src={
-                      state.entrance_url ||
-                      'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=600'
-                    }
-                    alt="Entrance"
-                    className="w-full h-full object-cover"
-                  />
+                <div className="h-28 rounded-xl bg-slate-800 overflow-hidden relative border border-[#21405A] flex items-center justify-center">
+                  {state.entrance_url ? (
+                    <img
+                      src={state.entrance_url}
+                      alt="Entrance"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#132D43] to-[#0A1826] text-[#526173]">
+                      <DoorOpen className="w-6 h-6 mb-1 opacity-40 text-[#28D17C]" />
+                      <span className="text-[9px] uppercase tracking-wider font-semibold opacity-60">Entrance Photo Pending</span>
+                    </div>
+                  )}
                   <div className="absolute bottom-1.5 left-2 bg-black/75 px-1.5 py-0.5 rounded text-[8px] font-bold text-white flex items-center gap-1">
                     <DoorOpen className="w-2.5 h-2.5 text-[#28D17C]" />
                     <span>Main Entrance</span>

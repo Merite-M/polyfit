@@ -24,7 +24,6 @@ import {
   fetchEmployeeMe,
   fetchEmployeeVisits,
 } from '@/services/api';
-import { createDemoAccounts } from '@/constants/demo-data';
 import { useDiscoveryStore } from '@/stores/discovery-store';
 import { useTabStore } from '@/stores/tab-store';
 
@@ -110,7 +109,6 @@ interface AuthState {
   locationGranted: boolean;
   isLoading: boolean;
   error: string | null;
-  demoOtp: string | null;
 
   // PF-102 Profile & Benefit Telemetry
   benefitTelemetry: BenefitUsageTelemetry | null;
@@ -141,7 +139,6 @@ interface AuthState {
   updateNotificationSettings: (settings: Partial<EmployeeNotificationSettings>) => Promise<void>;
 
   recordSuccessfulCheckIn: (visit: VerifiedVisitReceipt) => void;
-  loadDemoAccount: (orgType: 'bk' | 'techcorp') => Promise<void>;
   initializeSession: () => Promise<boolean>;
   logout: () => Promise<void>;
 }
@@ -164,7 +161,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   locationGranted: false,
   isLoading: false,
   error: null,
-  demoOtp: null,
 
   // PF-102 State
   benefitTelemetry: null,
@@ -283,7 +279,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const result = await requestAccess(target);
       set({
         isLoading: false,
-        demoOtp: result.demo_otp || null,
         step: 'otp',
         error: null,
       });
@@ -448,24 +443,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     saveSecureItem(STORAGE_KEY_VISITS, JSON.stringify([visit, ...currentVisits])).catch(() => {});
   },
 
-  loadDemoAccount: async (orgType: 'bk' | 'techcorp') => {
-    set({ isLoading: true, error: null });
-    const demos = createDemoAccounts();
-    const demo = demos[orgType];
-    set({
-      email: demo.email,
-      organization: demo.organization,
-      benefit: demo.benefit,
-      employee: demo.employee,
-      benefitTelemetry: demo.benefitTelemetry,
-      recentVisits: demo.recentVisits,
-      session: demo.session,
-      demoOtp: demo.demoOtp,
-      step: 'otp',
-      isLoading: false,
-    });
-  },
-
   initializeSession: async () => {
     try {
       const token = await getSecureItem(STORAGE_KEY_TOKEN);
@@ -531,7 +508,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       benefitTelemetry: null,
       recentVisits: [],
       notificationSettings: DEFAULT_NOTIFICATIONS,
-      demoOtp: null,
       error: null,
     });
   },

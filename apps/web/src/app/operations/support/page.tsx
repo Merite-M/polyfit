@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 import { useOperationsDrawer } from "@/contexts/OperationsDrawerContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface BeneficiaryItem {
   id: string;
@@ -131,10 +132,17 @@ const RBAC_ROLE_CONFIG = {
 
 export default function SupportOperationsPage() {
   const { openDrawer, refreshKey } = useOperationsDrawer();
+  const { user, role, isSuperAdmin } = useAuth();
 
-  // Active Simulated Operator Role
-  const [activeRole, setActiveRole] = useState<keyof typeof RBAC_ROLE_CONFIG>("super_admin");
-  const rolePermissions = RBAC_ROLE_CONFIG[activeRole];
+  // Derive operator role strictly from authenticated session
+  const operatorRole: keyof typeof RBAC_ROLE_CONFIG = useMemo(() => {
+    if (isSuperAdmin || role === "super_admin") return "super_admin";
+    if (role === "polyfit_ops") return "polyfit_ops";
+    if (role === "finance_manager") return "finance_manager";
+    return "support_agent";
+  }, [role, isSuperAdmin]);
+
+  const rolePermissions = RBAC_ROLE_CONFIG[operatorRole];
 
   // Navigation tab
   const [activeTab, setActiveTab] = useState<"beneficiaries" | "settings" | "audit" | "team">("beneficiaries");
@@ -268,7 +276,6 @@ export default function SupportOperationsPage() {
         body: JSON.stringify({
           key,
           value,
-          operator_email: `operator-${activeRole}@polyfit.rw`,
         }),
       });
       if (res?.setting) {
@@ -298,7 +305,6 @@ export default function SupportOperationsPage() {
         body: JSON.stringify({
           target_user_id: userId,
           role: newRole,
-          operator_email: `operator-${activeRole}@polyfit.rw`,
         }),
       });
       fetchTeam();
@@ -379,30 +385,15 @@ export default function SupportOperationsPage() {
           </div>
         </div>
 
-        {/* Role Simulator Switcher */}
-        <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-xl bg-slate-100 border border-slate-200">
-          <span className="text-[11px] font-semibold text-slate-600 pl-2 pr-1 flex items-center gap-1.5">
-            <Eye className="w-3.5 h-3.5 text-[#008A4B]" />
-            <span>Simulate Role:</span>
-          </span>
-          {(Object.keys(RBAC_ROLE_CONFIG) as Array<keyof typeof RBAC_ROLE_CONFIG>).map((roleKey) => {
-            const isCurrent = activeRole === roleKey;
-            const r = RBAC_ROLE_CONFIG[roleKey];
-            return (
-              <button
-                key={roleKey}
-                type="button"
-                onClick={() => setActiveRole(roleKey)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  isCurrent
-                    ? "bg-white text-slate-900 shadow-xs font-bold"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
-                }`}
-              >
-                {r.label}
-              </button>
-            );
-          })}
+        {/* Operator Identity & Real Clearance Badge */}
+        <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs">
+          <div className="w-2 h-2 rounded-full bg-[#28D17C] animate-pulse" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+            <span className="font-bold text-[#0B1F33]">{user?.email || "Staff Operator"}</span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border ${rolePermissions.badgeColor}`}>
+              {rolePermissions.label}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -410,7 +401,7 @@ export default function SupportOperationsPage() {
       <div className="p-3.5 rounded-xl bg-[#E9FAF2]/60 border border-[#B7F1D2] flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2.5">
           <span className={`px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider text-[10px] border ${rolePermissions.badgeColor}`}>
-            Active: {rolePermissions.label}
+            Active Clearance: {rolePermissions.label}
           </span>
           <span className="text-slate-700">{rolePermissions.description}</span>
         </div>
@@ -1134,15 +1125,15 @@ export default function SupportOperationsPage() {
                 <div
                   key={roleKey}
                   className={`p-4 rounded-2xl bg-white border space-y-3 shadow-xs ${
-                    activeRole === roleKey ? "border-[#28D17C] ring-2 ring-[#28D17C]/20" : "border-slate-200/80"
+                    operatorRole === roleKey ? "border-[#28D17C] ring-2 ring-[#28D17C]/20" : "border-slate-200/80"
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${role.badgeColor}`}>
                       {role.label}
                     </span>
-                    {activeRole === roleKey && (
-                      <span className="text-[10px] text-[#008A4B] font-bold bg-[#E9FAF2] px-1.5 py-0.5 rounded">Simulating</span>
+                    {operatorRole === roleKey && (
+                      <span className="text-[10px] text-[#008A4B] font-bold bg-[#E9FAF2] px-1.5 py-0.5 rounded">Your Clearance</span>
                     )}
                   </div>
                   <p className="text-[11px] text-slate-500 min-h-[44px]">

@@ -86,7 +86,6 @@ export function MomoDisburseModal({
         method: "POST",
         body: JSON.stringify({
           phoneNumber: phone.trim(),
-          force: true,
         }),
       });
 
@@ -111,7 +110,7 @@ export function MomoDisburseModal({
       className="pf-native-dialog pf-dialog-md p-0 bg-transparent text-[#0B1F33]"
       aria-labelledby="momo-disburse-title"
     >
-      <div className="relative w-full bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+      <div className="relative w-full bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden @container">
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2.5">

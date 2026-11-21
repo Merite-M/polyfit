@@ -126,10 +126,11 @@ describe('PolyFit Partner Ecosystem End-to-End Audit & Hardening', () => {
     });
 
     test('1.3: Concurrency Guard: 5 simultaneous check-ins are safely serialized with zero race condition', async () => {
-      // Find another active employee for concurrency test
+      // Find another active employee from Kigali Tech Innovations (which has a contract at FitLife)
       const { data: altEmp } = await supabase
         .from('employees')
         .select('id, full_name')
+        .eq('org_id', '02f13bdc-ce25-4c9d-b712-451c06a63fa2')
         .neq('id', CLAIRE_EMP_ID)
         .eq('status', 'active')
         .limit(1)
@@ -184,7 +185,8 @@ describe('PolyFit Partner Ecosystem End-to-End Audit & Hardening', () => {
         .send({
           turnstile_id: 'TURNSTILE_01',
           employee_identifier: 'jean.mugisha@bk.rw',
-          provider_location_id: FITLIFE_LOCATION_ID
+          provider_location_id: FITLIFE_LOCATION_ID,
+          supervisor_otp: '654321'
         });
 
       assert.strictEqual(rejectedRes.status, 403);
@@ -198,7 +200,8 @@ describe('PolyFit Partner Ecosystem End-to-End Audit & Hardening', () => {
         .send({
           turnstile_id: 'TURNSTILE_01',
           employee_identifier: 'claire@kigalitech.rw',
-          provider_location_id: FITLIFE_LOCATION_ID
+          provider_location_id: FITLIFE_LOCATION_ID,
+          supervisor_otp: '654321'
         });
 
       assert.ok([201, 409].includes(bypassRes.status));

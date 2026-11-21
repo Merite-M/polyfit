@@ -10,7 +10,6 @@ import React, {
 } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiFetch } from "@/lib/api-client";
-import { TECHCORP_CANONICAL_DATA } from "@/lib/constants";
 import type { CorporateEmployee } from "@/components/corporate/EmployeeDetailDrawer";
 import type { BenefitPlan } from "@/components/corporate/PlanCard";
 import type { InvoiceRecord } from "@/components/corporate/billing/InvoiceTable";
@@ -44,52 +43,7 @@ export const EMPTY_ORGANIZATION: CorporateOrganization = {
   status: "active",
 };
 
-export const NETWORK_ORGANIZATIONS: CorporateOrganization[] = [
-  {
-    id: "02f13bdc-ce25-4c9d-b712-451c06a63fa2",
-    name: "Kigali Tech Innovations",
-    slug: "kigali-tech-innovations",
-    domain: "kigalitech.rw",
-    allowed_domains: ["kigalitech.rw"],
-    tax_id: "109887766",
-    contact_email: "hr@kigalitech.rw",
-    billing_email: "hr@kigalitech.rw",
-    industry: "Technology & Financial Services",
-  },
-  {
-    id: "c79a9982-4477-4336-a24b-561419f6c43b",
-    name: "TechCorp Rwanda",
-    slug: "techcorp-rwanda",
-    domain: "techcorp.rw",
-    allowed_domains: ["techcorp.rw"],
-    tax_id: "108392019",
-    contact_email: "hr@techcorp.rw",
-    billing_email: "finance@techcorp.rw",
-    industry: "Technology & Software",
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000001",
-    name: "Bank of Kigali",
-    slug: "bank-of-kigali",
-    domain: "bk.rw",
-    allowed_domains: ["bk.rw", "bankofkigali.rw"],
-    tax_id: "100018471",
-    contact_email: "wellness@bk.rw",
-    billing_email: "finance@bk.rw",
-    industry: "Banking & Financial Services",
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000002",
-    name: "Equity Bank Rwanda",
-    slug: "equity-bank-rwanda",
-    domain: "equitybank.co.ke",
-    allowed_domains: ["equitybank.co.ke", "equitygroupholdings.com"],
-    tax_id: "101928475",
-    contact_email: "wellness@equitybank.rw",
-    billing_email: "accounts@equitybank.rw",
-    industry: "Banking & Financial Services",
-  },
-];
+export const NETWORK_ORGANIZATIONS: CorporateOrganization[] = [];
 
 export interface CorporateReportingCategory {
   category: string;
@@ -259,81 +213,39 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // 3. Dynamic Portal State (initialized cleanly; populated via loadPortalData)
-  const isExplicitTechCorp = useMemo(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const s = params.get("org") || params.get("slug");
-      if (s) return String(s).toLowerCase().includes("techcorp");
-    }
-    return false;
-  }, []);
-
-  const [funnelData, setFunnelData] = useState<AdoptionFunnelData>(() => {
-    if (isExplicitTechCorp && isDemoMode) {
-      return TECHCORP_CANONICAL_DATA.funnel;
-    }
-    return {
-      totalEligible: 0,
-      registeredEmployees: 0,
-      activeBeneficiaries: 0,
-      totalVisits: 0,
-      newEmployees30d: 0,
-      newBeneficiaries30d: 0,
-      avgVisitsPerActive: 0,
-    };
+  const [funnelData, setFunnelData] = useState<AdoptionFunnelData>({
+    totalEligible: 0,
+    registeredEmployees: 0,
+    activeBeneficiaries: 0,
+    totalVisits: 0,
+    newEmployees30d: 0,
+    newBeneficiaries30d: 0,
+    avgVisitsPerActive: 0,
   });
 
-  const [reportingData, setReportingData] = useState<CorporateReportingData>(() => {
-    if (isExplicitTechCorp && isDemoMode) {
-      return {
-        categories: TECHCORP_CANONICAL_DATA.wellness.categories,
-        temporal: {
-          wellnessHour: TECHCORP_CANONICAL_DATA.wellness.wellnessHour,
-          peakDay: TECHCORP_CANONICAL_DATA.wellness.peakDay,
-        },
-        monthlyTrends: DEMO_MONTHLY_TRENDS,
-      };
-    }
-    return {
-      categories: { gym: 0, pool: 0, studio: 0, clinic: 0 },
-      topProviders: [],
-      departments: [],
-      temporal: {
-        wellnessHour: "No activity yet",
-        peakDay: "No activity yet",
-      },
-      monthlyTrends: [],
-    };
+  const [reportingData, setReportingData] = useState<CorporateReportingData>({
+    categories: { gym: 0, pool: 0, studio: 0, clinic: 0 },
+    topProviders: [],
+    departments: [],
+    temporal: {
+      wellnessHour: "No activity yet",
+      peakDay: "No activity yet",
+    },
+    monthlyTrends: [],
   });
 
-  const [economics, setEconomics] = useState<CorporateEconomics>(() => {
-    if (isExplicitTechCorp && isDemoMode) return TECHCORP_CANONICAL_DATA.economics;
-    return ZERO_ECONOMICS;
-  });
+  const [economics, setEconomics] = useState<CorporateEconomics>(ZERO_ECONOMICS);
 
   // 4. Employee Roster State
-  const [employees, setEmployees] = useState<CorporateEmployee[]>(() => {
-    if (isExplicitTechCorp && isDemoMode) {
-      return TECHCORP_CANONICAL_DATA.employees as CorporateEmployee[];
-    }
-    return [];
-  });
+  const [employees, setEmployees] = useState<CorporateEmployee[]>([]);
   const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
 
   // 5. Benefit Plans State
-  const [plans, setPlans] = useState<BenefitPlan[]>(() => {
-    if (isExplicitTechCorp && isDemoMode) {
-      return TECHCORP_CANONICAL_DATA.plans as unknown as BenefitPlan[];
-    }
-    return [];
-  });
+  const [plans, setPlans] = useState<BenefitPlan[]>([]);
   const [isLoadingPlans, setIsLoadingPlans] = useState(false);
 
   // 6. Invoices State
-  const [invoices, setInvoices] = useState<InvoiceRecord[]>(() => {
-    if (isExplicitTechCorp && isDemoMode) return TECHCORP_CANONICAL_DATA.invoices as unknown as InvoiceRecord[];
-    return [];
-  });
+  const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
 
   // Load portal data dynamically from database for ANY organization
@@ -382,14 +294,6 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       setIsLoadingPlans(false);
     }
 
-    // Fallback for techcorp-rwanda demo mode only
-    if (targetSlugOrId && String(targetSlugOrId).toLowerCase().includes("techcorp")) {
-      setPlans(TECHCORP_CANONICAL_DATA.plans as unknown as BenefitPlan[]);
-      setEmployees(TECHCORP_CANONICAL_DATA.employees as CorporateEmployee[]);
-      setFunnelData(TECHCORP_CANONICAL_DATA.funnel);
-      setEconomics(TECHCORP_CANONICAL_DATA.economics);
-      setInvoices(TECHCORP_CANONICAL_DATA.invoices as unknown as InvoiceRecord[]);
-    }
     return null;
   }, []);
 
@@ -415,35 +319,40 @@ export function CorporateProvider({ children }: { children: React.ReactNode }) {
       try {
         if (isSuperAdmin) {
           // Super admin: can browse all organizations in the network
-          let orgs = NETWORK_ORGANIZATIONS;
+          let orgs: CorporateOrganization[] = [];
           try {
             const listRes = await apiFetch<any>("/api/public/corporate/organizations");
             if (listRes?.success && Array.isArray(listRes.organizations) && listRes.organizations.length > 0) {
               orgs = listRes.organizations;
             }
           } catch (e) {
-            console.warn("[CorporateContext] Failed to fetch full org list, using network orgs fallback", e);
+            console.warn("[CorporateContext] Failed to fetch full org list:", e);
           }
 
           if (isCancelled) return;
           setAvailableOrganizations(orgs);
 
           // Find active org from query param, localStorage, or fallback to first
-          let selectedOrg = orgs[0];
+          let selectedOrg = orgs[0] || null;
           if (typeof window !== "undefined") {
             const params = new URLSearchParams(window.location.search);
             const queryOrg = params.get("org") || params.get("slug");
             const storedOrg = localStorage.getItem("polyfit_corporate_active_org");
             const targetSlug = queryOrg || storedOrg;
-            if (targetSlug) {
+            if (targetSlug && orgs.length > 0) {
               const match = orgs.find((o) => o.slug === targetSlug || o.id === targetSlug);
               if (match) selectedOrg = match;
             }
           }
 
-          setOrganization(selectedOrg);
-          setOrganizationStatus("active");
-          await loadPortalData(selectedOrg.slug || selectedOrg.id);
+          if (selectedOrg) {
+            setOrganization(selectedOrg);
+            setOrganizationStatus("active");
+            await loadPortalData(selectedOrg.slug || selectedOrg.id);
+          } else {
+            setOrganization(EMPTY_ORGANIZATION);
+            setOrganizationStatus("not_found");
+          }
           return;
         }
 

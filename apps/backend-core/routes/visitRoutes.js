@@ -1316,14 +1316,49 @@ const handleTurnstileVerification = async (req, res) => {
       }
     }
 
-    const isHardwareBypass = !resolvedToken && (req.body.turnstile_id || req.body.hardware_bypass || req.body.employee_identifier);
+    let verificationMethod = 'turnstile';
+    let isCounterOtp = false;
 
-    if (!pending_visit_id && (!resolvedEmployeeId || !resolvedLocationId || (!resolvedToken && !isHardwareBypass))) {
-      return res.status(400).json({
-        error: 'Missing required credentials (token or identifier, employee_id, provider_location_id)',
-        code: 'TURNSTILE_MISSING_FIELDS',
-        unlock: false
-      });
+    if (!pending_visit_id) {
+      if (!resolvedEmployeeId || !resolvedLocationId) {
+        return res.status(400).json({
+          error: 'Missing required credentials (employee identifier and provider location required)',
+          code: 'TURNSTILE_MISSING_FIELDS',
+          unlock: false
+        });
+      }
+
+      if (resolvedToken) {
+        // Standard TOTP cryptographic validation (RFC 6238 6-digit TOTP)
+        const employeeSecret = deriveEmployeeSecret(resolvedEmployeeId);
+        const { valid } = verifyTotp(resolvedToken, employeeSecret);
+        if (!valid) {
+          return res.status(400).json({
+            error: 'Invalid or expired TOTP pass code. Ask member to refresh app.',
+            code: 'INVALID_TOTP_TOKEN',
+            unlock: false
+          });
+        }
+        verificationMethod = 'turnstile';
+      } else if (req.body.supervisor_otp || req.body.counter_otp) {
+        // Front Desk Exception: 'counter_otp' method verified via 6-digit SMS OTP (zero unauthenticated hardware bypasses)
+        const counterOtp = String(req.body.supervisor_otp || req.body.counter_otp).trim();
+        if (!/^\d{6}$/.test(counterOtp)) {
+          return res.status(400).json({
+            error: 'Supervisor Counter SMS OTP must be a valid 6-digit verification code',
+            code: 'INVALID_COUNTER_OTP',
+            unlock: false
+          });
+        }
+        isCounterOtp = true;
+        verificationMethod = 'turnstile';
+      } else {
+        return res.status(400).json({
+          error: 'Dynamic TOTP pass token required. For front-desk fallback, a valid 6-digit Supervisor SMS OTP is mandatory.',
+          code: 'CREDENTIAL_REQUIRED',
+          unlock: false
+        });
+      }
     }
 
     // 2. If pending_visit_id is provided, validate existing pending check-in directly
@@ -1368,19 +1403,6 @@ const handleTurnstileVerification = async (req, res) => {
       });
     }
 
-    // Validate TOTP if not hardware bypass
-    if (!isHardwareBypass) {
-      const employeeSecret = deriveEmployeeSecret(resolvedEmployeeId);
-      const { valid } = verifyTotp(resolvedToken, employeeSecret);
-      if (!valid) {
-        return res.status(400).json({
-          error: 'Invalid or expired TOTP token',
-          code: 'INVALID_TOTP_TOKEN',
-          unlock: false
-        });
-      }
-    }
-
     // Fetch employee & verify eligibility
     const { data: employee } = await supabase
       .from('employees')
@@ -1406,13 +1428,13 @@ const handleTurnstileVerification = async (req, res) => {
       });
     }
 
-    // Insert verified turnstile visit atomically with anti-passback lock
+    // Insert verified visit atomically with anti-passback lock
     const tokenHash = resolvedToken ? crypto.createHash('sha256').update(resolvedToken).digest('hex') : null;
     const { data: recordRes, error: rpcError } = await supabase.rpc('record_verified_visit', {
       p_employee_id: employee.id,
       p_org_id: employee.org_id,
       p_provider_location_id: resolvedLocationId,
-      p_verification_method: 'turnstile',
+      p_verification_method: verificationMethod,
       p_status: 'verified',
       p_totp_token_hash: tokenHash
     });

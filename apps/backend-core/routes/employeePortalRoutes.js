@@ -11,6 +11,7 @@ const {
   getEmployeeNetwork
 } = require('../services/employeePortalService');
 const { evaluateEmployeeEligibility } = require('../services/eligibilityService');
+const { deriveEmployeeSecret, DEFAULT_TIME_STEP_SECONDS } = require('../services/totpService');
 
 const router = express.Router();
 
@@ -656,8 +657,13 @@ router.post(['/auth/request-access', '/request-access'], async (req, res) => {
         attempts: 0
       });
 
-      // Universal/demo OTP output strictly prohibited in production to prevent credential leakage
-      const isDevOrDemo = process.env.NODE_ENV !== 'production';
+      // Zero demo OTP leakage; strictly prohibited in production and scoped to test runner execution
+      const isTestRunner = process.env.NODE_ENV !== 'production' && (
+        process.env.NODE_ENV === 'test' ||
+        process.env.npm_lifecycle_event === 'test' ||
+        process.argv.some((arg) => typeof arg === 'string' && arg.includes('--test')) ||
+        (process.execArgv && process.execArgv.some((arg) => typeof arg === 'string' && arg.includes('--test')))
+      );
 
       return res.status(200).json({
         success: true,
@@ -666,7 +672,7 @@ router.post(['/auth/request-access', '/request-access'], async (req, res) => {
         phone: normalizedPhone,
         destination: normalizedPhone,
         expires_in_seconds: 600,
-        ...(isDevOrDemo ? { demo_otp: otp } : {})
+        ...(isTestRunner ? { demo_otp: otp } : {})
       });
     }
 
@@ -710,8 +716,13 @@ router.post(['/auth/request-access', '/request-access'], async (req, res) => {
       }
     }
 
-    // Universal/demo OTP output strictly prohibited in production to prevent credential leakage
-    const isDevOrDemo = process.env.NODE_ENV !== 'production';
+    // Zero demo OTP leakage; strictly prohibited in production and scoped to test runner execution
+    const isTestRunner = process.env.NODE_ENV !== 'production' && (
+      process.env.NODE_ENV === 'test' ||
+      process.env.npm_lifecycle_event === 'test' ||
+      process.argv.some((arg) => typeof arg === 'string' && arg.includes('--test')) ||
+      (process.execArgv && process.execArgv.some((arg) => typeof arg === 'string' && arg.includes('--test')))
+    );
 
     return res.status(200).json({
       success: true,
@@ -720,7 +731,7 @@ router.post(['/auth/request-access', '/request-access'], async (req, res) => {
       email: cleanEmail,
       destination: cleanEmail,
       expires_in_seconds: 600,
-      ...(isDevOrDemo ? { demo_otp: otp } : {})
+      ...(isTestRunner ? { demo_otp: otp } : {})
     });
   } catch (err) {
     console.error('[employeePortal/request-access] Error:', err);
@@ -759,8 +770,6 @@ router.post(['/auth/verify-access', '/verify-access'], async (req, res) => {
 
     // Validate OTP against cache with attempt bounding and constant-time safeCompare
     const cachedOtp = otpCache.get(targetKey);
-    // Universal demo OTP bypass strictly prohibited in production environments
-    const isUniversalDemo = process.env.NODE_ENV !== 'production' && ['123456', '000000'].includes(cleanCode);
 
     if (cachedOtp) {
       cachedOtp.attempts = (cachedOtp.attempts || 0) + 1;
@@ -774,8 +783,7 @@ router.post(['/auth/verify-access', '/verify-access'], async (req, res) => {
       }
     }
 
-    const isCodeValid = cachedOtp && Date.now() < cachedOtp.expiresAt && safeCompare(cachedOtp.code, cleanCode);
-    const isMatch = isUniversalDemo || isCodeValid;
+    const isMatch = Boolean(cachedOtp && Date.now() < cachedOtp.expiresAt && safeCompare(cachedOtp.code, cleanCode));
 
     if (!isMatch) {
       return res.status(400).json({
@@ -1007,16 +1015,15 @@ router.post(['/benefit/activate', '/benefit/activation'], async (req, res) => {
         }, { onConflict: 'employee_id,benefit_id' });
     }
 
-    // 4. Generate 32-byte cryptographic token seed for SecureStore (RFC 6238 TOTP Pass Vault)
-    const crypto = require('crypto');
-    const offlineTokenSeed = crypto.randomBytes(32).toString('hex');
+    // 4. Provision deterministic 32-byte cryptographic token seed for SecureStore (aligned with visit verification HMAC)
+    const offlineTokenSeed = deriveEmployeeSecret(employee.id).toString('hex');
 
     return res.status(200).json({
       success: true,
       message: 'Corporate wellness benefit activated successfully!',
       activated_at: new Date().toISOString(),
       offline_token_seed: offlineTokenSeed,
-      totp_step_seconds: 15,
+      totp_step_seconds: DEFAULT_TIME_STEP_SECONDS || 30,
       employee: {
         id: employee.id,
         full_name: employee.full_name,
@@ -1026,7 +1033,7 @@ router.post(['/benefit/activate', '/benefit/activation'], async (req, res) => {
       },
       pass_vault: {
         algorithm: 'SHA256',
-        step_seconds: 15,
+        step_seconds: DEFAULT_TIME_STEP_SECONDS || 30,
         provisioned_at: new Date().toISOString()
       }
     });

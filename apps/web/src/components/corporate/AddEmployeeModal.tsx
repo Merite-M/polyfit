@@ -31,9 +31,7 @@ export function AddEmployeeModal({
 }: AddEmployeeModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const { addEmployee: ctxAddEmployee, organization } = useCorporate();
-  const effectiveDomain = corporateDomain && !corporateDomain.includes("techcorp")
-    ? corporateDomain
-    : organization.domain || "kigalitech.rw";
+  const effectiveDomain = corporateDomain || organization.domain || "";
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -97,12 +95,10 @@ export function AddEmployeeModal({
           status,
         });
       } else {
-        await apiFetch(`/api/public/corporate/employees`, {
+        await apiFetch(`/api/organizations/${orgId || organization.id}/employees`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            org_id: orgId || organization.id,
-            org_slug: organization.slug,
             full_name: fullName.trim(),
             email: email.trim().toLowerCase(),
             employee_id_external: employeeIdExternal.trim() || null,
@@ -137,7 +133,7 @@ export function AddEmployeeModal({
       className="pf-native-dialog p-0 bg-transparent text-[var(--text-primary,#0B1F33)]"
       aria-labelledby="add-employee-title"
     >
-      <div className="relative w-full max-w-lg bg-[var(--surface,#FFFFFF)] rounded-2xl shadow-2xl border border-[var(--border,#E2E8F0)] overflow-hidden">
+      <div className="@container relative w-full max-w-lg bg-[var(--surface,#FFFFFF)] rounded-2xl shadow-2xl border border-[var(--border,#E2E8F0)] overflow-hidden">
         {/* Header */}
         <div className="px-6 py-5 border-b border-[var(--border,#E2E8F0)] flex items-center justify-between bg-[var(--surface-dim,#F7F9FC)]">
           <div className="flex items-center gap-2.5">

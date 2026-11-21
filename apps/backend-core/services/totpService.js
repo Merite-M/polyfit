@@ -148,19 +148,6 @@ function verifySignedPassPayload(signedPayload) {
       return parsed;
     }
 
-    // 2. Offline pass signature check (RFC 3174 SHA-1 tamper hash from mobile app)
-    if (parsed && (parsed.type === 'polyfit_totp_pass' || parsed.offline)) {
-      const clientHash = crypto
-        .createHash('sha1')
-        .update(jsonStr + (parsed.token || ''))
-        .digest('hex')
-        .slice(0, 16);
-
-      if (safeCompare(sig, clientHash)) {
-        return parsed;
-      }
-    }
-
     return null;
   } catch (err) {
     return null;

@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [providerId, setProviderId] = useState<string | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [showMfaReminder, setShowMfaReminder] = useState(true);
 
   const resolveUserRoles = async (authUser: any) => {
     if (!authUser) {
@@ -83,14 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user && isMounted) {
           setUser(session.user);
           await resolveUserRoles(session.user);
-        } else if (typeof window !== 'undefined' && localStorage.getItem('polyfit_demo_mode') === 'true') {
-          if (isMounted) {
-            setUser({ id: 'demo-user', email: 'demo@example.com' });
-            setRole('super_admin');
-            setOrganizationId('c79a9982-4477-4336-a24b-561419f6c43b');
-            setIsSuperAdmin(true);
-            setIsDemoMode(true);
-          }
         } else if (isMounted) {
           setUser(null);
           setRole(null);
@@ -120,13 +112,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await resolveUserRoles(session.user);
           setLoading(false);
         }, 0);
-      } else if (typeof window !== 'undefined' && localStorage.getItem('polyfit_demo_mode') === 'true') {
-        setUser({ id: 'demo-user', email: 'demo@example.com' });
-        setRole('super_admin');
-        setOrganizationId('c79a9982-4477-4336-a24b-561419f6c43b');
-        setIsSuperAdmin(true);
-        setIsDemoMode(true);
-        setLoading(false);
       } else {
         setUser(null);
         setRole(null);
@@ -154,7 +139,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setOrganizationId(null);
     setProviderId(null);
     setIsSuperAdmin(false);
-    setIsDemoMode(false);
 
     if (typeof window !== 'undefined') {
       try {
@@ -170,17 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const enableDemoMode = () => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('polyfit_demo_mode', 'true');
-      } catch {}
-    }
-    setUser({ id: 'demo-user', email: 'demo@example.com' });
-    setRole('super_admin');
-    setOrganizationId('c79a9982-4477-4336-a24b-561419f6c43b');
-    setIsSuperAdmin(true);
-    setIsDemoMode(true);
-    setLoading(false);
+    console.warn('[AuthContext] Demo mode is permanently disabled in production.');
   };
 
   return (
@@ -194,10 +168,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         isLoading: loading,
         signOut,
-        isDemoMode,
+        isDemoMode: false,
         enableDemoMode
       }}
     >
+      {user && showMfaReminder && (
+        <aside
+          role="status"
+          aria-label="Security Recommendation"
+          className="bg-emerald-950 text-emerald-100 text-xs px-4 py-2 border-b border-emerald-800 flex items-center justify-between z-50 relative font-sans"
+        >
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>
+              <strong>Security Recommendation:</strong> Protect privileged access with Multi-Factor Authentication (MFA / Authenticator App).
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowMfaReminder(false)}
+            className="text-emerald-300 hover:text-white text-xs underline font-medium px-2 py-0.5 rounded cursor-pointer"
+            aria-label="Dismiss MFA notice"
+          >
+            Dismiss
+          </button>
+        </aside>
+      )}
       {children}
     </AuthContext.Provider>
   );

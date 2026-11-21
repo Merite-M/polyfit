@@ -90,7 +90,7 @@ export default function PartnerMarketingPage() {
       format: 'a4'
     });
 
-    const facilityName = provider?.name || 'FitLife Gym Kigali';
+    const facilityName = provider?.name || 'Wellness Facility Partner';
 
     // Top Dark Blue Brand Strip
     doc.setFillColor(11, 31, 51);
@@ -158,7 +158,7 @@ export default function PartnerMarketingPage() {
     doc.save(`${facilityName.toLowerCase().replace(/\s+/g, '_')}_counter_plaque_A4.pdf`);
   };
 
-  const facilityName = provider?.name || 'FitLife Gym Kigali';
+  const facilityName = provider?.name || 'Wellness Facility Partner';
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">

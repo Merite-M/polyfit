@@ -98,39 +98,34 @@ export const INITIAL_WIZARD_STATE: WizardLocationState = {
   },
 
   phone_country_code: '+250',
-  phone_number: '788 123 456',
-  whatsapp_number: '788 123 456',
+  phone_number: '',
+  whatsapp_number: '',
   instagram_handle: '',
   website_url: '',
 
-  description:
-    'Premier conditioning, wellness, and aquatic training facility in Kigali featuring state-of-the-art workout zones, certified trainers, and world-class recovery amenities.',
-  important_notice: 'Please bring your corporate ID or PolyFit mobile pass for verified check-in.',
+  description: '',
+  important_notice: '',
 
   first_checkin_rules: {
     booking_required: false,
-    registration_form_required: true,
+    registration_form_required: false,
     guided_tour_mandatory: false,
-    arrive_early_minutes: 10,
+    arrive_early_minutes: 0,
   },
-  recommended_gear: ['Clean indoor athletic sneakers', 'Training towel', 'Hydration bottle'],
+  recommended_gear: [],
 
   amenities: [],
 
-  logo_url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=300',
-  cover_url: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&q=80&w=1200',
-  entrance_url: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=800',
-  gallery_urls: [
-    'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=800',
-  ],
+  logo_url: '',
+  cover_url: '',
+  entrance_url: '',
+  gallery_urls: [],
 
   payout_method: 'bank',
-  bank_name: 'Bank of Kigali (BK)',
+  bank_name: '',
   account_name: '',
   account_number: '',
-  swift_code: 'BOKRRWRW',
+  swift_code: '',
   momo_provider: 'mtn',
   momo_code: '',
   momo_phone: '',

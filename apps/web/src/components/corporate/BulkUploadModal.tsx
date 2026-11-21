@@ -294,7 +294,7 @@ export function BulkUploadModal({
       }));
 
       if (isFullRosterSync && targetOrgId) {
-        response = await apiFetch<any>(`${apiUrl}/api/organizations/${targetOrgId}/sync-roster`, {
+        response = await apiFetch<any>(`/api/organizations/${targetOrgId}/sync-roster`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -304,47 +304,41 @@ export function BulkUploadModal({
           }),
         });
       } else {
-        try {
-          response = await apiFetch<{
-            success: boolean;
-            message: string;
-            summary: {
-              created: number;
-              updated: number;
-              skipped: number;
-              failed: number;
-            };
-            duration_ms?: number;
-          }>(`${apiUrl}/api/organizations/${targetOrgId}/employees/bulk`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              csv_data: rawCsvText,
-              update_existing: true,
-              send_invites: false,
-            }),
-          });
-        } catch {
-          response = await apiFetch<any>(`/api/public/corporate/employees/bulk`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              org_id: targetOrgId,
-              org_slug: corporateCtx?.organization?.slug || "corp",
-              csv_data: rawCsvText,
-            }),
-          });
-        }
+        response = await apiFetch<{
+          success: boolean;
+          message: string;
+          summary?: {
+            created: number;
+            updated: number;
+            skipped: number;
+            failed: number;
+          };
+          created?: number;
+          updated?: number;
+          skipped?: number;
+          failed?: number;
+          duration_ms?: number;
+        }>(`/api/organizations/${targetOrgId}/employees/bulk`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            csv_data: rawCsvText,
+            employees: validEmployees,
+            update_existing: true,
+            send_invites: false,
+          }),
+        });
       }
 
-      if (response && response.summary) {
+      const summary = response?.summary || response;
+      if (summary) {
         setImportResult({
-          created: response.summary.created || 0,
-          updated: response.summary.updated || 0,
-          deprovisioned: response.summary.deprovisioned || 0,
-          skipped: response.summary.skipped || 0,
-          failed: response.summary.failed || 0,
-          duration_ms: response.duration_ms,
+          created: summary.created || 0,
+          updated: summary.updated || 0,
+          deprovisioned: summary.deprovisioned || 0,
+          skipped: summary.skipped || 0,
+          failed: summary.failed || 0,
+          duration_ms: response?.duration_ms,
         });
         onImportSuccess();
       }
@@ -374,7 +368,7 @@ export function BulkUploadModal({
       className="pf-native-dialog pf-dialog-lg p-0 bg-transparent text-[var(--text-primary,#0B1F33)]"
       aria-labelledby="bulk-upload-title"
     >
-      <div className="relative w-full bg-[var(--surface,#FFFFFF)] rounded-2xl shadow-2xl border border-[var(--border,#E2E8F0)] overflow-hidden">
+      <div className="@container relative w-full bg-[var(--surface,#FFFFFF)] rounded-2xl shadow-2xl border border-[var(--border,#E2E8F0)] overflow-hidden">
         {/* Header */}
         <div className="px-6 py-5 border-b border-[var(--border,#E2E8F0)] flex items-center justify-between bg-[var(--surface-dim,#F7F9FC)]">
           <div className="flex items-center gap-2.5">

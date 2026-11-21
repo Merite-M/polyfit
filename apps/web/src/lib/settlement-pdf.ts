@@ -155,15 +155,15 @@ export function generateSettlementPdf(
   doc.text(`TIN (RRA): ${statement.provider.tax_id || 'Registered / On File'}`, margin + 4, boxY);
 
   boxY += 4;
-  doc.text(`Email: ${statement.provider.settlement_email || 'finance@partner.rw'}`, margin + 4, boxY);
+  doc.text(`Email: ${statement.provider.settlement_email || 'Not Provided'}`, margin + 4, boxY);
 
   boxY += 4;
   const bank = statement.provider.bank_details;
-  let payoutDesc = 'Bank of Kigali (BK) ••••140-19';
+  let payoutDesc = 'Direct Payout Account Not Configured';
   if (bank?.payout_method === 'momo') {
-    payoutDesc = `MTN MoMo Code: ${bank.momo_code || '184920'}`;
+    payoutDesc = `MoMo Code: ${bank.momo_code || bank.momo_phone || 'Unspecified'}`;
   } else if (bank?.bank_name) {
-    payoutDesc = `${bank.bank_name} • ${bank.account_number || ''}`;
+    payoutDesc = `${bank.bank_name} • ${bank.account_number ? `••••${bank.account_number.slice(-4)}` : 'On File'}`;
   }
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...colorEmerald);
@@ -189,10 +189,10 @@ export function generateSettlementPdf(
   doc.text(`Period: ${statement.period_start} to ${statement.period_end}`, rightColX + 4, boxY);
 
   boxY += 4;
-  doc.text(`Disbursement Date: ${statement.payout_date || '15th of the Month'}`, rightColX + 4, boxY);
+  doc.text(`Disbursement Date: ${statement.payout_date || 'Pending Schedule'}`, rightColX + 4, boxY);
 
   boxY += 4;
-  doc.text(`Trace Reference: ${statement.payment_reference || 'BK-FT-20260915-082'}`, rightColX + 4, boxY);
+  doc.text(`Trace Reference: ${statement.payment_reference || 'N/A (Pending)'}`, rightColX + 4, boxY);
 
   boxY += 4.5;
   doc.setFont('helvetica', 'bold');
@@ -253,43 +253,51 @@ export function generateSettlementPdf(
 
   currentY += tableHeaderH;
 
-  const defaultLines: SettlementLineItem[] = [
-    { org_name: 'Bank of Kigali Plc', category: 'Executive Fitness', visit_count: 205, per_visit_rate: 5000, subtotal: 1025000 },
-    { org_name: 'MTN Rwandacell', category: 'Corporate All-Access', visit_count: 155, per_visit_rate: 5000, subtotal: 775000 },
-    { org_name: 'TechCorp Rwanda', category: 'Standard Wellness', visit_count: 90, per_visit_rate: 5000, subtotal: 450000 },
-    { org_name: 'I&M Bank Rwanda', category: 'Executive Fitness', visit_count: 40, per_visit_rate: 5000, subtotal: 200000 }
-  ];
+  const items = statement.line_items || [];
 
-  const items = statement.line_items && statement.line_items.length > 0 ? statement.line_items : defaultLines;
-
-  items.forEach((item, index) => {
-    const rowH = 7;
-    if (index % 2 === 1) {
-      doc.setFillColor(252, 253, 254);
-      doc.rect(margin, currentY, contentWidth, rowH, 'F');
-    }
+  if (items.length === 0) {
+    const rowH = 10;
+    doc.setFillColor(252, 253, 254);
+    doc.rect(margin, currentY, contentWidth, rowH, 'F');
     doc.setDrawColor(...colorBorder);
     doc.line(margin, currentY + rowH, pageWidth - margin, currentY + rowH);
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...colorNavy);
-    doc.text(item.org_name, margin + 4, currentY + 4.8);
-
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('helvetica', 'italic');
     doc.setFontSize(8);
     doc.setTextColor(...colorSlate);
-    doc.text(item.category || 'General Access', margin + 70, currentY + 4.8);
-
-    doc.text(`${item.visit_count}`, margin + 110, currentY + 4.8, { align: 'right' });
-    doc.text(formatRwf(item.per_visit_rate), margin + 140, currentY + 4.8, { align: 'right' });
-
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...colorNavy);
-    doc.text(formatRwf(item.subtotal), pageWidth - margin - 4, currentY + 4.8, { align: 'right' });
+    doc.text('No itemized corporate visits recorded for this billing cycle.', margin + 4, currentY + 6);
 
     currentY += rowH;
-  });
+  } else {
+    items.forEach((item, index) => {
+      const rowH = 7;
+      if (index % 2 === 1) {
+        doc.setFillColor(252, 253, 254);
+        doc.rect(margin, currentY, contentWidth, rowH, 'F');
+      }
+      doc.setDrawColor(...colorBorder);
+      doc.line(margin, currentY + rowH, pageWidth - margin, currentY + rowH);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...colorNavy);
+      doc.text(item.org_name, margin + 4, currentY + 4.8);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...colorSlate);
+      doc.text(item.category || 'General Access', margin + 70, currentY + 4.8);
+
+      doc.text(`${item.visit_count}`, margin + 110, currentY + 4.8, { align: 'right' });
+      doc.text(formatRwf(item.per_visit_rate), margin + 140, currentY + 4.8, { align: 'right' });
+
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...colorNavy);
+      doc.text(formatRwf(item.subtotal), pageWidth - margin - 4, currentY + 4.8, { align: 'right' });
+
+      currentY += rowH;
+    });
+  }
 
   // Totals Summary Block
   currentY += 4;

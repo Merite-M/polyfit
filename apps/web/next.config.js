@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  output: 'standalone',
   trailingSlash: true,
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
   images: { unoptimized: true }
