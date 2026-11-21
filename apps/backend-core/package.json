@@ -15,7 +15,7 @@
   "dependencies": {
     "@polyfit/shared-utils": "workspace:*",
     "@polyfit/supabase-client": "workspace:*",
-    "@supabase/supabase-js": "^2.112.3",
+    "@supabase/supabase-js": "catalog:",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

@@ -4,11 +4,13 @@ services:
     name: polyfit-backend
     env: node
     plan: free
-    buildCommand: pnpm install --filter @polyfit/backend-core...
+    buildCommand: pnpm install --no-frozen-lockfile --filter @polyfit/backend-core...
     startCommand: node apps/backend-core/index.js
     envVars:
       - key: NODE_VERSION
         value: 26.13.1
+      - key: PNPM_VERSION
+        value: 12.21.0
       - key: NODE_ENV
         value: production
       - key: PORT
@@ -34,7 +36,7 @@ services:
   - type: web
     name: polyfit
     env: static
-    buildCommand: pnpm install --filter @polyfit/web... && pnpm --filter @polyfit/web build
+    buildCommand: pnpm install --no-frozen-lockfile --filter @polyfit/web... && pnpm --filter @polyfit/web build
     staticPublishPath: apps/web/out
     routes:
       - type: rewrite
@@ -43,6 +45,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 26.13.1
+      - key: PNPM_VERSION
+        value: 12.21.0
       - key: NEXT_PUBLIC_SUPABASE_URL
         sync: false
       - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
